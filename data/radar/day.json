@@ -1,0 +1,33 @@
+{
+  "title": "Radar of the Day",
+  "subtitle": "Top 3 picks (FREE view)",
+  "edition": { "generated_at_utc": "2026-01-29T03:10:00Z" },
+  "top3": [
+    {
+      "match_id": "EPL_12345",
+      "kickoff_utc": "2026-01-29T20:00:00Z",
+      "league": "Premier League",
+      "home": "Arsenal",
+      "away": "Chelsea",
+      "pick": "Under 3.5",
+      "risk": "medium",
+      "status": "pending"
+    }
+  ],
+  "items": [
+    {
+      "match_id": "EPL_12345",
+      "kickoff_utc": "2026-01-29T20:00:00Z",
+      "league": "Premier League",
+      "home": "Arsenal",
+      "away": "Chelsea",
+      "pick": "Under 3.5",
+      "risk": "medium",
+      "status": "pending",
+      "stats": {
+        "home": { "form5": [1, 1, 0, -1, 1], "g5": { "gf": 7, "ga": 4 } },
+        "away": { "form5": [-1, 0, 1, 0, -1], "g5": { "gf": 5, "ga": 6 } }
+      }
+    }
+  ]
+}
