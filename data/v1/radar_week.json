@@ -1,0 +1,26 @@
+{
+  "generated_at_utc": "2026-01-30T00:00:00Z",
+  "week_scope": "Mon–Sun",
+  "items": [
+    {
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Liverpool",
+      "away": "Chelsea",
+      "kickoff_utc": "2026-02-01T16:30:00Z",
+      "risk": "medium",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "Brazil",
+      "competition": "Brasileirão Série A",
+      "home": "Botafogo",
+      "away": "Cruzeiro",
+      "kickoff_utc": "2026-02-02T00:30:00Z",
+      "risk": "low",
+      "suggestion_free": "DNB Home",
+      "result": "pending"
+    }
+  ]
+}

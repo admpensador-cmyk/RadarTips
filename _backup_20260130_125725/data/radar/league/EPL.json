@@ -1,0 +1,17 @@
+{
+  "title": "Premier League",
+  "round": "Matchweek 23",
+  "edition": { "generated_at_utc": "2026-01-29T03:10:00Z" },
+  "top3": [
+    { "match_id":"EPL_12345","kickoff_utc":"2026-01-29T20:00:00Z","league":"Premier League","home":"Arsenal","away":"Chelsea","pick":"Under 3.5","risk":"medium","status":"pending" },
+    { "match_id":"EPL_22222","kickoff_utc":"2026-01-29T22:30:00Z","league":"Premier League","home":"Liverpool","away":"Everton","pick":"Liverpool DNB","risk":"low","status":"pending" },
+    { "match_id":"EPL_33333","kickoff_utc":"2026-01-30T00:00:00Z","league":"Premier League","home":"Tottenham","away":"West Ham","pick":"Over 1.5","risk":"medium","status":"pending" }
+  ],
+  "items": [
+    {
+      "match_id":"EPL_22222","kickoff_utc":"2026-01-29T22:30:00Z","league":"Premier League",
+      "home":"Liverpool","away":"Everton","pick":"Liverpool DNB","risk":"low","status":"pending",
+      "stats":{"home":{"form5":[1,1,1,0,1],"g5":{"gf":10,"ga":3}},"away":{"form5":[-1,0,-1,0,1],"g5":{"gf":4,"ga":7}}}
+    }
+  ]
+}

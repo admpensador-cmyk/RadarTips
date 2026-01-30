@@ -1,0 +1,53 @@
+{
+  "generated_at_utc": "2026-01-30T00:00:00Z",
+  "matches": [
+    {
+      "kickoff_utc": "2026-01-30T15:00:00Z",
+      "country": "Egypt",
+      "competition": "Egypt Premier League",
+      "home": "Al Ahly",
+      "away": "Zamalek",
+      "risk": "low",
+      "suggestion_free": "1X",
+      "form_home": "WWWWW",
+      "gf_home": 12,
+      "ga_home": 2
+    },
+    {
+      "kickoff_utc": "2026-01-30T17:00:00Z",
+      "country": "Europe",
+      "competition": "Europa League",
+      "home": "Aston Villa",
+      "away": "Salzburg",
+      "risk": "medium",
+      "suggestion_free": "1X",
+      "form_home": "WWDWL",
+      "gf_home": 9,
+      "ga_home": 4
+    },
+    {
+      "kickoff_utc": "2026-01-30T23:00:00Z",
+      "country": "Brazil",
+      "competition": "Brasileirão",
+      "home": "Mirassol",
+      "away": "Vasco",
+      "risk": "medium",
+      "suggestion_free": "Under 3.5",
+      "form_home": "DWWLD",
+      "gf_home": 7,
+      "ga_home": 5
+    },
+    {
+      "kickoff_utc": "2026-02-01T19:00:00Z",
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Arsenal",
+      "away": "Brighton",
+      "risk": "low",
+      "suggestion_free": "1X",
+      "form_home": "WDLWW",
+      "gf_home": 8,
+      "ga_home": 3
+    }
+  ]
+}
