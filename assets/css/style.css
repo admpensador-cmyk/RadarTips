@@ -179,6 +179,7 @@ h3{margin:10px 0 0;font-size:16px;letter-spacing:-.2px}
 .dot.g{background:rgba(24,169,87,.18);border-color:rgba(24,169,87,.25)}
 .dot.r{background:rgba(224,69,69,.18);border-color:rgba(224,69,69,.25)}
 .dot.y{background:rgba(224,179,0,.18);border-color:rgba(224,179,0,.25)}
+.dot.n{background:rgba(140,150,170,.16);border-color:rgba(140,150,170,.25)}
 .gfga{font-weight:850;color:#15243e}
 .gfga .gf{color:var(--green);font-weight:950}
 .gfga .ga{color:var(--red);font-weight:950}
@@ -281,3 +282,24 @@ h3{margin:10px 0 0;font-size:16px;letter-spacing:-.2px}
 
 /* Make any element with tooltip feel intentional */
 [data-tip]{cursor:help}
+
+/* Tooltip (data-tip) */
+.radar-tooltip{
+  position:fixed;
+  max-width:340px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(215,227,246,.95);
+  background:rgba(255,255,255,.98);
+  box-shadow:0 10px 28px rgba(0,0,0,.14);
+  font-size:12px;
+  font-weight:750;
+  line-height:1.25;
+  color:#1b2a46;
+  z-index:9999;
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity .12s ease, transform .12s ease;
+}
+.radar-tooltip.show{opacity:1;transform:translateY(0)}

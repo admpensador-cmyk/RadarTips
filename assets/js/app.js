@@ -89,6 +89,83 @@ function tipAttr(text){
   return `title="${t}" data-tip="${t}"`;
 }
 
+
+// Lightweight tooltips using [data-tip]
+function initTooltips(){
+  if(document.querySelector(".radar-tooltip")) return;
+  const tip = document.createElement("div");
+  tip.className = "radar-tooltip";
+  document.body.appendChild(tip);
+
+  let active = null;
+
+  function show(text, x, y){
+    if(!text) return;
+    tip.textContent = text;
+    const pad = 14;
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+    // Measure after setting text
+    tip.style.left = "0px";
+    tip.style.top = "0px";
+    tip.classList.add("show");
+    const r = tip.getBoundingClientRect();
+
+    let nx = x + pad;
+    let ny = y + pad;
+
+    if(nx + r.width > vw - 8) nx = Math.max(8, vw - r.width - 8);
+    if(ny + r.height > vh - 8) ny = Math.max(8, y - r.height - pad);
+
+    tip.style.left = `${nx}px`;
+    tip.style.top  = `${ny}px`;
+  }
+
+  function hide(){
+    tip.classList.remove("show");
+    active = null;
+  }
+
+  document.addEventListener("pointermove", (e)=>{
+    // Mouse only: avoids random tooltips on touch scroll
+    if(e.pointerType && e.pointerType !== "mouse") return;
+    const el = e.target.closest("[data-tip]");
+    if(!el){
+      if(active) hide();
+      return;
+    }
+    const text = el.getAttribute("data-tip") || "";
+    if(!text){
+      if(active) hide();
+      return;
+    }
+    active = el;
+    show(text, e.clientX, e.clientY);
+  });
+
+  document.addEventListener("pointerleave", (e)=>{
+    if(e.pointerType && e.pointerType !== "mouse") return;
+    if(e.target.closest && e.target.closest("[data-tip]")) hide();
+  }, true);
+
+  // Keyboard accessibility
+  document.addEventListener("focusin", (e)=>{
+    const el = e.target.closest && e.target.closest("[data-tip]");
+    if(!el) return;
+    const text = el.getAttribute("data-tip") || "";
+    if(!text) return;
+    const r = el.getBoundingClientRect();
+    active = el;
+    show(text, r.left + (r.width/2), r.top + (r.height/2));
+  });
+
+  document.addEventListener("focusout", (e)=>{
+    const el = e.target.closest && e.target.closest("[data-tip]");
+    if(el) hide();
+  });
+}
+
 function setNav(lang, t){
   const map = {
     day: `/${lang}/radar/day/`,
@@ -212,20 +289,39 @@ function resultLabel(ch, t){
   return t.result_red || "Derrota";
 }
 
-function buildFormSquares(t, formStr, details){
-  // details: [{opp, score, date, venue, result}] length 5
+function venueLabel(v, t){
+  const vv = String(v||"").toLowerCase();
+  if(vv==="casa" || vv==="home" || vv==="h") return t.home_label || "CASA";
+  if(vv==="fora" || vv==="away" || vv==="a") return t.away_label || "FORA";
+  return "";
+}
+
+function fmtDDMM(isoUtc){
+  try{
+    const d = new Date(isoUtc);
+    return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+  }catch{ return ""; }
+}
+
+function buildFormSquares(t, details, windowN){
+  const n = Number(windowN || 5);
+
+  // Strict: details must provide opponent + score + date per square.
   if(Array.isArray(details) && details.length){
-    return details.slice(0,5).map(d=>{
-      const r = (d.result || "D").toUpperCase();
-      const tip = `${d.venue||""} vs ${d.opp||""} • ${d.score||""} • ${d.date||""}`.trim();
+    return details.slice(0, n).map(d=>{
+      const r = String(d.result || "D").toUpperCase();
+      const v = venueLabel(d.venue, t);
+      const opp = d.opp || "—";
+      const score = d.score || "—";
+      const dateIso = d.date_utc || d.kickoff_utc || d.date || "";
+      const ddmm = dateIso ? fmtDDMM(dateIso) : "";
+      const tip = `${v ? (v + " ") : ""}vs ${opp} • ${score}${ddmm ? (" • " + ddmm) : ""}`;
       return `<span class="dot ${squareFor(r)}" ${tipAttr(tip)}></span>`;
     }).join("");
   }
-  const s = (formStr || "WDLWD").slice(0,5).split("");
-  return s.map(ch=>{
-    const tip = `${t.form_tooltip_square || "Resultado"}: ${resultLabel(ch, t)}`;
-    return `<span class="dot ${squareFor(ch)}" ${tipAttr(tip)}></span>`;
-  }).join("");
+
+  const missing = t.form_missing_tip || "Historical match details not provided yet.";
+  return Array.from({length:n}).map(()=> `<span class="dot n" ${tipAttr(missing)}></span>`).join("");
 }
 
 function renderCalendar(t, matches, viewMode, query, activeDateKey){
@@ -280,10 +376,10 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       row.setAttribute("title", `${t.match_radar}: ${m.home} vs ${m.away}`);
       row.setAttribute("data-tip", `${t.match_radar}: ${m.home} vs ${m.away}`);
 
-      const formHome = buildFormSquares(t, m.form_home, m.form_home_details);
-      const formAway = buildFormSquares(t, m.form_away, m.form_away_details);
+      const formHome = buildFormSquares(t, m.form_home_details, CAL_META.form_window);
+      const formAway = buildFormSquares(t, m.form_away_details, CAL_META.form_window);
 
-      const goalsTip = t.goals_tooltip || "Gols feitos / gols sofridos (últimos 5 jogos)";
+      const goalsTip = t.goals_tooltip || "Goals for/goals against (last 5 matches).";
       const ghf = (m.gf_home ?? 0), gha = (m.ga_home ?? 0);
       const gaf = (m.gf_away ?? 0), gaa = (m.ga_away ?? 0);
 
@@ -337,6 +433,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 let T = null;
 let LANG = null;
 let CAL_MATCHES = [];
+let CAL_META = { form_window: 5, goals_window: 5 };
 
 function openModal(type, value){
   const back = qs("#modal_backdrop");
@@ -363,10 +460,10 @@ function openModal(type, value){
 
     title.textContent = `${home} vs ${away}`;
 
-    const goalsTip = T.goals_tooltip || "Gols feitos / gols sofridos (últimos 5 jogos)";
+    const goalsTip = T.goals_tooltip || "Goals for/goals against (last 5 matches).";
 
-    const formHome = buildFormSquares(T, m?.form_home, m?.form_home_details);
-    const formAway = buildFormSquares(T, m?.form_away, m?.form_away_details);
+    const formHome = buildFormSquares(T, m?.form_home_details, CAL_META.form_window);
+    const formAway = buildFormSquares(T, m?.form_away_details, CAL_META.form_window);
 
     body.innerHTML = `
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
@@ -586,6 +683,7 @@ async function init(){
 
   setNav(LANG, T);
   decorateLangPills(LANG);
+  initTooltips();
 
   const p = pageType();
   if(p==="day"){
@@ -612,8 +710,9 @@ async function init(){
 
   let viewMode = "time";
   let q = "";
-  const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[]});
+  const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
   CAL_MATCHES = data.matches || [];
+  CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
 
   // Date strip
   const strip = ensureDateStrip(T);

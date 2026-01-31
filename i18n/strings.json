@@ -59,7 +59,8 @@
     "next7_label": "7D",
     "next7_tooltip": "Show next 7 days",
     "lang_current_tip": "Current language",
-    "lang_switch_tip": "Switch language"
+    "lang_switch_tip": "Switch language",
+    "form_missing_tip": "Historical match details not provided yet."
   },
   "pt": {
     "brand": "RadarTips",
@@ -121,7 +122,8 @@
     "next7_label": "7D",
     "next7_tooltip": "Mostrar os próximos 7 dias",
     "lang_current_tip": "Idioma atual",
-    "lang_switch_tip": "Trocar idioma"
+    "lang_switch_tip": "Trocar idioma",
+    "form_missing_tip": "Detalhes do histórico ainda não informados."
   },
   "es": {
     "brand": "RadarTips",
@@ -183,7 +185,8 @@
     "next7_label": "7D",
     "next7_tooltip": "Mostrar próximos 7 días",
     "lang_current_tip": "Idioma actual",
-    "lang_switch_tip": "Cambiar idioma"
+    "lang_switch_tip": "Cambiar idioma",
+    "form_missing_tip": "Aún no hay detalles del historial."
   },
   "fr": {
     "brand": "RadarTips",
@@ -245,7 +248,8 @@
     "next7_label": "7J",
     "next7_tooltip": "Afficher les 7 prochains jours",
     "lang_current_tip": "Langue actuelle",
-    "lang_switch_tip": "Changer de langue"
+    "lang_switch_tip": "Changer de langue",
+    "form_missing_tip": "Détails d'historique non fournis pour l'instant."
   },
   "de": {
     "brand": "RadarTips",
@@ -307,6 +311,7 @@
     "next7_label": "7T",
     "next7_tooltip": "Nächste 7 Tage anzeigen",
     "lang_current_tip": "Aktuelle Sprache",
-    "lang_switch_tip": "Sprache wechseln"
+    "lang_switch_tip": "Sprache wechseln",
+    "form_missing_tip": "Historische Match-Details noch nicht verfügbar."
   }
 }
