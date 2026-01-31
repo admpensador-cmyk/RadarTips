@@ -285,6 +285,43 @@ function renderTop3(t, data){
   });
 }
 
+
+function renderPitch(){
+  const kicker = qs("#pitch_kicker");
+  const freepro = qs("#pitch_free_pro");
+  const markets = qs("#pitch_markets");
+  const aboutBtn = qs("#btn_about");
+  const browseBtn = qs("#btn_browse");
+
+  if(kicker) kicker.textContent = T.pitch_kicker || "";
+  if(freepro) freepro.textContent = T.pitch_free_pro || "";
+  if(aboutBtn) aboutBtn.textContent = T.about_cta || "About";
+  if(browseBtn){
+    browseBtn.textContent = T.browse_cta || "Calendar";
+    const calSection = qs("#calendar_section");
+    browseBtn.setAttribute("href", calSection ? "#calendar_section" : `/${LANG}/calendar/`);
+  }
+  if(markets){
+    const chips = [
+      {k:"market_1x", tip:"market_1x_tip"},
+      {k:"market_under", tip:"market_under_tip"},
+      {k:"market_dnb", tip:"market_dnb_tip"},
+      {k:"market_handicap", tip:"market_handicap_tip"},
+    ];
+    markets.innerHTML = `
+      <div class="markets-label">${escAttr(T.markets_label || "")}</div>
+      <div class="markets-row">
+        ${chips.map(c=>{
+          const label = T[c.k] || "";
+          const tip = T[c.tip] || "";
+          return `<span class="mini-chip market" ${tipAttr(tip)}>${escAttr(label)}</span>`;
+        }).join("")}
+      </div>
+    `;
+  }
+}
+
+
 function normalize(s){ return (s||"").toLowerCase().trim(); }
 
 function groupByTime(matches){
@@ -465,6 +502,31 @@ function openModal(type, value){
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");
   const body = qs("#modal_body");
+
+  // ABOUT / HOW IT WORKS
+  if(type === "about"){
+    title.textContent = T.about_title || "About";
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="color:#11244b;font-weight:850;line-height:1.35">${escAttr(T.about_intro || "")}</div>
+
+        <div style="padding:12px 12px;border:1px solid rgba(43,111,242,.20);border-radius:16px;background:rgba(43,111,242,.06)">
+          <div style="font-weight:950;margin-bottom:8px">${escAttr(T.about_steps_title || "")}</div>
+          <div style="display:flex;flex-direction:column;gap:6px;color:#163261;font-weight:800">
+            <div>• ${escAttr(T.about_step1 || "")}</div>
+            <div>• ${escAttr(T.about_step2 || "")}</div>
+            <div>• ${escAttr(T.about_step3 || "")}</div>
+          </div>
+        </div>
+
+        <div style="color:rgba(11,18,32,.75);font-weight:800">${escAttr(T.about_note || "")}</div>
+      </div>
+    `;
+    back.style.display = "flex";
+    bindModalClicks();
+    return;
+  }
+
 
   // MATCH RADAR
   if(type === "match"){
@@ -707,6 +769,8 @@ async function init(){
   setText("brand", T.brand);
   setText("disclaimer", T.disclaimer);
 
+  setText("subtitle", T.subtitle || "");
+
   setNav(LANG, T);
   decorateLangPills(LANG);
   initTooltips();
@@ -715,15 +779,18 @@ async function init(){
   if(p==="day"){
     setText("hero_title", T.hero_title_day);
     setText("hero_sub", T.hero_sub_day);
+    renderPitch();
     const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[]});
     renderTop3(T, radar);
   } else if(p==="week"){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
+    renderPitch();
     renderTop3(T, {highlights:[]});
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
+    renderPitch();
     renderTop3(T, {highlights:[]});
   }
 
