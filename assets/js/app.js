@@ -266,7 +266,7 @@ function renderTop3(t, data){
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
 
-    const suggestion = item.suggestion_free || "—";
+    const suggestion = localizeMarket(item.suggestion_free, t) || "—";
     lock.innerHTML = `
       <div class="callout">
         <div class="callout-top">
@@ -287,6 +287,8 @@ function renderTop3(t, data){
 
 
 function renderPitch(){
+  const bar = qs("#pitchbar");
+  if(bar) bar.hidden = false;
   const kicker = qs("#pitch_kicker");
   const freepro = qs("#pitch_free_pro");
   const markets = qs("#pitch_markets");
@@ -483,7 +485,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
             </div>
           </div>
         </div>
-        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(m.suggestion_free || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
+        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
       `;
 
       list.appendChild(row);
@@ -544,7 +546,7 @@ function openModal(type, value){
     const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "—";
     const riskCls = m ? riskClass(m.risk) : "med";
     const kickoff = m ? fmtTime(m.kickoff_utc) : "--:--";
-    const suggestion = m?.suggestion_free || "—";
+    const suggestion = localizeMarket(m?.suggestion_free, T) || "—";
 
     title.textContent = `${home} vs ${away}`;
 
@@ -629,7 +631,7 @@ function openModal(type, value){
           <div class="time">${fmtTime(m.kickoff_utc)}</div>
           <div>
             <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(m.suggestion_free || "—")}</b> • ${riskText}</div>
+            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(localizeMarket(m.suggestion_free, t) || "—")}</b> • ${riskText}</div>
           </div>
         </div>
       `;
@@ -761,10 +763,131 @@ function build7Days(){
   return days;
 }
 
+function localizeMarket(raw, t){
+  const s = String(raw || "").trim();
+  if(!s) return s;
+
+  const home = (t && t.word_home) || "Home";
+  const away = (t && t.word_away) || "Away";
+  const draw = (t && t.word_draw) || "Draw";
+
+  // Double chance shortcuts
+  if(/^1x\b/i.test(s)){
+    const desc = (t && t.market_desc_home_draw) || "Home or Draw";
+    return `1X (${desc})`;
+  }
+  if(/^x2\b/i.test(s)){
+    const desc = (t && t.market_desc_draw_away) || "Draw or Away";
+    return `X2 (${desc})`;
+  }
+  if(/^12\b/i.test(s)){
+    const desc = (t && t.market_desc_home_away) || "Home or Away";
+    return `12 (${desc})`;
+  }
+
+  // Draw No Bet
+  let m = s.match(/^dnb\s*(home|away)\b/i);
+  if(m){
+    const side = (m[1].toLowerCase()==="home") ? home : away;
+    const fmt = (t && t.market_dnb_fmt) || "DNB {side}";
+    return fmt.replace("{side}", side);
+  }
+
+  // Totals
+  m = s.match(/^(under|over)\s*([0-9]+(?:\.[0-9])?)\b/i);
+  if(m){
+    const n = m[2];
+    const prefix = (m[1].toLowerCase()==="under") ? ((t && t.market_under_prefix) || "Under") : ((t && t.market_over_prefix) || "Over");
+    return `${prefix} ${n}`;
+  }
+
+  // Handicap basics
+  m = s.match(/^(handicap|ah)\s*([+-]?[0-9]+(?:\.[0-9])?)\b/i);
+  if(m){
+    const n = m[2];
+    const word = (t && t.word_handicap) || "Handicap";
+    return `${word} ${n}`;
+  }
+
+  // Fallback: translate common words/phrases inside the string
+  let out = s;
+  const phraseMap = [
+    [/Home or Draw/gi, (t && t.market_desc_home_draw)],
+    [/Draw or Away/gi, (t && t.market_desc_draw_away)],
+    [/Home or Away/gi, (t && t.market_desc_home_away)],
+  ];
+  phraseMap.forEach(([rx, val])=>{ if(val) out = out.replace(rx, val); });
+
+  out = out
+    .replace(/\bHome\b/gi, home)
+    .replace(/\bAway\b/gi, away)
+    .replace(/\bDraw\b/gi, draw);
+
+  return out;
+}
+
+const THEME_KEY = "rt_theme";
+
+function getSavedTheme(){
+  try{
+    const v = localStorage.getItem(THEME_KEY);
+    if(v==="dark" || v==="light") return v;
+  }catch(e){}
+  return null;
+}
+
+function applyTheme(theme){
+  document.body.dataset.theme = theme;
+}
+
+function pickDefaultTheme(){
+  // RadarTips: dark by default (more "tips & odds" vibe)
+  return "dark";
+}
+
+function setTheme(theme, t){
+  applyTheme(theme);
+  const btn = qs("#theme_toggle");
+  if(!btn) return;
+
+  const isDark = theme === "dark";
+  const label = isDark ? ((t && t.theme_light_short) || "Light") : ((t && t.theme_dark_short) || "Dark");
+  btn.textContent = label;
+
+  const tip = isDark ? ((t && t.theme_light_tip) || "Switch to light theme") : ((t && t.theme_dark_tip) || "Switch to dark theme");
+  btn.setAttribute("data-tip", tip);
+  btn.title = tip;
+}
+
+function initThemeToggle(t){
+  const saved = getSavedTheme();
+  const theme = saved || pickDefaultTheme();
+  setTheme(theme, t);
+
+  const btn = qs("#theme_toggle");
+  if(btn && !btn.dataset.bound){
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", ()=>{
+      const cur = document.body.dataset.theme || "light";
+      const next = (cur === "dark") ? "light" : "dark";
+      try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+      setTheme(next, t);
+    });
+    btn.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        btn.click();
+      }
+    });
+  }
+}
+
 async function init(){
   LANG = pathLang() || detectLang();
   const dict = await loadJSON("/i18n/strings.json", {});
   T = dict[LANG] || dict.en;
+
+  initThemeToggle(T);
 
   setText("brand", T.brand);
   setText("disclaimer", T.disclaimer);

@@ -470,3 +470,45 @@ h3{margin:10px 0 0;font-size:17px;letter-spacing:-.2px}
   background:rgba(255,255,255,.72);
   border-color:rgba(43,111,242,.16);
 }
+
+/* =====================
+   Dark theme (RadarTips)
+   ===================== */
+body[data-theme="dark"]{
+  --bg1:#060814;
+  --bg2:#0b1224;
+  --ink:#eaf1ff;
+  --muted:#a9b7d8;
+  --stroke:rgba(165,195,255,.18);
+  --shadow:0 24px 90px rgba(0,0,0,.55);
+}
+
+body[data-theme="dark"]{
+  background:
+    radial-gradient(circle at 15% 10%, rgba(43,111,242,.22), transparent 35%),
+    radial-gradient(circle at 85% 0%, rgba(120,86,255,.18), transparent 30%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
+}
+
+body[data-theme="dark"] .topbar,
+body[data-theme="dark"] .hero,
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .section,
+body[data-theme="dark"] .modal{
+  background:linear-gradient(180deg, rgba(14,18,30,.88), rgba(14,18,30,.62));
+}
+
+body[data-theme="dark"] .pill,
+body[data-theme="dark"] .lang,
+body[data-theme="dark"] .btn{
+  background:rgba(14,18,30,.55);
+}
+
+body[data-theme="dark"] .callout{
+  background:linear-gradient(180deg, rgba(43,111,242,.18), rgba(14,18,30,.55));
+  border-color: rgba(43,111,242,.25);
+}
+
+body[data-theme="dark"] .chip{background:rgba(14,18,30,.55)}
+body[data-theme="dark"] .badge-mini{background:rgba(14,18,30,.55)}
+body[data-theme="dark"] .pill.active{background:linear-gradient(180deg, rgba(43,111,242,.28), rgba(14,18,30,.55))}
