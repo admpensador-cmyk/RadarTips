@@ -60,7 +60,13 @@
     "next7_tooltip": "Show next 7 days",
     "lang_current_tip": "Current language",
     "lang_switch_tip": "Switch language",
-    "form_missing_tip": "Historical match details not provided yet."
+    "form_missing_tip": "Historical match details not provided yet.",
+    "rank_tooltip": "Highlight order in the Radar (not a guarantee).",
+    "competition_tooltip": "Competition / league.",
+    "country_tooltip": "Country / region.",
+    "risk_short_label": "Risk",
+    "free_badge": "FREE",
+    "free_tooltip": "Available in the free version."
   },
   "pt": {
     "brand": "RadarTips",
@@ -123,7 +129,13 @@
     "next7_tooltip": "Mostrar os próximos 7 dias",
     "lang_current_tip": "Idioma atual",
     "lang_switch_tip": "Trocar idioma",
-    "form_missing_tip": "Detalhes do histórico ainda não informados."
+    "form_missing_tip": "Detalhes do histórico ainda não informados.",
+    "rank_tooltip": "Ordem de destaque no Radar (não é garantia).",
+    "competition_tooltip": "Competição / liga.",
+    "country_tooltip": "País / região.",
+    "risk_short_label": "Risco",
+    "free_badge": "FREE",
+    "free_tooltip": "Disponível na versão gratuita."
   },
   "es": {
     "brand": "RadarTips",
@@ -186,7 +198,13 @@
     "next7_tooltip": "Mostrar próximos 7 días",
     "lang_current_tip": "Idioma actual",
     "lang_switch_tip": "Cambiar idioma",
-    "form_missing_tip": "Aún no hay detalles del historial."
+    "form_missing_tip": "Aún no hay detalles del historial.",
+    "rank_tooltip": "Orden de destaque en el Radar (no es garantía).",
+    "competition_tooltip": "Competición / liga.",
+    "country_tooltip": "País / región.",
+    "risk_short_label": "Riesgo",
+    "free_badge": "FREE",
+    "free_tooltip": "Disponible en la versión gratuita."
   },
   "fr": {
     "brand": "RadarTips",
@@ -249,7 +267,13 @@
     "next7_tooltip": "Afficher les 7 prochains jours",
     "lang_current_tip": "Langue actuelle",
     "lang_switch_tip": "Changer de langue",
-    "form_missing_tip": "Détails d'historique non fournis pour l'instant."
+    "form_missing_tip": "Détails d'historique non fournis pour l'instant.",
+    "rank_tooltip": "Ordre de mise en avant (pas une garantie).",
+    "competition_tooltip": "Compétition / ligue.",
+    "country_tooltip": "Pays / région.",
+    "risk_short_label": "Risque",
+    "free_badge": "FREE",
+    "free_tooltip": "Disponible en version gratuite."
   },
   "de": {
     "brand": "RadarTips",
@@ -312,6 +336,12 @@
     "next7_tooltip": "Nächste 7 Tage anzeigen",
     "lang_current_tip": "Aktuelle Sprache",
     "lang_switch_tip": "Sprache wechseln",
-    "form_missing_tip": "Historische Match-Details noch nicht verfügbar."
+    "form_missing_tip": "Historische Match-Details noch nicht verfügbar.",
+    "rank_tooltip": "Hervorhebungsrang (keine Garantie).",
+    "competition_tooltip": "Wettbewerb / Liga.",
+    "country_tooltip": "Land / Region.",
+    "risk_short_label": "Risiko",
+    "free_badge": "FREE",
+    "free_tooltip": "In der Gratisversion verfügbar."
   }
 }

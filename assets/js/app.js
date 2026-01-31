@@ -89,6 +89,21 @@ function tipAttr(text){
   return `title="${t}" data-tip="${t}"`;
 }
 
+// Inline icons (tiny, monochrome). Keeps UI "adult" without emojis.
+const ICONS = {
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>',
+  trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4h2v3a4 4 0 0 1-2 3"/><path d="M19 4h-2v3a4 4 0 0 0 2 3"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.4L21 10l-6.8 1.6L12 18l-2.2-6.4L3 10l6.8-1.6L12 2z"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>',
+};
+
+function ico(name){
+  return ICONS[name] || "";
+}
+function icoSpan(name){
+  return `<span class="ico" aria-hidden="true">${ico(name)}</span>`;
+}
 
 // Lightweight tooltips using [data-tip]
 function initTooltips(){
@@ -204,7 +219,10 @@ function renderTop3(t, data){
     const meta = card.querySelector(".meta");
     const lock = card.querySelector(".lock");
 
-    top.textContent = `${t.top_slot} ${idx+1}`;
+    top.className = "badge top rank";
+    top.textContent = `#${idx+1}`;
+    top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
+    top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
 
     if(!item){
       badge.className = "badge risk high";
@@ -227,15 +245,17 @@ function renderTop3(t, data){
     // Title
     h3.textContent = `${item.home} vs ${item.away}`;
 
-    // Meta
+    // Meta (chips + icons; avoids awkward wraps)
     meta.innerHTML = `
-      <span ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(item.kickoff_utc)}</span>
-      <span>•</span>
-      <span ${tipAttr(t.competition_tooltip || "")}>${item.competition}</span>
-      <span>•</span>
-      <a href="javascript:void(0)" data-open="competition" data-value="${escAttr(item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</a>
-      <span>•</span>
-      <a href="javascript:void(0)" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</a>
+      <div class="meta-chips">
+        <span class="meta-chip" ${tipAttr(t.kickoff_tooltip || "")}>${icoSpan("clock")}<span>${fmtTime(item.kickoff_utc)}</span></span>
+        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(item.competition)}</span></span>
+        <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(item.country)}</span></span>
+      </div>
+      <div class="meta-actions">
+        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
+        <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
+      </div>
     `;
 
     // FREE callout
@@ -248,12 +268,18 @@ function renderTop3(t, data){
 
     const suggestion = item.suggestion_free || "—";
     lock.innerHTML = `
-      <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-        <div>
-          <span style="font-weight:950">${t.suggestion_label || "Sugestão do Radar"}:</span>
-          <span ${tipAttr(t.suggestion_tooltip || "")}><b>${escAttr(suggestion)}</b></span>
+      <div class="callout">
+        <div class="callout-top">
+          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugestão do Radar")}</span></span>
+          <span class="callout-value" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)}</span>
         </div>
-        <button class="btn" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}>${t.match_radar || "Radar do Jogo"}</button>
+        <div class="callout-sub">
+          <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
+          <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
+        </div>
+        <div class="callout-actions">
+          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
+        </div>
       </div>
     `;
   });
@@ -755,6 +781,8 @@ async function init(){
     // any [data-open] outside modal (cards, chips, matches)
     qsa("[data-open]").forEach(el=>{
       el.addEventListener("click", (e)=>{
+        // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
+        e.stopPropagation();
         const type = el.getAttribute("data-open");
         const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
         openModal(type, val);
