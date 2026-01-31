@@ -11,7 +11,84 @@
       "suggestion_free": "1X",
       "form_home": "WWWWW",
       "gf_home": 12,
-      "ga_home": 2
+      "ga_home": 2,
+      "form_away": "LLDLL",
+      "gf_away": 11,
+      "ga_away": 3,
+      "form_home_details": [
+        {
+          "venue": "Casa",
+          "opp": "Rival 1",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 3",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 5",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        }
+      ],
+      "form_away_details": [
+        {
+          "venue": "Fora",
+          "opp": "Rival 1",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 3",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 5",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        }
+      ]
     },
     {
       "kickoff_utc": "2026-01-30T17:00:00Z",
@@ -23,7 +100,84 @@
       "suggestion_free": "1X",
       "form_home": "WWDWL",
       "gf_home": 9,
-      "ga_home": 4
+      "ga_home": 4,
+      "form_away": "LWDWL",
+      "gf_away": 8,
+      "ga_away": 5,
+      "form_home_details": [
+        {
+          "venue": "Casa",
+          "opp": "Rival 1",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 3",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 5",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        }
+      ],
+      "form_away_details": [
+        {
+          "venue": "Fora",
+          "opp": "Rival 1",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 3",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 5",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        }
+      ]
     },
     {
       "kickoff_utc": "2026-01-30T23:00:00Z",
@@ -35,7 +189,84 @@
       "suggestion_free": "Under 3.5",
       "form_home": "DWWLD",
       "gf_home": 7,
-      "ga_home": 5
+      "ga_home": 5,
+      "form_away": "LWDWL",
+      "gf_away": 6,
+      "ga_away": 6,
+      "form_home_details": [
+        {
+          "venue": "Casa",
+          "opp": "Rival 1",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 3",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 4",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 5",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        }
+      ],
+      "form_away_details": [
+        {
+          "venue": "Fora",
+          "opp": "Rival 1",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 3",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 5",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        }
+      ]
     },
     {
       "kickoff_utc": "2026-02-01T19:00:00Z",
@@ -47,7 +278,84 @@
       "suggestion_free": "1X",
       "form_home": "WDLWW",
       "gf_home": 8,
-      "ga_home": 3
+      "ga_home": 3,
+      "form_away": "LWDWL",
+      "gf_away": 7,
+      "ga_away": 4,
+      "form_home_details": [
+        {
+          "venue": "Casa",
+          "opp": "Rival 1",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 2",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 3",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Casa",
+          "opp": "Rival 5",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        }
+      ],
+      "form_away_details": [
+        {
+          "venue": "Fora",
+          "opp": "Rival 1",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 2",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 3",
+          "score": "1-1",
+          "date": "últimos jogos",
+          "result": "D"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 4",
+          "score": "2-0",
+          "date": "últimos jogos",
+          "result": "W"
+        },
+        {
+          "venue": "Fora",
+          "opp": "Rival 5",
+          "score": "0-2",
+          "date": "últimos jogos",
+          "result": "L"
+        }
+      ]
     }
   ]
 }
