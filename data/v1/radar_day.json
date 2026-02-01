@@ -1,34 +1,34 @@
 {
-  "generated_at_utc": "2026-01-30T00:00:00Z",
+  "generated_at_utc": "2026-02-01T05:41:20.650Z",
   "highlights": [
     {
-      "country": "England",
-      "competition": "Premier League",
-      "home": "Arsenal",
-      "away": "Brighton",
-      "kickoff_utc": "2026-01-30T19:00:00Z",
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Torino",
+      "away": "Lecce",
+      "kickoff_utc": "2026-02-01T08:30:00-03:00",
       "risk": "low",
-      "suggestion_free": "1X (Home or Draw)",
-      "pro_locked": true
-    },
-    {
-      "country": "Brazil",
-      "competition": "Brasileirão Série A",
-      "home": "Bahia",
-      "away": "Flamengo",
-      "kickoff_utc": "2026-01-30T23:30:00Z",
-      "risk": "medium",
       "suggestion_free": "Under 3.5",
       "pro_locked": true
     },
     {
       "country": "Spain",
-      "competition": "LaLiga",
-      "home": "Betis",
-      "away": "Valencia",
-      "kickoff_utc": "2026-01-30T20:00:00Z",
-      "risk": "high",
-      "suggestion_free": "DNB Home",
+      "competition": "La Liga",
+      "home": "Real Madrid",
+      "away": "Rayo Vallecano",
+      "kickoff_utc": "2026-02-01T10:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "1X (Home or Draw)",
+      "pro_locked": true
+    },
+    {
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Nottingham Forest",
+      "away": "Crystal Palace",
+      "kickoff_utc": "2026-02-01T11:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
       "pro_locked": true
     }
   ]

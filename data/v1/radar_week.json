@@ -1,25 +1,105 @@
 {
-  "generated_at_utc": "2026-01-30T00:00:00Z",
-  "week_scope": "Mon–Sun",
+  "generated_at_utc": "2026-02-01T05:41:20.650Z",
+  "week_scope": "7d",
   "items": [
+    {
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Torino",
+      "away": "Lecce",
+      "kickoff_utc": "2026-02-01T08:30:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "Spain",
+      "competition": "La Liga",
+      "home": "Real Madrid",
+      "away": "Rayo Vallecano",
+      "kickoff_utc": "2026-02-01T10:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "1X (Home or Draw)",
+      "result": "pending"
+    },
     {
       "country": "England",
       "competition": "Premier League",
-      "home": "Liverpool",
-      "away": "Chelsea",
-      "kickoff_utc": "2026-02-01T16:30:00Z",
-      "risk": "medium",
+      "home": "Manchester United",
+      "away": "Fulham",
+      "kickoff_utc": "2026-02-01T11:00:00-03:00",
+      "risk": "low",
       "suggestion_free": "Over 1.5",
       "result": "pending"
     },
     {
-      "country": "Brazil",
-      "competition": "Brasileirão Série A",
-      "home": "Botafogo",
-      "away": "Cruzeiro",
-      "kickoff_utc": "2026-02-02T00:30:00Z",
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Nottingham Forest",
+      "away": "Crystal Palace",
+      "kickoff_utc": "2026-02-01T11:00:00-03:00",
       "risk": "low",
-      "suggestion_free": "DNB Home",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Aston Villa",
+      "away": "Brentford",
+      "kickoff_utc": "2026-02-01T11:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Como",
+      "away": "Atalanta",
+      "kickoff_utc": "2026-02-01T11:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "France",
+      "competition": "Ligue 1",
+      "home": "Lyon",
+      "away": "Lille",
+      "kickoff_utc": "2026-02-01T11:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "1X (Home or Draw)",
+      "result": "pending"
+    },
+    {
+      "country": "Germany",
+      "competition": "Bundesliga",
+      "home": "VfB Stuttgart",
+      "away": "SC Freiburg",
+      "kickoff_utc": "2026-02-01T11:30:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "Spain",
+      "competition": "La Liga",
+      "home": "Real Betis",
+      "away": "Valencia",
+      "kickoff_utc": "2026-02-01T12:15:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "France",
+      "competition": "Ligue 1",
+      "home": "Angers",
+      "away": "Metz",
+      "kickoff_utc": "2026-02-01T13:15:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
       "result": "pending"
     }
   ]
