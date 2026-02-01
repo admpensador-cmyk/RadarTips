@@ -909,7 +909,12 @@ async function init(){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
     renderPitch();
-    renderTop3(T, {highlights:[]});
+    // Use week radar file if present (falls back gracefully)
+    const week = await loadJSON("/data/v1/radar_week.json", {items:[], highlights:[]});
+    const highlights = (week.highlights && Array.isArray(week.highlights) && week.highlights.length)
+      ? week.highlights
+      : (week.items || []);
+    renderTop3(T, {highlights});
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
