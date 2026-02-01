@@ -487,30 +487,50 @@ body[data-theme="dark"] .btn{
 body[data-theme="dark"] .btn.ghost{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.24);color:rgba(233,240,255,.92)}
 body[data-theme="dark"] .btn.primary{background:var(--accent);color:#fff;border-color:rgba(59,130,246,.40)}
 
-/* Calendar groups/rows */
-body[data-theme="dark"] .group{
-  background:rgba(2,6,23,.34);
+/* Calendar (match the Radar look: no white panels) */
+body[data-theme="dark"] .section{
+  background:rgba(2,6,23,.22);
   border-color:var(--stroke);
+  box-shadow:0 14px 54px rgba(0,0,0,.28);
+}
+
+/* Groups become a header row + card-like matches (cleaner, less blocky) */
+body[data-theme="dark"] .group{
+  padding:0;
+  background:transparent;
+  border-color:transparent;
+}
+body[data-theme="dark"] .group-head{
+  padding:12px 12px;
+  border:1px solid var(--stroke);
+  border-radius:16px;
+  background:rgba(2,6,23,.34);
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+  backdrop-filter: blur(10px);
 }
 body[data-theme="dark"] .flag{box-shadow:0 6px 18px rgba(59,130,246,.35)}
 body[data-theme="dark"] .chip{
-  background:rgba(59,130,246,.12);
-  border-color:rgba(59,130,246,.22);
-  color:rgba(233,240,255,.88);
+  background:rgba(59,130,246,.14);
+  border-color:rgba(59,130,246,.26);
+  color:rgba(233,240,255,.92);
 }
 
+body[data-theme="dark"] .matches{gap:12px}
+
 body[data-theme="dark"] .match{
-  background:rgba(2,6,23,.28);
-  border-color:rgba(148,163,184,.18);
+  background:rgba(2,6,23,.34);
+  border-color:var(--stroke);
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+  backdrop-filter: blur(10px);
 }
-body[data-theme="dark"] .match:hover{background:rgba(2,6,23,.40)}
-body[data-theme="dark"] .time{color:rgba(233,240,255,.92)}
-body[data-theme="dark"] .teams{color:rgba(233,240,255,.92)}
+body[data-theme="dark"] .match:hover{background:rgba(2,6,23,.48)}
+body[data-theme="dark"] .time{color:rgba(233,240,255,.94)}
+body[data-theme="dark"] .teams{color:rgba(233,240,255,.94)}
 body[data-theme="dark"] .gfga{color:rgba(233,240,255,.84)}
 body[data-theme="dark"] .suggestion{
-  background:rgba(59,130,246,.12);
-  border-color:rgba(59,130,246,.24);
-  color:rgba(233,240,255,.94);
+  background:rgba(59,130,246,.16);
+  border-color:rgba(59,130,246,.28);
+  color:rgba(233,240,255,.96);
 }
 
 body[data-theme="dark"] .proline{color:rgba(233,240,255,.78)}
