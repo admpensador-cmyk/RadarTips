@@ -1,0 +1,70 @@
+{
+  "timezone": "America/Sao_Paulo",
+  "days_ahead": 7,
+  "last_n": 5,
+  "max_goals_matrix": 6,
+  "leagues": [
+    {
+      "league": 71,
+      "name": "Brasileirão Série A",
+      "country": "Brazil",
+      "season_rule": "calendar_year"
+    },
+    {
+      "league": 39,
+      "name": "Premier League",
+      "country": "England",
+      "season_rule": "europe_split"
+    },
+    {
+      "league": 140,
+      "name": "LaLiga",
+      "country": "Spain",
+      "season_rule": "europe_split"
+    },
+    {
+      "league": 135,
+      "name": "Serie A",
+      "country": "Italy",
+      "season_rule": "europe_split"
+    },
+    {
+      "league": 78,
+      "name": "Bundesliga",
+      "country": "Germany",
+      "season_rule": "europe_split"
+    },
+    {
+      "league": 61,
+      "name": "Ligue 1",
+      "country": "France",
+      "season_rule": "europe_split"
+    },
+    {
+      "league": 2,
+      "name": "UEFA Champions League",
+      "country": "World",
+      "season_rule": "europe_split"
+    },
+    {
+      "league": 3,
+      "name": "UEFA Europa League",
+      "country": "World",
+      "season_rule": "europe_split"
+    }
+  ],
+  "enable_odds_for_highlights": false,
+  "odds": {
+    "bookmaker_preference": [
+      "Bet365",
+      "bet365",
+      "Betfair",
+      "Pinnacle"
+    ],
+    "markets": [
+      "1X2",
+      "Double Chance",
+      "Over/Under"
+    ]
+  }
+}
