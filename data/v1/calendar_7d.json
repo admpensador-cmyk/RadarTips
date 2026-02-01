@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-02-01T05:41:20.650Z",
+  "generated_at_utc": "2026-02-01T13:10:29.231Z",
   "matches": [
     {
       "kickoff_utc": "2026-02-01T08:30:00-03:00",
@@ -13,13 +13,22 @@
       "away_id": 867,
       "risk": "low",
       "suggestion_free": "Under 3.5",
-      "form_home": "LLLLW",
-      "form_away": "DLLLL",
-      "gf_home": 4,
+      "form_home": "WLLLL",
+      "form_away": "LDLLL",
+      "gf_home": 2,
       "ga_home": 12,
       "gf_away": 1,
-      "ga_away": 6,
+      "ga_away": 5,
       "form_home_last": [
+        {
+          "fixture_id": 1378092,
+          "date_utc": "2026-02-01T08:30:00-03:00",
+          "venue": "H",
+          "vs": "Lecce",
+          "gf": 1,
+          "ga": 0,
+          "result": "W"
+        },
         {
           "fixture_id": 1378075,
           "date_utc": "2026-01-24T11:00:00-03:00",
@@ -55,18 +64,18 @@
           "gf": 1,
           "ga": 2,
           "result": "L"
-        },
-        {
-          "fixture_id": 1378043,
-          "date_utc": "2026-01-04T14:00:00-03:00",
-          "venue": "A",
-          "vs": "Verona",
-          "gf": 3,
-          "ga": 0,
-          "result": "W"
         }
       ],
       "form_away_last": [
+        {
+          "fixture_id": 1378092,
+          "date_utc": "2026-02-01T08:30:00-03:00",
+          "venue": "A",
+          "vs": "Torino",
+          "gf": 0,
+          "ga": 1,
+          "result": "L"
+        },
         {
           "fixture_id": 1378080,
           "date_utc": "2026-01-24T16:45:00-03:00",
@@ -102,15 +111,6 @@
           "gf": 1,
           "ga": 2,
           "result": "L"
-        },
-        {
-          "fixture_id": 1378047,
-          "date_utc": "2026-01-06T14:00:00-03:00",
-          "venue": "H",
-          "vs": "AS Roma",
-          "gf": 0,
-          "ga": 2,
-          "result": "L"
         }
       ]
     },
@@ -126,13 +126,22 @@
       "away_id": 728,
       "risk": "low",
       "suggestion_free": "1X (Home or Draw)",
-      "form_home": "WWWWW",
-      "form_away": "LLWDL",
-      "gf_home": 13,
-      "ga_home": 2,
+      "form_home": "DWWWW",
+      "form_away": "DLLWD",
+      "gf_home": 11,
+      "ga_home": 1,
       "gf_away": 4,
-      "ga_away": 12,
+      "ga_away": 8,
       "form_home_last": [
+        {
+          "fixture_id": 1391037,
+          "date_utc": "2026-02-01T10:00:00-03:00",
+          "venue": "H",
+          "vs": "Rayo Vallecano",
+          "gf": 0,
+          "ga": 0,
+          "result": "D"
+        },
         {
           "fixture_id": 1391028,
           "date_utc": "2026-01-24T17:00:00-03:00",
@@ -168,18 +177,18 @@
           "gf": 2,
           "ga": 0,
           "result": "W"
-        },
-        {
-          "fixture_id": 1390969,
-          "date_utc": "2025-12-14T17:00:00-03:00",
-          "venue": "A",
-          "vs": "Alaves",
-          "gf": 2,
-          "ga": 1,
-          "result": "W"
         }
       ],
       "form_away_last": [
+        {
+          "fixture_id": 1391037,
+          "date_utc": "2026-02-01T10:00:00-03:00",
+          "venue": "A",
+          "vs": "Real Madrid",
+          "gf": 0,
+          "ga": 0,
+          "result": "D"
+        },
         {
           "fixture_id": 1391024,
           "date_utc": "2026-01-24T10:00:00-03:00",
@@ -215,15 +224,6 @@
           "gf": 1,
           "ga": 1,
           "result": "D"
-        },
-        {
-          "fixture_id": 1390981,
-          "date_utc": "2025-12-21T14:30:00-03:00",
-          "venue": "A",
-          "vs": "Elche",
-          "gf": 0,
-          "ga": 4,
-          "result": "L"
         }
       ]
     },
@@ -3658,14 +3658,23 @@
       "home_id": 728,
       "away_id": 718,
       "risk": "low",
-      "suggestion_free": "Over 1.5",
-      "form_home": "LLWDL",
+      "suggestion_free": "Under 3.5",
+      "form_home": "DLLWD",
       "form_away": "WLLDD",
       "gf_home": 4,
-      "ga_home": 12,
+      "ga_home": 8,
       "gf_away": 5,
       "ga_away": 8,
       "form_home_last": [
+        {
+          "fixture_id": 1391037,
+          "date_utc": "2026-02-01T10:00:00-03:00",
+          "venue": "A",
+          "vs": "Real Madrid",
+          "gf": 0,
+          "ga": 0,
+          "result": "D"
+        },
         {
           "fixture_id": 1391024,
           "date_utc": "2026-01-24T10:00:00-03:00",
@@ -3701,15 +3710,6 @@
           "gf": 1,
           "ga": 1,
           "result": "D"
-        },
-        {
-          "fixture_id": 1390981,
-          "date_utc": "2025-12-21T14:30:00-03:00",
-          "venue": "A",
-          "vs": "Elche",
-          "gf": 0,
-          "ga": 4,
-          "result": "L"
         }
       ],
       "form_away_last": [
@@ -5692,12 +5692,12 @@
       "home_id": 502,
       "away_id": 503,
       "risk": "low",
-      "suggestion_free": "Over 1.5",
+      "suggestion_free": "1X (Home or Draw)",
       "form_home": "LLWDD",
-      "form_away": "LLLLW",
+      "form_away": "WLLLL",
       "gf_home": 7,
       "ga_home": 8,
-      "gf_away": 4,
+      "gf_away": 2,
       "ga_away": 12,
       "form_home_last": [
         {
@@ -5748,6 +5748,15 @@
       ],
       "form_away_last": [
         {
+          "fixture_id": 1378092,
+          "date_utc": "2026-02-01T08:30:00-03:00",
+          "venue": "H",
+          "vs": "Lecce",
+          "gf": 1,
+          "ga": 0,
+          "result": "W"
+        },
+        {
           "fixture_id": 1378075,
           "date_utc": "2026-01-24T11:00:00-03:00",
           "venue": "A",
@@ -5782,15 +5791,6 @@
           "gf": 1,
           "ga": 2,
           "result": "L"
-        },
-        {
-          "fixture_id": 1378043,
-          "date_utc": "2026-01-04T14:00:00-03:00",
-          "venue": "A",
-          "vs": "Verona",
-          "gf": 3,
-          "ga": 0,
-          "result": "W"
         }
       ]
     },
@@ -6371,13 +6371,22 @@
       "away_id": 494,
       "risk": "low",
       "suggestion_free": "Under 3.5",
-      "form_home": "DLLLL",
+      "form_home": "LDLLL",
       "form_away": "WLDWL",
       "gf_home": 1,
-      "ga_home": 6,
+      "ga_home": 5,
       "gf_away": 7,
       "ga_away": 6,
       "form_home_last": [
+        {
+          "fixture_id": 1378092,
+          "date_utc": "2026-02-01T08:30:00-03:00",
+          "venue": "A",
+          "vs": "Torino",
+          "gf": 0,
+          "ga": 1,
+          "result": "L"
+        },
         {
           "fixture_id": 1378080,
           "date_utc": "2026-01-24T16:45:00-03:00",
@@ -6411,15 +6420,6 @@
           "venue": "H",
           "vs": "Parma",
           "gf": 1,
-          "ga": 2,
-          "result": "L"
-        },
-        {
-          "fixture_id": 1378047,
-          "date_utc": "2026-01-06T14:00:00-03:00",
-          "venue": "H",
-          "vs": "AS Roma",
-          "gf": 0,
           "ga": 2,
           "result": "L"
         }
@@ -7841,11 +7841,11 @@
       "risk": "low",
       "suggestion_free": "X2 (Away or Draw)",
       "form_home": "WWDLD",
-      "form_away": "WWWWW",
+      "form_away": "DWWWW",
       "gf_home": 7,
       "ga_home": 8,
-      "gf_away": 13,
-      "ga_away": 2,
+      "gf_away": 11,
+      "ga_away": 1,
       "form_home_last": [
         {
           "fixture_id": 1391027,
@@ -7895,6 +7895,15 @@
       ],
       "form_away_last": [
         {
+          "fixture_id": 1391037,
+          "date_utc": "2026-02-01T10:00:00-03:00",
+          "venue": "H",
+          "vs": "Rayo Vallecano",
+          "gf": 0,
+          "ga": 0,
+          "result": "D"
+        },
+        {
           "fixture_id": 1391028,
           "date_utc": "2026-01-24T17:00:00-03:00",
           "venue": "A",
@@ -7928,15 +7937,6 @@
           "vs": "Sevilla",
           "gf": 2,
           "ga": 0,
-          "result": "W"
-        },
-        {
-          "fixture_id": 1390969,
-          "date_utc": "2025-12-14T17:00:00-03:00",
-          "venue": "A",
-          "vs": "Alaves",
-          "gf": 2,
-          "ga": 1,
           "result": "W"
         }
       ]
