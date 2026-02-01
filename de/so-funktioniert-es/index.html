@@ -2,42 +2,35 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips • So funktioniert es</title>
-  <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
-  <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>So funktioniert es • RadarTips</title>
+  <meta name="description" content="So funktioniert es — RadarTips informational site." />
+  <link rel="stylesheet" href="/assets/style.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="topbar">
-      <a class="brand" href="/de/">
-        <span id="brand">RadarTips</span>
-      </a>
-      <div class="topbar-right">
-        <a class="btn btn-ghost" href="/de/radar/day/">Tag</a>
-        <a class="btn btn-ghost" href="/de/radar/week/">Woche</a>
-        <a class="btn btn-ghost" href="/de/calendar/">Kalender</a>
-        <button class="btn btn-ghost" id="theme_toggle" type="button" aria-label="Theme">🌙</button>
+  <div class="app">
+    <div class="shell">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="page">
+        <div class="hero">
+          <h1>So funktioniert es</h1>
+          <p class="muted">RadarTips is informational content. We are not a bookmaker. 18+</p>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-body" style="line-height:1.65">
+            <p>RadarTips hebt Spiele und Märkte anhand von Daten hervor. <strong>Informativ</strong>, keine Garantie.</p><ul><li>Vorgeschlagene Märkte, Risiko, Stats.</li><li>Wenn Kriterien nicht erfüllt: <em>Keine Wette</em>.</li><li>Externe Links können Affiliate-Links sein.</li></ul><p><strong>18+</strong>. Verantwortungsbewusst spielen.</p>
+          </div>
+        </div>
+      </main>
+
+      <div class="footer">
+        © <span id="year"></span> RadarTips
       </div>
     </div>
-
-    <div class="hero">
-      <div class="hero-left">
-        <div class="hero-title">So funktioniert RadarTips</div>
-        <div class="hero-sub" id="legal_note"></div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <div class="card-body" style="line-height:1.6">
-        <p>RadarTips ist eine unabhängige Informationsplattform. Wir analysieren Spiele und zeigen Wahrscheinlichkeits-Schätzungen sowie Value-Indikatoren. Wir sind kein Buchmacher.</p><p>Nutze das Radar, um Spiele, Märkte, Risiko und Erwartungswert zu vergleichen. Wenn du wettst, tust du das bei einem lizenzierten Anbieter deiner Wahl.</p><p>Einige Links können Affiliate-Links sein. Das kann uns eine Provision einbringen, ohne Mehrkosten für dich. 18+. Bitte verantwortungsvoll wetten.</p>
-      </div>
-    </div>
-
-    <footer id="site_footer" class="site-footer"></footer>
   </div>
 
-  <script src="/assets/js/app.js?v=8"></script>
+  <script src="/assets/js/app.js"></script>
 </body>
 </html>

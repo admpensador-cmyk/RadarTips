@@ -1,4 +1,43 @@
 const LANGS = ["en","pt","es","fr","de"];
+const LEGAL_PATHS = {
+  en: { how:"/en/how-it-works/", about:"/en/about/", contact:"/en/contact/", terms:"/en/terms/", privacy:"/en/privacy/", aff:"/en/affiliates/", rg:"/en/responsible-gambling/" },
+  pt: { how:"/pt/como-funciona/", about:"/pt/sobre/", contact:"/pt/contato/", terms:"/pt/termos/", privacy:"/pt/privacidade/", aff:"/pt/afiliados/", rg:"/pt/jogo-responsavel/" },
+  es: { how:"/es/como-funciona/", about:"/es/sobre/", contact:"/es/contacto/", terms:"/es/terminos/", privacy:"/es/privacidad/", aff:"/es/afiliados/", rg:"/es/juego-responsable/" },
+  fr: { how:"/fr/comment-ca-marche/", about:"/fr/a-propos/", contact:"/fr/contact/", terms:"/fr/conditions/", privacy:"/fr/confidentialite/", aff:"/fr/affiliation/", rg:"/fr/jeu-responsable/" },
+  de: { how:"/de/so-funktioniert-es/", about:"/de/uber-uns/", contact:"/de/kontakt/", terms:"/de/bedingungen/", privacy:"/de/datenschutz/", aff:"/de/partnerhinweis/", rg:"/de/verantwortungsvolles-spielen/" }
+};
+
+function renderComplianceFooter(lang){
+  const foot = qs(".footer");
+  if(!foot) return;
+  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
+  const labels = {
+    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"},
+    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo responsável",note:"Conteúdo informativo • Não somos casa de apostas • +18"},
+    es:{how:"Cómo funciona",about:"Sobre",contact:"Contacto",terms:"Términos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo • No somos casa de apuestas • 18+"},
+    fr:{how:"Comment ça marche",about:"À propos",contact:"Contact",terms:"Conditions",privacy:"Confidentialité",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif • Pas un bookmaker • 18+"},
+    de:{how:"So funktioniert es",about:"Über uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt • Kein Buchmacher • 18+"}
+  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"};
+
+  foot.innerHTML = `
+    <div class="foot-wrap">
+      <div class="foot-links">
+        <a href="${p.how}">${labels.how}</a>
+        <a href="${p.about}">${labels.about}</a>
+        <a href="${p.contact}">${labels.contact}</a>
+        <a href="${p.terms}">${labels.terms}</a>
+        <a href="${p.privacy}">${labels.privacy}</a>
+        <a href="${p.aff}">${labels.aff}</a>
+        <a href="${p.rg}">${labels.rg}</a>
+      </div>
+      <div class="foot-meta">
+        <span>${labels.note}</span>
+        <span>© <span id="year"></span> RadarTips</span>
+      </div>
+    </div>
+  `;
+}
+
 
 function pathLang(){
   const seg = location.pathname.split("/").filter(Boolean)[0];
@@ -97,6 +136,34 @@ const ICONS = {
   spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.4L21 10l-6.8 1.6L12 18l-2.2-6.4L3 10l6.8-1.6L12 2z"/></svg>',
   arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>',
 };
+
+// --- Football identity helpers (lightweight crest badges) ---
+function _hashHue(str){
+  let h = 0;
+  const s = String(str || "");
+  for(let i=0;i<s.length;i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+
+function _initials(name){
+  const s = String(name || "").trim();
+  if(!s) return "??";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if(parts.length === 1){
+    return parts[0].slice(0, 3).toUpperCase();
+  }
+  const a = parts[0][0] || "";
+  const b = parts[1][0] || "";
+  const c = parts[parts.length-1][0] || "";
+  const out = (a + b + (parts.length > 2 ? c : "")).toUpperCase();
+  return out.slice(0, 3);
+}
+
+function crestHTML(teamName){
+  const hue = _hashHue(teamName);
+  const ini = _initials(teamName);
+  return `<span class="crest" style="--h:${hue}" aria-hidden="true">${escAttr(ini)}</span>`;
+}
 
 function ico(name){
   return ICONS[name] || "";
@@ -242,8 +309,14 @@ function renderTop3(t, data){
     badge.setAttribute("title", t.risk_tooltip || "");
     badge.setAttribute("data-tip", t.risk_tooltip || "");
 
-    // Title
-    h3.textContent = `${item.home} vs ${item.away}`;
+    // Title (football-first: crest + team name)
+    h3.innerHTML = `
+      <div class="match-title">
+        <div class="teamline">${crestHTML(item.home)}<span>${escAttr(item.home)}</span></div>
+        <div class="vs">vs</div>
+        <div class="teamline">${crestHTML(item.away)}<span>${escAttr(item.away)}</span></div>
+      </div>
+    `;
 
     // Meta (chips + icons; avoids awkward wraps)
     meta.innerHTML = `
@@ -466,7 +539,10 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       row.innerHTML = `
         <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
         <div>
-          <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
+          <div class="teams">
+            <div class="teamline">${crestHTML(m.home)}<span>${escAttr(m.home)}</span></div>
+            <div class="teamline">${crestHTML(m.away)}<span>${escAttr(m.away)}</span></div>
+          </div>
           <div class="subline">
             <div>
               <div class="form" ${tipAttr(formTip)}>
@@ -1026,6 +1102,12 @@ async function init(){
     });
   });
 
+<<<<<<< HEAD
+=======
+  // compliance footer
+  renderComplianceFooter(lang);
+
+>>>>>>> c62aa79 (Melhorias UI)
   // year
   setText("year", String(new Date().getFullYear()));
 

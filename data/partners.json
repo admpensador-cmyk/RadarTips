@@ -1,13 +1,11 @@
 {
-  "default": "partner",
+  "default": "default",
+  "fallback_url": "/en/how-it-works/",
   "partners": {
-    "partner": {
-      "name": "Casa parceira",
+    "default": {
+      "name": "Partner",
       "default_url": "/en/how-it-works/",
-      "allow": [],
-      "utm_defaults": {
-        "src": "radar"
-      }
+      "allow": []
     }
   }
 }

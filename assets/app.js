@@ -1,4 +1,43 @@
 const LANGS = ["en","pt","es","fr","de"];
+const LEGAL_PATHS = {
+  en: { how:"/en/how-it-works/", about:"/en/about/", contact:"/en/contact/", terms:"/en/terms/", privacy:"/en/privacy/", aff:"/en/affiliates/", rg:"/en/responsible-gambling/" },
+  pt: { how:"/pt/como-funciona/", about:"/pt/sobre/", contact:"/pt/contato/", terms:"/pt/termos/", privacy:"/pt/privacidade/", aff:"/pt/afiliados/", rg:"/pt/jogo-responsavel/" },
+  es: { how:"/es/como-funciona/", about:"/es/sobre/", contact:"/es/contacto/", terms:"/es/terminos/", privacy:"/es/privacidad/", aff:"/es/afiliados/", rg:"/es/juego-responsable/" },
+  fr: { how:"/fr/comment-ca-marche/", about:"/fr/a-propos/", contact:"/fr/contact/", terms:"/fr/conditions/", privacy:"/fr/confidentialite/", aff:"/fr/affiliation/", rg:"/fr/jeu-responsable/" },
+  de: { how:"/de/so-funktioniert-es/", about:"/de/uber-uns/", contact:"/de/kontakt/", terms:"/de/bedingungen/", privacy:"/de/datenschutz/", aff:"/de/partnerhinweis/", rg:"/de/verantwortungsvolles-spielen/" }
+};
+
+function renderComplianceFooter(lang){
+  const foot = qs(".footer");
+  if(!foot) return;
+  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
+  const labels = {
+    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"},
+    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo responsável",note:"Conteúdo informativo • Não somos casa de apostas • +18"},
+    es:{how:"Cómo funciona",about:"Sobre",contact:"Contacto",terms:"Términos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo • No somos casa de apuestas • 18+"},
+    fr:{how:"Comment ça marche",about:"À propos",contact:"Contact",terms:"Conditions",privacy:"Confidentialité",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif • Pas un bookmaker • 18+"},
+    de:{how:"So funktioniert es",about:"Über uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt • Kein Buchmacher • 18+"}
+  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"};
+
+  foot.innerHTML = `
+    <div class="foot-wrap">
+      <div class="foot-links">
+        <a href="${p.how}">${labels.how}</a>
+        <a href="${p.about}">${labels.about}</a>
+        <a href="${p.contact}">${labels.contact}</a>
+        <a href="${p.terms}">${labels.terms}</a>
+        <a href="${p.privacy}">${labels.privacy}</a>
+        <a href="${p.aff}">${labels.aff}</a>
+        <a href="${p.rg}">${labels.rg}</a>
+      </div>
+      <div class="foot-meta">
+        <span>${labels.note}</span>
+        <span>© <span id="year"></span> RadarTips</span>
+      </div>
+    </div>
+  `;
+}
+
 
 function pathLang(){
   const seg = location.pathname.split("/").filter(Boolean)[0];
@@ -909,12 +948,7 @@ async function init(){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
     renderPitch();
-    // Use week radar file if present (falls back gracefully)
-    const week = await loadJSON("/data/v1/radar_week.json", {items:[], highlights:[]});
-    const highlights = (week.highlights && Array.isArray(week.highlights) && week.highlights.length)
-      ? week.highlights
-      : (week.items || []);
-    renderTop3(T, {highlights});
+    renderTop3(T, {highlights:[]});
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
@@ -1031,6 +1065,12 @@ async function init(){
     });
   });
 
+<<<<<<< HEAD
+=======
+  // compliance footer
+  renderComplianceFooter(lang);
+
+>>>>>>> c62aa79 (Melhorias UI)
   // year
   setText("year", String(new Date().getFullYear()));
 

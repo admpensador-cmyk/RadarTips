@@ -2,56 +2,35 @@
 <html lang="pt">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips • Sobre o RadarTips</title>
-  <meta name="description" content="RadarTips: informational content. Not a bookmaker. 18+." />
-  <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sobre • RadarTips</title>
+  <meta name="description" content="Sobre — RadarTips informational site." />
+  <link rel="stylesheet" href="/assets/style.css" />
 </head>
-<body data-page="legal">
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brandline">
-          <div class="logo">
-            <span id="brand">RadarTips</span>
-            <span class="badge-mini" id="disclaimer">—</span>
+<body>
+  <div class="app">
+    <div class="shell">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="page">
+        <div class="hero">
+          <h1>Sobre</h1>
+          <p class="muted">RadarTips is informational content. We are not a bookmaker. 18+</p>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-body" style="line-height:1.65">
+            <p>O RadarTips é um projeto independente e informativo sobre mercados e estatísticas de futebol.</p><p>Não somos casa de apostas nem operadora.</p>
           </div>
         </div>
-        <div class="mini" id="subtitle"></div>
-      </div>
+      </main>
 
-      <div class="nav">
-        <a class="pill" data-nav="day" href="#">—</a>
-        <a class="pill" data-nav="week" href="#">—</a>
-        <a class="pill" data-nav="calendar" href="#">—</a>
-
-        <span style="width:10px"></span>
-
-        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
-
-        <span class="lang" data-lang="en">EN</span>
-        <span class="lang" data-lang="pt">PT</span>
-        <span class="lang" data-lang="es">ES</span>
-        <span class="lang" data-lang="fr">FR</span>
-        <span class="lang" data-lang="de">DE</span>
+      <div class="footer">
+        © <span id="year"></span> RadarTips
       </div>
     </div>
-
-    <div class="hero">
-      <h1>Sobre o RadarTips</h1>
-      <p class="legal-note" id="legal_note">—</p>
-    </div>
-
-    <div class="section">
-      <div class="legal-content">
-        <p>O RadarTips é um site de conteúdo informativo com destaques de jogos, estatísticas e sugestões de mercados comuns. Não somos uma casa de apostas.</p><p>O Radar organiza informações (forma recente, gols, calendário...) e, quando disponível, sugere um mercado com nível de risco. Use como apoio, não como garantia.</p>
-      </div>
-    </div>
-
-    <footer id="site_footer" class="site-footer"></footer>
   </div>
 
-  <script src="/assets/js/app.js?v=8"></script>
+  <script src="/assets/js/app.js"></script>
 </body>
 </html>

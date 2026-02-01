@@ -2,56 +2,35 @@
 <html lang="pt">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips • Divulgação de Afiliados</title>
-  <meta name="description" content="RadarTips: informational content. Not a bookmaker. 18+." />
-  <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Divulgação de afiliados • RadarTips</title>
+  <meta name="description" content="Divulgação de afiliados — RadarTips informational site." />
+  <link rel="stylesheet" href="/assets/style.css" />
 </head>
-<body data-page="legal">
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brandline">
-          <div class="logo">
-            <span id="brand">RadarTips</span>
-            <span class="badge-mini" id="disclaimer">—</span>
+<body>
+  <div class="app">
+    <div class="shell">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="page">
+        <div class="hero">
+          <h1>Divulgação de afiliados</h1>
+          <p class="muted">RadarTips is informational content. We are not a bookmaker. 18+</p>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-body" style="line-height:1.65">
+            <p>Alguns links podem ser de afiliados. Podemos receber comissão sem custo adicional para você.</p>
           </div>
         </div>
-        <div class="mini" id="subtitle"></div>
-      </div>
+      </main>
 
-      <div class="nav">
-        <a class="pill" data-nav="day" href="#">—</a>
-        <a class="pill" data-nav="week" href="#">—</a>
-        <a class="pill" data-nav="calendar" href="#">—</a>
-
-        <span style="width:10px"></span>
-
-        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
-
-        <span class="lang" data-lang="en">EN</span>
-        <span class="lang" data-lang="pt">PT</span>
-        <span class="lang" data-lang="es">ES</span>
-        <span class="lang" data-lang="fr">FR</span>
-        <span class="lang" data-lang="de">DE</span>
+      <div class="footer">
+        © <span id="year"></span> RadarTips
       </div>
     </div>
-
-    <div class="hero">
-      <h1>Divulgação de Afiliados</h1>
-      <p class="legal-note" id="legal_note">—</p>
-    </div>
-
-    <div class="section">
-      <div class="legal-content">
-        <p>Algumas páginas podem conter links de afiliados. Isso significa que podemos receber comissão se você se cadastrar ou realizar uma ação por meio desses links, <strong>sem custo adicional</strong>.</p><p>As sugestões do Radar são informativas e não garantem resultados.</p>
-      </div>
-    </div>
-
-    <footer id="site_footer" class="site-footer"></footer>
   </div>
 
-  <script src="/assets/js/app.js?v=8"></script>
+  <script src="/assets/js/app.js"></script>
 </body>
 </html>
