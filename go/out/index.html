@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RadarTips • Redirect</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="/assets/favicon.svg" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=9" />
+</head>
+<body data-page="legal">
+  <div class="container">
+    <div class="hero">
+      <h1>Redirecting…</h1>
+      <p class="legal-note">Affiliate link. 18+. Play responsibly.</p>
+    </div>
+
+    <div class="section">
+      <div class="legal-content">
+        <p id="msg">Preparing redirect…</p>
+        <p class="small" id="sub"></p>
+      </div>
+    </div>
+
+    <footer id="site_footer" class="site-footer"></footer>
+  </div>
+
+  <script src="/assets/js/app.js?v=9"></script>
+  <script>
+    (function(){
+      const FALLBACK = "/";
+
+      function qp(){
+        const u = new URL(location.href);
+        return {
+          partner: u.searchParams.get("b") || u.searchParams.get("partner") || "",
+          url: u.searchParams.get("url") || "",
+          src: u.searchParams.get("src") || "site",
+          match: u.searchParams.get("match") || "",
+        };
+      }
+
+      function isAllowed(host, allow){
+        if(!allow || !allow.length) return true; // allowlist optional until configured
+        return allow.indexOf(host) !== -1;
+      }
+
+      async function main(){
+        const p = qp();
+
+        let cfg = null;
+        try{
+          const r = await fetch("/data/partners.json", {cache:"no-store"});
+          if(r.ok) cfg = await r.json();
+        }catch(e){}
+
+        const partners = (cfg && cfg.partners) ? cfg.partners : {};
+        const key = p.partner || (cfg && cfg.default) || "partner";
+        const partner = partners[key] || partners["partner"] || null;
+
+        let target = (partner && partner.default_url) ? partner.default_url : FALLBACK;
+
+        // If a raw url param is provided, allow it only if it matches configured allowlist
+        if(p.url){
+          try{
+            const u = new URL(p.url);
+            const allow = partner && partner.allow ? partner.allow : [];
+            if(isAllowed(u.hostname, allow)){
+              target = u.toString();
+            }
+          }catch(e){}
+        }
+
+        // analytics (optional)
+        try{
+          if(window.gtag){
+            window.gtag('event','click_out', {
+              partner: key,
+              src: p.src,
+              match: p.match
+            });
+          }
+        }catch(e){}
+
+        const msg = document.getElementById("msg");
+        const sub = document.getElementById("sub");
+        if(msg){
+          msg.textContent = "Opening partner…";
+        }
+        if(sub){
+          sub.textContent = partner && partner.name ? ("Partner: " + partner.name) : "";
+        }
+
+        setTimeout(function(){
+          location.replace(target);
+        }, 350);
+      }
+
+      main();
+    })();
+  </script>
+</body>
+</html>

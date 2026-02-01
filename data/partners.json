@@ -1,0 +1,13 @@
+{
+  "default": "partner",
+  "partners": {
+    "partner": {
+      "name": "Casa parceira",
+      "default_url": "/",
+      "allow": [],
+      "utm_defaults": {
+        "src": "radar"
+      }
+    }
+  }
+}

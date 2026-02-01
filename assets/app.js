@@ -77,6 +77,10 @@ function setHTML(id, val){
 function qs(sel){ return document.querySelector(sel); }
 function qsa(sel){ return [...document.querySelectorAll(sel)]; }
 
+function has(id){
+  return !!document.getElementById(id);
+}
+
 function escAttr(s){
   return String(s||"")
     .replaceAll("&","&amp;")
@@ -882,6 +886,41 @@ function initThemeToggle(t){
   }
 }
 
+function initFooter(lang, t){
+  const el = document.getElementById("site_footer");
+  if(!el) return;
+
+  const y = String(new Date().getFullYear());
+  const base = `/${lang}`;
+
+  const links = [
+    {href: `${base}/sobre/`, label: t.footer_about || "About"},
+    {href: `${base}/contato/`, label: t.footer_contact || "Contact"},
+    {href: `${base}/termos/`, label: t.footer_terms || "Terms"},
+    {href: `${base}/privacidade/`, label: t.footer_privacy || "Privacy"},
+    {href: `${base}/afiliados/`, label: t.footer_affiliates || "Affiliates"},
+    {href: `${base}/jogo-responsavel/`, label: t.footer_responsible || "Responsible"}
+  ];
+
+  el.innerHTML = `
+    <div class="footer-inner">
+      <div class="footer-left">
+        <div class="footer-brand">${escAttr(t.brand || "RadarTips")}</div>
+        <div class="footer-note">${escAttr(t.footer_note || (t.disclaimer || "Informational content • Not a bookmaker • 18+"))}</div>
+        <div class="footer-note small">${escAttr(t.footer_aff_note || "Links may be affiliate links. We may earn commission at no extra cost.")}</div>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        ${links.map(a=>`<a href="${a.href}">${escAttr(a.label)}</a>`).join("")}
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <span>© ${y} ${escAttr(t.brand || "RadarTips")}</span>
+      <span class="sep">•</span>
+      <span class="age">${escAttr(t.footer_18 || "18+")}</span>
+    </div>
+  `;
+}
+
 async function init(){
   LANG = pathLang() || detectLang();
   const dict = await loadJSON("/i18n/strings.json", {});
@@ -894,9 +933,14 @@ async function init(){
 
   setText("subtitle", T.subtitle || "");
 
+  // Compliance/affiliate note (visible, user-facing)
+  if(has("legal_note")) setText("legal_note", T.legal_note || "");
+
   setNav(LANG, T);
   decorateLangPills(LANG);
   initTooltips();
+
+  initFooter(LANG, T);
 
   const p = pageType();
   if(p==="day"){
@@ -922,12 +966,13 @@ async function init(){
     renderTop3(T, {highlights:[]});
   }
 
-  // Calendar controls always available
-  setText("calendar_title", T.calendar_title);
-  setText("calendar_sub", T.calendar_sub);
-  qs("#search").setAttribute("placeholder", T.search_placeholder);
-  qs("#btn_time").textContent = T.view_by_time;
-  qs("#btn_country").textContent = T.view_by_country;
+  const hasCalendar = !!(qs("#calendar") && qs("#search") && qs("#btn_time") && qs("#btn_country"));
+  if(hasCalendar){
+    setText("calendar_title", T.calendar_title);
+    setText("calendar_sub", T.calendar_sub);
+    qs("#search").setAttribute("placeholder", T.search_placeholder);
+    qs("#btn_time").textContent = T.view_by_time;
+    qs("#btn_country").textContent = T.view_by_country;
 
   let viewMode = "time";
   let q = "";
@@ -1005,22 +1050,29 @@ async function init(){
     });
   }
 
-  qs("#btn_time").addEventListener("click", ()=>{ viewMode="time"; rerender(); });
-  qs("#btn_country").addEventListener("click", ()=>{ viewMode="country"; rerender(); });
-  qs("#search").addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
+    qs("#btn_time").addEventListener("click", ()=>{ viewMode="time"; rerender(); });
+    qs("#btn_country").addEventListener("click", ()=>{ viewMode="country"; rerender(); });
+    qs("#search").addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
 
-  if(strip){
-    strip.addEventListener("click", (e)=>{
-      const btn = e.target.closest("button[data-date]");
-      if(!btn) return;
-      activeDate = btn.getAttribute("data-date");
-      renderStrip();
-      rerender();
-    });
+    if(strip){
+      strip.addEventListener("click", (e)=>{
+        const btn = e.target.closest("button[data-date]");
+        if(!btn) return;
+        activeDate = btn.getAttribute("data-date");
+        renderStrip();
+        rerender();
+      });
+    }
+
+    const mc = qs("#modal_close");
+    if(mc) mc.addEventListener("click", closeModal);
+    const mb = qs("#modal_backdrop");
+    if(mb) mb.addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+
+    renderStrip();
+    rerender();
+    bindOpenHandlers();
   }
-
-  qs("#modal_close").addEventListener("click", closeModal);
-  qs("#modal_backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
 
   // language switch (preserve page)
   qsa("[data-lang]").forEach(btn=>{
@@ -1031,12 +1083,8 @@ async function init(){
     });
   });
 
-  // year
+  // year (legacy span)
   setText("year", String(new Date().getFullYear()));
-
-  renderStrip();
-  rerender();
-  bindOpenHandlers();
 }
 
 document.addEventListener("DOMContentLoaded", init);

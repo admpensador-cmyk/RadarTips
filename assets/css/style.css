@@ -80,6 +80,17 @@ a{color:inherit; text-decoration:none}
 .hero h1{margin:0;font-size:34px;letter-spacing:-.6px}
 .hero p{margin:10px 0 0;color:var(--muted);font-weight:650;max-width:900px}
 
+.legal-note{
+  margin-top:12px;
+  font-size:12px;
+  line-height:1.35;
+  color:var(--muted);
+  background:rgba(43,111,242,.06);
+  border:1px solid rgba(43,111,242,.18);
+  padding:10px 12px;
+  border-radius:14px;
+}
+
 .grid{margin-top:16px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .card{
   grid-column:span 4;
@@ -164,6 +175,14 @@ h3{margin:10px 0 0;font-size:17px;letter-spacing:-.2px}
 .section h2{margin:0;font-size:18px;letter-spacing:-.2px}
 .section .sub{margin-top:6px;color:var(--muted);font-weight:650;font-size:13px}
 
+/* Simple legal pages */
+.legal-content{max-width:920px;margin:0 auto;color:var(--text)}
+.legal-content h2{margin:18px 0 8px;font-size:18px;letter-spacing:-.2px}
+.legal-content p{margin:0 0 12px;color:var(--muted);font-weight:650;line-height:1.5}
+.legal-content ul{margin:0 0 12px 18px;color:var(--muted);font-weight:650;line-height:1.5}
+.legal-content a{color:var(--accent);text-decoration:none;font-weight:850}
+.legal-content a:hover{text-decoration:underline}
+
 .controls{
   margin-top:14px;
   display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between
@@ -242,6 +261,27 @@ h3{margin:10px 0 0;font-size:17px;letter-spacing:-.2px}
   margin-top:20px;color:rgba(20,34,64,.78);
   font-size:12px;font-weight:650;text-align:center;
 }
+
+/* Rich footer (compliance + trust) */
+.site-footer{
+  margin-top:22px;
+  padding:18px 18px 14px;
+  border:1px solid var(--stroke);
+  background:var(--card);
+  border-radius:18px;
+  box-shadow:0 10px 28px rgba(8,24,56,.08);
+}
+.footer-inner{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.footer-left{min-width:240px;max-width:520px}
+.footer-brand{font-weight:950;letter-spacing:-.2px}
+.footer-note{margin-top:6px;color:var(--muted);font-weight:650;font-size:12px;line-height:1.35}
+.footer-note.small{opacity:.92}
+.footer-links{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.footer-links a{color:var(--text);text-decoration:none;font-weight:850;font-size:12px;opacity:.9}
+.footer-links a:hover{opacity:1;text-decoration:underline}
+.footer-bottom{margin-top:12px;display:flex;gap:10px;justify-content:center;align-items:center;color:var(--muted);font-size:12px;font-weight:750}
+.footer-bottom .sep{opacity:.6}
+.footer-bottom .age{font-weight:950}
 
 .modal-backdrop{
   position:fixed;inset:0;background:rgba(10,18,34,.38);
@@ -415,6 +455,10 @@ body[data-theme="dark"] .hero::after{
   background: radial-gradient(circle at 35% 35%, rgba(59,130,246,.26), transparent 62%);
 }
 body[data-theme="dark"] .hero p{color:var(--muted)}
+body[data-theme="dark"] .legal-note{
+  background:rgba(59,130,246,.10);
+  border-color:rgba(59,130,246,.22);
+}
 
 /* Cards */
 body[data-theme="dark"] .card{

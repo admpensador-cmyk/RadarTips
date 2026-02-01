@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RadarTips • Redirect</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="/assets/favicon.svg" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+</head>
+<body data-page="legal">
+  <div class="container">
+    <div class="hero">
+      <h1>Redirecting…</h1>
+      <p class="legal-note">Affiliate link. 18+. Play responsibly.</p>
+    </div>
+    <div class="section">
+      <div class="legal-content">
+        <p id="msg">Preparing redirect…</p>
+      </div>
+    </div>
+    <footer id="site_footer" class="site-footer"></footer>
+  </div>
+
+  <script src="/assets/js/app.js?v=8"></script>
+  <script>
+    (function(){
+      // Default target for this partner. Replace with your real affiliate URL.
+      var DEFAULT_TARGET = "https://www.bet365.com/";
+      var ALLOW = ["bet365.com", "www.bet365.com", "bet365.com.br", "bet365.bet.br"];
+
+      function parse(){
+        var u = new URL(location.href);
+        return {
+          url: u.searchParams.get("url"),
+          src: u.searchParams.get("src") || "site",
+          match: u.searchParams.get("match") || "",
+        };
+      }
+
+      function safeTarget(raw){
+        if(!raw) return DEFAULT_TARGET;
+        try{
+          var u = new URL(raw);
+          if(ALLOW.indexOf(u.hostname) === -1) return null;
+          return u.toString();
+        }catch(e){
+          return null;
+        }
+      }
+
+      var p = parse();
+      var target = safeTarget(p.url) || DEFAULT_TARGET;
+
+      // Try to fire analytics if configured (optional)
+      try{
+        if(window.gtag){
+          window.gtag('event','click_out', {
+            partner: 'bet365',
+            src: p.src,
+            match: p.match
+          });
+        }
+      }catch(e){}
+
+      var msg = document.getElementById("msg");
+      if(msg){
+        msg.textContent = "Opening partner…";
+      }
+
+      // Small delay so the message renders
+      setTimeout(function(){
+        location.replace(target);
+      }, 350);
+    })();
+  </script>
+</body>
+</html>
