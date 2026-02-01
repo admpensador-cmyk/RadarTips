@@ -892,9 +892,11 @@ function initFooter(lang, t){
 
   const y = String(new Date().getFullYear());
   const base = `/${lang}`;
+  const howSlug = ({en:"how-it-works",pt:"como-funciona",es:"como-funciona",fr:"comment-ca-marche",de:"so-funktioniert-es"}[lang] || "how-it-works");
 
   const links = [
     {href: `${base}/sobre/`, label: t.footer_about || "About"},
+    {href: `${base}/${howSlug}/`, label: t.footer_how || "How it works"},
     {href: `${base}/contato/`, label: t.footer_contact || "Contact"},
     {href: `${base}/termos/`, label: t.footer_terms || "Terms"},
     {href: `${base}/privacidade/`, label: t.footer_privacy || "Privacy"},

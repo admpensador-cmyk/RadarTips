@@ -111,7 +111,8 @@
     "market_under_prefix": "Under",
     "market_over_prefix": "Over",
     "market_dnb_fmt": "DNB {side}",
-    "word_handicap": "Handicap"
+    "word_handicap": "Handicap",
+    "footer_how": "How it works"
   },
   "pt": {
     "brand": "RadarTips",
@@ -225,7 +226,8 @@
     "market_under_prefix": "Menos de",
     "market_over_prefix": "Mais de",
     "market_dnb_fmt": "DNB {side}",
-    "word_handicap": "Handicap"
+    "word_handicap": "Handicap",
+    "footer_how": "Como funciona"
   },
   "es": {
     "brand": "RadarTips",
@@ -339,7 +341,8 @@
     "market_under_prefix": "Menos de",
     "market_over_prefix": "Más de",
     "market_dnb_fmt": "DNB {side}",
-    "word_handicap": "Hándicap"
+    "word_handicap": "Hándicap",
+    "footer_how": "Cómo funciona"
   },
   "fr": {
     "brand": "RadarTips",
@@ -453,7 +456,8 @@
     "market_under_prefix": "Moins de",
     "market_over_prefix": "Plus de",
     "market_dnb_fmt": "DNB {side}",
-    "word_handicap": "Handicap"
+    "word_handicap": "Handicap",
+    "footer_how": "Comment ça marche"
   },
   "de": {
     "brand": "RadarTips",
@@ -567,6 +571,7 @@
     "market_under_prefix": "Unter",
     "market_over_prefix": "Über",
     "market_dnb_fmt": "DNB {side}",
-    "word_handicap": "Handicap"
+    "word_handicap": "Handicap",
+    "footer_how": "So funktioniert es"
   }
 }

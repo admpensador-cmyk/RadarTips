@@ -3,7 +3,7 @@
   "partners": {
     "partner": {
       "name": "Casa parceira",
-      "default_url": "/",
+      "default_url": "/en/how-it-works/",
       "allow": [],
       "utm_defaults": {
         "src": "radar"
