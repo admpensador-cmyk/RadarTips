@@ -27,6 +27,15 @@ const MAX_FIX_TOTAL = Number(cfg.max_fixtures_total ?? 9999);
 const client = new ApiFootballClient({ apiKey: API_KEY });
 
 const isoDate = (d) => d.toISOString().slice(0, 10);
+function teamLogoUrl(teamId){
+  if(!teamId) return null;
+  return `https://media.api-sports.io/football/teams/${teamId}.png`;
+}
+function leagueLogoUrl(leagueId){
+  if(!leagueId) return null;
+  return `https://media.api-sports.io/football/leagues/${leagueId}.png`;
+}
+
 
 // Season heuristics (works for most leagues)
 function seasonFor(rule, date = new Date()) {
@@ -430,9 +439,9 @@ function buildCalendarMatchRow(entry, formHome, formAway, suggestion) {
     home_id: fx.teams.home.id,
     away_id: fx.teams.away.id,
 
-    home_logo: fx.teams.home.logo || null,
-    away_logo: fx.teams.away.logo || null,
-    competition_logo: fx.league.logo || null,
+    home_logo: fx.teams.home.logo || teamLogoUrl(fx.teams.home.id) || null,
+    away_logo: fx.teams.away.logo || teamLogoUrl(fx.teams.away.id) || null,
+    competition_logo: fx.league.logo || leagueLogoUrl(fx.league.id) || null,
     country_flag: fx.league.flag || null,
 
     risk: riskBucket(suggestion.lose),
@@ -465,6 +474,10 @@ function chooseHighlights(calendarMatches) {
 
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, 3).map(x => ({
+    fixture_id: x.m.fixture_id,
+    competition_id: x.m.competition_id,
+    home_id: x.m.home_id,
+    away_id: x.m.away_id,
     country: x.m.country,
     competition: x.m.competition,
     home: x.m.home,
@@ -493,6 +506,10 @@ function chooseWeekItems(calendarMatches) {
     const c = seenComp.get(k) ?? 0;
     if (c >= 3) continue; // avoid flooding same league
     out.push({
+      fixture_id: m.fixture_id,
+      competition_id: m.competition_id,
+      home_id: m.home_id,
+      away_id: m.away_id,
       country: m.country,
       competition: m.competition,
       home: m.home,

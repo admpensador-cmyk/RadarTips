@@ -223,6 +223,18 @@ function pickTeamLogo(obj, side){
       return t.logo || t.crest || t.badge || null;
     }
   }catch(e){}
+
+  // Fallback: derive API-Sports logo URL from ids if present
+  try{
+    const idKey = (side==="home") ? ["home_id","homeId","team_home_id"] : ["away_id","awayId","team_away_id"];
+    for(const k of idKey){
+      const id = obj && obj[k];
+      if(id) return `https://media.api-sports.io/football/teams/${id}.png`;
+    }
+    // nested: { home:{id}, away:{id} }
+    const t2 = obj && obj[side];
+    if(t2 && t2.id) return `https://media.api-sports.io/football/teams/${t2.id}.png`;
+  }catch(e){}
   return null;
 }
 

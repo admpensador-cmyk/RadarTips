@@ -9,7 +9,14 @@
       "kickoff_utc": "2026-02-02T16:45:00-03:00",
       "risk": "low",
       "suggestion_free": "Under 3.5",
-      "pro_locked": true
+      "pro_locked": true,
+      "home_id": 494,
+      "away_id": 497,
+      "competition_id": 135,
+      "fixture_id": 1378093,
+      "home_logo": "https://media.api-sports.io/football/teams/494.png",
+      "away_logo": "https://media.api-sports.io/football/teams/497.png",
+      "competition_logo": "https://media.api-sports.io/football/leagues/135.png"
     },
     {
       "country": "England",
@@ -19,7 +26,14 @@
       "kickoff_utc": "2026-02-02T17:00:00-03:00",
       "risk": "low",
       "suggestion_free": "Over 1.5",
-      "pro_locked": true
+      "pro_locked": true,
+      "home_id": 746,
+      "away_id": 44,
+      "competition_id": 39,
+      "fixture_id": 1379206,
+      "home_logo": "https://media.api-sports.io/football/teams/746.png",
+      "away_logo": "https://media.api-sports.io/football/teams/44.png",
+      "competition_logo": "https://media.api-sports.io/football/leagues/39.png"
     },
     {
       "country": "Spain",
@@ -29,7 +43,14 @@
       "kickoff_utc": "2026-02-02T17:00:00-03:00",
       "risk": "low",
       "suggestion_free": "Over 1.5",
-      "pro_locked": true
+      "pro_locked": true,
+      "home_id": 798,
+      "away_id": 536,
+      "competition_id": 140,
+      "fixture_id": 1391035,
+      "home_logo": "https://media.api-sports.io/football/teams/798.png",
+      "away_logo": "https://media.api-sports.io/football/teams/536.png",
+      "competition_logo": "https://media.api-sports.io/football/leagues/140.png"
     }
   ]
 }

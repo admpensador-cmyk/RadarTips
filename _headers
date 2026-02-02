@@ -1,2 +1,5 @@
 /*
   Cache-Control: no-cache
+
+/data/v1/*
+  Cache-Control: no-store, max-age=0
