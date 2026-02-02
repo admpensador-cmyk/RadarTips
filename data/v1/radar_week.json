@@ -1,10 +1,106 @@
 {
-  "meta": {
-    "is_mock": false,
-    "generated_at": null,
-    "note": "Data will appear after the updater runs."
-  },
-  "weeks": [],
-  "matches": [],
-  "highlights": []
+  "generated_at_utc": "2026-02-02T11:46:53.256Z",
+  "week_scope": "7d",
+  "items": [
+    {
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Udinese",
+      "away": "AS Roma",
+      "kickoff_utc": "2026-02-02T16:45:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Sunderland",
+      "away": "Burnley",
+      "kickoff_utc": "2026-02-02T17:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "Spain",
+      "competition": "La Liga",
+      "home": "Mallorca",
+      "away": "Sevilla",
+      "kickoff_utc": "2026-02-02T17:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Bologna",
+      "away": "AC Milan",
+      "kickoff_utc": "2026-02-03T16:45:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "Brazil",
+      "competition": "Serie A",
+      "home": "RB Bragantino",
+      "away": "Atletico-MG",
+      "kickoff_utc": "2026-02-04T19:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "Brazil",
+      "competition": "Serie A",
+      "home": "Flamengo",
+      "away": "Internacional",
+      "kickoff_utc": "2026-02-04T19:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "Brazil",
+      "competition": "Serie A",
+      "home": "remo",
+      "away": "Mirassol",
+      "kickoff_utc": "2026-02-04T20:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "result": "pending"
+    },
+    {
+      "country": "Germany",
+      "competition": "Bundesliga",
+      "home": "Union Berlin",
+      "away": "Eintracht Frankfurt",
+      "kickoff_utc": "2026-02-06T16:30:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Verona",
+      "away": "Pisa",
+      "kickoff_utc": "2026-02-06T16:45:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    },
+    {
+      "country": "France",
+      "competition": "Ligue 1",
+      "home": "Metz",
+      "away": "Lille",
+      "kickoff_utc": "2026-02-06T16:45:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "result": "pending"
+    }
+  ]
 }

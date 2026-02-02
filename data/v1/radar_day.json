@@ -1,9 +1,35 @@
 {
-  "meta": {
-    "is_mock": false,
-    "generated_at": null,
-    "note": "Data will appear after the updater runs."
-  },
-  "highlights": [],
-  "matches": []
+  "generated_at_utc": "2026-02-02T11:46:53.256Z",
+  "highlights": [
+    {
+      "country": "Italy",
+      "competition": "Serie A",
+      "home": "Udinese",
+      "away": "AS Roma",
+      "kickoff_utc": "2026-02-02T16:45:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "pro_locked": true
+    },
+    {
+      "country": "England",
+      "competition": "Premier League",
+      "home": "Sunderland",
+      "away": "Burnley",
+      "kickoff_utc": "2026-02-02T17:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "pro_locked": true
+    },
+    {
+      "country": "Spain",
+      "competition": "La Liga",
+      "home": "Mallorca",
+      "away": "Sevilla",
+      "kickoff_utc": "2026-02-02T17:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Over 1.5",
+      "pro_locked": true
+    }
+  ]
 }
