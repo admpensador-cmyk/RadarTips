@@ -116,6 +116,40 @@ function setHTML(id, val){
 function qs(sel){ return document.querySelector(sel); }
 function qsa(sel){ return [...document.querySelectorAll(sel)]; }
 
+function ensureTopSearch(t){
+  const nav = qs(".topbar .nav");
+  if(!nav) return;
+  if(qs("#topSearch")) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "top-search";
+  wrap.innerHTML = `
+    <span class="top-search-ico" aria-hidden="true">🔎</span>
+    <input id="topSearch" type="search" inputmode="search" placeholder="${escAttr(t.search_placeholder || "Search team or league")}" />
+  `;
+
+  // Insert near the left of the topbar controls (before theme/lang pills)
+  const themeBtn = qs("#theme_toggle");
+  if(themeBtn && themeBtn.parentElement === nav){
+    nav.insertBefore(wrap, themeBtn);
+  }else{
+    nav.appendChild(wrap);
+  }
+
+  const topInput = wrap.querySelector("#topSearch");
+  const mainInput = qs("#search");
+  if(!topInput || !mainInput) return;
+
+  // Sync both ways
+  topInput.addEventListener("input", ()=>{
+    mainInput.value = topInput.value;
+    mainInput.dispatchEvent(new Event("input", {bubbles:true}));
+  });
+  mainInput.addEventListener("input", ()=>{
+    if(topInput.value !== mainInput.value) topInput.value = mainInput.value;
+  });
+}
+
 function escAttr(s){
   return String(s||"")
     .replaceAll("&","&amp;")
@@ -771,23 +805,114 @@ function decorateLangPills(lang){
 }
 
 function ensureDateStrip(t){
-  const section = qs(".section");
-  if(!section) return null;
+  // Prefer a top-mounted strip (dashboard style), fallback to section.
+  const topHost = qs(".topbar");
   if(qs("#dateStrip")) return qs("#dateStrip");
 
-  const controls = qs(".controls");
   const strip = document.createElement("div");
   strip.className = "date-strip";
   strip.id = "dateStrip";
 
-  if(controls) section.insertBefore(strip, controls);
-  else section.appendChild(strip);
+  if(topHost){
+    // Insert before language pills so it stays on the right.
+    const nav = qs(".topbar .nav");
+    if(nav) nav.insertBefore(strip, nav.firstChild);
+    else topHost.appendChild(strip);
+  }else{
+    const section = qs(".section");
+    if(!section) return null;
+    const controls = qs(".controls");
+    if(controls) section.insertBefore(strip, controls);
+    else section.appendChild(strip);
+  }
 
   strip.setAttribute("aria-label", t.date_filter_label || "Filtro de data");
   strip.setAttribute("data-tip", t.date_filter_tip || "Filtrar por data");
   strip.title = t.date_filter_tip || "Filtrar por data";
 
   return strip;
+}
+
+function ensureSidebar(t, lang){
+  if(qs(".app-shell")) return;
+
+  const container = qs(".container");
+  if(!container) return;
+
+  const shell = document.createElement("div");
+  shell.className = "app-shell";
+
+  const aside = document.createElement("aside");
+  aside.className = "sidebar";
+
+  const main = document.createElement("main");
+  main.className = "main";
+
+  // Move container into main
+  container.parentNode.insertBefore(shell, container);
+  main.appendChild(container);
+  shell.appendChild(aside);
+  shell.appendChild(main);
+
+  const labels = {
+    day: t.nav_day || "Daily Radar",
+    week: t.nav_week || "Weekly Radar",
+    calendar: t.nav_calendar || "Calendar",
+    how: (t.footer_how || t.about_steps_title || "How it works"),
+    about: (t.footer_about || t.about_title || "About"),
+    contact: (t.footer_contact || "Contact")
+  };
+
+  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
+  const nav = {
+    day: `/${lang}/radar/day/`,
+    week: `/${lang}/radar/week/`,
+    calendar: `/${lang}/calendar/`
+  };
+
+  // Simple inline icons (no external deps)
+  const ico = {
+    day: "⚡",
+    week: "📅",
+    calendar: "🗓️",
+    how: "🧭",
+    about: "ℹ️",
+    contact: "✉️"
+  };
+
+  const here = pageType();
+
+  aside.innerHTML = `
+    <div class="side-brand" role="banner">
+      <div class="side-logo">
+        <span class="ball">⚽</span>
+        <div>
+          <div class="side-title">RadarTips</div>
+          <div class="side-sub">${escAttr(t.sidebar_tagline || "Football radar")}</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="side-nav" aria-label="Navigation">
+      <a class="side-item ${here==="day"?"active":""}" href="${nav.day}"><span class="i">${ico.day}</span><span>${escAttr(labels.day)}</span></a>
+      <a class="side-item ${here==="week"?"active":""}" href="${nav.week}"><span class="i">${ico.week}</span><span>${escAttr(labels.week)}</span></a>
+      <a class="side-item ${here==="calendar"?"active":""}" href="${nav.calendar}"><span class="i">${ico.calendar}</span><span>${escAttr(labels.calendar)}</span></a>
+    </nav>
+
+    <div class="side-divider"></div>
+
+    <nav class="side-nav" aria-label="Info">
+      <a class="side-item" href="${p.how}"><span class="i">${ico.how}</span><span>${escAttr(t.how_link || "How it works")}</span></a>
+      <a class="side-item" href="${p.about}"><span class="i">${ico.about}</span><span>${escAttr(t.about_link || "About")}</span></a>
+      <a class="side-item" href="${p.contact}"><span class="i">${ico.contact}</span><span>${escAttr(t.contact_link || "Contact")}</span></a>
+    </nav>
+
+    <div class="side-divider"></div>
+
+    <div class="side-mini">
+      <div class="side-note">${escAttr((t.disclaimer || "Informational content") + " • 18+")}</div>
+    </div>
+  `;
 }
 
 function build7Days(){
@@ -937,6 +1062,10 @@ async function init(){
   decorateLangPills(LANG);
   initTooltips();
 
+  // Dashboard layout helpers (sidebar + top search + top date strip)
+  ensureSidebar(T, LANG);
+  ensureTopSearch(T);
+
   const p = pageType();
   if(p==="day"){
     setText("hero_title", T.hero_title_day);
@@ -1065,12 +1194,9 @@ async function init(){
     });
   });
 
-<<<<<<< HEAD
-=======
   // compliance footer
   renderComplianceFooter(lang);
 
->>>>>>> c62aa79 (Melhorias UI)
   // year
   setText("year", String(new Date().getFullYear()));
 
