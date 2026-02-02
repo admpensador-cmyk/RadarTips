@@ -7,7 +7,7 @@ const LEGAL_PATHS = {
   de: { how:"/de/so-funktioniert-es/", about:"/de/uber-uns/", contact:"/de/kontakt/", terms:"/de/bedingungen/", privacy:"/de/datenschutz/", aff:"/de/partnerhinweis/", rg:"/de/verantwortungsvolles-spielen/" }
 };
 
-function renderComplianceFooter(LANG){
+function renderComplianceFooter(lang){
   const foot = qs(".footer");
   if(!foot) return;
   const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
@@ -209,7 +209,30 @@ function _initials(name){
   return out.slice(0, 3);
 }
 
-function crestHTML(teamName){
+function pickTeamLogo(obj, side){
+  const cand = (side==="home")
+    ? ["home_logo","homeLogo","home_crest","home_badge","logo_home","team_home_logo","home_team_logo","home_logo_url"]
+    : ["away_logo","awayLogo","away_crest","away_badge","logo_away","team_away_logo","away_team_logo","away_logo_url"];
+  for(const k of cand){
+    if(obj && obj[k]) return obj[k];
+  }
+  // Optional nested shapes: { home: {logo}, away:{logo} }
+  try{
+    const t = obj && obj[side];
+    if(t && typeof t === "object"){
+      return t.logo || t.crest || t.badge || null;
+    }
+  }catch(e){}
+  return null;
+}
+
+function crestHTML(teamName, logoUrl){
+  const logo = logoUrl || null;
+  if(logo){
+    const src = escAttr(logo);
+    const alt = escAttr(teamName);
+    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" /></span>`;
+  }
   const hue = _hashHue(teamName);
   const ini = _initials(teamName);
   return `<span class="crest" style="--h:${hue}" aria-hidden="true">${escAttr(ini)}</span>`;
@@ -360,11 +383,13 @@ function renderTop3(t, data){
     badge.setAttribute("data-tip", t.risk_tooltip || "");
 
     // Title (football-first: crest + team name)
+    const homeLogo = pickTeamLogo(item, "home");
+    const awayLogo = pickTeamLogo(item, "away");
     h3.innerHTML = `
       <div class="match-title">
-        <div class="teamline">${crestHTML(item.home)}<span>${escAttr(item.home)}</span></div>
+        <div class="teamline">${crestHTML(item.home, homeLogo)}<span>${escAttr(item.home)}</span></div>
         <div class="vs">vs</div>
-        <div class="teamline">${crestHTML(item.away)}<span>${escAttr(item.away)}</span></div>
+        <div class="teamline">${crestHTML(item.away, awayLogo)}<span>${escAttr(item.away)}</span></div>
       </div>
     `;
 
@@ -372,11 +397,11 @@ function renderTop3(t, data){
     meta.innerHTML = `
       <div class="meta-chips">
         <span class="meta-chip" ${tipAttr(t.kickoff_tooltip || "")}>${icoSpan("clock")}<span>${fmtTime(item.kickoff_utc)}</span></span>
-        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(item.competition)}</span></span>
+        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(competitionDisplay(item.competition, item.country, LANG))}</span></span>
         <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(item.country)}</span></span>
       </div>
       <div class="meta-actions">
-        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
+        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionValue(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
         <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
       </div>
     `;
@@ -449,6 +474,49 @@ function renderPitch(){
 
 function normalize(s){ return (s||"").toLowerCase().trim(); }
 
+
+function competitionDisplay(rawComp, country, lang){
+  const comp = String(rawComp || "").trim();
+  const c = normalize(country);
+  const n = normalize(comp);
+
+  // Disambiguate common league names (so Brazil doesn't look like Italy, etc.)
+  const isPt = (lang === "pt");
+  const isEs = (lang === "es");
+  const isFr = (lang === "fr");
+  const isDe = (lang === "de");
+
+  function pick(pt,en,es,fr,de){
+    if(isPt) return pt;
+    if(isEs) return es || en;
+    if(isFr) return fr || en;
+    if(isDe) return de || en;
+    return en;
+  }
+
+  if(n === "serie a"){
+    if(c === "brazil") return pick("Brasileirão Série A","Brazil Serie A","Serie A (Brasil)","Série A (Brésil)","Serie A (Brasilien)");
+    if(c === "italy")  return pick("Serie A (Itália)","Serie A (Italy)","Serie A (Italia)","Serie A (Italie)","Serie A (Italien)");
+  }
+  if(n === "serie b"){
+    if(c === "brazil") return pick("Brasileirão Série B","Brazil Serie B","Serie B (Brasil)","Série B (Brésil)","Serie B (Brasilien)");
+    if(c === "italy")  return pick("Serie B (Itália)","Serie B (Italy)","Serie B (Italia)","Serie B (Italie)","Serie B (Italien)");
+  }
+  if(n === "serie c"){
+    if(c === "brazil") return pick("Brasileirão Série C","Brazil Serie C","Serie C (Brasil)","Série C (Brésil)","Serie C (Brasilien)");
+  }
+
+  return comp || "—";
+}
+
+function competitionValue(m){
+  // Prefer numeric id if available, fallback to name.
+  const id = m && (m.competition_id || m.league_id || m.leagueId);
+  if(id !== undefined && id !== null && String(id).trim() !== "") return String(id);
+  return String(m?.competition || "");
+}
+
+
 function groupByTime(matches){
   const sorted = [...matches].sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
   const map = new Map();
@@ -514,11 +582,12 @@ function buildFormSquares(t, details, windowN){
 
 function renderCalendar(t, matches, viewMode, query, activeDateKey){
   const root = qs("#calendar");
+  if(!root) return;
   root.innerHTML = "";
 
   const q = normalize(query);
 
-  const filtered = matches.filter(m=>{
+  const filtered = (matches || []).filter(m=>{
     // Date filter (local timezone)
     if(activeDateKey && activeDateKey !== "7d"){
       if(localDateKey(m.kickoff_utc) !== activeDateKey) return false;
@@ -529,93 +598,167 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     return blob.includes(q);
   });
 
-  const groups = (viewMode==="country") ? groupByCountry(filtered) : groupByTime(filtered);
+  if(!filtered.length){
+    root.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-title">${escAttr(t.empty_list || "Sem jogos encontrados.")}</div>
+        <div class="empty-sub">${escAttr(t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.")}</div>
+      </div>
+    `;
+    return;
+  }
 
+  function renderMatchRow(m, showMeta){
+    const row = document.createElement("div");
+    row.className = "match";
+    row.setAttribute("data-open","match");
+    row.setAttribute("data-key", matchKey(m));
+    row.setAttribute("role","button");
+    row.setAttribute("tabindex","0");
+    row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
+    row.setAttribute("title", `${t.match_radar}: ${m.home} vs ${m.away}`);
+    row.setAttribute("data-tip", `${t.match_radar}: ${m.home} vs ${m.away}`);
+
+    const formHome = buildFormSquares(t, m.form_home_details || m.form_home_last || m.home_last || null, CAL_META.form_window);
+    const formAway = buildFormSquares(t, m.form_away_details || m.form_away_last || m.away_last || null, CAL_META.form_window);
+
+    const goalsTip = t.goals_tooltip || "Goals for/goals against (last 5 matches).";
+    const ghf = (m.gf_home ?? m.goals_for_home ?? 0), gha = (m.ga_home ?? m.goals_against_home ?? 0);
+    const gaf = (m.gf_away ?? m.goals_for_away ?? 0), gaa = (m.ga_away ?? m.goals_against_away ?? 0);
+
+    const goalsHTML = `
+      <div class="goals" ${tipAttr(goalsTip)}>
+        <span class="goal-pill" ${tipAttr(`${goalsTip} • ${t.home_label || "CASA"}`)}>
+          <span class="tag">${t.goals_label} ${t.home_label || "CASA"}</span>
+          <span class="gf">${escAttr(ghf)}</span>/<span class="ga">${escAttr(gha)}</span>
+        </span>
+        <span class="goal-pill" ${tipAttr(`${goalsTip} • ${t.away_label || "FORA"}`)}>
+          <span class="tag">${t.goals_label} ${t.away_label || "FORA"}</span>
+          <span class="gf">${escAttr(gaf)}</span>/<span class="ga">${escAttr(gaa)}</span>
+        </span>
+      </div>
+    `;
+
+    const formTip = t.form_tooltip || (t.form_label || "Últimos 5");
+
+    const homeLogo = pickTeamLogo(m, "home");
+    const awayLogo = pickTeamLogo(m, "away");
+
+    const compDisp = competitionDisplay(m.competition, m.country, LANG);
+    const compVal  = competitionValue(m);
+
+    const metaChips = showMeta ? `
+      <div class="meta-chips" style="margin-top:8px">
+        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
+        <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
+      </div>
+    ` : "";
+
+    row.innerHTML = `
+      <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
+      <div>
+        <div class="teams">
+          <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+          <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+        </div>
+        ${metaChips}
+        <div class="subline">
+          <div>
+            <div class="form" ${tipAttr(formTip)}>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span style="font-weight:950;opacity:.8">${t.home_short || "C"}</span>
+                ${formHome}
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+                <span style="font-weight:950;opacity:.8">${t.away_short || "F"}</span>
+                ${formAway}
+              </div>
+            </div>
+          </div>
+          <div>
+            ${goalsHTML}
+          </div>
+        </div>
+      </div>
+      <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
+    `;
+
+    return row;
+  }
+
+  if(viewMode === "country"){
+    // Country -> Competition (the expected "Por país - competição")
+    const countries = groupByCountry(filtered);
+
+    for(const cg of countries){
+      const countryName = cg.name || "—";
+      const box = document.createElement("div");
+      box.className = "group";
+
+      box.innerHTML = `
+        <div class="group-head">
+          <div class="group-title"><span class="flag"></span><span>${escAttr(countryName)}</span></div>
+          <div class="group-actions">
+            <span class="chip" data-open="country" data-value="${escAttr(countryName)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</span>
+          </div>
+        </div>
+        <div class="subgroups"></div>
+      `;
+
+      const host = box.querySelector(".subgroups");
+
+      // Competition subgroups inside the country
+      const map = new Map();
+      const sorted = [...cg.matches].sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
+      for(const m of sorted){
+        const key = String(m.competition || "—");
+        if(!map.has(key)) map.set(key, []);
+        map.get(key).push(m);
+      }
+
+      for(const [compRaw, ms] of map.entries()){
+        const compDisp = competitionDisplay(compRaw, countryName, LANG);
+        const compVal = competitionValue(ms[0] || {competition:compRaw});
+
+        const sub = document.createElement("div");
+        sub.className = "subgroup";
+        sub.innerHTML = `
+          <div class="subhead">
+            <div class="subtitle">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></div>
+            <div class="group-actions">
+              <span class="chip" data-open="competition" data-value="${escAttr(compVal || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
+            </div>
+          </div>
+          <div class="matches"></div>
+        `;
+
+        const list = sub.querySelector(".matches");
+        ms.forEach(m => list.appendChild(renderMatchRow(m, false)));
+
+        host.appendChild(sub);
+      }
+
+      root.appendChild(box);
+    }
+
+    return;
+  }
+
+  // Time view (always within the selected day)
+  const groups = groupByTime(filtered);
   for(const g of groups){
     const box = document.createElement("div");
     box.className = "group";
 
-    // derive values for group actions
-    const first = g.matches[0] || {};
-    const competitionValue = (viewMode==="country") ? (first.competition||"") : g.name;
-    const countryValue = (viewMode==="country") ? g.name : (first.country||"");
-
     box.innerHTML = `
       <div class="group-head">
-        <div class="group-title"><span class="flag"></span><span>${escAttr(g.name)}</span></div>
-        <div class="group-actions">
-          <span class="chip" data-open="competition" data-value="${escAttr(competitionValue)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
-          <span class="chip" data-open="country" data-value="${escAttr(countryValue)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</span>
-        </div>
+        <div class="group-title">${icoSpan("clock")}<span>${escAttr(g.name)}</span></div>
       </div>
       <div class="matches"></div>
     `;
 
     const list = box.querySelector(".matches");
-
-    for(const m of g.matches){
-      const row = document.createElement("div");
-      row.className = "match";
-      row.setAttribute("data-open","match");
-      row.setAttribute("data-key", matchKey(m));
-      row.setAttribute("role","button");
-      row.setAttribute("tabindex","0");
-      row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
-      row.setAttribute("title", `${t.match_radar}: ${m.home} vs ${m.away}`);
-      row.setAttribute("data-tip", `${t.match_radar}: ${m.home} vs ${m.away}`);
-
-      const formHome = buildFormSquares(t, m.form_home_details, CAL_META.form_window);
-      const formAway = buildFormSquares(t, m.form_away_details, CAL_META.form_window);
-
-      const goalsTip = t.goals_tooltip || "Goals for/goals against (last 5 matches).";
-      const ghf = (m.gf_home ?? 0), gha = (m.ga_home ?? 0);
-      const gaf = (m.gf_away ?? 0), gaa = (m.ga_away ?? 0);
-
-      const goalsHTML = `
-        <div class="goals" ${tipAttr(goalsTip)}>
-          <span class="goal-pill" ${tipAttr(`${goalsTip} • ${t.home_label || "CASA"}`)}>
-            <span class="tag">${t.goals_label} ${t.home_label || "CASA"}</span>
-            <span class="gf">${escAttr(ghf)}</span>/<span class="ga">${escAttr(gha)}</span>
-          </span>
-          <span class="goal-pill" ${tipAttr(`${goalsTip} • ${t.away_label || "FORA"}`)}>
-            <span class="tag">${t.goals_label} ${t.away_label || "FORA"}</span>
-            <span class="gf">${escAttr(gaf)}</span>/<span class="ga">${escAttr(gaa)}</span>
-          </span>
-        </div>
-      `;
-
-      const formTip = t.form_tooltip || (t.form_label || "Últimos 5");
-
-      row.innerHTML = `
-        <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-        <div>
-          <div class="teams">
-            <div class="teamline">${crestHTML(m.home)}<span>${escAttr(m.home)}</span></div>
-            <div class="teamline">${crestHTML(m.away)}<span>${escAttr(m.away)}</span></div>
-          </div>
-          <div class="subline">
-            <div>
-              <div class="form" ${tipAttr(formTip)}>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <span style="font-weight:950;opacity:.8">${t.home_short || "C"}</span>
-                  ${formHome}
-                </div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
-                  <span style="font-weight:950;opacity:.8">${t.away_short || "F"}</span>
-                  ${formAway}
-                </div>
-              </div>
-            </div>
-            <div>
-              ${goalsHTML}
-            </div>
-          </div>
-        </div>
-        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
-      `;
-
-      list.appendChild(row);
-    }
+    g.matches.forEach(m => list.appendChild(renderMatchRow(m, true)));
 
     root.appendChild(box);
   }
@@ -635,19 +778,22 @@ function openModal(type, value){
   if(type === "about"){
     title.textContent = T.about_title || "About";
     body.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div style="color:#11244b;font-weight:850;line-height:1.35">${escAttr(T.about_intro || "")}</div>
+      <div class="panel">
+        <div class="panel-title">${escAttr(T.about_intro_title || T.about_title || "About")}</div>
+        <div class="smallnote">${escAttr(T.about_intro || "")}</div>
+      </div>
 
-        <div style="padding:12px 12px;border:1px solid rgba(43,111,242,.20);border-radius:16px;background:rgba(43,111,242,.06)">
-          <div style="font-weight:950;margin-bottom:8px">${escAttr(T.about_steps_title || "")}</div>
-          <div style="display:flex;flex-direction:column;gap:6px;color:#163261;font-weight:800">
-            <div>• ${escAttr(T.about_step1 || "")}</div>
-            <div>• ${escAttr(T.about_step2 || "")}</div>
-            <div>• ${escAttr(T.about_step3 || "")}</div>
-          </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="panel-title">${escAttr(T.about_steps_title || "How it works")}</div>
+        <div class="smallnote" style="display:flex;flex-direction:column;gap:6px">
+          <div>• ${escAttr(T.about_step1 || "")}</div>
+          <div>• ${escAttr(T.about_step2 || "")}</div>
+          <div>• ${escAttr(T.about_step3 || "")}</div>
         </div>
+      </div>
 
-        <div style="color:rgba(11,18,32,.75);font-weight:800">${escAttr(T.about_note || "")}</div>
+      <div class="mnote">
+        <div>${escAttr(T.disclaimer || "")}</div>
       </div>
     `;
     back.style.display = "flex";
@@ -655,20 +801,21 @@ function openModal(type, value){
     return;
   }
 
-
   // MATCH RADAR
   if(type === "match"){
     const key = value || "";
     const decoded = decodeURIComponent(key);
     const parts = decoded.split("|");
-    const kUtc = parts[0];
     const home = parts[1] || "";
     const away = parts[2] || "";
 
     const m = CAL_MATCHES.find(x => (`${x.kickoff_utc}|${x.home}|${x.away}`) === decoded) || null;
 
     const mCountry = m?.country || "—";
-    const mComp = m?.competition || "—";
+    const compDisp = competitionDisplay(m?.competition, mCountry, LANG);
+    const mCompRaw = m?.competition || "—";
+    const compVal = competitionValue(m || {competition:mCompRaw});
+
     const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "—";
     const riskCls = m ? riskClass(m.risk) : "med";
     const kickoff = m ? fmtTime(m.kickoff_utc) : "--:--";
@@ -677,60 +824,72 @@ function openModal(type, value){
     title.textContent = `${home} vs ${away}`;
 
     const goalsTip = T.goals_tooltip || "Goals for/goals against (last 5 matches).";
+    const formHome = buildFormSquares(T, m?.form_home_details || m?.form_home_last || m?.home_last || null, CAL_META.form_window);
+    const formAway = buildFormSquares(T, m?.form_away_details || m?.form_away_last || m?.away_last || null, CAL_META.form_window);
 
-    const formHome = buildFormSquares(T, m?.form_home_details, CAL_META.form_window);
-    const formAway = buildFormSquares(T, m?.form_away_details, CAL_META.form_window);
+    const homeLogo = pickTeamLogo(m, "home");
+    const awayLogo = pickTeamLogo(m, "away");
 
     body.innerHTML = `
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="font-weight:950;color:#11244b">${escAttr(mComp)} • ${escAttr(mCountry)} • <span ${tipAttr(T.kickoff_tooltip || "")}>${kickoff}</span></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div class="mhead">
+        <div class="mmeta">
+          <div class="mteams">
+            <div class="team">${crestHTML(home, homeLogo)}<span>${escAttr(home)}</span></div>
+            <div class="vs" style="opacity:.7;font-weight:900">vs</div>
+            <div class="team">${crestHTML(away, awayLogo)}<span>${escAttr(away)}</span></div>
+          </div>
+
+          <div class="mcomp">
+            ${escAttr(compDisp)} • ${escAttr(mCountry)} • <span ${tipAttr(T.kickoff_tooltip || "")}>${kickoff}</span>
+          </div>
+
+          <div class="mbadges">
             <span class="badge risk ${riskCls}" ${tipAttr(T.risk_tooltip || "")}>${riskText}</span>
-            <span class="badge" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(suggestion)}</b></span>
+            <span class="badge" ${tipAttr(T.suggestion_tooltip || "")}>${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(suggestion)}</b></span>
           </div>
         </div>
-        <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${T.cta_pro}</button>
+
+        <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
       </div>
 
-      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div style="padding:12px;border:1px solid rgba(215,227,246,.9);border-radius:16px;background:rgba(255,255,255,.65)">
-          <div style="font-weight:950;margin-bottom:8px" ${tipAttr(T.form_tooltip || "")}>${T.form_label || "Forma"}</div>
+      <div class="mgrid">
+        <div class="panel">
+          <div class="panel-title" ${tipAttr(T.form_tooltip || "")}>${escAttr(T.form_label || "Últimos 5")}</div>
           <div class="form">
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <span style="font-weight:950;opacity:.8">${T.home_label || "CASA"}</span>
+              <span style="font-weight:950;opacity:.85">${escAttr(T.home_label || "CASA")}</span>
               ${formHome}
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-              <span style="font-weight:950;opacity:.8">${T.away_label || "FORA"}</span>
+              <span style="font-weight:950;opacity:.85">${escAttr(T.away_label || "FORA")}</span>
               ${formAway}
             </div>
           </div>
         </div>
 
-        <div style="padding:12px;border:1px solid rgba(215,227,246,.9);border-radius:16px;background:rgba(255,255,255,.65)">
-          <div style="font-weight:950;margin-bottom:8px" ${tipAttr(goalsTip)}>${T.goals_title || "Gols"}</div>
+        <div class="panel">
+          <div class="panel-title" ${tipAttr(goalsTip)}>${escAttr(T.goals_title || "Gols (últimos 5)")}</div>
           <div class="goals">
             <span class="goal-pill" ${tipAttr(`${goalsTip} • ${T.home_label || "CASA"}`)}>
-              <span class="tag">${T.goals_label} ${T.home_label || "CASA"}</span>
+              <span class="tag">${escAttr(T.goals_label || "Gols")} ${escAttr(T.home_label || "CASA")}</span>
               <span class="gf">${escAttr(m?.gf_home ?? 0)}</span>/<span class="ga">${escAttr(m?.ga_home ?? 0)}</span>
             </span>
             <span class="goal-pill" ${tipAttr(`${goalsTip} • ${T.away_label || "FORA"}`)}>
-              <span class="tag">${T.goals_label} ${T.away_label || "FORA"}</span>
+              <span class="tag">${escAttr(T.goals_label || "Gols")} ${escAttr(T.away_label || "FORA")}</span>
               <span class="gf">${escAttr(m?.gf_away ?? 0)}</span>/<span class="ga">${escAttr(m?.ga_away ?? 0)}</span>
             </span>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <span class="chip" data-open="competition" data-value="${escAttr(mComp)}" ${tipAttr(T.competition_radar_tip || "")}>${T.competition_radar}</span>
-        <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${T.country_radar}</span>
+      <div class="mfooter">
+        <span class="chip" data-open="competition" data-value="${escAttr(compVal || mCompRaw)}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
+        <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${escAttr(T.country_radar || "Radar do País")}</span>
       </div>
 
-      <div style="margin-top:14px;padding:12px;border:1px dashed rgba(43,111,242,.35);border-radius:16px;background:rgba(43,111,242,.06);font-weight:800;color:#163261">
-        ${T.free_includes || "FREE: sugestão + risco + forma + gols."}<br/>
-        <span style="opacity:.85">${T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas."}</span>
+      <div class="mnote">
+        ${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}<br/>
+        <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
       </div>
     `;
 
@@ -740,45 +899,74 @@ function openModal(type, value){
   }
 
   // COUNTRY / COMPETITION RADAR (FREE)
-  const label = (type==="country") ? T.country_radar : T.competition_radar;
-  title.textContent = value ? `${label}: ${value}` : label;
+  const isId = /^[0-9]+$/.test(String(value || "").trim());
+  const label = (type==="country") ? (T.country_radar || "Radar do País") : (T.competition_radar || "Radar da Competição");
 
-  const list = (type==="country")
-    ? CAL_MATCHES.filter(m => normalize(m.country) === normalize(value))
-    : CAL_MATCHES.filter(m => normalize(m.competition) === normalize(value));
+  let list = [];
+  let displayValue = value;
+
+  if(type==="country"){
+    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(value));
+  }else{
+    if(isId){
+      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(value));
+      const sample = list[0];
+      if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
+    }else{
+      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(value));
+      const sample = list[0];
+      if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
+    }
+  }
+
+  title.textContent = displayValue ? `${label}: ${displayValue}` : label;
 
   const rows = list
     .sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc))
     .map(m=>{
       const key = matchKey(m);
       const riskText = (m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med;
+
+      const homeLogo = pickTeamLogo(m, "home");
+      const awayLogo = pickTeamLogo(m, "away");
+
+      const compDisp = competitionDisplay(m.competition, m.country, LANG);
+
       return `
         <div class="match" data-open="match" data-key="${key}" role="button" tabindex="0" ${tipAttr(`${T.match_radar}: ${m.home} vs ${m.away}`)}>
           <div class="time">${fmtTime(m.kickoff_utc)}</div>
           <div>
-            <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(localizeMarket(m.suggestion_free, t) || "—")}</b> • ${riskText}</div>
+            <div class="teams">
+              <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+              <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+            </div>
+            <div class="meta-chips" style="margin-top:8px">
+              <span class="meta-chip">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
+              <span class="meta-chip">${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
+            </div>
+            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>
+              ${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(localizeMarket(m.suggestion_free, T) || "—")}</b> • ${escAttr(riskText)}
+            </div>
           </div>
         </div>
       `;
     }).join("");
 
   body.innerHTML = `
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-      <div style="font-weight:900">${T.upcoming_matches || "Próximos jogos"}</div>
-      <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${T.cta_pro}</button>
-    </div>
-
-    <div style="margin-top:12px;color:rgba(74,88,110,.95);font-weight:650">
-      ${T.free_includes || "FREE: sugestão + risco + forma + gols."}
+    <div class="mhead">
+      <div class="mmeta">
+        <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
+        <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
+      </div>
+      <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
     </div>
 
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-      ${rows || `<div class="smallnote">${T.empty_list || "Sem jogos encontrados."}</div>`}
+      ${rows || `<div class="smallnote">${escAttr(T.empty_list || "Sem jogos encontrados.")}</div>`}
     </div>
 
-    <div style="margin-top:14px;padding:12px;border:1px dashed rgba(43,111,242,.35);border-radius:16px;background:rgba(43,111,242,.06);font-weight:800;color:#163261">
-      <span style="opacity:.85">${T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas."}</span>
+    <div class="mnote">
+      <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
     </div>
   `;
 
@@ -1079,6 +1267,137 @@ function initThemeToggle(t){
   }
 }
 
+
+function injectPatchStyles(){
+  if(document.getElementById("rtPatchStyles")) return;
+  const style = document.createElement("style");
+  style.id = "rtPatchStyles";
+  style.textContent = `
+  /* --- RadarTips patch: modal readability + nested calendar + crest images --- */
+  .crest.crest--img{
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,.12);
+    overflow: hidden;
+  }
+  .crest.crest--img img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 3px;
+    display: block;
+  }
+
+  .modal-backdrop{
+    background: rgba(0,0,0,.62) !important;
+    backdrop-filter: blur(6px);
+  }
+  .modal{
+    background: rgba(10,14,24,.98) !important;
+    border: 1px solid rgba(255,255,255,.10) !important;
+    color: rgba(255,255,255,.92) !important;
+  }
+  .modal .modal-title{
+    color: rgba(255,255,255,.95) !important;
+  }
+  .modal .panel{
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .modal .panel-title{
+    font-weight: 950;
+    margin-bottom: 8px;
+    opacity: .92;
+  }
+  .modal .mhead{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    justify-content:space-between;
+  }
+  .modal .mmeta{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width: 240px;
+  }
+  .modal .mteams{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    font-weight: 950;
+  }
+  .modal .mteams .team{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .modal .mcomp{
+    font-weight: 900;
+    opacity: .92;
+  }
+  .modal .mbadges{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .modal .mgrid{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+  @media (max-width: 920px){
+    .modal .mgrid{ grid-template-columns: 1fr; }
+  }
+  .modal .mfooter{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .modal .mnote{
+    margin-top:14px;
+    padding:12px;
+    border:1px dashed rgba(43,111,242,.35);
+    border-radius:16px;
+    background: rgba(43,111,242,.10);
+    font-weight: 800;
+  }
+
+  /* Nested calendar (country -> competition) */
+  .group .subgroup{
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,.06);
+  }
+  .group .subhead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding: 6px 2px;
+  }
+  .group .subtitle{
+    font-weight: 950;
+    opacity: .88;
+  }
+
+  /* Date chips: make Today/Tomorrow pop a bit */
+  .date-strip .date-chip.today,
+  .date-strip .date-chip.tomorrow{
+    font-weight: 950;
+  }
+  `;
+  document.head.appendChild(style);
+}
+
+
 async function init(){
   LANG = pathLang() || detectLang();
   const dict = await loadJSON("/i18n/strings.json", {});
@@ -1094,6 +1413,7 @@ async function init(){
   setNav(LANG, T);
   decorateLangPills(LANG);
   initTooltips();
+  injectPatchStyles();
 
   // Dashboard layout helpers (sidebar + top search + top date strip)
   ensureSidebar(T, LANG);
@@ -1131,7 +1451,7 @@ async function init(){
   qs("#btn_time").textContent = T.view_by_time;
   qs("#btn_country").textContent = T.view_by_country;
 
-  let viewMode = "time";
+  let viewMode = "country";
   let q = "";
   const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
   if (!data || isMockDataset(data) || (Array.isArray(data.matches) && data.matches.length===0)) {
@@ -1144,27 +1464,31 @@ async function init(){
   // Date strip
   const strip = ensureDateStrip(T);
   const days = build7Days();
-  let activeDate = "7d"; // default: next 7 days
+  let activeDate = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(days[0]); // default: Hoje
 
   function renderStrip(){
     if(!strip) return;
 
-    const chips = [];
-
-    // 7d chip (range)
-    chips.push({key:"7d", label:(T.next7_label || "7D"), tip:(T.next7_tooltip || "Próximos 7 dias")});
-
-    for(const d of days){
+    const chips = days.map((d, idx)=>{
       const key = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
-      chips.push({
-        key,
-        label: fmtDateShortDDMM(d),
-        tip: fmtDateLong(d, LANG)
-      });
-    }
+
+      // Labels: Hoje / Amanhã / dd-mm
+      let label = fmtDateShortDDMM(d);
+      let extra = "";
+
+      if(idx === 0){
+        label = (LANG === "pt") ? "Hoje" : (LANG === "es") ? "Hoy" : (LANG === "fr") ? "Aujourd'hui" : (LANG === "de") ? "Heute" : "Today";
+        extra = "today";
+      }else if(idx === 1){
+        label = (LANG === "pt") ? "Amanhã" : (LANG === "es") ? "Mañana" : (LANG === "fr") ? "Demain" : (LANG === "de") ? "Morgen" : "Tomorrow";
+        extra = "tomorrow";
+      }
+
+      return { key, label, tip: fmtDateLong(d, LANG), extra };
+    });
 
     strip.innerHTML = chips.map(c=>{
-      const cls = (c.key === activeDate) ? "date-chip active" : "date-chip";
+      const cls = (c.key === activeDate) ? `date-chip active ${c.extra}` : `date-chip ${c.extra}`;
       return `<button class="${cls}" type="button" data-date="${c.key}" ${tipAttr(c.tip)}>${escAttr(c.label)}</button>`;
     }).join("");
   }
