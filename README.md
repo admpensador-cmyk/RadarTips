@@ -18,7 +18,20 @@ Currently reads JSON from:
 - /data/v1/radar_week.json
 - /data/v1/calendar_7d.json
 
-Next step: replace JSON generation with Cloudflare Worker Cron + KV/D1 (automation).
+### Automated updates (GitHub Actions)
+
+This repo includes a daily GitHub Action that regenerates the JSON files using the **football-data.org** API.
+
+1) Create an API token on football-data.org.
+2) In GitHub: **Settings → Secrets and variables → Actions → New repository secret**
+   - Name: `FOOTBALL_DATA_TOKEN`
+   - Value: your token
+3) (Optional) Override competitions / windows via environment variables in the workflow:
+   - `RADARTIPS_COMPETITIONS` (default: `PL,PD,SA,BL1,FL1,BSA`)
+   - `RADARTIPS_DAYS` (default: `7`)
+   - `RADARTIPS_FORM_WINDOW` (default: `5`)
+
+After the workflow pushes updated JSON to `main`, Cloudflare Pages will deploy automatically.
 
 ## Calendar schema (data/v1/calendar_7d.json)
 
@@ -33,7 +46,7 @@ Each match (minimum required fields used by the UI):
 - `kickoff_utc` (ISO)
 - `country`, `competition`
 - `home`, `away`
-- `risk` (`low` | `med` | `high`)
+- `risk` (`low` | `medium` | `high`)
 - `suggestion_free` (e.g. `"1X"`)
 - Goals totals per team (for the same `goals_window`):
   - `gf_home`, `ga_home`

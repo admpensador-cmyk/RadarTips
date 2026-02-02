@@ -6,7 +6,7 @@
   <title>RadarTips • Radar</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
 </head>
 <body data-page="day">
   <div class="container">
@@ -28,6 +28,9 @@
 
         <span style="width:10px"></span>
 
+        
+        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
+
         <span class="lang" data-lang="en">EN</span>
         <span class="lang" data-lang="pt">PT</span>
         <span class="lang" data-lang="es">ES</span>
@@ -39,6 +42,21 @@
     <div class="hero">
       <h1 id="hero_title">Radar</h1>
       <p id="hero_sub">—</p>
+
+    <div class="pitchbar" id="pitchbar" hidden aria-label="O que é o RadarTips">
+      <div class="pitchbox">
+        <div class="pitch-kicker" id="pitch_kicker">—</div>
+        <div class="pitch-actions">
+          <button class="btn" type="button" data-open="about" id="btn_about">—</button>
+          <a class="btn ghost" id="btn_browse" href="#">—</a>
+        </div>
+        <div class="pitch-freepro" id="pitch_free_pro">—</div>
+      </div>
+      <div class="pitchbox pitchbox-right">
+        <div id="pitch_markets"></div>
+      </div>
+    </div>
+
 
       <div class="grid">
         <div class="card" data-slot="1">
@@ -73,7 +91,7 @@
       </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="calendar_section">
       <h2 id="calendar_title">—</h2>
       <div class="sub" id="calendar_sub">—</div>
 
@@ -103,6 +121,6 @@
     </div>
   </div>
 
-  <script src="/assets/js/app.js"></script>
+  <script src="/assets/js/app.js?v=8"></script>
 </body>
 </html>

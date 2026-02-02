@@ -1,35 +1,9 @@
 {
-  "generated_at_utc": "2026-01-30T00:00:00Z",
-  "highlights": [
-    {
-      "country": "England",
-      "competition": "Premier League",
-      "home": "Arsenal",
-      "away": "Brighton",
-      "kickoff_utc": "2026-01-30T19:00:00Z",
-      "risk": "low",
-      "suggestion_free": "1X (Home or Draw)",
-      "pro_locked": true
-    },
-    {
-      "country": "Brazil",
-      "competition": "Brasileirão Série A",
-      "home": "Bahia",
-      "away": "Flamengo",
-      "kickoff_utc": "2026-01-30T23:30:00Z",
-      "risk": "medium",
-      "suggestion_free": "Under 3.5",
-      "pro_locked": true
-    },
-    {
-      "country": "Spain",
-      "competition": "LaLiga",
-      "home": "Betis",
-      "away": "Valencia",
-      "kickoff_utc": "2026-01-30T20:00:00Z",
-      "risk": "high",
-      "suggestion_free": "DNB Home",
-      "pro_locked": true
-    }
-  ]
+  "meta": {
+    "is_mock": false,
+    "generated_at": null,
+    "note": "Data will appear after the updater runs."
+  },
+  "highlights": [],
+  "matches": []
 }

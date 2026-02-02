@@ -1,76 +1,10 @@
 {
-  "generated_at_utc": "2026-01-30T00:00:00Z",
-  "matches": [
-    {
-      "kickoff_utc": "2026-01-30T15:00:00Z",
-      "country": "Egypt",
-      "competition": "Egypt Premier League",
-      "home": "Al Ahly",
-      "away": "Zamalek",
-      "risk": "low",
-      "suggestion_free": "1X",
-      "form_home": "WWWWW",
-      "gf_home": 12,
-      "ga_home": 2,
-      "form_away": "LLDLL",
-      "gf_away": 11,
-      "ga_away": 3,
-      "form_home_details": [],
-      "form_away_details": []
-    },
-    {
-      "kickoff_utc": "2026-01-30T17:00:00Z",
-      "country": "Europe",
-      "competition": "Europa League",
-      "home": "Aston Villa",
-      "away": "Salzburg",
-      "risk": "medium",
-      "suggestion_free": "1X",
-      "form_home": "WWDWL",
-      "gf_home": 9,
-      "ga_home": 4,
-      "form_away": "LWDWL",
-      "gf_away": 8,
-      "ga_away": 5,
-      "form_home_details": [],
-      "form_away_details": []
-    },
-    {
-      "kickoff_utc": "2026-01-30T23:00:00Z",
-      "country": "Brazil",
-      "competition": "Brasileirão",
-      "home": "Mirassol",
-      "away": "Vasco",
-      "risk": "medium",
-      "suggestion_free": "Under 3.5",
-      "form_home": "DWWLD",
-      "gf_home": 7,
-      "ga_home": 5,
-      "form_away": "LWDWL",
-      "gf_away": 6,
-      "ga_away": 6,
-      "form_home_details": [],
-      "form_away_details": []
-    },
-    {
-      "kickoff_utc": "2026-02-01T19:00:00Z",
-      "country": "England",
-      "competition": "Premier League",
-      "home": "Arsenal",
-      "away": "Brighton",
-      "risk": "low",
-      "suggestion_free": "1X",
-      "form_home": "WDLWW",
-      "gf_home": 8,
-      "ga_home": 3,
-      "form_away": "LWDWL",
-      "gf_away": 7,
-      "ga_away": 4,
-      "form_home_details": [],
-      "form_away_details": []
-    }
-  ],
-  "schema_version": "v2",
+  "meta": {
+    "is_mock": false,
+    "generated_at": null,
+    "note": "Data will appear after the updater runs."
+  },
   "form_window": 5,
-  "goals_window": 5
+  "goals_window": 5,
+  "matches": []
 }

@@ -1,4 +1,43 @@
 const LANGS = ["en","pt","es","fr","de"];
+const LEGAL_PATHS = {
+  en: { how:"/en/how-it-works/", about:"/en/about/", contact:"/en/contact/", terms:"/en/terms/", privacy:"/en/privacy/", aff:"/en/affiliates/", rg:"/en/responsible-gambling/" },
+  pt: { how:"/pt/como-funciona/", about:"/pt/sobre/", contact:"/pt/contato/", terms:"/pt/termos/", privacy:"/pt/privacidade/", aff:"/pt/afiliados/", rg:"/pt/jogo-responsavel/" },
+  es: { how:"/es/como-funciona/", about:"/es/sobre/", contact:"/es/contacto/", terms:"/es/terminos/", privacy:"/es/privacidad/", aff:"/es/afiliados/", rg:"/es/juego-responsable/" },
+  fr: { how:"/fr/comment-ca-marche/", about:"/fr/a-propos/", contact:"/fr/contact/", terms:"/fr/conditions/", privacy:"/fr/confidentialite/", aff:"/fr/affiliation/", rg:"/fr/jeu-responsable/" },
+  de: { how:"/de/so-funktioniert-es/", about:"/de/uber-uns/", contact:"/de/kontakt/", terms:"/de/bedingungen/", privacy:"/de/datenschutz/", aff:"/de/partnerhinweis/", rg:"/de/verantwortungsvolles-spielen/" }
+};
+
+function renderComplianceFooter(lang){
+  const foot = qs(".footer");
+  if(!foot) return;
+  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
+  const labels = {
+    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"},
+    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo responsável",note:"Conteúdo informativo • Não somos casa de apostas • +18"},
+    es:{how:"Cómo funciona",about:"Sobre",contact:"Contacto",terms:"Términos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo • No somos casa de apuestas • 18+"},
+    fr:{how:"Comment ça marche",about:"À propos",contact:"Contact",terms:"Conditions",privacy:"Confidentialité",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif • Pas un bookmaker • 18+"},
+    de:{how:"So funktioniert es",about:"Über uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt • Kein Buchmacher • 18+"}
+  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"};
+
+  foot.innerHTML = `
+    <div class="foot-wrap">
+      <div class="foot-links">
+        <a href="${p.how}">${labels.how}</a>
+        <a href="${p.about}">${labels.about}</a>
+        <a href="${p.contact}">${labels.contact}</a>
+        <a href="${p.terms}">${labels.terms}</a>
+        <a href="${p.privacy}">${labels.privacy}</a>
+        <a href="${p.aff}">${labels.aff}</a>
+        <a href="${p.rg}">${labels.rg}</a>
+      </div>
+      <div class="foot-meta">
+        <span>${labels.note}</span>
+        <span>© <span id="year"></span> RadarTips</span>
+      </div>
+    </div>
+  `;
+}
+
 
 function pathLang(){
   const seg = location.pathname.split("/").filter(Boolean)[0];
@@ -64,6 +103,26 @@ async function loadJSON(url, fallback){
     if(!r.ok) throw 0;
     return await r.json();
   }catch{ return fallback; }
+
+function isMockDataset(obj){
+  try{
+    if (!obj) return false;
+    if (obj.meta && obj.meta.is_mock) return true;
+    const s = JSON.stringify(obj);
+    // Common demo fixtures used during UI prototyping
+    const demo = ["Arsenal","Brighton","Bahia","Flamengo","Betis","Valencia"];
+    return demo.some(n => s.includes(n));
+  }catch(e){ return false; }
+}
+
+function showUpdatingMessage(container){
+  if(!container) return;
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-title">Updating match data…</div>
+      <div class="empty-sub">We’re generating today’s radar. Please refresh in a few minutes.</div>
+    </div>`;
+}
 }
 
 function setText(id, val){
@@ -77,6 +136,38 @@ function setHTML(id, val){
 function qs(sel){ return document.querySelector(sel); }
 function qsa(sel){ return [...document.querySelectorAll(sel)]; }
 
+function ensureTopSearch(t){
+  const nav = qs(".topbar .nav");
+  if(!nav) return;
+  if(qs("#topSearch")) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "top-search";
+  wrap.innerHTML = `
+    <span class="top-search-ico" aria-hidden="true">🔎</span>
+    <input id="topSearch" type="search" inputmode="search" placeholder="${escAttr(t.search_placeholder || "Search team or league")}" />
+  `;
+
+  const themeBtn = qs("#theme_toggle");
+  if(themeBtn && themeBtn.parentElement === nav){
+    nav.insertBefore(wrap, themeBtn);
+  }else{
+    nav.appendChild(wrap);
+  }
+
+  const topInput = wrap.querySelector("#topSearch");
+  const mainInput = qs("#search");
+  if(!topInput || !mainInput) return;
+
+  topInput.addEventListener("input", ()=>{
+    mainInput.value = topInput.value;
+    mainInput.dispatchEvent(new Event("input", {bubbles:true}));
+  });
+  mainInput.addEventListener("input", ()=>{
+    if(topInput.value !== mainInput.value) topInput.value = mainInput.value;
+  });
+}
+
 function escAttr(s){
   return String(s||"")
     .replaceAll("&","&amp;")
@@ -89,6 +180,49 @@ function tipAttr(text){
   return `title="${t}" data-tip="${t}"`;
 }
 
+// Inline icons (tiny, monochrome). Keeps UI "adult" without emojis.
+const ICONS = {
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>',
+  trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4h2v3a4 4 0 0 1-2 3"/><path d="M19 4h-2v3a4 4 0 0 0 2 3"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.4L21 10l-6.8 1.6L12 18l-2.2-6.4L3 10l6.8-1.6L12 2z"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>',
+};
+
+// --- Football identity helpers (lightweight crest badges) ---
+function _hashHue(str){
+  let h = 0;
+  const s = String(str || "");
+  for(let i=0;i<s.length;i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+
+function _initials(name){
+  const s = String(name || "").trim();
+  if(!s) return "??";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if(parts.length === 1){
+    return parts[0].slice(0, 3).toUpperCase();
+  }
+  const a = parts[0][0] || "";
+  const b = parts[1][0] || "";
+  const c = parts[parts.length-1][0] || "";
+  const out = (a + b + (parts.length > 2 ? c : "")).toUpperCase();
+  return out.slice(0, 3);
+}
+
+function crestHTML(teamName){
+  const hue = _hashHue(teamName);
+  const ini = _initials(teamName);
+  return `<span class="crest" style="--h:${hue}" aria-hidden="true">${escAttr(ini)}</span>`;
+}
+
+function ico(name){
+  return ICONS[name] || "";
+}
+function icoSpan(name){
+  return `<span class="ico" aria-hidden="true">${ico(name)}</span>`;
+}
 
 // Lightweight tooltips using [data-tip]
 function initTooltips(){
@@ -204,7 +338,10 @@ function renderTop3(t, data){
     const meta = card.querySelector(".meta");
     const lock = card.querySelector(".lock");
 
-    top.textContent = `${t.top_slot} ${idx+1}`;
+    top.className = "badge top rank";
+    top.textContent = `#${idx+1}`;
+    top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
+    top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
 
     if(!item){
       badge.className = "badge risk high";
@@ -224,19 +361,25 @@ function renderTop3(t, data){
     badge.setAttribute("title", t.risk_tooltip || "");
     badge.setAttribute("data-tip", t.risk_tooltip || "");
 
-    // Title
-    h3.textContent = `${item.home} vs ${item.away}`;
+    // Title (football-first: crest + team name)
+    h3.innerHTML = `
+      <div class="match-title">
+        <div class="teamline">${crestHTML(item.home)}<span>${escAttr(item.home)}</span></div>
+        <div class="vs">vs</div>
+        <div class="teamline">${crestHTML(item.away)}<span>${escAttr(item.away)}</span></div>
+      </div>
+    `;
 
-    // Meta (structured so it doesn't wrap awkwardly)
+    // Meta (chips + icons; avoids awkward wraps)
     meta.innerHTML = `
-      <div class="meta-top">
-        <span class="meta-item" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(item.kickoff_utc)}</span>
-        <span class="meta-sep">•</span>
-        <span class="meta-item" ${tipAttr(t.competition_tooltip || "")}>${escAttr(item.competition)}</span>
+      <div class="meta-chips">
+        <span class="meta-chip" ${tipAttr(t.kickoff_tooltip || "")}>${icoSpan("clock")}<span>${fmtTime(item.kickoff_utc)}</span></span>
+        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(item.competition)}</span></span>
+        <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(item.country)}</span></span>
       </div>
       <div class="meta-actions">
-        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${escAttr(t.competition_radar)}</button>
-        <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${escAttr(t.country_radar)}</button>
+        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
+        <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
       </div>
     `;
 
@@ -248,20 +391,63 @@ function renderTop3(t, data){
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
 
-    const suggestion = item.suggestion_free || "—";
+    const suggestion = localizeMarket(item.suggestion_free, t) || "—";
     lock.innerHTML = `
       <div class="callout">
         <div class="callout-top">
-          <span class="callout-label">${escAttr(t.suggestion_label || "Sugestão do Radar")}</span>
+          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugestão do Radar")}</span></span>
           <span class="callout-value" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)}</span>
         </div>
+        <div class="callout-sub">
+          <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
+          <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
+        </div>
         <div class="callout-actions">
-          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}>${escAttr(t.match_radar || "Radar do Jogo")}</button>
+          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
         </div>
       </div>
     `;
   });
 }
+
+
+function renderPitch(){
+  const bar = qs("#pitchbar");
+  if(bar) bar.hidden = false;
+  const kicker = qs("#pitch_kicker");
+  const freepro = qs("#pitch_free_pro");
+  const markets = qs("#pitch_markets");
+  const aboutBtn = qs("#btn_about");
+  const browseBtn = qs("#btn_browse");
+
+  if(kicker) kicker.textContent = T.pitch_kicker || "";
+  if(freepro) freepro.textContent = T.pitch_free_pro || "";
+  if(aboutBtn) aboutBtn.textContent = T.about_cta || "About";
+  if(browseBtn){
+    browseBtn.textContent = T.browse_cta || "Calendar";
+    const calSection = qs("#calendar_section");
+    browseBtn.setAttribute("href", calSection ? "#calendar_section" : `/${LANG}/calendar/`);
+  }
+  if(markets){
+    const chips = [
+      {k:"market_1x", tip:"market_1x_tip"},
+      {k:"market_under", tip:"market_under_tip"},
+      {k:"market_dnb", tip:"market_dnb_tip"},
+      {k:"market_handicap", tip:"market_handicap_tip"},
+    ];
+    markets.innerHTML = `
+      <div class="markets-label">${escAttr(T.markets_label || "")}</div>
+      <div class="markets-row">
+        ${chips.map(c=>{
+          const label = T[c.k] || "";
+          const tip = T[c.tip] || "";
+          return `<span class="mini-chip market" ${tipAttr(tip)}>${escAttr(label)}</span>`;
+        }).join("")}
+      </div>
+    `;
+  }
+}
+
 
 function normalize(s){ return (s||"").toLowerCase().trim(); }
 
@@ -405,7 +591,10 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       row.innerHTML = `
         <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
         <div>
-          <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
+          <div class="teams">
+            <div class="teamline">${crestHTML(m.home)}<span>${escAttr(m.home)}</span></div>
+            <div class="teamline">${crestHTML(m.away)}<span>${escAttr(m.away)}</span></div>
+          </div>
           <div class="subline">
             <div>
               <div class="form" ${tipAttr(formTip)}>
@@ -424,7 +613,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
             </div>
           </div>
         </div>
-        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(m.suggestion_free || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
+        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
       `;
 
       list.appendChild(row);
@@ -444,6 +633,31 @@ function openModal(type, value){
   const title = qs("#modal_title");
   const body = qs("#modal_body");
 
+  // ABOUT / HOW IT WORKS
+  if(type === "about"){
+    title.textContent = T.about_title || "About";
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="color:#11244b;font-weight:850;line-height:1.35">${escAttr(T.about_intro || "")}</div>
+
+        <div style="padding:12px 12px;border:1px solid rgba(43,111,242,.20);border-radius:16px;background:rgba(43,111,242,.06)">
+          <div style="font-weight:950;margin-bottom:8px">${escAttr(T.about_steps_title || "")}</div>
+          <div style="display:flex;flex-direction:column;gap:6px;color:#163261;font-weight:800">
+            <div>• ${escAttr(T.about_step1 || "")}</div>
+            <div>• ${escAttr(T.about_step2 || "")}</div>
+            <div>• ${escAttr(T.about_step3 || "")}</div>
+          </div>
+        </div>
+
+        <div style="color:rgba(11,18,32,.75);font-weight:800">${escAttr(T.about_note || "")}</div>
+      </div>
+    `;
+    back.style.display = "flex";
+    bindModalClicks();
+    return;
+  }
+
+
   // MATCH RADAR
   if(type === "match"){
     const key = value || "";
@@ -460,7 +674,7 @@ function openModal(type, value){
     const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "—";
     const riskCls = m ? riskClass(m.risk) : "med";
     const kickoff = m ? fmtTime(m.kickoff_utc) : "--:--";
-    const suggestion = m?.suggestion_free || "—";
+    const suggestion = localizeMarket(m?.suggestion_free, T) || "—";
 
     title.textContent = `${home} vs ${away}`;
 
@@ -545,7 +759,7 @@ function openModal(type, value){
           <div class="time">${fmtTime(m.kickoff_utc)}</div>
           <div>
             <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(m.suggestion_free || "—")}</b> • ${riskText}</div>
+            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(localizeMarket(m.suggestion_free, t) || "—")}</b> • ${riskText}</div>
           </div>
         </div>
       `;
@@ -646,23 +860,94 @@ function decorateLangPills(lang){
 }
 
 function ensureDateStrip(t){
-  const section = qs(".section");
-  if(!section) return null;
+  // Prefer a top-mounted strip (dashboard style), fallback to section.
+  const topHost = qs(".topbar");
   if(qs("#dateStrip")) return qs("#dateStrip");
 
-  const controls = qs(".controls");
   const strip = document.createElement("div");
   strip.className = "date-strip";
   strip.id = "dateStrip";
 
-  if(controls) section.insertBefore(strip, controls);
-  else section.appendChild(strip);
+  if(topHost){
+    const nav = qs(".topbar .nav");
+    if(nav) nav.insertBefore(strip, nav.firstChild);
+    else topHost.appendChild(strip);
+  }else{
+    const section = qs(".section");
+    if(!section) return null;
+    const controls = qs(".controls");
+    if(controls) section.insertBefore(strip, controls);
+    else section.appendChild(strip);
+  }
 
   strip.setAttribute("aria-label", t.date_filter_label || "Filtro de data");
   strip.setAttribute("data-tip", t.date_filter_tip || "Filtrar por data");
   strip.title = t.date_filter_tip || "Filtrar por data";
 
   return strip;
+}
+
+function ensureSidebar(t, lang){
+  if(qs(".app-shell")) return;
+
+  const container = qs(".container");
+  if(!container) return;
+
+  const shell = document.createElement("div");
+  shell.className = "app-shell";
+
+  const aside = document.createElement("aside");
+  aside.className = "sidebar";
+
+  const main = document.createElement("main");
+  main.className = "main";
+
+  // Move container into main
+  container.parentNode.insertBefore(shell, container);
+  main.appendChild(container);
+  shell.appendChild(aside);
+  shell.appendChild(main);
+
+  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
+  const nav = {
+    day: `/${lang}/radar/day/`,
+    week: `/${lang}/radar/week/`,
+    calendar: `/${lang}/calendar/`
+  };
+
+  const here = pageType();
+
+  aside.innerHTML = `
+    <div class="side-brand" role="banner">
+      <div class="side-logo">
+        <span class="ball">⚽</span>
+        <div>
+          <div class="side-title">RadarTips</div>
+          <div class="side-sub">${escAttr(t.sidebar_tagline || "Football radar")}</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="side-nav" aria-label="Navigation">
+      <a class="side-item ${here==="day"?"active":""}" href="${nav.day}"><span class="i">⚡</span><span>${escAttr(t.nav_day || "Daily Radar")}</span></a>
+      <a class="side-item ${here==="week"?"active":""}" href="${nav.week}"><span class="i">📅</span><span>${escAttr(t.nav_week || "Weekly Radar")}</span></a>
+      <a class="side-item ${here==="calendar"?"active":""}" href="${nav.calendar}"><span class="i">🗓️</span><span>${escAttr(t.nav_calendar || "Calendar")}</span></a>
+    </nav>
+
+    <div class="side-divider"></div>
+
+    <nav class="side-nav" aria-label="Info">
+      <a class="side-item" href="${p.how}"><span class="i">🧭</span><span>${escAttr(t.how_link || "How it works")}</span></a>
+      <a class="side-item" href="${p.about}"><span class="i">ℹ️</span><span>${escAttr(t.about_link || "About")}</span></a>
+      <a class="side-item" href="${p.contact}"><span class="i">✉️</span><span>${escAttr(t.contact_link || "Contact")}</span></a>
+    </nav>
+
+    <div class="side-divider"></div>
+
+    <div class="side-mini">
+      <div class="side-note">${escAttr((t.disclaimer || "Informational content") + " • 18+")}</div>
+    </div>
+  `;
 }
 
 function build7Days(){
@@ -677,31 +962,167 @@ function build7Days(){
   return days;
 }
 
+function localizeMarket(raw, t){
+  const s = String(raw || "").trim();
+  if(!s) return s;
+
+  const home = (t && t.word_home) || "Home";
+  const away = (t && t.word_away) || "Away";
+  const draw = (t && t.word_draw) || "Draw";
+
+  // Double chance shortcuts
+  if(/^1x\b/i.test(s)){
+    const desc = (t && t.market_desc_home_draw) || "Home or Draw";
+    return `1X (${desc})`;
+  }
+  if(/^x2\b/i.test(s)){
+    const desc = (t && t.market_desc_draw_away) || "Draw or Away";
+    return `X2 (${desc})`;
+  }
+  if(/^12\b/i.test(s)){
+    const desc = (t && t.market_desc_home_away) || "Home or Away";
+    return `12 (${desc})`;
+  }
+
+  // Draw No Bet
+  let m = s.match(/^dnb\s*(home|away)\b/i);
+  if(m){
+    const side = (m[1].toLowerCase()==="home") ? home : away;
+    const fmt = (t && t.market_dnb_fmt) || "DNB {side}";
+    return fmt.replace("{side}", side);
+  }
+
+  // Totals
+  m = s.match(/^(under|over)\s*([0-9]+(?:\.[0-9])?)\b/i);
+  if(m){
+    const n = m[2];
+    const prefix = (m[1].toLowerCase()==="under") ? ((t && t.market_under_prefix) || "Under") : ((t && t.market_over_prefix) || "Over");
+    return `${prefix} ${n}`;
+  }
+
+  // Handicap basics
+  m = s.match(/^(handicap|ah)\s*([+-]?[0-9]+(?:\.[0-9])?)\b/i);
+  if(m){
+    const n = m[2];
+    const word = (t && t.word_handicap) || "Handicap";
+    return `${word} ${n}`;
+  }
+
+  // Fallback: translate common words/phrases inside the string
+  let out = s;
+  const phraseMap = [
+    [/Home or Draw/gi, (t && t.market_desc_home_draw)],
+    [/Draw or Away/gi, (t && t.market_desc_draw_away)],
+    [/Home or Away/gi, (t && t.market_desc_home_away)],
+  ];
+  phraseMap.forEach(([rx, val])=>{ if(val) out = out.replace(rx, val); });
+
+  out = out
+    .replace(/\bHome\b/gi, home)
+    .replace(/\bAway\b/gi, away)
+    .replace(/\bDraw\b/gi, draw);
+
+  return out;
+}
+
+const THEME_KEY = "rt_theme";
+
+function getSavedTheme(){
+  try{
+    const v = localStorage.getItem(THEME_KEY);
+    if(v==="dark" || v==="light") return v;
+  }catch(e){}
+  return null;
+}
+
+function applyTheme(theme){
+  document.body.dataset.theme = theme;
+}
+
+function pickDefaultTheme(){
+  // RadarTips: dark by default (more "tips & odds" vibe)
+  return "dark";
+}
+
+function setTheme(theme, t){
+  applyTheme(theme);
+  const btn = qs("#theme_toggle");
+  if(!btn) return;
+
+  const isDark = theme === "dark";
+  const label = isDark ? ((t && t.theme_light_short) || "Light") : ((t && t.theme_dark_short) || "Dark");
+  btn.textContent = label;
+
+  const tip = isDark ? ((t && t.theme_light_tip) || "Switch to light theme") : ((t && t.theme_dark_tip) || "Switch to dark theme");
+  btn.setAttribute("data-tip", tip);
+  btn.title = tip;
+}
+
+function initThemeToggle(t){
+  const saved = getSavedTheme();
+  const theme = saved || pickDefaultTheme();
+  setTheme(theme, t);
+
+  const btn = qs("#theme_toggle");
+  if(btn && !btn.dataset.bound){
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", ()=>{
+      const cur = document.body.dataset.theme || "light";
+      const next = (cur === "dark") ? "light" : "dark";
+      try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+      setTheme(next, t);
+    });
+    btn.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        btn.click();
+      }
+    });
+  }
+}
+
 async function init(){
   LANG = pathLang() || detectLang();
   const dict = await loadJSON("/i18n/strings.json", {});
   T = dict[LANG] || dict.en;
 
+  initThemeToggle(T);
+
   setText("brand", T.brand);
   setText("disclaimer", T.disclaimer);
+
+  setText("subtitle", T.subtitle || "");
 
   setNav(LANG, T);
   decorateLangPills(LANG);
   initTooltips();
 
+  // Dashboard layout helpers (sidebar + top search + top date strip)
+  ensureSidebar(T, LANG);
+  ensureTopSearch(T);
+
   const p = pageType();
   if(p==="day"){
     setText("hero_title", T.hero_title_day);
     setText("hero_sub", T.hero_sub_day);
+    renderPitch();
     const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[]});
+  if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
+    const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
+    showUpdatingMessage(top);
+    return;
+  }
+
     renderTop3(T, radar);
   } else if(p==="week"){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
+    renderPitch();
     renderTop3(T, {highlights:[]});
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
+    renderPitch();
     renderTop3(T, {highlights:[]});
   }
 
@@ -715,6 +1136,10 @@ async function init(){
   let viewMode = "time";
   let q = "";
   const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+  if (!data || isMockDataset(data) || (Array.isArray(data.matches) && data.matches.length===0)) {
+    // Calendar can stay empty; UI will show no matches.
+  }
+
   CAL_MATCHES = data.matches || [];
   CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
 
@@ -813,6 +1238,9 @@ async function init(){
       location.href = `/${target}/${rest}`.replace(/\/+$/g, "/").replace(/\/+/g,"/");
     });
   });
+
+  // compliance footer
+  renderComplianceFooter(lang);
 
   // year
   setText("year", String(new Date().getFullYear()));
