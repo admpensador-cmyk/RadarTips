@@ -430,6 +430,12 @@ function buildCalendarMatchRow(entry, formHome, formAway, suggestion) {
     home_id: fx.teams.home.id,
     away_id: fx.teams.away.id,
 
+    home_logo: fx.teams.home.logo || null,
+    away_logo: fx.teams.away.logo || null,
+    competition_logo: fx.league.logo || null,
+    country_flag: fx.league.flag || null,
+    kickoff_day_local: String(fx.fixture.date || "").slice(0, 10),
+
     risk: riskBucket(suggestion.lose),
     suggestion_free: suggestion.market,
 
@@ -460,11 +466,17 @@ function chooseHighlights(calendarMatches) {
 
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, 3).map(x => ({
+    fixture_id: x.m.fixture_id,
     country: x.m.country,
     competition: x.m.competition,
     home: x.m.home,
     away: x.m.away,
+    home_logo: x.m.home_logo ?? null,
+    away_logo: x.m.away_logo ?? null,
+    competition_logo: x.m.competition_logo ?? null,
+    country_flag: x.m.country_flag ?? null,
     kickoff_utc: x.m.kickoff_utc,
+    kickoff_day_local: x.m.kickoff_day_local ?? String(x.m.kickoff_utc || "").slice(0, 10),
     risk: x.m.risk,
     suggestion_free: x.m.suggestion_free,
     pro_locked: true
@@ -484,11 +496,17 @@ function chooseWeekItems(calendarMatches) {
     const c = seenComp.get(k) ?? 0;
     if (c >= 3) continue; // avoid flooding same league
     out.push({
+      fixture_id: m.fixture_id,
       country: m.country,
       competition: m.competition,
       home: m.home,
       away: m.away,
+      home_logo: m.home_logo ?? null,
+      away_logo: m.away_logo ?? null,
+      competition_logo: m.competition_logo ?? null,
+      country_flag: m.country_flag ?? null,
       kickoff_utc: m.kickoff_utc,
+      kickoff_day_local: m.kickoff_day_local ?? String(m.kickoff_utc || "").slice(0, 10),
       risk: m.risk,
       suggestion_free: m.suggestion_free,
       result: "pending"
