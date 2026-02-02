@@ -28,6 +28,18 @@ const client = new ApiFootballClient({ apiKey: API_KEY });
 
 const isoDate = (d) => d.toISOString().slice(0, 10);
 
+// Local day key in configured timezone (YYYY-MM-DD)
+function dayKeyLocal(isoUtc, timeZone){
+  try{
+    const dt = new Date(isoUtc);
+    // en-CA yields YYYY-MM-DD
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone, year:'numeric', month:'2-digit', day:'2-digit' });
+    return fmt.format(dt);
+  }catch(e){
+    return String(isoUtc || '').slice(0,10);
+  }
+}
+
 // Season heuristics (works for most leagues)
 function seasonFor(rule, date = new Date()) {
   const y = date.getUTCFullYear();
@@ -419,8 +431,16 @@ async function fetchLastFixtures(teamId, leagueId, season) {
 function buildCalendarMatchRow(entry, formHome, formAway, suggestion) {
   const fx = entry.fx;
 
+  const kickoff_utc = fx.fixture.date;
+  const kickoff_day_local = dayKeyLocal(kickoff_utc, TZ);
+  const home_logo = fx.teams?.home?.logo || null;
+  const away_logo = fx.teams?.away?.logo || null;
+  const competition_logo = fx.league?.logo || null;
+  const country_flag = fx.league?.flag || null;
+
   return {
-    kickoff_utc: fx.fixture.date,
+    kickoff_utc,
+    kickoff_day_local,
     country: fx.league.country || entry.league.country,
     competition: fx.league.name || entry.league.name,
     competition_id: fx.league.id,
@@ -429,12 +449,10 @@ function buildCalendarMatchRow(entry, formHome, formAway, suggestion) {
     away: fx.teams.away.name,
     home_id: fx.teams.home.id,
     away_id: fx.teams.away.id,
-
-    home_logo: fx.teams.home.logo || null,
-    away_logo: fx.teams.away.logo || null,
-    competition_logo: fx.league.logo || null,
-    country_flag: fx.league.flag || null,
-    kickoff_day_local: String(fx.fixture.date || "").slice(0, 10),
+    home_logo,
+    away_logo,
+    competition_logo,
+    country_flag,
 
     risk: riskBucket(suggestion.lose),
     suggestion_free: suggestion.market,
@@ -466,17 +484,17 @@ function chooseHighlights(calendarMatches) {
 
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, 3).map(x => ({
-    fixture_id: x.m.fixture_id,
     country: x.m.country,
     competition: x.m.competition,
+    competition_id: x.m.competition_id,
     home: x.m.home,
     away: x.m.away,
-    home_logo: x.m.home_logo ?? null,
-    away_logo: x.m.away_logo ?? null,
-    competition_logo: x.m.competition_logo ?? null,
-    country_flag: x.m.country_flag ?? null,
+    home_logo: x.m.home_logo,
+    away_logo: x.m.away_logo,
+    competition_logo: x.m.competition_logo,
+    country_flag: x.m.country_flag,
     kickoff_utc: x.m.kickoff_utc,
-    kickoff_day_local: x.m.kickoff_day_local ?? String(x.m.kickoff_utc || "").slice(0, 10),
+    kickoff_day_local: x.m.kickoff_day_local,
     risk: x.m.risk,
     suggestion_free: x.m.suggestion_free,
     pro_locked: true
@@ -496,17 +514,17 @@ function chooseWeekItems(calendarMatches) {
     const c = seenComp.get(k) ?? 0;
     if (c >= 3) continue; // avoid flooding same league
     out.push({
-      fixture_id: m.fixture_id,
       country: m.country,
       competition: m.competition,
+      competition_id: m.competition_id,
       home: m.home,
       away: m.away,
-      home_logo: m.home_logo ?? null,
-      away_logo: m.away_logo ?? null,
-      competition_logo: m.competition_logo ?? null,
-      country_flag: m.country_flag ?? null,
+      home_logo: m.home_logo,
+      away_logo: m.away_logo,
+      competition_logo: m.competition_logo,
+      country_flag: m.country_flag,
       kickoff_utc: m.kickoff_utc,
-      kickoff_day_local: m.kickoff_day_local ?? String(m.kickoff_utc || "").slice(0, 10),
+      kickoff_day_local: m.kickoff_day_local,
       risk: m.risk,
       suggestion_free: m.suggestion_free,
       result: "pending"
