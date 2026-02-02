@@ -21,6 +21,9 @@ const DAYS = Number(cfg.days_ahead ?? 7);
 const LAST_N = Number(cfg.last_n ?? 5);
 const MAX_G = Number(cfg.max_goals_matrix ?? 6);
 
+const MAX_FIX_PER_LEAGUE = Number(cfg.max_fixtures_per_league ?? 9999);
+const MAX_FIX_TOTAL = Number(cfg.max_fixtures_total ?? 9999);
+
 const client = new ApiFootballClient({ apiKey: API_KEY });
 
 const isoDate = (d) => d.toISOString().slice(0, 10);
@@ -33,6 +36,170 @@ function seasonFor(rule, date = new Date()) {
   // europe_split: season named by start year (e.g., 2025 for 2025/26)
   return (m >= 7) ? y : (y - 1);
 }
+
+
+// Resolve config league entries that use {search,country,type} or {auto:"brazil_state_championships"}.
+// This avoids hardcoding provider-specific league IDs.
+async function resolveConfiguredLeagues(leagues, today = new Date()) {
+  const out = [];
+  const seen = new Set();
+
+  // small in-run cache for /leagues lookups
+  if (!resolveConfiguredLeagues._cache) resolveConfiguredLeagues._cache = new Map();
+  const cache = resolveConfiguredLeagues._cache;
+
+  const normalizeCountry = (c) => (c ?? "").toString().trim().toLowerCase();
+  const normalizeType = (t) => (t ?? "").toString().trim().toLowerCase();
+  const normalizeName = (n) => (n ?? "").toString().trim().toLowerCase();
+
+  function scoreCandidate(entry, item) {
+    const ln = normalizeName(item?.league?.name);
+    const cn = normalizeCountry(item?.country?.name);
+    const type = normalizeType(item?.league?.type);
+    let score = 0;
+
+    if (entry.country && cn === normalizeCountry(entry.country)) score += 6;
+    if (entry.type && type === normalizeType(entry.type)) score += 4;
+
+    // reward stronger name matches
+    const q = normalizeName(entry.search);
+    if (q && ln === q) score += 10;
+    if (q && ln.includes(q)) score += 5;
+
+    // slight preference for current seasons if present
+    const seasons = item?.seasons ?? [];
+    if (seasons.some(s => s?.current === true)) score += 1;
+
+    return score;
+  }
+
+  async function lookupBySearch(entry, season) {
+    const key = JSON.stringify({ search: entry.search, country: entry.country ?? "", type: entry.type ?? "", season: season ?? "" });
+    if (cache.has(key)) return cache.get(key);
+
+    const params = { search: entry.search };
+    if (entry.country) params.country = entry.country;
+    if (entry.type) params.type = entry.type;
+    if (season) params.season = season;
+
+    let json;
+    try {
+      json = await client.get("/leagues", params);
+    } catch (e) {
+      json = { response: [] };
+    }
+
+    let items = json.response ?? [];
+    if ((!items || items.length === 0) && season) {
+      // retry without season constraint
+      try {
+        json = await client.get("/leagues", { ...params, season: undefined });
+        items = json.response ?? [];
+      } catch (e) {
+        items = [];
+      }
+    }
+
+    // pick best candidate
+    let best = null;
+    let bestScore = -1;
+    for (const it of items) {
+      const sc = scoreCandidate(entry, it);
+      if (sc > bestScore) { bestScore = sc; best = it; }
+    }
+    cache.set(key, best);
+    return best;
+  }
+
+  async function expandBrazilStates(autoEntry) {
+    const season = autoEntry.season ?? seasonFor(autoEntry.season_rule ?? "calendar_year", today);
+    const key = `brazil_states|${season}`;
+    if (cache.has(key)) return cache.get(key);
+
+    let json;
+    try {
+      json = await client.get("/leagues", { country: "Brazil", type: "league", season });
+    } catch (e) {
+      json = { response: [] };
+    }
+
+    const items = json.response ?? [];
+    const res = [];
+    const isStateTopTier = (name) => {
+      const n = (name ?? "").toString();
+      if (!n.includes(" - ")) return false;
+      const low = n.toLowerCase();
+      // exclude national leagues/cups and obvious non-state competitions
+      if (low.includes("serie a") || low.includes("serie b") || low.includes("serie c")) return false;
+      if (low.includes("copa")) return false;
+      if (low.includes("brasileir") || low.includes("brasil")) return false;
+
+      const suffix = n.split(" - ").pop().trim().toLowerCase();
+      return suffix === "1" || suffix === "a1";
+    };
+
+    for (const it of items) {
+      const id = it?.league?.id;
+      const name = it?.league?.name;
+      if (!id || !name) continue;
+      if (!isStateTopTier(name)) continue;
+
+      const obj = {
+        league: id,
+        name,
+        country: "Brazil",
+        season_rule: "calendar_year",
+        source: "auto"
+      };
+      res.push(obj);
+    }
+
+    // stable ordering by name
+    res.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    cache.set(key, res);
+    return res;
+  }
+
+  for (const L of (leagues ?? [])) {
+    if (!L) continue;
+
+    if (typeof L.league === "number") {
+      if (!seen.has(L.league)) { out.push(L); seen.add(L.league); }
+      continue;
+    }
+
+    if (L.auto === "brazil_state_championships") {
+      const states = await expandBrazilStates(L);
+      for (const s of states) {
+        if (!seen.has(s.league)) { out.push(s); seen.add(s.league); }
+      }
+      continue;
+    }
+
+    if (L.search) {
+      const season = L.season ?? seasonFor(L.season_rule ?? "europe_split", today);
+      const best = await lookupBySearch(L, season);
+      if (best?.league?.id) {
+        const resolved = {
+          ...L,
+          league: best.league.id,
+          name: L.name ?? best.league.name,
+          country: L.country ?? best.country?.name ?? "World",
+          resolved_from: "search"
+        };
+        if (!seen.has(resolved.league)) { out.push(resolved); seen.add(resolved.league); }
+      } else {
+        console.warn("Could not resolve league:", L);
+      }
+      continue;
+    }
+
+    console.warn("Invalid league config entry (missing league/search/auto):", L);
+  }
+
+  return out;
+}
+
 
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
@@ -163,47 +330,72 @@ function computeTeamForm(fixtures, teamId) {
   };
 }
 
+
 async function fetchUpcomingFixtures() {
   const today = new Date();
   const from = isoDate(today);
   const to = isoDate(new Date(today.getTime() + (DAYS * 24 * 3600 * 1000)));
 
+  const leagues = await resolveConfiguredLeagues(cfg.leagues, today);
+
   const all = [];
-  for (const L of cfg.leagues) {
-    const season = L.season ?? seasonFor(L.season_rule, today);
-    // Prefer from/to, fallback to date loop if provider doesn't support
-    let json;
-    try {
-      json = await client.get("/fixtures", {
-        league: L.league,
-        season,
-        from,
-        to,
-        timezone: TZ
-      });
-    } catch (e) {
-      // fallback: fetch day-by-day
-      const merged = [];
-      for (let d = 0; d <= DAYS; d++) {
-        const dt = new Date(today.getTime() + d * 24 * 3600 * 1000);
-        const j = await client.get("/fixtures", { league: L.league, season, date: isoDate(dt), timezone: TZ });
-        merged.push(...(j.response ?? []));
+  for (const L of leagues) {
+    const baseSeason = L.season ?? seasonFor(L.season_rule, today);
+
+    // Try adjacent seasons when the provider's season labeling differs (e.g., split seasons).
+    const seasonsToTry = Array.from(new Set(
+      [baseSeason, baseSeason - 1, baseSeason + 1].filter((x) => Number.isFinite(x))
+    ));
+
+    let seasonUsed = baseSeason;
+    let fixtures = [];
+
+    for (const season of seasonsToTry) {
+      let json;
+      try {
+        json = await client.get("/fixtures", {
+          league: L.league,
+          season,
+          from,
+          to,
+          timezone: TZ
+        });
+      } catch (e) {
+        // fallback: fetch day-by-day
+        const merged = [];
+        for (let d = 0; d <= DAYS; d++) {
+          const dt = new Date(today.getTime() + d * 24 * 3600 * 1000);
+          const j = await client.get("/fixtures", { league: L.league, season, date: isoDate(dt), timezone: TZ });
+          merged.push(...(j.response ?? []));
+        }
+        json = { response: merged };
       }
-      json = { response: merged };
+
+      const resp = json.response ?? [];
+      if (resp.length > 0) {
+        seasonUsed = season;
+        fixtures = resp;
+        break;
+      }
     }
 
-    for (const fx of (json.response ?? [])) {
-      all.push({
-        fx,
-        league: L,
-        season
-      });
+    if (fixtures.length === 0) continue;
+
+    // Cap per-league volume (keeps API usage and payload sane)
+    fixtures = fixtures.slice(0, MAX_FIX_PER_LEAGUE);
+
+    for (const fx of fixtures) {
+      all.push({ fx, league: L, season: seasonUsed });
+      if (all.length >= MAX_FIX_TOTAL * 2) break; // soft cap; final cap after sorting
     }
+    if (all.length >= MAX_FIX_TOTAL * 2) break;
   }
+
   // sort by kickoff
   all.sort((a, b) => new Date(a.fx.fixture.date) - new Date(b.fx.fixture.date));
-  return all;
+  return all.slice(0, MAX_FIX_TOTAL);
 }
+
 
 async function fetchLastFixtures(teamId, leagueId, season) {
   // Cache in-memory to avoid repeated calls

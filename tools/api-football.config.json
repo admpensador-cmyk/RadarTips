@@ -3,53 +3,160 @@
   "days_ahead": 7,
   "last_n": 5,
   "max_goals_matrix": 6,
+  "max_fixtures_per_league": 20,
+  "max_fixtures_total": 220,
   "leagues": [
     {
-      "league": 71,
-      "name": "Brasileirão Série A",
+      "search": "Championship",
+      "country": "England",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "Ligue 2",
+      "country": "France",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "2. Bundesliga",
+      "country": "Germany",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "Serie B",
+      "country": "Italy",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "Segunda Division",
+      "country": "Spain",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "UEFA Champions League",
+      "country": "World",
+      "type": "cup",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "UEFA Europa League",
+      "country": "World",
+      "type": "cup",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "Serie A",
       "country": "Brazil",
+      "type": "league",
+      "season_rule": "calendar_year",
+      "name": "Brasileirão Série A"
+    },
+    {
+      "search": "Serie B",
+      "country": "Brazil",
+      "type": "league",
+      "season_rule": "calendar_year",
+      "name": "Brasileirão Série B"
+    },
+    {
+      "search": "Serie C",
+      "country": "Brazil",
+      "type": "league",
+      "season_rule": "calendar_year",
+      "name": "Brasileirão Série C"
+    },
+    {
+      "search": "Copa do Brasil",
+      "country": "Brazil",
+      "type": "cup",
       "season_rule": "calendar_year"
     },
     {
-      "league": 39,
-      "name": "Premier League",
-      "country": "England",
-      "season_rule": "europe_split"
+      "search": "Copa do Nordeste",
+      "country": "Brazil",
+      "type": "cup",
+      "season_rule": "calendar_year"
     },
     {
-      "league": 140,
-      "name": "LaLiga",
-      "country": "Spain",
-      "season_rule": "europe_split"
+      "auto": "brazil_state_championships",
+      "country": "Brazil",
+      "season_rule": "calendar_year",
+      "name": "Estaduais (auto)"
     },
     {
-      "league": 135,
-      "name": "Serie A",
-      "country": "Italy",
-      "season_rule": "europe_split"
-    },
-    {
-      "league": 78,
-      "name": "Bundesliga",
-      "country": "Germany",
-      "season_rule": "europe_split"
-    },
-    {
-      "league": 61,
-      "name": "Ligue 1",
-      "country": "France",
-      "season_rule": "europe_split"
-    },
-    {
-      "league": 2,
-      "name": "UEFA Champions League",
+      "search": "CONMEBOL Libertadores",
       "country": "World",
+      "type": "cup",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "CONMEBOL Sudamericana",
+      "country": "World",
+      "type": "cup",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Liga Profesional Argentina",
+      "country": "Argentina",
+      "type": "league",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Liga MX",
+      "country": "Mexico",
+      "type": "league",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Primera A",
+      "country": "Colombia",
+      "type": "league",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Primera Division",
+      "country": "Chile",
+      "type": "league",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Primera Division",
+      "country": "Uruguay",
+      "type": "league",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Primera Division",
+      "country": "Paraguay",
+      "type": "league",
+      "season_rule": "calendar_year"
+    },
+    {
+      "search": "Pro League",
+      "country": "Saudi Arabia",
+      "type": "league",
       "season_rule": "europe_split"
     },
     {
-      "league": 3,
-      "name": "UEFA Europa League",
-      "country": "World",
+      "search": "Premier League",
+      "country": "Egypt",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "Premier Division",
+      "country": "South Africa",
+      "type": "league",
+      "season_rule": "europe_split"
+    },
+    {
+      "search": "A-League",
+      "country": "Australia",
+      "type": "league",
       "season_rule": "europe_split"
     }
   ],
