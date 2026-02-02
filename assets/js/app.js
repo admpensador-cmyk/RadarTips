@@ -103,26 +103,25 @@ async function loadJSON(url, fallback){
     if(!r.ok) throw 0;
     return await r.json();
   }catch{ return fallback; }
+}
 
+// Only treat a dataset as "mock" when it explicitly declares it.
+// Never infer mock status from team names (real matches can contain any team).
 function isMockDataset(obj){
   try{
-    if (!obj) return false;
-    if (obj.meta && obj.meta.is_mock) return true;
-    const s = JSON.stringify(obj);
-    // Common demo fixtures used during UI prototyping
-    const demo = ["Arsenal","Brighton","Bahia","Flamengo","Betis","Valencia"];
-    return demo.some(n => s.includes(n));
+    return !!(obj && obj.meta && obj.meta.is_mock === true);
   }catch(e){ return false; }
 }
 
-function showUpdatingMessage(container){
+function showUpdatingMessage(container, t){
   if(!container) return;
+  const title = (t && t.updating_title) || "Updating match data…";
+  const sub = (t && t.updating_sub) || "We’re generating today’s radar. Please refresh in a few minutes.";
   container.innerHTML = `
     <div class="empty-state">
-      <div class="empty-title">Updating match data…</div>
-      <div class="empty-sub">We’re generating today’s radar. Please refresh in a few minutes.</div>
+      <div class="empty-title">${escAttr(title)}</div>
+      <div class="empty-sub">${escAttr(sub)}</div>
     </div>`;
-}
 }
 
 function setText(id, val){
@@ -1106,19 +1105,16 @@ async function init(){
     setText("hero_title", T.hero_title_day);
     setText("hero_sub", T.hero_sub_day);
     renderPitch();
-    const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[]});
-  if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
-    const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
-    showUpdatingMessage(top);
-    return;
-  }
-
-    renderTop3(T, radar);
+    const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[], matches:[]});
+    // Never abort the whole page just because the Top3 feed is empty.
+    // Calendar can still have matches.
+    renderTop3(T, (radar && !isMockDataset(radar)) ? radar : {highlights:[]});
   } else if(p==="week"){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
     renderPitch();
-    renderTop3(T, {highlights:[]});
+    const radarW = await loadJSON("/data/v1/radar_week.json", {highlights:[], matches:[]});
+    renderTop3(T, (radarW && !isMockDataset(radarW)) ? radarW : {highlights:[]});
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
@@ -1126,61 +1122,64 @@ async function init(){
     renderTop3(T, {highlights:[]});
   }
 
-  // Calendar controls always available
-  setText("calendar_title", T.calendar_title);
-  setText("calendar_sub", T.calendar_sub);
-  qs("#search").setAttribute("placeholder", T.search_placeholder);
-  qs("#btn_time").textContent = T.view_by_time;
-  qs("#btn_country").textContent = T.view_by_country;
+  // Calendar is only present on radar pages (day/week/calendar).
+  // Legal/info pages also load this script, so we must guard DOM access.
+  if(qs("#calendar")){
+    setText("calendar_title", T.calendar_title);
+    setText("calendar_sub", T.calendar_sub);
 
-  let viewMode = "time";
-  let q = "";
-  const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
-  if (!data || isMockDataset(data) || (Array.isArray(data.matches) && data.matches.length===0)) {
-    // Calendar can stay empty; UI will show no matches.
-  }
+    const searchEl = qs("#search");
+    if(searchEl) searchEl.setAttribute("placeholder", T.search_placeholder);
 
-  CAL_MATCHES = data.matches || [];
-  CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
+    const btnTime = qs("#btn_time");
+    const btnCountry = qs("#btn_country");
+    if(btnTime) btnTime.textContent = T.view_by_time;
+    if(btnCountry) btnCountry.textContent = T.view_by_country;
 
-  // Date strip
-  const strip = ensureDateStrip(T);
-  const days = build7Days();
-  let activeDate = "7d"; // default: next 7 days
-
-  function renderStrip(){
-    if(!strip) return;
-
-    const chips = [];
-
-    // 7d chip (range)
-    chips.push({key:"7d", label:(T.next7_label || "7D"), tip:(T.next7_tooltip || "Próximos 7 dias")});
-
-    for(const d of days){
-      const key = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
-      chips.push({
-        key,
-        label: fmtDateShortDDMM(d),
-        tip: fmtDateLong(d, LANG)
-      });
+    let viewMode = "time";
+    let q = "";
+    const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+    if (!data || isMockDataset(data)) {
+      // Calendar can stay empty; UI will show no matches.
     }
 
-    strip.innerHTML = chips.map(c=>{
-      const cls = (c.key === activeDate) ? "date-chip active" : "date-chip";
-      return `<button class="${cls}" type="button" data-date="${c.key}" ${tipAttr(c.tip)}>${escAttr(c.label)}</button>`;
-    }).join("");
-  }
+    CAL_MATCHES = data.matches || [];
+    CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
 
-  function rerender(){
-    qs("#btn_time").classList.toggle("active", viewMode==="time");
-    qs("#btn_country").classList.toggle("active", viewMode==="country");
-    renderCalendar(T, CAL_MATCHES, viewMode, q, activeDate);
+    // Date strip
+    const strip = ensureDateStrip(T);
+    const days = build7Days();
+    let activeDate = "7d"; // default: next 7 days
 
-    // bind open handlers after each render
-    bindOpenHandlers();
-  }
+    function renderStrip(){
+      if(!strip) return;
 
-  function bindOpenHandlers(){
+      const chips = [];
+      chips.push({key:"7d", label:(T.next7_label || "7D"), tip:(T.next7_tooltip || "Próximos 7 dias")});
+
+      for(const d of days){
+        const key = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
+        chips.push({
+          key,
+          label: fmtDateShortDDMM(d),
+          tip: fmtDateLong(d, LANG)
+        });
+      }
+
+      strip.innerHTML = chips.map(c=>{
+        const cls = (c.key === activeDate) ? "date-chip active" : "date-chip";
+        return `<button class="${cls}" type="button" data-date="${c.key}" ${tipAttr(c.tip)}>${escAttr(c.label)}</button>`;
+      }).join("");
+    }
+
+    function rerender(){
+      if(btnTime) btnTime.classList.toggle("active", viewMode==="time");
+      if(btnCountry) btnCountry.classList.toggle("active", viewMode==="country");
+      renderCalendar(T, CAL_MATCHES, viewMode, q, activeDate);
+      bindOpenHandlers();
+    }
+
+    function bindOpenHandlers(){
     // any [data-open] outside modal (cards, chips, matches)
     qsa("[data-open]").forEach(el=>{
       el.addEventListener("click", (e)=>{
@@ -1213,9 +1212,9 @@ async function init(){
     });
   }
 
-  qs("#btn_time").addEventListener("click", ()=>{ viewMode="time"; rerender(); });
-  qs("#btn_country").addEventListener("click", ()=>{ viewMode="country"; rerender(); });
-  qs("#search").addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
+    if(btnTime) btnTime.addEventListener("click", ()=>{ viewMode="time"; rerender(); });
+    if(btnCountry) btnCountry.addEventListener("click", ()=>{ viewMode="country"; rerender(); });
+    if(searchEl) searchEl.addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
 
   if(strip){
     strip.addEventListener("click", (e)=>{
@@ -1227,8 +1226,15 @@ async function init(){
     });
   }
 
-  qs("#modal_close").addEventListener("click", closeModal);
-  qs("#modal_backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+    const modalClose = qs("#modal_close");
+    const modalBackdrop = qs("#modal_backdrop");
+    if(modalClose) modalClose.addEventListener("click", closeModal);
+    if(modalBackdrop) modalBackdrop.addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+
+    renderStrip();
+    rerender();
+    bindOpenHandlers();
+  }
 
   // language switch (preserve page)
   qsa("[data-lang]").forEach(btn=>{
@@ -1240,14 +1246,11 @@ async function init(){
   });
 
   // compliance footer
-  renderComplianceFooter(lang);
+  renderComplianceFooter(LANG);
 
   // year
   setText("year", String(new Date().getFullYear()));
 
-  renderStrip();
-  rerender();
-  bindOpenHandlers();
 }
 
 document.addEventListener("DOMContentLoaded", init);
