@@ -127,11 +127,3 @@ h1{margin:0;font-size:34px;line-height:1.1}
   .grid3{grid-template-columns:1fr}
   .item{grid-template-columns: 80px 1fr}
 }
-
-/* Compliance footer */
-.footer{ padding:16px 20px; }
-.footer .foot-wrap{ display:flex; flex-direction:column; gap:10px; }
-.footer .foot-links{ display:flex; flex-wrap:wrap; gap:10px 14px; }
-.footer .foot-links a{ opacity:.9; text-decoration:none; border-bottom:1px solid transparent; }
-.footer .foot-links a:hover{ opacity:1; border-bottom-color:currentColor; }
-.footer .foot-meta{ display:flex; flex-wrap:wrap; gap:10px 14px; opacity:.85; font-size:12px; }
