@@ -23,6 +23,7 @@ jobs:
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
+          set -e
           node tools/update-data-api-football.mjs --mode=daily
 
       - name: Upload snapshots to R2 (optional, no rebuild)
@@ -31,11 +32,25 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
+          set -e
+
           if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$R2_BUCKET_NAME" ]]; then
-            npm i -g wrangler
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/calendar_7d.json" --file data/v1/calendar_7d.json --content-type application/json --account-id "$CLOUDFLARE_ACCOUNT_ID"
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/radar_day.json" --file data/v1/radar_day.json --content-type application/json --account-id "$CLOUDFLARE_ACCOUNT_ID"
-            echo "UPLOADED_R2=1" >> $GITHUB_ENV
+            npm i -g wrangler@3
+
+            # Opcional: garante que os arquivos existem antes de tentar upload
+            test -f data/v1/calendar_7d.json
+            test -f data/v1/radar_day.json
+
+            # O wrangler usa CLOUDFLARE_ACCOUNT_ID via env; NÃO passa --account-id aqui
+            wrangler r2 object put "$R2_BUCKET_NAME/v1/calendar_7d.json" \
+              --file data/v1/calendar_7d.json \
+              --content-type application/json
+
+            wrangler r2 object put "$R2_BUCKET_NAME/v1/radar_day.json" \
+              --file data/v1/radar_day.json \
+              --content-type application/json
+
+            echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
           else
             echo "Skipping R2 upload (missing Cloudflare secrets)."
           fi
@@ -43,10 +58,13 @@ jobs:
       - name: Commit & push if changed (fallback)
         if: ${{ false }}
         run: |
+          set -e
+
           if [[ "$UPLOADED_R2" == "1" ]]; then
             echo "Snapshots uploaded to R2; skipping commit to avoid Pages rebuild."
             exit 0
           fi
+
           if [[ -n "$(git status --porcelain)" ]]; then
             git config user.name "radartips-bot"
             git config user.email "radartips-bot@users.noreply.github.com"
@@ -55,8 +73,4 @@ jobs:
             git push
           else
             echo "No changes to commit."
-          fi
-
-          else
-            echo "No changes."
           fi
