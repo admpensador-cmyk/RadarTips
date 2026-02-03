@@ -2,176 +2,21 @@
   "timezone": "America/Sao_Paulo",
   "days_ahead": 7,
   "last_n": 5,
-  "max_goals_matrix": 6,
-  "max_fixtures_per_league": null,
-  "max_fixtures_total": null,
   "leagues": [
-    {
-      "search": "Championship",
-      "country": "England",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "Ligue 2",
-      "country": "France",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "2. Bundesliga",
-      "country": "Germany",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "Serie B",
-      "country": "Italy",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "Segunda Division",
-      "country": "Spain",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "UEFA Champions League",
-      "country": "World",
-      "type": "cup",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "UEFA Europa League",
-      "country": "World",
-      "type": "cup",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "Serie A",
-      "country": "Brazil",
-      "type": "league",
-      "season_rule": "calendar_year",
-      "name": "Brasileirão Série A"
-    },
-    {
-      "search": "Serie B",
-      "country": "Brazil",
-      "type": "league",
-      "season_rule": "calendar_year",
-      "name": "Brasileirão Série B"
-    },
-    {
-      "search": "Serie C",
-      "country": "Brazil",
-      "type": "league",
-      "season_rule": "calendar_year",
-      "name": "Brasileirão Série C"
-    },
-    {
-      "search": "Copa do Brasil",
-      "country": "Brazil",
-      "type": "cup",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Copa do Nordeste",
-      "country": "Brazil",
-      "type": "cup",
-      "season_rule": "calendar_year"
-    },
-    {
-      "auto": "brazil_state_championships",
-      "country": "Brazil",
-      "season_rule": "calendar_year",
-      "name": "Estaduais (auto)"
-    },
-    {
-      "search": "CONMEBOL Libertadores",
-      "country": "World",
-      "type": "cup",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "CONMEBOL Sudamericana",
-      "country": "World",
-      "type": "cup",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Liga Profesional Argentina",
-      "country": "Argentina",
-      "type": "league",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Liga MX",
-      "country": "Mexico",
-      "type": "league",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Primera A",
-      "country": "Colombia",
-      "type": "league",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Primera Division",
-      "country": "Chile",
-      "type": "league",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Primera Division",
-      "country": "Uruguay",
-      "type": "league",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Primera Division",
-      "country": "Paraguay",
-      "type": "league",
-      "season_rule": "calendar_year"
-    },
-    {
-      "search": "Pro League",
-      "country": "Saudi Arabia",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "Premier League",
-      "country": "Egypt",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "Premier Division",
-      "country": "South Africa",
-      "type": "league",
-      "season_rule": "europe_split"
-    },
-    {
-      "search": "A-League",
-      "country": "Australia",
-      "type": "league",
-      "season_rule": "europe_split"
-    }
-  ],
-  "enable_odds_for_highlights": false,
-  "odds": {
-    "bookmaker_preference": [
-      "Bet365",
-      "bet365",
-      "Betfair",
-      "Pinnacle"
-    ],
-    "markets": [
-      "1X2",
-      "Double Chance",
-      "Over/Under"
-    ]
-  }
+    { "auto": "brazil_state_championships", "season_rule": "calendar_year" },
+
+    { "search": "Serie A", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Serie B", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Copa do Brasil", "country": "Brazil", "type": "cup", "season_rule": "calendar_year" },
+
+    { "search": "Premier League", "country": "England", "type": "league", "season_rule": "europe_split" },
+    { "search": "La Liga", "country": "Spain", "type": "league", "season_rule": "europe_split" },
+    { "search": "Serie A", "country": "Italy", "type": "league", "season_rule": "europe_split" },
+    { "search": "Bundesliga", "country": "Germany", "type": "league", "season_rule": "europe_split" },
+    { "search": "Ligue 1", "country": "France", "type": "league", "season_rule": "europe_split" },
+
+    { "search": "UEFA Champions League", "country": "", "type": "cup", "season_rule": "europe_split" },
+    { "search": "UEFA Europa League", "country": "", "type": "cup", "season_rule": "europe_split" },
+    { "search": "UEFA Europa Conference League", "country": "", "type": "cup", "season_rule": "europe_split" }
+  ]
 }
