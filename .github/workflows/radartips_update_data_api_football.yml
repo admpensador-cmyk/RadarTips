@@ -3,7 +3,7 @@ name: Update RadarTips data (API-FOOTBALL)
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "10 11 * * *"
+    - cron: "10 11 * * *" # 08:10 BRT (UTC-3) ~= 11:10 UTC
 
 permissions:
   contents: write
@@ -41,16 +41,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "=== CHECK (sem vazar segredos) ==="
-          echo "R2_BUCKET_NAME=${R2_BUCKET_NAME:-<empty>}"
-          echo "ACCOUNT_ID set? $([[ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]] && echo yes || echo no)"
-          echo "TOKEN set? $([[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] && echo yes || echo no)"
-
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
             echo "Skipping R2 upload (missing Cloudflare secrets)."
             exit 0
           fi
 
+<<<<<<< HEAD
           # Fixa a versão para não mudar comportamento do nada
           npm i -g wrangler@4.62.0
           wrangler --version
@@ -63,11 +59,21 @@ jobs:
           echo "=== UPLOAD (REMOTE) ==="
           # Importante: objectPath primeiro; --remote vem como flag do comando
           wrangler r2 object put "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+=======
+          npm i -g wrangler@4
+          wrangler --version
+
+          test -f "data/v1/calendar_7d.json"
+          test -f "data/v1/radar_day.json"
+
+          # --remote precisa vir ANTES do objectPath no wrangler v4
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+>>>>>>> 091f4c0 (fix: workflow update-data)
             --file "data/v1/calendar_7d.json" \
             --content-type "application/json" \
             --remote
 
-          wrangler r2 object put "${R2_BUCKET_NAME}/v1/radar_day.json" \
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json" \
             --file "data/v1/radar_day.json" \
             --content-type "application/json" \
             --remote
@@ -85,6 +91,7 @@ jobs:
           sha256sum "data/v1/calendar_7d.json" "/tmp/r2_calendar_7d.json"
           sha256sum "data/v1/radar_day.json"  "/tmp/r2_radar_day.json"
 
+<<<<<<< HEAD
           echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
 
       - name: Commit & push if changed (fallback)
@@ -107,3 +114,8 @@ jobs:
           else
             echo "No changes to commit."
           fi
+=======
+          # Verificação objetiva (se este GET funcionar, está no R2 remoto)
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json" --file "/tmp/radar_day.json"
+          echo "OK: /tmp/radar_day.json baixado do R2 remoto"
+>>>>>>> 091f4c0 (fix: workflow update-data)
