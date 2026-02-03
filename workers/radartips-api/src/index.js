@@ -296,16 +296,16 @@ var index_default = {
   },
 
   async scheduled(event, env, ctx) {
-    const cron = event.cron || "";
-    if (cron === "* * * * *") {
-      ctx.waitUntil(cronUpdateLive(env));
-      return;
-    }
-    if (cron === "*/10 * * * *") {
-      ctx.waitUntil(cronFinalizeRecent(env));
-      return;
-    }
+  const cron = event.cron || "";
+  if (cron === "* * * * *") {
+    ctx.waitUntil(cronUpdateLive(env));
+    return;
   }
+  if (cron === "*/10 * * * *") {
+    ctx.waitUntil(cronFinalizeRecent(env));
+    return;
+  }
+}
 };
 
 export { index_default as default };
