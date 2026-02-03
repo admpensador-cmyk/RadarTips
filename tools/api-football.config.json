@@ -3,8 +3,8 @@
   "days_ahead": 7,
   "last_n": 5,
   "max_goals_matrix": 6,
-  "max_fixtures_per_league": 20,
-  "max_fixtures_total": 220,
+  "max_fixtures_per_league": null,
+  "max_fixtures_total": null,
   "leagues": [
     {
       "search": "Championship",

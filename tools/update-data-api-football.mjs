@@ -21,8 +21,8 @@ const DAYS = Number(cfg.days_ahead ?? 7);
 const LAST_N = Number(cfg.last_n ?? 5);
 const MAX_G = Number(cfg.max_goals_matrix ?? 6);
 
-const MAX_FIX_PER_LEAGUE = Number(cfg.max_fixtures_per_league ?? 9999);
-const MAX_FIX_TOTAL = Number(cfg.max_fixtures_total ?? 9999);
+const MAX_FIX_PER_LEAGUE = (cfg.max_fixtures_per_league == null) ? Infinity : Number(cfg.max_fixtures_per_league);
+const MAX_FIX_TOTAL = (cfg.max_fixtures_total == null) ? Infinity : Number(cfg.max_fixtures_total);
 
 const client = new ApiFootballClient({ apiKey: API_KEY });
 
@@ -436,19 +436,18 @@ async function fetchUpcomingFixtures(range = null) {
 
     if (fixtures.length === 0) continue;
 
-    // Cap per-league volume (keeps API usage and payload sane)
-    fixtures = fixtures.slice(0, MAX_FIX_PER_LEAGUE);
+    // No per-league cap: include all fixtures returned for the window.
+    if (Number.isFinite(MAX_FIX_PER_LEAGUE)) fixtures = fixtures.slice(0, MAX_FIX_PER_LEAGUE);
 
     for (const fx of fixtures) {
       all.push({ fx, league: L, season: seasonUsed });
-      if (all.length >= MAX_FIX_TOTAL * 2) break; // soft cap; final cap after sorting
+      // no global cap
     }
-    if (all.length >= MAX_FIX_TOTAL * 2) break;
   }
 
   // sort by kickoff
   all.sort((a, b) => new Date(a.fx.fixture.date) - new Date(b.fx.fixture.date));
-  return all.slice(0, MAX_FIX_TOTAL);
+  return Number.isFinite(MAX_FIX_TOTAL) ? all.slice(0, MAX_FIX_TOTAL) : all;
 }
 
 
