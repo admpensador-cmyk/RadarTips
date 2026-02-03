@@ -7,15 +7,15 @@ crons = ["* * * * *", "*/10 * * * *"]
 
 [vars]
 # Required: API-Football key (ApiSports)
-API_FOOTBALL_KEY = ""
+
 
 # Data snapshot version prefix inside the R2 bucket
 V1_PREFIX = "v1"
 
 [[kv_namespaces]]
-binding = "KV"
-id = "__PUT_KV_NAMESPACE_ID__"
+binding = "RADARTIPS_LIVE"
+id = "7985bdade9df416690cfd0226ebd78d2"
 
 [[r2_buckets]]
 binding = "R2"
-bucket_name = "__PUT_R2_BUCKET_NAME__"
+bucket_name = "radartips-data"
