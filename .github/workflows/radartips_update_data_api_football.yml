@@ -56,10 +56,12 @@ jobs:
           test -f "data/v1/radar_day.json"
 
           echo "=== UPLOAD (REMOTE) ==="
-          # Nota: --remote precisa vir antes do objectPath
           wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "data/v1/calendar_7d.json" --content-type "application/json"
           wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "data/v1/radar_day.json"  --content-type "application/json"
 
-          echo "=== VERIFY (LIST OBJECTS) ==="
-          # Algumas versões aceitam --remote aqui, outras não. Tentamos com e sem.
-          wrangler r2 object list --remote "${R2_BUCKET_NAME}" --prefix "v1/" || wrangler r2 object list "${R2_BUCKET_NAME}" --prefix "v1/"
+          echo "=== VERIFY (GET 1 FILE) ==="
+          # Se este GET funcionar, o objeto existe no bucket.
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/calendar_7d.json"
+          ls -la "/tmp/calendar_7d.json"
+
+          echo "Uploaded to R2 OK."
