@@ -56,6 +56,7 @@ function seasonFor(rule, date = new Date()) {
 // This avoids hardcoding provider-specific league IDs.
 async function resolveConfiguredLeagues(leagues, today = new Date()) {
   const out = [];
+  const unresolved = [];
   const seen = new Set();
 
   // small in-run cache for /leagues lookups
@@ -88,31 +89,54 @@ async function resolveConfiguredLeagues(leagues, today = new Date()) {
   }
 
   async function lookupBySearch(entry, season) {
-    const key = JSON.stringify({ search: entry.search, season: season ?? "" });
+    const key = JSON.stringify({ search: entry.search, country: entry.country ?? "", type: entry.type ?? "", season: season ?? "" });
     if (cache.has(key)) return cache.get(key);
 
     const params = { search: entry.search };
+    if (entry.country) params.country = entry.country;
+    if (entry.type) params.type = entry.type;
     if (season) params.season = season;
 
     let json;
-    try {
-      json = await client.get("/leagues", params);
-    } catch (e) {
-      json = { response: [] };
+    const baseSearch = `/leagues?search=${encodeURIComponent(entry.search)}`;
+
+    // 1) tenta com filtros (season/country/type) quando fornecidos
+    // 2) se vier vazio, relaxa (remove country/type) porque a API nem sempre usa o mesmo "country"
+    // 3) se ainda vier vazio, tenta sem season (algumas ligas retornam melhor assim)
+    const tryUrls = [];
+
+    if (season != null) {
+      const u1 = new URL(baseSearch, 'https://x.invalid');
+      u1.searchParams.set('season', String(season));
+      if (entry.country) u1.searchParams.set('country', entry.country);
+      if (entry.type) u1.searchParams.set('type', entry.type);
+      tryUrls.push(u1.pathname + u1.search);
+
+      // relaxa country/type
+      const u2 = new URL(baseSearch, 'https://x.invalid');
+      u2.searchParams.set('season', String(season));
+      tryUrls.push(u2.pathname + u2.search);
     }
 
-    let items = json.response ?? [];
-    if ((!items || items.length === 0) && season) {
-      // retry without season constraint
+    // sem season
+    const u3 = new URL(baseSearch, 'https://x.invalid');
+    if (entry.country) u3.searchParams.set('country', entry.country);
+    if (entry.type) u3.searchParams.set('type', entry.type);
+    tryUrls.push(u3.pathname + u3.search);
+
+    // relaxa tudo (apenas search)
+    tryUrls.push(baseSearch);
+
+    let lastErr = null;
+    for (const url of tryUrls) {
       try {
-        json = await client.get("/leagues", { search: entry.search });
-        items = json.response ?? [];
+        json = await client.get(url);
+        if (json?.response?.length) break;
       } catch (e) {
-        items = [];
+        lastErr = e;
       }
     }
-
-    // pick best candidate
+    if (!json?.response) throw (lastErr || new Error('API-Football: empty response'));    // pick best candidate
     let best = null;
     let bestScore = -1;
     for (const it of items) {
@@ -202,14 +226,16 @@ async function resolveConfiguredLeagues(leagues, today = new Date()) {
         if (!seen.has(resolved.league)) { out.push(resolved); seen.add(resolved.league); }
       } else {
         console.warn("Could not resolve league:", L);
+        unresolved.push(L);
       }
       continue;
     }
 
     console.warn("Invalid league config entry (missing league/search/auto):", L);
+    unresolved.push(L);
   }
 
-  return out;
+  return { resolved: out, unresolved };
 }
 
 
@@ -615,8 +641,17 @@ async function main() {
       dailyMatches.push(buildCalendarMatchRow(entry, formHome, formAway, suggestion));
     }
 
-    writeJson(path.join(OUT_DIR, "calendar_7d.json"), { generated_at_utc, matches: dailyMatches });
-    writeJson(path.join(OUT_DIR, "radar_day.json"), { generated_at_utc, highlights: chooseHighlights(dailyMatches) });
+    const meta = {
+      timezone: config.timezone,
+      competitions_configured: Array.isArray(config.competitions) ? config.competitions.length : 0,
+      leagues_resolved_count: leagues.length,
+      leagues_unresolved_count: unresolved.length,
+      unresolved,
+      resolved: leagues.map(l => ({ league: l.league, season: l.season, name: l.name, country: l.country, type: l.type })),
+    };
+
+    writeJson(path.join(OUT_DIR, "calendar_7d.json"), { generated_at_utc, meta, matches: dailyMatches });
+    writeJson(path.join(OUT_DIR, "radar_day.json"), { generated_at_utc, meta, highlights: chooseHighlights(dailyMatches) });
   }
 
   // WEEKLY: Mon..Sun (recalculated only on Monday by workflow)
