@@ -223,19 +223,65 @@ function pickTeamLogo(obj, side){
       return t.logo || t.crest || t.badge || null;
     }
   }catch(e){}
-
-  // Fallback: derive API-Sports logo URL from ids if present
-  try{
-    const idKey = (side==="home") ? ["home_id","homeId","team_home_id"] : ["away_id","awayId","team_away_id"];
-    for(const k of idKey){
-      const id = obj && obj[k];
-      if(id) return `https://media.api-sports.io/football/teams/${id}.png`;
-    }
-    // nested: { home:{id}, away:{id} }
-    const t2 = obj && obj[side];
-    if(t2 && t2.id) return `https://media.api-sports.io/football/teams/${t2.id}.png`;
-  }catch(e){}
   return null;
+}
+
+function pickCompetitionLogo(obj){
+  const cand = ["competition_logo","competitionLogo","league_logo","leagueLogo","logo_league","competition_logo_url"];
+  for(const k of cand){
+    if(obj && obj[k]) return obj[k];
+  }
+  // Fallback by id (API-Sports)
+  const id = obj && (obj.competition_id || obj.league_id || obj.leagueId);
+  if(id !== undefined && id !== null && String(id).trim() !== ""){
+    return `https://media.api-sports.io/football/leagues/${String(id).trim()}.png`;
+  }
+  return null;
+}
+
+function pickCountryFlag(obj){
+  const cand = ["country_flag","countryFlag","flag","country_flag_url"];
+  for(const k of cand){
+    if(obj && obj[k]) return obj[k];
+  }
+  // Optional fallback if an ISO2 code is present
+  const code = obj && (obj.country_code || obj.countryCode || obj.country_iso2 || obj.iso2);
+  if(code && /^[A-Za-z]{2}$/.test(String(code))){
+    return `https://media.api-sports.io/flags/${String(code).toLowerCase()}.svg`;
+  }
+
+  // Name-to-ISO2 best-effort for our target coverage
+  const name = String(obj?.country || obj?.country_name || obj?.countryName || "").trim().toLowerCase();
+  const MAP = {
+    "italy":"it",
+    "england":"gb",
+    "scotland":"gb",
+    "wales":"gb",
+    "spain":"es",
+    "france":"fr",
+    "germany":"de",
+    "brazil":"br",
+    "argentina":"ar",
+    "mexico":"mx",
+    "colombia":"co",
+    "chile":"cl",
+    "uruguay":"uy",
+    "paraguay":"py",
+    "saudi arabia":"sa",
+    "egypt":"eg",
+    "south africa":"za",
+    "australia":"au",
+  };
+  const iso = MAP[name];
+  if(iso){
+    return `https://media.api-sports.io/flags/${iso}.svg`;
+  }
+  return null;
+}
+
+function tinyImgHTML(src, alt, cls){
+  if(!src) return "";
+  return `<img class="${escAttr(cls||"")}" src="${escAttr(src)}" alt="${escAttr(alt||"")}" loading="lazy" referrerpolicy="no-referrer" />`;
 }
 
 function crestHTML(teamName, logoUrl){
@@ -704,12 +750,15 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
     for(const cg of countries){
       const countryName = cg.name || "—";
+      const cFirst = (cg.matches && cg.matches[0]) ? cg.matches[0] : null;
+      const flagUrl = pickCountryFlag(cFirst);
+      const flagHTML = flagUrl ? tinyImgHTML(flagUrl, countryName, "flag-img") : icoSpan("globe");
       const box = document.createElement("div");
       box.className = "group";
 
       box.innerHTML = `
-        <div class="group-head">
-          <div class="group-title"><span class="flag"></span><span>${escAttr(countryName)}</span></div>
+        <div class="group-head collapsible" data-collapse="country" role="button" tabindex="0" aria-expanded="true">
+          <div class="group-title"><span class="chev" aria-hidden="true"></span>${flagHTML}<span>${escAttr(countryName)}</span></div>
           <div class="group-actions">
             <span class="chip" data-open="country" data-value="${escAttr(countryName)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</span>
           </div>
@@ -731,12 +780,14 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       for(const [compRaw, ms] of map.entries()){
         const compDisp = competitionDisplay(compRaw, countryName, LANG);
         const compVal = competitionValue(ms[0] || {competition:compRaw});
+        const compLogoUrl = pickCompetitionLogo(ms[0] || null);
+        const compIcon = compLogoUrl ? tinyImgHTML(compLogoUrl, compDisp, "comp-logo") : icoSpan("trophy");
 
         const sub = document.createElement("div");
         sub.className = "subgroup";
         sub.innerHTML = `
-          <div class="subhead">
-            <div class="subtitle">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></div>
+          <div class="subhead collapsible" data-collapse="competition" role="button" tabindex="0" aria-expanded="true">
+            <div class="subtitle"><span class="chev" aria-hidden="true"></span>${compIcon}<span>${escAttr(compDisp)}</span></div>
             <div class="group-actions">
               <span class="chip" data-open="competition" data-value="${escAttr(compVal || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
             </div>
@@ -1405,6 +1456,42 @@ function injectPatchStyles(){
   .date-strip .date-chip.tomorrow{
     font-weight: 950;
   }
+
+  /* Country + competition logos (flags / league crests) */
+  .flag-img,
+  .comp-logo{
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  .group-title,
+  .subtitle{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  /* Collapsible groups (country + competition) */
+  .collapsible{
+    cursor: pointer;
+    user-select: none;
+  }
+  .chev{
+    width: 14px;
+    height: 14px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    opacity:.65;
+    transform: rotate(0deg);
+    transition: transform .16s ease;
+  }
+  .chev::before{ content: '▾'; line-height: 1; font-size: 14px; }
+  .group.collapsed .chev,
+  .subgroup.collapsed .chev{ transform: rotate(-90deg); }
+  .group.collapsed .subgroups{ display:none; }
+  .subgroup.collapsed .matches{ display:none; }
   `;
   document.head.appendChild(style);
 }
@@ -1448,7 +1535,18 @@ async function init(){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
     renderPitch();
-    renderTop3(T, {highlights:[]});
+    const week = await loadJSON("/data/v1/radar_week.json", {items:[]});
+    const items = Array.isArray(week?.items) ? week.items : [];
+    if(!week || isMockDataset(week) || items.length===0){
+      renderTop3(T, {highlights:[]});
+    } else {
+      // Weekly data uses "items"; map first 3 into the existing Top3 renderer.
+      const highlights = items.slice(0,3).map(x => ({
+        ...x,
+        pro_locked: true
+      }));
+      renderTop3(T, {highlights});
+    }
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
@@ -1542,6 +1640,30 @@ async function init(){
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
           el.click();
+        }
+      }, {once:true});
+    });
+
+    // collapsible headers (country groups + competition subgroups)
+    qsa(".collapsible[data-collapse]").forEach(el=>{
+      const handle = (e)=>{
+        // If the click is for a modal action, do nothing (those handlers stop propagation anyway)
+        if(e && e.target && e.target.closest && e.target.closest("[data-open]")) return;
+
+        const kind = el.getAttribute("data-collapse") || "";
+        const parent = (kind === "competition") ? el.closest(".subgroup") : el.closest(".group");
+        if(!parent) return;
+
+        parent.classList.toggle("collapsed");
+        const expanded = !parent.classList.contains("collapsed");
+        el.setAttribute("aria-expanded", expanded ? "true" : "false");
+      };
+
+      el.addEventListener("click", handle, {once:true});
+      el.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          handle(e);
         }
       }, {once:true});
     });
