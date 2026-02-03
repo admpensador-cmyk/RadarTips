@@ -12,10 +12,13 @@ permissions:
 jobs:
   build-data:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -24,8 +27,4 @@ jobs:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -e
-          node tools/update-data-api-football.mjs --mode=daily
-
-      - name: Upload snapshots to R2 (optional, no rebuild)
-        env:
-          CLOUDFL
+          node tools/update-data-api-football.mjs
