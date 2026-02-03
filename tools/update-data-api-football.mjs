@@ -136,7 +136,15 @@ async function resolveConfiguredLeagues(leagues, today = new Date()) {
         lastErr = e;
       }
     }
-    if (!json?.response) throw (lastErr || new Error('API-Football: empty response'));    // pick best candidate
+    // Se a API não retornar nada (ou retornar em formato inesperado), não derruba o workflow.
+    // Apenas sinaliza "não encontrado" para o chamador decidir o fallback.
+    const items = Array.isArray(json?.response) ? json.response : [];
+    if (!items.length) {
+      cache.set(key, null);
+      return null;
+    }
+
+    // pick best candidate
     let best = null;
     let bestScore = -1;
     for (const it of items) {
