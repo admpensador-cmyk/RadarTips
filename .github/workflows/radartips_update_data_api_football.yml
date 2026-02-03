@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           node tools/update-data-api-football.mjs --mode=daily
 
-      - name: Upload snapshots to R2 (remote, no rebuild)
+      - name: Upload snapshots to R2 (optional, no rebuild)
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -51,28 +51,39 @@ jobs:
             exit 0
           fi
 
-          npm i -g wrangler@4
+          # Fixa a versão para não mudar comportamento do nada
+          npm i -g wrangler@4.62.0
           wrangler --version
 
+          echo "=== CHECK FILES ==="
+          ls -la data/v1 || true
           test -f "data/v1/calendar_7d.json"
           test -f "data/v1/radar_day.json"
 
-          echo "=== UPLOAD TO REAL R2 (REMOTE) ==="
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+          echo "=== UPLOAD (REMOTE) ==="
+          # Importante: objectPath primeiro; --remote vem como flag do comando
+          wrangler r2 object put "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
             --file "data/v1/calendar_7d.json" \
-            --content-type "application/json"
+            --content-type "application/json" \
+            --remote
 
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json" \
+          wrangler r2 object put "${R2_BUCKET_NAME}/v1/radar_day.json" \
             --file "data/v1/radar_day.json" \
-            --content-type "application/json"
+            --content-type "application/json" \
+            --remote
 
-          echo "=== VERIFY ON REAL R2 (REMOTE GET) ==="
-          rm -f /tmp/calendar_7d.json /tmp/radar_day.json
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/calendar_7d.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "/tmp/radar_day.json"
+          echo "=== VERIFY (REMOTE GET + CHECKSUM) ==="
+          wrangler r2 object get "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+            --file "/tmp/r2_calendar_7d.json" \
+            --remote
 
-          echo "OK: bytes baixados do R2 real:"
-          wc -c /tmp/calendar_7d.json /tmp/radar_day.json
+          wrangler r2 object get "${R2_BUCKET_NAME}/v1/radar_day.json" \
+            --file "/tmp/r2_radar_day.json" \
+            --remote
+
+          echo "--- sha256 local vs remoto (devem bater) ---"
+          sha256sum "data/v1/calendar_7d.json" "/tmp/r2_calendar_7d.json"
+          sha256sum "data/v1/radar_day.json"  "/tmp/r2_radar_day.json"
 
           echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
 
@@ -81,8 +92,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           if [[ "${UPLOADED_R2:-0}" == "1" ]]; then
-            echo "Uploaded to R2; skipping commit to avoid Pages rebuild."
+            echo "Snapshots uploaded to R2; skipping commit to avoid Pages rebuild."
             exit 0
           fi
 
