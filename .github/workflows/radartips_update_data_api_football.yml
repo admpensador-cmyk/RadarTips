@@ -1,52 +1,25 @@
-name: Update RadarTips data (API-FOOTBALL)
-
-on:
-  workflow_dispatch: {}
-  schedule:
-    - cron: "10 11 * * *"
-
-permissions:
-  contents: write
-
-jobs:
-  build-data:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Generate JSON (API-FOOTBALL)
-        env:
-          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
-        run: |
-          set -e
-          node tools/update-data-api-football.mjs --mode=daily
-
       - name: Upload snapshots to R2 (optional, no rebuild)
+        shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
-          set -e
+          set -euo pipefail
 
-          if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$R2_BUCKET_NAME" ]]; then
-            npm i -g wrangler@4
-            wrangler --version
-            wrangler r2 bucket list
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
+            echo "Skipping R2 upload (missing Cloudflare secrets)."
+            exit 0
+          fi
 
-            test -f data/v1/calendar_7d.json
-            test -f data/v1/radar_day.json
+          npm i -g wrangler@4
+          wrangler --version
+          wrangler r2 bucket list
 
-            wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
-              --file data/v1/calendar_7d.json \
-              --content-type application/json
+          test -f data/v1/calendar_7d.json
+          test -f data/v1/radar_day.json
 
-            wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json" \
-              --file data/v1/radar_day.json \
-              --content-type application/json
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "data/v1/calendar_7d.json" --content-type "application/json"
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "data/v1/radar_day.json"  --content-type "application/json"
 
-            echo "U
+          echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
