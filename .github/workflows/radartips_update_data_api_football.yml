@@ -41,7 +41,7 @@ jobs:
           fi
 
       - name: Commit & push if changed (fallback)
-        if:false
+          if:false
         run: |
           if [[ "$UPLOADED_R2" == "1" ]]; then
             echo "Snapshots uploaded to R2; skipping commit to avoid Pages rebuild."
