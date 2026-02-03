@@ -35,18 +35,22 @@ jobs:
           set -e
 
           if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$R2_BUCKET_NAME" ]]; then
-            npm i -g wrangler@3
+            npm i -g wrangler@4
 
-            # Opcional: garante que os arquivos existem antes de tentar upload
+            # Diagnóstico útil (não vaza segredo)
+            wrangler --version
+            wrangler r2 bucket list
+
+            # Garante que os arquivos existem antes de tentar upload
             test -f data/v1/calendar_7d.json
             test -f data/v1/radar_day.json
 
-            # O wrangler usa CLOUDFLARE_ACCOUNT_ID via env; NÃO passa --account-id aqui
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/calendar_7d.json" \
+            # Upload (bucket/key)
+            wrangler r2 object put "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
               --file data/v1/calendar_7d.json \
               --content-type application/json
 
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/radar_day.json" \
+            wrangler r2 object put "${R2_BUCKET_NAME}/v1/radar_day.json" \
               --file data/v1/radar_day.json \
               --content-type application/json
 
