@@ -24,3 +24,42 @@ jobs:
         run: |
           set -e
           node tools/update-data-api-football.mjs --mode=daily
+
+      - name: Upload snapshots to R2 (optional, no rebuild)
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+
+          echo "=== CHECK (sem vazar segredos) ==="
+          echo "R2_BUCKET_NAME=${R2_BUCKET_NAME:-<empty>}"
+          echo "ACCOUNT_ID set? $([[ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]] && echo yes || echo no)"
+          echo "TOKEN set? $([[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] && echo yes || echo no)"
+
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
+            echo "Skipping R2 upload (missing Cloudflare secrets)."
+            exit 0
+          fi
+
+          npm i -g wrangler@4
+          wrangler --version
+
+          echo "=== LIST BUCKETS ==="
+          wrangler r2 bucket list
+
+          echo "=== CHECK FILES ==="
+          ls -la data/v1 || true
+          test -f "data/v1/calendar_7d.json"
+          test -f "data/v1/radar_day.json"
+
+          echo "=== UPLOAD (REMOTE) ==="
+          # Nota: --remote precisa vir antes do objectPath
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "data/v1/calendar_7d.json" --content-type "application/json"
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "data/v1/radar_day.json"  --content-type "application/json"
+
+          echo "=== VERIFY (LIST OBJECTS) ==="
+          # Algumas versões aceitam --remote aqui, outras não. Tentamos com e sem.
+          wrangler r2 object list --remote "${R2_BUCKET_NAME}" --prefix "v1/" || wrangler r2 object list "${R2_BUCKET_NAME}" --prefix "v1/"
