@@ -14,273 +14,245 @@ var BASE_FILES = [
 ];
 
 var FINAL_STATUSES = /* @__PURE__ */ new Set(["FT", "AET", "PEN"]);
-var VOID_STATUSES  = /* @__PURE__ */ new Set(["CANC", "PST", "ABD", "SUSP"]);
+var VOID_STATUSES = /* @__PURE__ */ new Set(["CANC", "PST", "ABD", "SUSP"]);
 
 function nowIso() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 __name(nowIso, "nowIso");
 
-function safeJsonParse(s) {
-  try { return JSON.parse(s); } catch { return null; }
+function safeJsonParse(text, fallback = null) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return fallback;
+  }
 }
 __name(safeJsonParse, "safeJsonParse");
 
-function uniq(arr) {
-  return [...new Set(arr)];
+function jsonResponse(data, status = 200, headers = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...JSON_HEADERS, ...headers }
+  });
 }
-__name(uniq, "uniq");
+__name(jsonResponse, "jsonResponse");
 
-// ✅ IMPORTANTÍSSIMO: pega KV mesmo que o binding se chame RADARTIPS_LIVE
-function kv(env) {
-  return env.KV || env.RADARTIPS_LIVE;
+function ok(data) {
+  return jsonResponse({ ok: true, ...data });
 }
-__name(kv, "kv");
+__name(ok, "ok");
 
-function v1Path(env, file) {
-  const p = (env.V1_PREFIX || "v1").replace(/^\/+|\/+$/g, "");
-  return `${p}/${file}`;
+function err(message, status = 400, extra = {}) {
+  return jsonResponse({ ok: false, error: message, ...extra }, status);
 }
-__name(v1Path, "v1Path");
+__name(err, "err");
 
-async function r2GetJson(env, file) {
-  const obj = await env.R2.get(v1Path(env, file));
+async function requireBindings(env) {
+  if (!env?.RADARTIPS_LIVE) {
+    console.log("KV binding missing: RADARTIPS_LIVE");
+    throw new Error("KV binding missing: RADARTIPS_LIVE");
+  }
+  if (!env?.R2) {
+    console.log("R2 binding missing: R2");
+    throw new Error("R2 binding missing: R2");
+  }
+}
+__name(requireBindings, "requireBindings");
+
+async function kvGetJson(env, key) {
+  const raw = await env.RADARTIPS_LIVE.get(key);
+  if (!raw) return null;
+  return safeJsonParse(raw, null);
+}
+__name(kvGetJson, "kvGetJson");
+
+async function kvPutJson(env, key, value, ttlSeconds) {
+  const opts = ttlSeconds ? { expirationTtl: ttlSeconds } : void 0;
+  await env.RADARTIPS_LIVE.put(key, JSON.stringify(value), opts);
+}
+__name(kvPutJson, "kvPutJson");
+
+async function r2GetJson(env, key) {
+  const obj = await env.R2.get(key);
   if (!obj) return null;
-  const txt = await obj.text();
-  return safeJsonParse(txt);
+  const text = await obj.text();
+  return safeJsonParse(text, null);
 }
 __name(r2GetJson, "r2GetJson");
 
-async function r2GetRaw(env, file) {
-  const obj = await env.R2.get(v1Path(env, file));
-  if (!obj) return null;
-  return obj;
-}
-__name(r2GetRaw, "r2GetRaw");
-
-function extractFixtureMetaFromCalendar(calendar) {
-  const meta = {};
-  const matches = calendar?.matches || [];
-  for (const m of matches) {
-    const id = m?.fixture_id ?? m?.id;
-    if (!id) continue;
-    meta[String(id)] = {
-      kickoff_utc: m.kickoff_utc || null,
-      country: m.country || null,
-      competition: m.competition || null
-    };
-  }
-  return meta;
-}
-__name(extractFixtureMetaFromCalendar, "extractFixtureMetaFromCalendar");
-
-function extractFixtureIdsFromObj(obj) {
-  const out = [];
-  if (!obj) return out;
-  const scan = /* @__PURE__ */ __name((x) => {
-    if (!x || typeof x !== "object") return;
-    if (Array.isArray(x)) return x.forEach(scan);
-    const id = x.fixture_id ?? x.id;
-    if (id) out.push(String(id));
-    for (const k2 of Object.keys(x)) scan(x[k2]);
-  }, "scan");
-  scan(obj);
-  return uniq(out);
-}
-__name(extractFixtureIdsFromObj, "extractFixtureIdsFromObj");
-
-async function getTracked(env) {
-  const KV = kv(env);
-  if (!KV) throw new Error("KV binding missing (expected KV or RADARTIPS_LIVE)");
-
-  const cached = safeJsonParse(await KV.get("tracked:v1"));
-  const ts = Number(cached?.updated_at_ms || 0);
-  const fresh = Date.now() - ts < 10 * 60 * 1e3;
-  if (cached && fresh) return cached;
-
-  const [calendar, day, week] = await Promise.all([
-    r2GetJson(env, "calendar_7d.json"),
-    r2GetJson(env, "radar_day.json"),
-    r2GetJson(env, "radar_week.json")
-  ]);
-
-  const ids = uniq([
-    ...extractFixtureIdsFromObj(calendar),
-    ...extractFixtureIdsFromObj(day),
-    ...extractFixtureIdsFromObj(week)
-  ]);
-
-  const meta = extractFixtureMetaFromCalendar(calendar);
-
-  const built = {
-    updated_at_ms: Date.now(),
-    updated_at_utc: nowIso(),
-    fixture_ids: ids,
-    meta
-  };
-
-  await KV.put("tracked:v1", JSON.stringify(built));
-  return built;
-}
-__name(getTracked, "getTracked");
-
-function normalizeLiveState(item) {
-  const fx = item?.fixture || {};
-  const teams = item?.teams || {};
-  const goals = item?.goals || {};
-  const status = fx?.status || {};
-  return {
-    fixture_id: fx?.id ?? null,
-    status_short: status?.short ?? null,
-    status_long: status?.long ?? null,
-    elapsed: status?.elapsed ?? null,
-    kickoff_utc: fx?.date ?? null,
-    goals_home: goals?.home ?? null,
-    goals_away: goals?.away ?? null,
-    updated_at_utc: nowIso(),
-    home_id: teams?.home?.id ?? null,
-    away_id: teams?.away?.id ?? null
-  };
-}
-__name(normalizeLiveState, "normalizeLiveState");
-
-async function fetchApiFootball(env, path, params) {
-  const url = new URL(`https://v3.football.api-sports.io${path}`);
-  for (const [k2, v] of Object.entries(params || {})) {
-    if (v === void 0 || v === null || v === "") continue;
-    url.searchParams.set(k2, String(v));
-  }
-  const res = await fetch(url.toString(), {
-    headers: { "x-apisports-key": env.API_FOOTBALL_KEY }
+async function r2PutJson(env, key, value) {
+  await env.R2.put(key, JSON.stringify(value), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" }
   });
-  if (!res.ok) throw new Error(`api-football ${res.status}`);
-  return await res.json();
 }
-__name(fetchApiFootball, "fetchApiFootball");
+__name(r2PutJson, "r2PutJson");
 
-async function loadStateMap(env) {
-  const KV = kv(env);
-  if (!KV) throw new Error("KV binding missing (expected KV or RADARTIPS_LIVE)");
-  return safeJsonParse(await KV.get("state:map")) || { updated_at_utc: null, states: {} };
+function isFinalStatus(status) {
+  return FINAL_STATUSES.has(status);
 }
-__name(loadStateMap, "loadStateMap");
+__name(isFinalStatus, "isFinalStatus");
 
-async function saveStateMap(env, map) {
-  const KV = kv(env);
-  if (!KV) throw new Error("KV binding missing (expected KV or RADARTIPS_LIVE)");
-  await KV.put("state:map", JSON.stringify(map));
+function isVoidStatus(status) {
+  return VOID_STATUSES.has(status);
 }
-__name(saveStateMap, "saveStateMap");
+__name(isVoidStatus, "isVoidStatus");
 
-async function cronUpdateLive(env) {
-  if (!env.API_FOOTBALL_KEY || !String(env.API_FOOTBALL_KEY).trim()) return;
-  const tracked = await getTracked(env);
-  const trackedSet = new Set(tracked.fixture_ids || []);
-  if (trackedSet.size === 0) return;
+function computeLeagueKey(fixture) {
+  const league = fixture?.league || {};
+  return `${league.id || "0"}:${league.season || "0"}`;
+}
+__name(computeLeagueKey, "computeLeagueKey");
 
-  const json = await fetchApiFootball(env, "/fixtures", { live: "all" });
-  const resp = json?.response || [];
-  const updates = {};
+function computeFixtureKey(fixture) {
+  return String(fixture?.fixture?.id || fixture?.id || "");
+}
+__name(computeFixtureKey, "computeFixtureKey");
 
-  for (const it of resp) {
-    const st = normalizeLiveState(it);
-    if (!st.fixture_id) continue;
-    const id = String(st.fixture_id);
-    if (!trackedSet.has(id)) continue;
-    updates[id] = st;
+function normalizeFixture(payload) {
+  if (!payload) return null;
+  const fixture = payload.fixture || payload;
+  const league = payload.league || payload;
+  const teams = payload.teams || payload;
+  const goals = payload.goals || payload;
+  const score = payload.score || payload;
+  const status = fixture?.status || payload?.fixture?.status || payload?.status || {};
+  return {
+    fixture: {
+      id: fixture?.id,
+      referee: fixture?.referee,
+      timezone: fixture?.timezone,
+      date: fixture?.date,
+      timestamp: fixture?.timestamp,
+      periods: fixture?.periods,
+      venue: fixture?.venue,
+      status
+    },
+    league,
+    teams,
+    goals,
+    score
+  };
+}
+__name(normalizeFixture, "normalizeFixture");
+
+async function apiFootballFetch(env, endpoint, qs = {}) {
+  const key = env.APIFOOTBALL_KEY || env.API_FOOTBALL_KEY || env.API_FOOTBALL;
+  if (!key) return null;
+
+  const base = "https://v3.football.api-sports.io";
+  const url = new URL(base + endpoint);
+  for (const [k, v] of Object.entries(qs)) {
+    if (v === void 0 || v === null || v === "") continue;
+    url.searchParams.set(k, String(v));
   }
 
-  const map = await loadStateMap(env);
-  map.updated_at_utc = nowIso();
-  map.updated_at_ms = Date.now();
-  map.states = map.states || {};
-
-  for (const [id, st] of Object.entries(updates)) {
-    map.states[id] = st;
-  }
-  await saveStateMap(env, map);
-}
-__name(cronUpdateLive, "cronUpdateLive");
-
-function parseUtc(iso) {
-  const t = Date.parse(iso);
-  return Number.isFinite(t) ? t : null;
-}
-__name(parseUtc, "parseUtc");
-
-async function cronFinalizeRecent(env) {
-  if (!env.API_FOOTBALL_KEY || !String(env.API_FOOTBALL_KEY).trim()) return;
-
-  const tracked = await getTracked(env);
-  const meta = tracked.meta || {};
-  const map = await loadStateMap(env);
-  map.states = map.states || {};
-
-  const now = Date.now();
-  const candidates = [];
-
-  for (const id of tracked.fixture_ids || []) {
-    const m = meta[id];
-    const k = parseUtc(m?.kickoff_utc);
-    if (!k) continue;
-
-    const st = map.states[id];
-    const short = String(st?.status_short || "").toUpperCase();
-    if (FINAL_STATUSES.has(short) || VOID_STATUSES.has(short)) continue;
-
-    if (now > k + 110 * 60 * 1e3 && now < k + 30 * 60 * 60 * 1e3) {
-      candidates.push(id);
+  const res = await fetch(url.toString(), {
+    headers: {
+      "x-apisports-key": key
     }
-  }
+  });
 
-  const batch = candidates.slice(0, 25);
-  if (batch.length === 0) return;
-
-  for (const id of batch) {
-    try {
-      const json = await fetchApiFootball(env, "/fixtures", { id });
-      const it = json?.response?.[0];
-      if (!it) continue;
-
-      const st = normalizeLiveState(it);
-      const short = String(st.status_short || "").toUpperCase();
-      if (FINAL_STATUSES.has(short) || VOID_STATUSES.has(short)) {
-        map.states[String(st.fixture_id)] = st;
-      }
-    } catch {}
-  }
-
-  map.updated_at_utc = nowIso();
-  map.updated_at_ms = Date.now();
-  await saveStateMap(env, map);
+  if (!res.ok) throw new Error(`api-football ${res.status}`);
+  const json = await res.json();
+  return json;
 }
-__name(cronFinalizeRecent, "cronFinalizeRecent");
+__name(apiFootballFetch, "apiFootballFetch");
+
+async function listBaseFiles(env) {
+  const out = {};
+  for (const file of BASE_FILES) {
+    const data = await r2GetJson(env, `snapshots/${file}`);
+    out[file] = data;
+  }
+  return out;
+}
+__name(listBaseFiles, "listBaseFiles");
 
 async function handleApiV1(env, pathname) {
-  if (pathname === "/api/v1/live.json") {
-    const map = await loadStateMap(env);
-    const states = Object.values(map.states || {});
-    return new Response(JSON.stringify({
-      updated_at_utc: map.updated_at_utc || null,
-      updated_at_ms: map.updated_at_ms || null,
-      states
-    }), { headers: JSON_HEADERS });
+  await requireBindings(env);
+
+  if (pathname === "/api/v1/health") {
+    return ok({ ts: nowIso() });
   }
 
-  const m = pathname.match(/^\/api\/v1\/(.+\.json)$/);
-  if (m) {
-    const file = m[1];
-    if (!BASE_FILES.includes(file)) {
-      return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: JSON_HEADERS });
-    }
-    const obj = await r2GetRaw(env, file);
-    if (!obj) return new Response(JSON.stringify({ error: "missing_snapshot" }), { status: 404, headers: JSON_HEADERS });
-    return new Response(obj.body, { headers: JSON_HEADERS });
+  if (pathname === "/api/v1/base") {
+    const data = await listBaseFiles(env);
+    return ok({ ts: nowIso(), data });
+  }
+
+  if (pathname === "/api/v1/live") {
+    const live = await kvGetJson(env, "live");
+    return ok({ ts: nowIso(), live: live || [] });
+  }
+
+  if (pathname === "/api/v1/live/state") {
+    const state = await kvGetJson(env, "live_state");
+    return ok({ ts: nowIso(), state: state || {} });
   }
 
   return null;
 }
 __name(handleApiV1, "handleApiV1");
+
+async function cronUpdateLive(env) {
+  await requireBindings(env);
+
+  const state = await kvGetJson(env, "live_state") || {};
+  const liveIds = state.liveIds || [];
+
+  if (liveIds.length === 0) {
+    await kvPutJson(env, "live", [], 120);
+    return;
+  }
+
+  const fixtures = [];
+  for (const id of liveIds) {
+    const json = await apiFootballFetch(env, "/fixtures", { id });
+    const item = json?.response?.[0];
+    if (!item) continue;
+    fixtures.push(normalizeFixture(item));
+  }
+
+  await kvPutJson(env, "live", fixtures, 120);
+}
+__name(cronUpdateLive, "cronUpdateLive");
+
+async function cronFinalizeRecent(env) {
+  await requireBindings(env);
+
+  const state = await kvGetJson(env, "live_state") || {};
+  const liveIds = state.liveIds || [];
+  if (liveIds.length === 0) return;
+
+  const stillLive = [];
+  const finalized = [];
+
+  for (const id of liveIds) {
+    const json = await apiFootballFetch(env, "/fixtures", { id });
+    const item = json?.response?.[0];
+    if (!item) continue;
+
+    const norm = normalizeFixture(item);
+    const status = norm?.fixture?.status?.short;
+
+    if (isVoidStatus(status) || isFinalStatus(status)) {
+      finalized.push(norm);
+    } else {
+      stillLive.push(id);
+    }
+  }
+
+  state.liveIds = stillLive;
+  state.lastFinalizeAt = nowIso();
+  await kvPutJson(env, "live_state", state);
+
+  if (finalized.length > 0) {
+    const key = `finalized/${Date.now()}.json`;
+    await r2PutJson(env, `snapshots/${key}`, finalized);
+  }
+}
+__name(cronFinalizeRecent, "cronFinalizeRecent");
 
 var index_default = {
   async fetch(request, env, ctx) {
@@ -296,16 +268,30 @@ var index_default = {
   },
 
   async scheduled(event, env, ctx) {
-  const cron = event.cron || "";
-  if (cron === "* * * * *") {
-    ctx.waitUntil(cronUpdateLive(env));
-    return;
+    const cron = event.cron || "";
+
+    if (cron === "* * * * *") {
+      ctx.waitUntil((async () => {
+        try {
+          await cronUpdateLive(env);
+        } catch (e) {
+          console.log("cronUpdateLive failed:", e?.message || String(e));
+        }
+      })());
+      return;
+    }
+
+    if (cron === "*/10 * * * *") {
+      ctx.waitUntil((async () => {
+        try {
+          await cronFinalizeRecent(env);
+        } catch (e) {
+          console.log("cronFinalizeRecent failed:", e?.message || String(e));
+        }
+      })());
+      return;
+    }
   }
-  if (cron === "*/10 * * * *") {
-    ctx.waitUntil(cronFinalizeRecent(env));
-    return;
-  }
-}
 };
 
 export { index_default as default };
