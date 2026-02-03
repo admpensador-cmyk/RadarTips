@@ -187,6 +187,67 @@ const ICONS = {
   arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>',
 };
 
+
+// --- Collapse state helpers (country / competition) ---
+const COLLAPSE_KEY = "rt_collapse_v1";
+let _collapseCache = null;
+
+function _loadCollapse(){
+  if(_collapseCache) return _collapseCache;
+  let st = {country:[], competition:[]};
+  try{
+    const raw = localStorage.getItem(COLLAPSE_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object"){
+        st.country = Array.isArray(obj.country) ? obj.country : [];
+        st.competition = Array.isArray(obj.competition) ? obj.competition : [];
+      }
+    }
+  }catch(e){}
+  _collapseCache = st;
+  return st;
+}
+
+function _saveCollapse(st){
+  _collapseCache = st;
+  try{ localStorage.setItem(COLLAPSE_KEY, JSON.stringify(st)); }catch(e){}
+}
+
+function _compKey(country, comp){
+  return `${String(country||"")}||${String(comp||"")}`;
+}
+
+function isCountryCollapsed(country){
+  const st = _loadCollapse();
+  return st.country.includes(String(country||""));
+}
+
+function setCountryCollapsed(country, collapsed){
+  const st = _loadCollapse();
+  const key = String(country||"");
+  const has = st.country.includes(key);
+  if(collapsed && !has) st.country.push(key);
+  if(!collapsed && has) st.country = st.country.filter(x=>x!==key);
+  _saveCollapse(st);
+}
+
+function isCompetitionCollapsed(country, comp){
+  const st = _loadCollapse();
+  const key = _compKey(country, comp);
+  return st.competition.includes(key);
+}
+
+function setCompetitionCollapsed(country, comp, collapsed){
+  const st = _loadCollapse();
+  const key = _compKey(country, comp);
+  const has = st.competition.includes(key);
+  if(collapsed && !has) st.competition.push(key);
+  if(!collapsed && has) st.competition = st.competition.filter(x=>x!==key);
+  _saveCollapse(st);
+}
+
+
 // --- Football identity helpers (lightweight crest badges) ---
 function _hashHue(str){
   let h = 0;
@@ -387,6 +448,13 @@ function setNav(lang, t){
   };
   qsa("[data-nav]").forEach(a=>{
     const k=a.getAttribute("data-nav");
+
+    // Calendar is a fixed section on Day/Week pages, so we don't need a separate Calendar tab in the topbar.
+    if(k==="calendar" && pageType()!=="calendar"){
+      a.style.display = "none";
+      return;
+    }
+
     a.href = map[k];
     a.textContent = (k==="day") ? t.nav_day : (k==="week") ? t.nav_week : t.nav_calendar;
     a.classList.toggle("active", location.pathname.startsWith(map[k]));
@@ -757,7 +825,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       box.className = "group";
 
       box.innerHTML = `
-        <div class="group-head collapsible" data-collapse="country" role="button" tabindex="0" aria-expanded="true">
+        <div class="group-head collapsible" data-collapse="country" data-key="${escAttr(countryName)}" role="button" tabindex="0" aria-expanded="true">
           <div class="group-title"><span class="chev" aria-hidden="true"></span>${flagHTML}<span>${escAttr(countryName)}</span></div>
           <div class="group-actions">
             <span class="chip" data-open="country" data-value="${escAttr(countryName)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</span>
@@ -765,6 +833,13 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
         </div>
         <div class="subgroups"></div>
       `;
+
+
+      // Apply persisted collapse state (country)
+      const _cCollapsed = isCountryCollapsed(countryName);
+      box.classList.toggle("collapsed", _cCollapsed);
+      const _cHead = box.querySelector(".group-head");
+      if(_cHead) _cHead.setAttribute("aria-expanded", _cCollapsed ? "false" : "true");
 
       const host = box.querySelector(".subgroups");
 
@@ -786,7 +861,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
         const sub = document.createElement("div");
         sub.className = "subgroup";
         sub.innerHTML = `
-          <div class="subhead collapsible" data-collapse="competition" role="button" tabindex="0" aria-expanded="true">
+          <div class="subhead collapsible" data-collapse="competition" data-country="${escAttr(countryName)}" data-key="${escAttr(compVal || compRaw)}" role="button" tabindex="0" aria-expanded="true">
             <div class="subtitle"><span class="chev" aria-hidden="true"></span>${compIcon}<span>${escAttr(compDisp)}</span></div>
             <div class="group-actions">
               <span class="chip" data-open="competition" data-value="${escAttr(compVal || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
@@ -794,6 +869,14 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
           </div>
           <div class="matches"></div>
         `;
+
+
+        // Apply persisted collapse state (competition)
+        const _compKeyVal = String(compVal || compRaw);
+        const _sCollapsed = isCompetitionCollapsed(countryName, _compKeyVal);
+        sub.classList.toggle("collapsed", _sCollapsed);
+        const _sHead = sub.querySelector(".subhead");
+        if(_sHead) _sHead.setAttribute("aria-expanded", _sCollapsed ? "false" : "true");
 
         const list = sub.querySelector(".matches");
         ms.forEach(m => list.appendChild(renderMatchRow(m, false)));
@@ -1109,30 +1192,28 @@ function decorateLangPills(lang){
 }
 
 function ensureDateStrip(t){
-  // Prefer a top-mounted strip (dashboard style), fallback to section.
-  const topHost = qs(".topbar");
+  // Always mount the strip inside the calendar section (below Radar), never inside the topbar.
   if(qs("#dateStrip")) return qs("#dateStrip");
 
   const strip = document.createElement("div");
   strip.className = "date-strip";
   strip.id = "dateStrip";
 
-  if(topHost){
-    const nav = qs(".topbar .nav");
-    if(nav) nav.insertBefore(strip, nav.firstChild);
-    else topHost.appendChild(strip);
+  const section = qs(".section");
+  const controls = qs(".section .controls");
+  const calendar = qs("#calendar");
+
+  if(controls && controls.parentElement){
+    controls.parentElement.insertBefore(strip, controls);
+  }else if(calendar && calendar.parentElement){
+    calendar.parentElement.insertBefore(strip, calendar);
+  }else if(section){
+    section.appendChild(strip);
   }else{
-    const section = qs(".section");
-    if(!section) return null;
-    const controls = qs(".controls");
-    if(controls) section.insertBefore(strip, controls);
-    else section.appendChild(strip);
+    return null;
   }
 
-  strip.setAttribute("aria-label", t.date_filter_label || "Filtro de data");
-  strip.setAttribute("data-tip", t.date_filter_tip || "Filtrar por data");
-  strip.title = t.date_filter_tip || "Filtrar por data";
-
+  strip.setAttribute("aria-label", (t && t.date_filter_label) ? t.date_filter_label : "Filtro de data");
   return strip;
 }
 
@@ -1561,6 +1642,11 @@ async function init(){
   qs("#btn_time").textContent = T.view_by_time;
   qs("#btn_country").textContent = T.view_by_country;
 
+  // UI preference: keep calendar grouped "por país / competição" (no need for extra buttons)
+  const _tog = qs(".controls .toggle");
+  if(_tog) _tog.style.display = "none";
+
+
   let viewMode = "country";
   let q = "";
   const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
@@ -1608,7 +1694,7 @@ async function init(){
     qs("#btn_country").classList.toggle("active", viewMode==="country");
     renderCalendar(T, CAL_MATCHES, viewMode, q, activeDate);
 
-    // bind open handlers after each render
+    // bind handlers after each render
     bindOpenHandlers();
   }
 
@@ -1621,7 +1707,7 @@ async function init(){
         const type = el.getAttribute("data-open");
         const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
         openModal(type, val);
-      }, {once:true});
+      });
     });
 
     // keyboard on match rows
@@ -1631,7 +1717,7 @@ async function init(){
           e.preventDefault();
           el.click();
         }
-      }, {once:true});
+      });
     });
 
     // cards as buttons
@@ -1641,7 +1727,7 @@ async function init(){
           e.preventDefault();
           el.click();
         }
-      }, {once:true});
+      });
     });
 
     // collapsible headers (country groups + competition subgroups)
@@ -1657,15 +1743,27 @@ async function init(){
         parent.classList.toggle("collapsed");
         const expanded = !parent.classList.contains("collapsed");
         el.setAttribute("aria-expanded", expanded ? "true" : "false");
+
+        // Persist collapse choice
+        try{
+          if(kind === "competition"){
+            const c = el.getAttribute("data-country") || "";
+            const k = el.getAttribute("data-key") || "";
+            setCompetitionCollapsed(c, k, !expanded);
+          }else{
+            const k = el.getAttribute("data-key") || "";
+            setCountryCollapsed(k, !expanded);
+          }
+        }catch(e){}
       };
 
-      el.addEventListener("click", handle, {once:true});
+      el.addEventListener("click", handle);
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
           handle(e);
         }
-      }, {once:true});
+      });
     });
   }
 
