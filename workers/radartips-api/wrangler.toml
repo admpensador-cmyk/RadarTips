@@ -8,3 +8,7 @@ crons = ["* * * * *"]
 [[kv_namespaces]]
 binding = "RADARTIPS_LIVE"
 id = "7985bdade9df416690cfd0226ebd78d2"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "radartips-data"
