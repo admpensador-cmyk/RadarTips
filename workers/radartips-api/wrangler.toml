@@ -1,5 +1,5 @@
-name = "radartips-api"
-main = "src/index.js" # ou src/index.ts / src/worker.js (use o que seu projeto usa)
+name = "radartips"
+main = "src/index.js"
 compatibility_date = "2026-02-03"
 
 [triggers]
