@@ -79,7 +79,7 @@ function extractFixtureIdsFromObj(obj){
 }
 
 async function getTracked(env){
-  const cached = safeJsonParse(await env.KV.get("tracked:v1"));
+  const cached = safeJsonParse(await env.RADARTIPS_LIVE.get("tracked:v1"));
   const ts = Number(cached?.updated_at_ms || 0);
   const fresh = (Date.now() - ts) < 10 * 60 * 1000; // 10 min
   if(cached && fresh) return cached;
@@ -105,7 +105,7 @@ async function getTracked(env){
     fixture_ids: ids,
     meta,
   };
-  await env.KV.put("tracked:v1", JSON.stringify(built));
+  await env.RADARTIPS_LIVE.put("tracked:v1", JSON.stringify(built));
   return built;
 }
 
@@ -144,11 +144,11 @@ async function fetchApiFootball(env, path, params){
 }
 
 async function loadStateMap(env){
-  return safeJsonParse(await env.KV.get("state:map")) || { updated_at_utc: null, states: {} };
+  return safeJsonParse(await env.RADARTIPS_LIVE.get("state:map")) || { updated_at_utc: null, states: {} };
 }
 
 async function saveStateMap(env, map){
-  await env.KV.put("state:map", JSON.stringify(map));
+  await env.RADARTIPS_LIVE.put("state:map", JSON.stringify(map));
 }
 
 async function cronUpdateLive(env){
