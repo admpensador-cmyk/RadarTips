@@ -88,12 +88,10 @@ async function resolveConfiguredLeagues(leagues, today = new Date()) {
   }
 
   async function lookupBySearch(entry, season) {
-    const key = JSON.stringify({ search: entry.search, country: entry.country ?? "", type: entry.type ?? "", season: season ?? "" });
+    const key = JSON.stringify({ search: entry.search, season: season ?? "" });
     if (cache.has(key)) return cache.get(key);
 
     const params = { search: entry.search };
-    if (entry.country) params.country = entry.country;
-    if (entry.type) params.type = entry.type;
     if (season) params.season = season;
 
     let json;
@@ -107,7 +105,7 @@ async function resolveConfiguredLeagues(leagues, today = new Date()) {
     if ((!items || items.length === 0) && season) {
       // retry without season constraint
       try {
-        json = await client.get("/leagues", { ...params, season: undefined });
+        json = await client.get("/leagues", { search: entry.search });
         items = json.response ?? [];
       } catch (e) {
         items = [];
