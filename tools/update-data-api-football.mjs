@@ -423,10 +423,11 @@ async function fetchUpcomingFixtures(range = null) {
   const to = range?.to || isoDate(new Date(today.getTime() + (DAYS * 24 * 3600 * 1000)));
   const daysSpan = Number(range?.daysSpan ?? DAYS);
 
-  const leagues = await resolveConfiguredLeagues(cfg.leagues, today);
+  const { resolved: leaguesResolved, unresolved } = await resolveConfiguredLeagues(cfg.leagues, today);
+  fetchUpcomingFixtures._leagues_meta = { resolved: leaguesResolved, unresolved };
 
   const all = [];
-  for (const L of leagues) {
+  for (const L of leaguesResolved) {
     const baseSeason = L.season ?? seasonFor(L.season_rule, today);
 
     // Try adjacent seasons when the provider's season labeling differs (e.g., split seasons).
@@ -649,13 +650,18 @@ async function main() {
       dailyMatches.push(buildCalendarMatchRow(entry, formHome, formAway, suggestion));
     }
 
+    const leaguesMeta = fetchUpcomingFixtures._leagues_meta ?? { resolved: [], unresolved: [] };
+    const leaguesResolved = Array.isArray(leaguesMeta.resolved) ? leaguesMeta.resolved : [];
+    const unresolved = Array.isArray(leaguesMeta.unresolved) ? leaguesMeta.unresolved : [];
+
     const meta = {
-      timezone: config.timezone,
-      competitions_configured: Array.isArray(config.competitions) ? config.competitions.length : 0,
-      leagues_resolved_count: leagues.length,
+      timezone: TZ,
+      days_ahead: DAYS,
+      leagues_configured_count: Array.isArray(cfg.leagues) ? cfg.leagues.length : 0,
+      leagues_resolved_count: leaguesResolved.length,
       leagues_unresolved_count: unresolved.length,
       unresolved,
-      resolved: leagues.map(l => ({ league: l.league, season: l.season, name: l.name, country: l.country, type: l.type })),
+      resolved: leaguesResolved.map(l => ({ league: l.league, season: l.season, name: l.name, country: l.country, type: l.type, source: l.source ?? l.resolved_from ?? undefined })),
     };
 
     writeJson(path.join(OUT_DIR, "calendar_7d.json"), { generated_at_utc, meta, matches: dailyMatches });
