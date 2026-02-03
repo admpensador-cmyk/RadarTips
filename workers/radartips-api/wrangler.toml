@@ -6,5 +6,5 @@ compatibility_date = "2026-02-03"
 crons = ["* * * * *"]
 
 [[kv_namespaces]]
-binding = "RADAR_LIVE"
+binding = "RADARTIPS_LIVE"
 id = "7985bdade9df416690cfd0226ebd78d2"
