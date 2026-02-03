@@ -1,16 +1,16 @@
-name: Update RadarTips data (API-FOOTBALL)
+name: Update RadarTips weekly radar (API-FOOTBALL)
 
 on:
   workflow_dispatch: {}
   schedule:
-    # 08:10 BRT (UTC-3) ~= 11:10 UTC
-    - cron: "10 11 * * *"
+    # 00:10 BRT (UTC-3) ~= 03:10 UTC (Monday)
+    - cron: "10 3 * * 1"
 
 permissions:
   contents: write
 
 jobs:
-  build-data:
+  build-weekly:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,13 +19,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate JSON (API-FOOTBALL)
+      - name: Generate JSON (weekly)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
-          node tools/update-data-api-football.mjs --mode=daily
+          node tools/update-data-api-football.mjs --mode=weekly
 
-      - name: Upload snapshots to R2 (optional, no rebuild)
+      - name: Upload weekly snapshot to R2 (optional, no rebuild)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -33,8 +33,7 @@ jobs:
         run: |
           if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$R2_BUCKET_NAME" ]]; then
             npm i -g wrangler
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/calendar_7d.json" --file data/v1/calendar_7d.json --content-type application/json --account-id "$CLOUDFLARE_ACCOUNT_ID"
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/radar_day.json" --file data/v1/radar_day.json --content-type application/json --account-id "$CLOUDFLARE_ACCOUNT_ID"
+            wrangler r2 object put "$R2_BUCKET_NAME/v1/radar_week.json" --file data/v1/radar_week.json --content-type application/json --account-id "$CLOUDFLARE_ACCOUNT_ID"
             echo "UPLOADED_R2=1" >> $GITHUB_ENV
           else
             echo "Skipping R2 upload (missing Cloudflare secrets)."
@@ -43,14 +42,14 @@ jobs:
       - name: Commit & push if changed (fallback)
         run: |
           if [[ "$UPLOADED_R2" == "1" ]]; then
-            echo "Snapshots uploaded to R2; skipping commit to avoid Pages rebuild."
+            echo "Weekly snapshot uploaded to R2; skipping commit to avoid Pages rebuild."
             exit 0
           fi
           if [[ -n "$(git status --porcelain)" ]]; then
             git config user.name "radartips-bot"
             git config user.email "radartips-bot@users.noreply.github.com"
-            git add data/v1/*.json
-            git commit -m "data: update radar (api-football)"
+            git add data/v1/radar_week.json
+            git commit -m "data: update weekly radar (api-football)"
             git push
           else
             echo "No changes."

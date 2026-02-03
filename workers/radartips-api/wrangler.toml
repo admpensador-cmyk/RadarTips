@@ -1,0 +1,21 @@
+name = "radartips-api"
+main = "src/index.js"
+compatibility_date = "2026-02-03"
+
+[triggers]
+crons = ["* * * * *", "*/10 * * * *"]
+
+[vars]
+# Required: API-Football key (ApiSports)
+API_FOOTBALL_KEY = ""
+
+# Data snapshot version prefix inside the R2 bucket
+V1_PREFIX = "v1"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "__PUT_KV_NAMESPACE_ID__"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "__PUT_R2_BUCKET_NAME__"

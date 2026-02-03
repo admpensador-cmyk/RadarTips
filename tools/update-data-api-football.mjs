@@ -26,6 +26,11 @@ const MAX_FIX_TOTAL = Number(cfg.max_fixtures_total ?? 9999);
 
 const client = new ApiFootballClient({ apiKey: API_KEY });
 
+// CLI
+const MODE = (process.argv.find(a => a.startsWith("--mode="))?.split("=")[1] || "daily").toLowerCase();
+const DO_DAILY = MODE === "daily" || MODE === "both";
+const DO_WEEKLY = MODE === "weekly" || MODE === "both";
+
 const isoDate = (d) => d.toISOString().slice(0, 10);
 function teamLogoUrl(teamId){
   if(!teamId) return null;
@@ -340,10 +345,51 @@ function computeTeamForm(fixtures, teamId) {
 }
 
 
-async function fetchUpcomingFixtures() {
+function tzOffsetMinutes(ref, tz){
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" });
+  const parts = fmt.formatToParts(ref);
+  const tzp = parts.find(p => p.type === "timeZoneName")?.value || "GMT";
+  // Examples: "GMT-3", "GMT+01:00"
+  const m = tzp.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/i);
+  if(!m) return 0;
+  const sign = (m[1] === "-") ? -1 : 1;
+  const hh = Number(m[2] || 0);
+  const mm = Number(m[3] || 0);
+  return sign * (hh * 60 + mm);
+}
+
+function tzYMD(ref, tz){
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
+  const [y,m,d] = fmt.format(ref).split("-").map(Number);
+  return { y, m, d };
+}
+
+function tzWeekday(ref, tz){
+  const wd = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(ref);
+  const map = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:7 };
+  return map[wd] || 1;
+}
+
+function weekRangeMonSun(tz, ref = new Date()){
+  const { y, m, d } = tzYMD(ref, tz);
+  const offsetMin = tzOffsetMinutes(ref, tz);
+  // UTC timestamp that corresponds to local midnight (00:00) for that date in tz
+  const localMidnightUtcMs = Date.UTC(y, m-1, d, 0, 0, 0) - offsetMin * 60 * 1000;
+  const wd = tzWeekday(ref, tz); // 1..7 (Mon..Sun)
+  const delta = wd - 1; // days since Monday
+  const startMs = localMidnightUtcMs - delta * 24 * 3600 * 1000;
+  const endMs = startMs + 6 * 24 * 3600 * 1000;
+  return {
+    start: new Date(startMs),
+    end: new Date(endMs),
+  };
+}
+
+async function fetchUpcomingFixtures(range = null) {
   const today = new Date();
-  const from = isoDate(today);
-  const to = isoDate(new Date(today.getTime() + (DAYS * 24 * 3600 * 1000)));
+  const from = range?.from || isoDate(today);
+  const to = range?.to || isoDate(new Date(today.getTime() + (DAYS * 24 * 3600 * 1000)));
+  const daysSpan = Number(range?.daysSpan ?? DAYS);
 
   const leagues = await resolveConfiguredLeagues(cfg.leagues, today);
 
@@ -372,7 +418,7 @@ async function fetchUpcomingFixtures() {
       } catch (e) {
         // fallback: fetch day-by-day
         const merged = [];
-        for (let d = 0; d <= DAYS; d++) {
+        for (let d = 0; d <= daysSpan; d++) {
           const dt = new Date(today.getTime() + d * 24 * 3600 * 1000);
           const j = await client.get("/fixtures", { league: L.league, season, date: isoDate(dt), timezone: TZ });
           merged.push(...(j.response ?? []));
@@ -534,67 +580,92 @@ function writeJson(p, obj) {
 }
 
 async function main() {
-  console.log("Fetching upcoming fixtures...");
-  const upcoming = await fetchUpcomingFixtures();
-
-  const calendarMatches = [];
-  for (const entry of upcoming) {
-    const fx = entry.fx;
-
-    // Skip if teams missing
-    if (!fx?.teams?.home?.id || !fx?.teams?.away?.id) continue;
-
-    // Get last fixtures for both teams (cached)
-    const [homeLast, awayLast] = await Promise.all([
-      fetchLastFixtures(fx.teams.home.id, fx.league.id, entry.season),
-      fetchLastFixtures(fx.teams.away.id, fx.league.id, entry.season)
-    ]);
-
-    const formHome = computeTeamForm(homeLast, fx.teams.home.id);
-    const formAway = computeTeamForm(awayLast, fx.teams.away.id);
-
-    // Strength bias: points per game from form (W=3,D=1,L=0)
-    const pts = (f) => [...f].reduce((s, ch) => s + (ch === "W" ? 3 : ch === "D" ? 1 : 0), 0);
-    const bias = (pts(formHome.form) - pts(formAway.form)) / Math.max(1, LAST_N * 3);
-
-    // Expected goals
-    const homeAttack = formHome.gf / Math.max(1, LAST_N);
-    const homeDef = formHome.ga / Math.max(1, LAST_N);
-    const awayAttack = formAway.gf / Math.max(1, LAST_N);
-    const awayDef = formAway.ga / Math.max(1, LAST_N);
-
-    const lambdaH = Math.max(0.2, ((homeAttack + awayDef) / 2) * 1.08);
-    const lambdaA = Math.max(0.2, ((awayAttack + homeDef) / 2) * 0.98);
-
-    const probs = computeProbs(lambdaH, lambdaA, MAX_G);
-    const suggestion = pickSuggestion(probs, bias);
-
-    const row = buildCalendarMatchRow(entry, formHome, formAway, suggestion);
-    calendarMatches.push(row);
-  }
-
   ensureDir(OUT_DIR);
-
   const generated_at_utc = new Date().toISOString();
 
-  // calendar_7d
-  writeJson(path.join(OUT_DIR, "calendar_7d.json"), {
-    generated_at_utc,
-    matches: calendarMatches
-  });
+  // DAILY: today..next 7 days
+  let dailyMatches = [];
+  if(DO_DAILY){
+    console.log("Fetching daily upcoming fixtures...");
+    const upcoming = await fetchUpcomingFixtures();
 
-  // radar_day (highlights)
-  writeJson(path.join(OUT_DIR, "radar_day.json"), {
-    generated_at_utc,
-    highlights: chooseHighlights(calendarMatches)
-  });
+    for (const entry of upcoming) {
+      const fx = entry.fx;
+      if (!fx?.teams?.home?.id || !fx?.teams?.away?.id) continue;
 
-  // radar_week
-  writeJson(path.join(OUT_DIR, "radar_week.json"), {
-    generated_at_utc,
-    week_scope: `${DAYS}d`,
-    items: chooseWeekItems(calendarMatches)
-  });
+      const [homeLast, awayLast] = await Promise.all([
+        fetchLastFixtures(fx.teams.home.id, fx.league.id, entry.season),
+        fetchLastFixtures(fx.teams.away.id, fx.league.id, entry.season)
+      ]);
+
+      const formHome = computeTeamForm(homeLast, fx.teams.home.id);
+      const formAway = computeTeamForm(awayLast, fx.teams.away.id);
+
+      const pts = (f) => [...f].reduce((s, ch) => s + (ch === "W" ? 3 : ch === "D" ? 1 : 0), 0);
+      const bias = (pts(formHome.form) - pts(formAway.form)) / Math.max(1, LAST_N * 3);
+
+      const homeAttack = formHome.gf / Math.max(1, LAST_N);
+      const homeDef = formHome.ga / Math.max(1, LAST_N);
+      const awayAttack = formAway.gf / Math.max(1, LAST_N);
+      const awayDef = formAway.ga / Math.max(1, LAST_N);
+
+      const lambdaH = Math.max(0.2, ((homeAttack + awayDef) / 2) * 1.08);
+      const lambdaA = Math.max(0.2, ((awayAttack + homeDef) / 2) * 0.98);
+
+      const probs = computeProbs(lambdaH, lambdaA, MAX_G);
+      const suggestion = pickSuggestion(probs, bias);
+
+      dailyMatches.push(buildCalendarMatchRow(entry, formHome, formAway, suggestion));
+    }
+
+    writeJson(path.join(OUT_DIR, "calendar_7d.json"), { generated_at_utc, matches: dailyMatches });
+    writeJson(path.join(OUT_DIR, "radar_day.json"), { generated_at_utc, highlights: chooseHighlights(dailyMatches) });
+  }
+
+  // WEEKLY: Mon..Sun (recalculated only on Monday by workflow)
+  if(DO_WEEKLY){
+    const range = weekRangeMonSun(TZ, new Date());
+    const from = isoDate(range.start);
+    const to = isoDate(range.end);
+    console.log(`Fetching weekly fixtures (Mon..Sun) from ${from} to ${to}...`);
+
+    const weeklyUpcoming = await fetchUpcomingFixtures({ from, to, daysSpan: 6 });
+
+    const weeklyMatches = [];
+    for (const entry of weeklyUpcoming) {
+      const fx = entry.fx;
+      if (!fx?.teams?.home?.id || !fx?.teams?.away?.id) continue;
+
+      const [homeLast, awayLast] = await Promise.all([
+        fetchLastFixtures(fx.teams.home.id, fx.league.id, entry.season),
+        fetchLastFixtures(fx.teams.away.id, fx.league.id, entry.season)
+      ]);
+
+      const formHome = computeTeamForm(homeLast, fx.teams.home.id);
+      const formAway = computeTeamForm(awayLast, fx.teams.away.id);
+
+      const pts = (f) => [...f].reduce((s, ch) => s + (ch === "W" ? 3 : ch === "D" ? 1 : 0), 0);
+      const bias = (pts(formHome.form) - pts(formAway.form)) / Math.max(1, LAST_N * 3);
+
+      const homeAttack = formHome.gf / Math.max(1, LAST_N);
+      const homeDef = formHome.ga / Math.max(1, LAST_N);
+      const awayAttack = formAway.gf / Math.max(1, LAST_N);
+      const awayDef = formAway.ga / Math.max(1, LAST_N);
+
+      const lambdaH = Math.max(0.2, ((homeAttack + awayDef) / 2) * 1.08);
+      const lambdaA = Math.max(0.2, ((awayAttack + homeDef) / 2) * 0.98);
+
+      const probs = computeProbs(lambdaH, lambdaA, MAX_G);
+      const suggestion = pickSuggestion(probs, bias);
+      weeklyMatches.push(buildCalendarMatchRow(entry, formHome, formAway, suggestion));
+    }
+
+    writeJson(path.join(OUT_DIR, "radar_week.json"), {
+      generated_at_utc,
+      week_scope: `${from}..${to}`,
+      items: chooseWeekItems(weeklyMatches)
+    });
+  }
 
   console.log("Done. Files written to data/v1/.");
 }

@@ -105,6 +105,152 @@ async function loadJSON(url, fallback){
   }catch{ return fallback; }
 }
 
+// Prefer Worker API (/api/v1) with automatic fallback to static files (/data/v1).
+// This enables real-time live updates without triggering Cloudflare Pages builds.
+const V1_API_BASE = "/api/v1";
+const V1_STATIC_BASE = "/data/v1";
+
+async function loadV1JSON(file, fallback){
+  // API first
+  const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
+  if(api) return api;
+  // Static fallback
+  return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
+}
+
+function _norm(str){ return String(str||"").trim().toLowerCase(); }
+
+function computeOutcomeFromSuggestion(sugg, gh, ga, statusShort){
+  const st = String(statusShort||"").toUpperCase();
+  const finalStatuses = new Set(["FT","AET","PEN"]);
+  const voidStatuses = new Set(["CANC","PST","ABD","SUSP"]);
+  if(voidStatuses.has(st)) return "void";
+  if(!finalStatuses.has(st)) return "pending";
+  const H = Number(gh); const A = Number(ga);
+  if(!Number.isFinite(H) || !Number.isFinite(A)) return "pending";
+
+  const s = _norm(sugg);
+  const total = H + A;
+
+  // Over/Under
+  let m = s.match(/(under|menos de)\s*([0-9]+(?:[\.,][0-9]+)?)/i);
+  if(m){
+    const line = Number(String(m[2]).replace(",","."));
+    if(Number.isFinite(line)) return total < line ? "green" : "red";
+  }
+  m = s.match(/(over|mais de)\s*([0-9]+(?:[\.,][0-9]+)?)/i);
+  if(m){
+    const line = Number(String(m[2]).replace(",","."));
+    if(Number.isFinite(line)) return total > line ? "green" : "red";
+  }
+
+  // Double chance / 1X / X2 / 12
+  if(s.includes("1x")) return (H >= A) ? "green" : "red";
+  if(s.includes("x2")) return (A >= H) ? "green" : "red";
+  if(s.includes("12")) return (H !== A) ? "green" : "red";
+
+  // Draw No Bet (best-effort)
+  if(s.includes("dnb") || s.includes("draw no bet")){
+    // If suggestion tells side, check it; otherwise treat as pending
+    if(s.includes("home") || s.includes("casa") || s.includes("mandante")){
+      if(H === A) return "void";
+      return (H > A) ? "green" : "red";
+    }
+    if(s.includes("away") || s.includes("fora") || s.includes("visitante")){
+      if(H === A) return "void";
+      return (A > H) ? "green" : "red";
+    }
+    // Unknown side
+    return "pending";
+  }
+
+  return "pending";
+}
+
+let _liveTimer = null;
+let _lastLiveAt = 0;
+
+async function tickLive(t){
+  const live = await loadJSON(`${V1_API_BASE}/live.json`, null);
+  if(!live || !Array.isArray(live.states)) return;
+  _lastLiveAt = Date.now();
+  applyLiveStates(live.states, t);
+}
+
+function startLivePolling(t){
+  // only once
+  if(_liveTimer) return;
+  tickLive(t);
+  _liveTimer = setInterval(()=> tickLive(t), 60_000);
+  document.addEventListener("visibilitychange", ()=>{
+    if(!document.hidden) tickLive(t);
+  });
+}
+
+function applyLiveStates(states, t){
+  for(const s of states){
+    if(!s) continue;
+    const id = String(s.fixture_id ?? s.id ?? "");
+    if(!id) continue;
+    const els = document.querySelectorAll(`[data-fixture-id="${id}"]`);
+    if(!els || els.length===0) continue;
+    for(const el of els){
+      const pill = el.querySelector("[data-live-pill]");
+      const scoreEl = el.querySelector("[data-score]");
+      const outcomeEl = el.querySelector("[data-outcome-pill]");
+      const sugg = el.getAttribute("data-sugg") || "";
+
+      const st = String(s.status_short||"").toUpperCase();
+      const elapsed = (s.elapsed ?? null);
+      const gh = s.goals_home;
+      const ga = s.goals_away;
+
+      // Score
+      if(scoreEl){
+        if(gh !== null && gh !== undefined && ga !== null && ga !== undefined){
+          scoreEl.textContent = `${gh} - ${ga}`;
+          scoreEl.hidden = false;
+        }else{
+          scoreEl.hidden = true;
+        }
+      }
+
+      // Live pill
+      if(pill){
+        pill.hidden = false;
+        pill.classList.remove("live","final","pending");
+        const isFinal = ["FT","AET","PEN"].includes(st);
+        const isLive = ["1H","2H","HT","ET","BT","P"].includes(st);
+        if(isFinal){
+          pill.classList.add("final");
+          pill.querySelector(".txt").textContent = (t.ft_label || "FT");
+        }else if(isLive){
+          pill.classList.add("live");
+          const liveTxt = (t.live_label || "LIVE");
+          pill.querySelector(".txt").textContent = (elapsed !== null && elapsed !== undefined)
+            ? `${liveTxt} ${elapsed}'`
+            : liveTxt;
+        }else{
+          pill.classList.add("pending");
+          pill.querySelector(".txt").textContent = t.pending_label || "—";
+        }
+      }
+
+      // Outcome
+      if(outcomeEl){
+        const out = computeOutcomeFromSuggestion(sugg, gh, ga, st);
+        outcomeEl.classList.remove("green","red","void","pending");
+        outcomeEl.classList.add(out);
+        if(out === "green") outcomeEl.textContent = (t.outcome_green || "GREEN");
+        else if(out === "red") outcomeEl.textContent = (t.outcome_red || "RED");
+        else if(out === "void") outcomeEl.textContent = (t.outcome_void || "VOID");
+        else outcomeEl.textContent = (t.outcome_pending || "PENDING");
+        outcomeEl.hidden = (out === "pending");
+      }
+    }
+  }
+}
+
 function isMockDataset(obj){
   try{
     return !!(obj && obj.meta && obj.meta.is_mock === true);
@@ -526,6 +672,11 @@ function renderTop3(t, data){
         <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(competitionDisplay(item.competition, item.country, LANG))}</span></span>
         <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(item.country)}</span></span>
       </div>
+      <div class="scoreline">
+        <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
+        <span class="score" data-score hidden>0 - 0</span>
+        <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
+      </div>
       <div class="meta-actions">
         <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionValue(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
         <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
@@ -539,6 +690,13 @@ function renderTop3(t, data){
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
+
+    // Live bindings
+    const _fxId = item.fixture_id ?? item.fixtureId ?? item.id ?? item.fixture ?? null;
+    if(_fxId !== null && _fxId !== undefined && String(_fxId).trim() !== ""){
+      card.setAttribute("data-fixture-id", String(_fxId));
+    }
+    card.setAttribute("data-sugg", String(item.suggestion_free || ""));
 
     const suggestion = localizeMarket(item.suggestion_free, t) || "—";
     lock.innerHTML = `
@@ -745,6 +903,13 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     row.setAttribute("title", `${t.match_radar}: ${m.home} vs ${m.away}`);
     row.setAttribute("data-tip", `${t.match_radar}: ${m.home} vs ${m.away}`);
 
+    // Live bindings
+    const _fxId = m.fixture_id ?? m.fixtureId ?? m.id ?? m.fixture ?? null;
+    if(_fxId !== null && _fxId !== undefined && String(_fxId).trim() !== ""){
+      row.setAttribute("data-fixture-id", String(_fxId));
+    }
+    row.setAttribute("data-sugg", String(m.suggestion_free || ""));
+
     const formHome = buildFormSquares(t, m.form_home_details || m.form_home_last || m.home_last || null, CAL_META.form_window);
     const formAway = buildFormSquares(t, m.form_away_details || m.form_away_last || m.away_last || null, CAL_META.form_window);
 
@@ -788,6 +953,11 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
           <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
         </div>
         ${metaChips}
+        <div class="scoreline">
+          <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
+          <span class="score" data-score hidden>0 - 0</span>
+          <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
+        </div>
         <div class="subline">
           <div>
             <div class="form" ${tipAttr(formTip)}>
@@ -1604,7 +1774,7 @@ async function init(){
     setText("hero_title", T.hero_title_day);
     setText("hero_sub", T.hero_sub_day);
     renderPitch();
-    const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[]});
+    const radar = await loadV1JSON("radar_day.json", {highlights:[]});
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
     showUpdatingMessage(top);
@@ -1616,7 +1786,7 @@ async function init(){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
     renderPitch();
-    const week = await loadJSON("/data/v1/radar_week.json", {items:[]});
+    const week = await loadV1JSON("radar_week.json", {items:[]});
     const items = Array.isArray(week?.items) ? week.items : [];
     if(!week || isMockDataset(week) || items.length===0){
       renderTop3(T, {highlights:[]});
@@ -1649,7 +1819,7 @@ async function init(){
 
   let viewMode = "country";
   let q = "";
-  const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+  const data = await loadV1JSON("calendar_7d.json", {matches:[], form_window:5, goals_window:5});
   if (!data || isMockDataset(data) || (Array.isArray(data.matches) && data.matches.length===0)) {
     // Calendar can stay empty; UI will show no matches.
   }
@@ -1701,6 +1871,8 @@ async function init(){
   function bindOpenHandlers(){
     // any [data-open] outside modal (cards, chips, matches)
     qsa("[data-open]").forEach(el=>{
+      if(el.dataset.boundOpen === "1") return;
+      el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
         // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
         e.stopPropagation();
@@ -1712,6 +1884,8 @@ async function init(){
 
     // keyboard on match rows
     qsa(".match[role='button']").forEach(el=>{
+      if(el.dataset.boundKey === "1") return;
+      el.dataset.boundKey = "1";
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
@@ -1722,6 +1896,8 @@ async function init(){
 
     // cards as buttons
     qsa(".card[data-open='match']").forEach(el=>{
+      if(el.dataset.boundCardKey === "1") return;
+      el.dataset.boundCardKey = "1";
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
@@ -1732,6 +1908,8 @@ async function init(){
 
     // collapsible headers (country groups + competition subgroups)
     qsa(".collapsible[data-collapse]").forEach(el=>{
+      if(el.dataset.boundCollapse === "1") return;
+      el.dataset.boundCollapse = "1";
       const handle = (e)=>{
         // If the click is for a modal action, do nothing (those handlers stop propagation anyway)
         if(e && e.target && e.target.closest && e.target.closest("[data-open]")) return;
@@ -1802,6 +1980,7 @@ async function init(){
   renderStrip();
   rerender();
   bindOpenHandlers();
+  startLivePolling(T);
 }
 
 document.addEventListener("DOMContentLoaded", init);
