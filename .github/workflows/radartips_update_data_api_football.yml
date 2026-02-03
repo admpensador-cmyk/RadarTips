@@ -13,6 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # 0 = não comita (evita rebuild do Pages)
+  # 1 = comita se o upload ao R2 não acontecer
   COMMIT_FALLBACK: "0"
 
 jobs:
@@ -46,7 +48,6 @@ jobs:
             exit 0
           fi
 
-<<<<<<< HEAD
           # Fixa a versão para não mudar comportamento do nada
           npm i -g wrangler@4.62.0
           wrangler --version
@@ -57,18 +58,8 @@ jobs:
           test -f "data/v1/radar_day.json"
 
           echo "=== UPLOAD (REMOTE) ==="
-          # Importante: objectPath primeiro; --remote vem como flag do comando
-          wrangler r2 object put "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
-=======
-          npm i -g wrangler@4
-          wrangler --version
-
-          test -f "data/v1/calendar_7d.json"
-          test -f "data/v1/radar_day.json"
-
-          # --remote precisa vir ANTES do objectPath no wrangler v4
+          # Mantém o --remote no comando (e também no fim), para evitar cair em "local"
           wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
->>>>>>> 091f4c0 (fix: workflow update-data)
             --file "data/v1/calendar_7d.json" \
             --content-type "application/json" \
             --remote
@@ -79,11 +70,11 @@ jobs:
             --remote
 
           echo "=== VERIFY (REMOTE GET + CHECKSUM) ==="
-          wrangler r2 object get "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
             --file "/tmp/r2_calendar_7d.json" \
             --remote
 
-          wrangler r2 object get "${R2_BUCKET_NAME}/v1/radar_day.json" \
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json" \
             --file "/tmp/r2_radar_day.json" \
             --remote
 
@@ -91,7 +82,6 @@ jobs:
           sha256sum "data/v1/calendar_7d.json" "/tmp/r2_calendar_7d.json"
           sha256sum "data/v1/radar_day.json"  "/tmp/r2_radar_day.json"
 
-<<<<<<< HEAD
           echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
 
       - name: Commit & push if changed (fallback)
@@ -106,16 +96,4 @@ jobs:
           fi
 
           if [[ -n "$(git status --porcelain)" ]]; then
-            git config user.name "radartips-bot"
-            git config user.email "radartips-bot@users.noreply.github.com"
-            git add data/v1/*.json
-            git commit -m "data: update radar (api-football)"
-            git push
-          else
-            echo "No changes to commit."
-          fi
-=======
-          # Verificação objetiva (se este GET funcionar, está no R2 remoto)
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json" --file "/tmp/radar_day.json"
-          echo "OK: /tmp/radar_day.json baixado do R2 remoto"
->>>>>>> 091f4c0 (fix: workflow update-data)
+            git config user.name
