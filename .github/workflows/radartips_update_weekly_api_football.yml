@@ -9,6 +9,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: radartips-data-weekly
+  cancel-in-progress: true
+
+env:
+  COMMIT_FALLBACK: "0"
+
 jobs:
   build-weekly:
     runs-on: ubuntu-latest
@@ -23,24 +30,39 @@ jobs:
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
+          set -e
           node tools/update-data-api-football.mjs --mode=weekly
 
       - name: Upload weekly snapshot to R2 (optional, no rebuild)
+        shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
-          if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$R2_BUCKET_NAME" ]]; then
-            npm i -g wrangler
-            wrangler r2 object put "$R2_BUCKET_NAME/v1/radar_week.json" --file data/v1/radar_week.json --content-type application/json --account-id "$CLOUDFLARE_ACCOUNT_ID"
-            echo "UPLOADED_R2=1" >> $GITHUB_ENV
-          else
+          set -euo pipefail
+
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
             echo "Skipping R2 upload (missing Cloudflare secrets)."
+            exit 0
           fi
 
+          npm i -g wrangler@4
+          wrangler --version
+
+          test -f "data/v1/radar_week.json"
+
+          wrangler r2 object put "${R2_BUCKET_NAME}/v1/radar_week.json" \
+            --file "data/v1/radar_week.json" \
+            --content-type "application/json"
+
+          echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
+
       - name: Commit & push if changed (fallback)
+        if: ${{ env.COMMIT_FALLBACK == '1' }}
+        shell: bash
         run: |
+          set -euo pipefail
           if [[ "$UPLOADED_R2" == "1" ]]; then
             echo "Weekly snapshot uploaded to R2; skipping commit to avoid Pages rebuild."
             exit 0

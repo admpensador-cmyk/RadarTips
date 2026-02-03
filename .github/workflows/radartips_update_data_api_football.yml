@@ -8,6 +8,16 @@ on:
 permissions:
   contents: write
 
+# Evita duas execuções ao mesmo tempo (e uploads concorrentes no R2)
+concurrency:
+  group: radartips-data-daily
+  cancel-in-progress: true
+
+env:
+  # 0 = não comita (evita rebuild do Pages)
+  # 1 = comita se o upload ao R2 não acontecer
+  COMMIT_FALLBACK: "0"
+
 jobs:
   build-data:
     runs-on: ubuntu-latest
@@ -44,24 +54,44 @@ jobs:
             exit 0
           fi
 
+          # Wrangler v4 (fixa a versão para não mudar o comportamento de um dia pro outro)
           npm i -g wrangler@4
           wrangler --version
 
-          echo "=== LIST BUCKETS ==="
-          wrangler r2 bucket list
-
-          echo "=== CHECK FILES ==="
-          ls -la data/v1 || true
+          # Garante que os arquivos existem
           test -f "data/v1/calendar_7d.json"
           test -f "data/v1/radar_day.json"
 
-          echo "=== UPLOAD (REMOTE) ==="
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "data/v1/calendar_7d.json" --content-type "application/json"
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "data/v1/radar_day.json"  --content-type "application/json"
+          # Upload (bucket/key)
+          # Importante: não usar --account-id aqui; o Wrangler usa CLOUDFLARE_ACCOUNT_ID via env.
+          wrangler r2 object put "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+            --file "data/v1/calendar_7d.json" \
+            --content-type "application/json"
 
-          echo "=== VERIFY (GET 1 FILE) ==="
-          # Se este GET funcionar, o objeto existe no bucket.
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/calendar_7d.json"
-          ls -la "/tmp/calendar_7d.json"
+          wrangler r2 object put "${R2_BUCKET_NAME}/v1/radar_day.json" \
+            --file "data/v1/radar_day.json" \
+            --content-type "application/json"
 
+          echo "UPLOADED_R2=1" >> "$GITHUB_ENV"
           echo "Uploaded to R2 OK."
+
+      - name: Commit & push if changed (fallback)
+        if: ${{ env.COMMIT_FALLBACK == '1' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${UPLOADED_R2:-0}" == "1" ]]; then
+            echo "Snapshots uploaded to R2; skipping commit to avoid Pages rebuild."
+            exit 0
+          fi
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "radartips-bot"
+            git config user.email "radartips-bot@users.noreply.github.com"
+            git add data/v1/*.json
+            git commit -m "data: update radar (api-football)"
+            git push
+          else
+            echo "No changes to commit."
+          fi

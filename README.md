@@ -13,25 +13,52 @@ Static multi-language site (EN/PT/ES/FR/DE) designed for:
 - Output directory: /
 
 ## Data
-Currently reads JSON from:
+The UI prefers live data from the Worker API:
+- /api/v1/radar_day.json
+- /api/v1/radar_week.json
+- /api/v1/calendar_7d.json
+
+If the Worker route is not available, it automatically falls back to static files:
 - /data/v1/radar_day.json
 - /data/v1/radar_week.json
 - /data/v1/calendar_7d.json
 
 ### Automated updates (GitHub Actions)
 
-This repo includes a daily GitHub Action that regenerates the JSON files using the **football-data.org** API.
+This repo includes two GitHub Actions that regenerate JSON using **API-FOOTBALL**:
+- Daily: `radartips_update_data_api_football.yml`
+- Weekly: `radartips_update_weekly_api_football.yml`
 
-1) Create an API token on football-data.org.
-2) In GitHub: **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `FOOTBALL_DATA_TOKEN`
-   - Value: your token
-3) (Optional) Override competitions / windows via environment variables in the workflow:
-   - `RADARTIPS_COMPETITIONS` (default: `PL,PD,SA,BL1,FL1,BSA`)
-   - `RADARTIPS_DAYS` (default: `7`)
-   - `RADARTIPS_FORM_WINDOW` (default: `5`)
+#### Required GitHub Secrets
+In GitHub: **Settings → Secrets and variables → Actions → New repository secret**
 
-After the workflow pushes updated JSON to `main`, Cloudflare Pages will deploy automatically.
+1) `APIFOOTBALL_KEY`
+   - Your API-FOOTBALL key
+
+2) R2 upload (recommended, avoids Pages rebuilds)
+   - `CLOUDFLARE_API_TOKEN` (custom token)
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - `R2_BUCKET_NAME`
+
+When R2 secrets are present, the workflow uploads JSON to:
+- `v1/calendar_7d.json`
+- `v1/radar_day.json`
+- `v1/radar_week.json`
+
+The Worker reads these objects from R2 and serves them at `/api/v1/*.json`.
+
+#### Commit fallback (optional)
+By default, workflows do **not** commit JSON back to the repo (to avoid Cloudflare Pages rebuild/deploy limits).
+If you ever want the fallback, set `COMMIT_FALLBACK=1` in the workflow env.
+
+#### Quick smoke test
+After a workflow run:
+- Open Cloudflare R2 bucket and confirm `v1/` contains the JSON files.
+- Hit the API routes in the browser:
+  - `/api/v1/calendar_7d.json`
+  - `/api/v1/radar_day.json`
+  - `/api/v1/radar_week.json`
+If those URLs return JSON, the UI should update automatically.
 
 ## Calendar schema (data/v1/calendar_7d.json)
 
