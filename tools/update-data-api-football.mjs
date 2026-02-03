@@ -454,4 +454,265 @@ async function fetchUpcomingFixtures(cfg, today = new Date()) {
       name: L.name ?? null,
       country: L.country ?? null,
       season,
-      count: trimm
+      count: trimmed.length,
+      logo: leagueLogoUrl(L.league),
+    });
+
+    all = all.concat(trimmed);
+    if (all.length >= MAX_FIX_TOTAL) break;
+  }
+
+  all = all.slice(0, MAX_FIX_TOTAL);
+
+  return { fixtures: all, leaguesMeta, unresolved };
+}
+
+function normalizeFixture(fx, leagueMetaById = {}) {
+  const fixture = fx?.fixture || {};
+  const league = fx?.league || {};
+  const teams = fx?.teams || {};
+  const goals = fx?.goals || {};
+  const st = fixture?.status || {};
+
+  const leagueId = league?.id ?? null;
+  const leagueMeta = leagueId ? leagueMetaById[String(leagueId)] : null;
+
+  return {
+    fixture_id: fixture?.id ?? null,
+    kickoff_utc: fixture?.date ?? null,
+    timestamp: fixture?.timestamp ?? null,
+    status_short: st?.short ?? null,
+    status_long: st?.long ?? null,
+    elapsed: st?.elapsed ?? null,
+
+    country: league?.country ?? leagueMeta?.country ?? null,
+    competition: league?.name ?? leagueMeta?.name ?? null,
+    league_id: leagueId,
+    league_logo: leagueLogoUrl(leagueId),
+
+    home_id: teams?.home?.id ?? null,
+    away_id: teams?.away?.id ?? null,
+    home: teams?.home?.name ?? null,
+    away: teams?.away?.name ?? null,
+    home_logo: teamLogoUrl(teams?.home?.id),
+    away_logo: teamLogoUrl(teams?.away?.id),
+
+    goals_home: goals?.home ?? null,
+    goals_away: goals?.away ?? null,
+  };
+}
+
+async function buildCalendarSnapshot() {
+  const today = new Date();
+  const { fixtures, leaguesMeta } = await fetchUpcomingFixtures(cfg, today);
+
+  const metaById = {};
+  for (const m of leaguesMeta) metaById[String(m.league)] = m;
+
+  const matches = fixtures
+    .map((fx) => normalizeFixture(fx, metaById))
+    .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+
+  return {
+    generated_at_utc: new Date().toISOString(),
+    days: DAYS,
+    leagues: leaguesMeta,
+    matches,
+    form_window: LAST_N,
+    goals_window: LAST_N,
+  };
+}
+
+function groupBy(arr, keyFn) {
+  const m = new Map();
+  for (const x of arr) {
+    const k = keyFn(x);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(x);
+  }
+  return m;
+}
+
+function computeTeamForm(fixtures, teamId) {
+  const played = fixtures
+    .filter((fx) => {
+      const f = fx?.fixture || {};
+      const st = f?.status?.short;
+      if (!["FT", "AET", "PEN"].includes(st)) return false;
+      const h = fx?.teams?.home?.id;
+      const a = fx?.teams?.away?.id;
+      return h === teamId || a === teamId;
+    })
+    .sort((a, b) => (b?.fixture?.timestamp ?? 0) - (a?.fixture?.timestamp ?? 0))
+    .slice(0, LAST_N);
+
+  let pts = 0;
+  for (const fx of played) {
+    const h = fx?.teams?.home?.id;
+    const a = fx?.teams?.away?.id;
+    const gh = fx?.goals?.home ?? 0;
+    const ga = fx?.goals?.away ?? 0;
+
+    if (h === teamId) {
+      if (gh > ga) pts += 3;
+      else if (gh === ga) pts += 1;
+    } else if (a === teamId) {
+      if (ga > gh) pts += 3;
+      else if (ga === gh) pts += 1;
+    }
+  }
+
+  return { n: played.length, points: pts };
+}
+
+function computeAvgGoals(fixtures, teamId) {
+  const played = fixtures
+    .filter((fx) => {
+      const st = fx?.fixture?.status?.short;
+      if (!["FT", "AET", "PEN"].includes(st)) return false;
+      const h = fx?.teams?.home?.id;
+      const a = fx?.teams?.away?.id;
+      return h === teamId || a === teamId;
+    })
+    .sort((a, b) => (b?.fixture?.timestamp ?? 0) - (a?.fixture?.timestamp ?? 0))
+    .slice(0, LAST_N);
+
+  const scored = [];
+  const conceded = [];
+
+  for (const fx of played) {
+    const h = fx?.teams?.home?.id;
+    const a = fx?.teams?.away?.id;
+    const gh = fx?.goals?.home ?? 0;
+    const ga = fx?.goals?.away ?? 0;
+
+    if (h === teamId) {
+      scored.push(gh);
+      conceded.push(ga);
+    } else if (a === teamId) {
+      scored.push(ga);
+      conceded.push(gh);
+    }
+  }
+
+  return {
+    n: played.length,
+    scored: avg(scored) ?? 0,
+    conceded: avg(conceded) ?? 0,
+  };
+}
+
+function buildHighlights(calendar) {
+  const matches = calendar.matches || [];
+  const upcoming = matches.filter(
+    (m) => m.status_short === "NS" || m.status_short === "TBD"
+  );
+
+  const byLeague = groupBy(upcoming, (m) => String(m.league_id || "0"));
+
+  const highlights = [];
+  for (const [leagueId, arr] of byLeague.entries()) {
+    for (const m of arr.slice(0, 8)) {
+      const fx = calendar._fixturesRaw?.get(String(m.fixture_id));
+      // fallback minimal stats
+      const homeForm = { n: 0, points: 0 };
+      const awayForm = { n: 0, points: 0 };
+      const homeGoals = { n: 0, scored: 0, conceded: 0 };
+      const awayGoals = { n: 0, scored: 0, conceded: 0 };
+
+      const lambdaH = Math.max(0.2, (homeGoals.scored + awayGoals.conceded) / 2);
+      const lambdaA = Math.max(0.2, (awayGoals.scored + homeGoals.conceded) / 2);
+
+      const probs = computeProbs(lambdaH, lambdaA, MAX_G);
+      const strengthBias = (homeForm.points - awayForm.points) / Math.max(1, LAST_N * 3);
+
+      const sug = pickSuggestion(probs, strengthBias);
+      const lose = sug.lose;
+
+      highlights.push({
+        fixture_id: m.fixture_id,
+        kickoff_utc: m.kickoff_utc,
+        country: m.country,
+        competition: m.competition,
+        league_id: m.league_id,
+        league_logo: m.league_logo,
+        home: m.home,
+        away: m.away,
+        home_logo: m.home_logo,
+        away_logo: m.away_logo,
+        market: sug.market,
+        lose_prob: Number(lose.toFixed(3)),
+        win_prob: Number((1 - lose).toFixed(3)),
+        risk: riskBucket(lose),
+        pro_locked: lose > 0.45,
+      });
+    }
+  }
+
+  highlights.sort((a, b) => a.lose_prob - b.lose_prob);
+  return highlights.slice(0, 60);
+}
+
+async function buildDailyRadar() {
+  const calendar = await buildCalendarSnapshot();
+
+  // keep raw fixtures for possible future enrich; map by fixture id
+  calendar._fixturesRaw = new Map();
+
+  const highlights = buildHighlights(calendar);
+
+  // strip internal raw
+  delete calendar._fixturesRaw;
+
+  return {
+    generated_at_utc: new Date().toISOString(),
+    highlights,
+  };
+}
+
+async function buildWeeklyRadar() {
+  const today = new Date();
+  const { fixtures, leaguesMeta } = await fetchUpcomingFixtures(cfg, today);
+
+  const metaById = {};
+  for (const m of leaguesMeta) metaById[String(m.league)] = m;
+
+  const matches = fixtures
+    .map((fx) => normalizeFixture(fx, metaById))
+    .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+
+  // weekly items: simple list (locked by default)
+  const items = matches.slice(0, 200).map((m) => ({
+    ...m,
+    pro_locked: true,
+  }));
+
+  return {
+    generated_at_utc: new Date().toISOString(),
+    items,
+  };
+}
+
+async function main() {
+  ensureDir(OUT_DIR);
+
+  if (DO_DAILY) {
+    const cal = await buildCalendarSnapshot();
+    const day = await buildDailyRadar();
+
+    writeJson(path.join(OUT_DIR, "calendar_7d.json"), cal);
+    writeJson(path.join(OUT_DIR, "radar_day.json"), day);
+    console.log("Wrote daily snapshots:", path.join(OUT_DIR, "calendar_7d.json"), path.join(OUT_DIR, "radar_day.json"));
+  }
+
+  if (DO_WEEKLY) {
+    const week = await buildWeeklyRadar();
+    writeJson(path.join(OUT_DIR, "radar_week.json"), week);
+    console.log("Wrote weekly snapshot:", path.join(OUT_DIR, "radar_week.json"));
+  }
+}
+
+main().catch((e) => {
+  console.error("FAILED:", e?.stack || e);
+  process.exit(2);
+});
