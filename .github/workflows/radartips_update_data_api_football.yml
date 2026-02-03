@@ -41,7 +41,7 @@ jobs:
           fi
 
       - name: Commit & push if changed (fallback)
-          if:false
+        if: ${{ false }}
         run: |
           if [[ "$UPLOADED_R2" == "1" ]]; then
             echo "Snapshots uploaded to R2; skipping commit to avoid Pages rebuild."
@@ -53,6 +53,10 @@ jobs:
             git add data/v1/*.json
             git commit -m "data: update radar (api-football)"
             git push
+          else
+            echo "No changes to commit."
+          fi
+
           else
             echo "No changes."
           fi
