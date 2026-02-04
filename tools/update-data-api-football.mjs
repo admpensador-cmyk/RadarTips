@@ -7,16 +7,14 @@
  *  - data/v1/radar_day.json
  *  - data/v1/radar_week.json (placeholder, safe)
  *
- * Design goal:
- *  - Follow API-Football v3 flow: resolve league via /leagues (current=true) then fetch fixtures via /fixtures (league+season).
- *  - Output schema compatible with assets/app.js
+ * Keeps: form/gols enrichment.
+ * Fix: Detect API JSON errors (even when HTTP 200) + /status smoke test.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-
-const API_BASE = "https://v3.football.api-sports.io";
+import { ApiFootballClient } from "./api-football-client.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
@@ -34,6 +32,8 @@ if (!KEY) {
   console.error("Missing API key. Set APIFOOTBALL_KEY (or API_FOOTBALL_KEY).");
   process.exit(1);
 }
+
+const api = new ApiFootballClient({ apiKey: KEY, minIntervalMs: 250, retries: 2 });
 
 function ensureDir(p) {
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
@@ -74,22 +74,6 @@ function toIso(dt) {
   return new Date(t).toISOString();
 }
 
-async function apiGet(pathname, params = {}) {
-  const url = new URL(`${API_BASE}${pathname}`);
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null || v === "") continue;
-    url.searchParams.set(k, String(v));
-  }
-  const res = await fetch(url.toString(), {
-    headers: { "x-apisports-key": KEY }
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`API error ${res.status} ${res.statusText}: ${txt}`.slice(0, 800));
-  }
-  return res.json();
-}
-
 function readConfig() {
   if (!fs.existsSync(CONFIG_PATH)) {
     throw new Error(`Missing config file: ${CONFIG_PATH}`);
@@ -119,17 +103,17 @@ function pickSeasonFromLeagueResponse(r) {
   return null;
 }
 
-/**
- * Resolve a league by name/country/type using /leagues
- * - First tries current=true (recommended to avoid stale seasons)
- * - If nothing found, retries without current=true
- * - Uses fuzzy matching to avoid fragile "exact name" issues
- */
+async function smokeTestStatus() {
+  const js = await api.get("/status");
+  // Só loga um resumo, sem depender da estrutura exata
+  const payload = js?.response ?? js;
+  console.log("[OK] /status response (summary):", JSON.stringify(payload).slice(0, 300));
+}
+
 async function resolveLeague(entry) {
   const search = String(entry?.search || "").trim();
   const country = String(entry?.country || "").trim();
   const type = String(entry?.type || "").trim();
-
   if (!search) return null;
 
   const tryQueries = [
@@ -139,7 +123,7 @@ async function resolveLeague(entry) {
 
   let resp = [];
   for (const q of tryQueries) {
-    const json = await apiGet("/leagues", q);
+    const json = await api.get("/leagues", q);
     resp = json?.response || [];
     if (resp.length) break;
   }
@@ -149,7 +133,6 @@ async function resolveLeague(entry) {
     return null;
   }
 
-  // score candidates
   const target = norm(search);
   const wantedCountry = norm(country);
 
@@ -160,14 +143,7 @@ async function resolveLeague(entry) {
       const leagueType = r?.league?.type ?? "";
       const leagueCountry = r?.country?.name ?? r?.league?.country ?? "";
       const season = pickSeasonFromLeagueResponse(r);
-
-      return {
-        league_id: leagueId,
-        league_name: leagueName,
-        league_type: leagueType,
-        league_country: leagueCountry,
-        season
-      };
+      return { league_id: leagueId, league_name: leagueName, league_type: leagueType, league_country: leagueCountry, season };
     })
     .filter((c) => c.league_id);
 
@@ -180,18 +156,14 @@ async function resolveLeague(entry) {
     if (wantedCountry && ctry === wantedCountry) s += 4;
     if (type && tp === norm(type)) s += 2;
 
-    // name closeness
     if (name === target) s += 6;
     if (name.includes(target) || target.includes(name)) s += 3;
 
-    // mild bonus if season exists
     if (Number.isFinite(c.season)) s += 1;
-
     return s;
   }
 
   candidates.sort((a, b) => score(b) - score(a));
-
   const best = candidates[0];
   if (!best?.league_id) return null;
 
@@ -199,17 +171,13 @@ async function resolveLeague(entry) {
   return best;
 }
 
-/**
- * Fetch fixtures for a league+season within [from,to], with pagination
- * Using timezone for consistent kickoff formatting.
- */
 async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone }) {
   const all = [];
   let page = 1;
   let totalPages = 1;
 
   while (page <= totalPages) {
-    const json = await apiGet("/fixtures", {
+    const json = await api.get("/fixtures", {
       league: league_id,
       season,
       from,
@@ -225,19 +193,14 @@ async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone 
     all.push(...resp);
     page += 1;
   }
-
   return all;
 }
 
-/**
- * Fetch last N finished fixtures for a team (global, not league-restricted).
- * Cached to reduce calls.
- */
 async function fetchTeamLastFinished(teamId, lastN, timezone, cache) {
   const key = `${teamId}|${lastN}`;
   if (cache.has(key)) return cache.get(key);
 
-  const json = await apiGet("/fixtures", {
+  const json = await api.get("/fixtures", {
     team: teamId,
     last: lastN,
     status: "FT",
@@ -320,17 +283,10 @@ function sumGoalsForAgainst(teamId, fixtures, limitN) {
     ga += gAg;
     counted += 1;
   }
-
   return { gf, ga, counted };
 }
 
-/**
- * Simple suggestion/risk heuristic (stable + cheap):
- * - If combined avg goals (both teams last N) <= 2.4 => Under 3.5
- * - Else Over 2.5
- * - Risk low when both are low avg; high when both are high; else med.
- */
-function pickSuggestionAndRisk(homeAgg, awayAgg, windowN) {
+function pickSuggestionAndRisk(homeAgg, awayAgg) {
   const hAvg = (homeAgg.counted ? (homeAgg.gf + homeAgg.ga) / homeAgg.counted : 2.2);
   const aAvg = (awayAgg.counted ? (awayAgg.gf + awayAgg.ga) / awayAgg.counted : 2.2);
   const combined = (hAvg + aAvg) / 2;
@@ -362,7 +318,6 @@ function mapFixtureToMatchRow(fx, enrich) {
     home_id: teams?.home?.id ?? null,
     away_id: teams?.away?.id ?? null,
 
-    // UI uses these:
     suggestion_free: enrich.suggestion_free,
     risk: enrich.risk,
     form_home_details: enrich.form_home_details,
@@ -375,15 +330,10 @@ function mapFixtureToMatchRow(fx, enrich) {
 }
 
 function sortByKickoff(matches) {
-  return [...matches].sort((a, b) => {
-    const ta = Date.parse(a?.kickoff_utc || "") || 0;
-    const tb = Date.parse(b?.kickoff_utc || "") || 0;
-    return ta - tb;
-  });
+  return [...matches].sort((a, b) => (Date.parse(a?.kickoff_utc || "") || 0) - (Date.parse(b?.kickoff_utc || "") || 0));
 }
 
 function pickRadarHighlights(matches) {
-  // next 36h, choose 3
   const now = Date.now();
   const horizon = now + 36 * 60 * 60 * 1000;
 
@@ -392,7 +342,6 @@ function pickRadarHighlights(matches) {
     return Number.isFinite(t) && t >= now - 3 * 60 * 60 * 1000 && t <= horizon;
   });
 
-  // prefer low risk then kickoff time
   const riskRank = { low: 0, med: 1, high: 2 };
   eligible.sort((a, b) => {
     const ra = riskRank[a.risk] ?? 1;
@@ -423,40 +372,38 @@ async function main() {
   console.log(`Range: ${from} -> ${to}`);
   console.log(`Windows: form=${formWindow} goals=${goalsWindow}`);
 
-  // Resolve leagues
+  // 1) SMOKE TEST: se a key tiver inválida/limitada, vai falhar aqui com erro claro
+  await smokeTestStatus();
+
+  // 2) Resolve leagues
   const resolved = [];
   for (const entry of cfg.leagues) {
     const r = await resolveLeague(entry);
     if (r?.league_id) resolved.push(r);
   }
-
   if (!resolved.length) {
     throw new Error("No leagues resolved from config. Check tools/api-football.config.json.");
   }
 
-  // Fetch fixtures for each resolved league
+  // 3) Fetch fixtures for each resolved league
   const rawFixtures = [];
   for (const r of resolved) {
     if (!Number.isFinite(r.season)) {
       console.warn(`[WARN] Missing season for league_id=${r.league_id} (${r.league_name}). Skipping fixtures.`);
       continue;
     }
-    try {
-      const fx = await fetchFixturesLeagueRange({
-        league_id: r.league_id,
-        season: r.season,
-        from,
-        to,
-        timezone
-      });
-      console.log(`[OK] Fixtures: league_id=${r.league_id} season=${r.season} count=${fx.length}`);
-      rawFixtures.push(...fx);
-    } catch (e) {
-      console.warn(`[WARN] fixtures failed for league_id=${r.league_id} (${r.league_name}): ${e?.message || e}`);
-    }
+    const fx = await fetchFixturesLeagueRange({
+      league_id: r.league_id,
+      season: r.season,
+      from,
+      to,
+      timezone
+    });
+    console.log(`[OK] Fixtures: league_id=${r.league_id} season=${r.season} count=${fx.length}`);
+    rawFixtures.push(...fx);
   }
 
-  // Dedup fixtures by fixture_id
+  // Dedup fixtures
   const seen = new Set();
   const fixtures = [];
   for (const fx of rawFixtures) {
@@ -467,14 +414,13 @@ async function main() {
     fixtures.push(fx);
   }
 
-  // Enrich: forms + goals using cached team lookups
+  // 4) Enrich: forms + goals (keep!)
   const teamCache = new Map();
-
   const matches = [];
+
   for (const fx of fixtures) {
     const homeId = fx?.teams?.home?.id ?? null;
     const awayId = fx?.teams?.away?.id ?? null;
-
     if (!homeId || !awayId) continue;
 
     const homeLast = await fetchTeamLastFinished(homeId, Math.max(formWindow, goalsWindow), timezone, teamCache);
@@ -486,7 +432,7 @@ async function main() {
     const homeAgg = sumGoalsForAgainst(homeId, homeLast, goalsWindow);
     const awayAgg = sumGoalsForAgainst(awayId, awayLast, goalsWindow);
 
-    const { suggestion_free, risk } = pickSuggestionAndRisk(homeAgg, awayAgg, Math.max(formWindow, goalsWindow));
+    const { suggestion_free, risk } = pickSuggestionAndRisk(homeAgg, awayAgg);
 
     matches.push(
       mapFixtureToMatchRow(fx, {
@@ -504,7 +450,7 @@ async function main() {
 
   const sorted = sortByKickoff(matches);
 
-  // calendar_7d.json (schema compatible with UI)
+  // calendar_7d.json
   const calendarOut = {
     generated_at_utc: nowIso(),
     form_window: formWindow,
@@ -514,7 +460,7 @@ async function main() {
   writeJsonAtomic(OUT_CAL_7D, calendarOut);
   console.log(`[OK] Wrote ${OUT_CAL_7D} matches=${sorted.length}`);
 
-  // radar_day.json (top3 highlights)
+  // radar_day.json
   const radarDayOut = {
     generated_at_utc: calendarOut.generated_at_utc,
     highlights: pickRadarHighlights(sorted)
@@ -522,15 +468,9 @@ async function main() {
   writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
   console.log(`[OK] Wrote ${OUT_RADAR_DAY} highlights=${radarDayOut.highlights.length}`);
 
-  // radar_week.json (safe placeholder for now)
-  const radarWeekOut = {
-    generated_at_utc: calendarOut.generated_at_utc,
-    highlights: []
-  };
-  writeJsonAtomic(OUT_RADAR_WEEK, radarWeekOut);
+  // radar_week.json placeholder
+  writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: calendarOut.generated_at_utc, highlights: [] });
   console.log(`[OK] Wrote ${OUT_RADAR_WEEK}`);
-
-  console.log("Done.");
 }
 
 main().catch((err) => {
