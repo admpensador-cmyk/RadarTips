@@ -8,7 +8,10 @@
  *  - data/v1/radar_week.json (placeholder, safe)
  *
  * Keeps: form/gols enrichment.
- * Fix: Detect API JSON errors (even when HTTP 200) + /status smoke test.
+ * Fixes:
+ *  - API errors can come in JSON even with HTTP 200 (handled by api-football-client.mjs).
+ *  - /leagues endpoint DOES NOT allow mixing `search` with `country/type/current`.
+ *    So we call /leagues?search=... ONLY, then filter locally by country/type.
  */
 
 import fs from "node:fs";
@@ -105,36 +108,34 @@ function pickSeasonFromLeagueResponse(r) {
 
 async function smokeTestStatus() {
   const js = await api.get("/status");
-  // Só loga um resumo, sem depender da estrutura exata
   const payload = js?.response ?? js;
   console.log("[OK] /status response (summary):", JSON.stringify(payload).slice(0, 300));
 }
 
+/**
+ * Resolve a league by name/country/type.
+ * IMPORTANT: API rule - if using `search`, you cannot combine with country/type/current.
+ * So we call /leagues?search=... only, then filter locally.
+ */
 async function resolveLeague(entry) {
   const search = String(entry?.search || "").trim();
   const country = String(entry?.country || "").trim();
   const type = String(entry?.type || "").trim();
+
   if (!search) return null;
 
-  const tryQueries = [
-    { search, country, type, current: true },
-    { search, country, type }
-  ];
-
-  let resp = [];
-  for (const q of tryQueries) {
-    const json = await api.get("/leagues", q);
-    resp = json?.response || [];
-    if (resp.length) break;
-  }
+  // API rule: do NOT mix search with other filters
+  const json = await api.get("/leagues", { search });
+  const resp = json?.response || [];
 
   if (!resp.length) {
-    console.warn(`[WARN] League not found: search="${search}" country="${country}" type="${type}"`);
+    console.warn(`[WARN] League not found: search="${search}"`);
     return null;
   }
 
   const target = norm(search);
   const wantedCountry = norm(country);
+  const wantedType = norm(type);
 
   const candidates = resp
     .map((r) => {
@@ -149,25 +150,37 @@ async function resolveLeague(entry) {
 
   function score(c) {
     let s = 0;
+
     const name = norm(c.league_name);
     const ctry = norm(c.league_country);
     const tp = norm(c.league_type);
 
-    if (wantedCountry && ctry === wantedCountry) s += 4;
-    if (type && tp === norm(type)) s += 2;
+    // Local filters (since API won't allow them with search)
+    if (wantedCountry) s += (ctry === wantedCountry ? 6 : -3);
+    if (wantedType) s += (tp === wantedType ? 3 : -1);
 
+    // Name match
     if (name === target) s += 6;
     if (name.includes(target) || target.includes(name)) s += 3;
 
+    // Bonus if season exists
     if (Number.isFinite(c.season)) s += 1;
+
     return s;
   }
 
   candidates.sort((a, b) => score(b) - score(a));
-  const best = candidates[0];
-  if (!best?.league_id) return null;
 
-  console.log(`[OK] League resolved: "${search}" -> id=${best.league_id} season=${best.season ?? "?"} name="${best.league_name}" country="${best.league_country}"`);
+  const best = candidates[0];
+  if (!best?.league_id) {
+    console.warn(`[WARN] League not resolved after filtering: search="${search}" country="${country}" type="${type}"`);
+    return null;
+  }
+
+  console.log(
+    `[OK] League resolved: "${search}" -> id=${best.league_id} season=${best.season ?? "?"} name="${best.league_name}" country="${best.league_country}" type="${best.league_type}"`
+  );
+
   return best;
 }
 
@@ -193,6 +206,7 @@ async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone 
     all.push(...resp);
     page += 1;
   }
+
   return all;
 }
 
@@ -283,6 +297,7 @@ function sumGoalsForAgainst(teamId, fixtures, limitN) {
     ga += gAg;
     counted += 1;
   }
+
   return { gf, ga, counted };
 }
 
@@ -372,10 +387,10 @@ async function main() {
   console.log(`Range: ${from} -> ${to}`);
   console.log(`Windows: form=${formWindow} goals=${goalsWindow}`);
 
-  // 1) SMOKE TEST: se a key tiver inválida/limitada, vai falhar aqui com erro claro
+  // Smoke test for key/quota validity
   await smokeTestStatus();
 
-  // 2) Resolve leagues
+  // Resolve leagues
   const resolved = [];
   for (const entry of cfg.leagues) {
     const r = await resolveLeague(entry);
@@ -385,7 +400,7 @@ async function main() {
     throw new Error("No leagues resolved from config. Check tools/api-football.config.json.");
   }
 
-  // 3) Fetch fixtures for each resolved league
+  // Fetch fixtures per league
   const rawFixtures = [];
   for (const r of resolved) {
     if (!Number.isFinite(r.season)) {
@@ -414,7 +429,7 @@ async function main() {
     fixtures.push(fx);
   }
 
-  // 4) Enrich: forms + goals (keep!)
+  // Enrich: form + goals
   const teamCache = new Map();
   const matches = [];
 
@@ -450,7 +465,7 @@ async function main() {
 
   const sorted = sortByKickoff(matches);
 
-  // calendar_7d.json
+  // Write calendar_7d.json
   const calendarOut = {
     generated_at_utc: nowIso(),
     form_window: formWindow,
@@ -460,7 +475,7 @@ async function main() {
   writeJsonAtomic(OUT_CAL_7D, calendarOut);
   console.log(`[OK] Wrote ${OUT_CAL_7D} matches=${sorted.length}`);
 
-  // radar_day.json
+  // Write radar_day.json
   const radarDayOut = {
     generated_at_utc: calendarOut.generated_at_utc,
     highlights: pickRadarHighlights(sorted)
@@ -468,7 +483,7 @@ async function main() {
   writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
   console.log(`[OK] Wrote ${OUT_RADAR_DAY} highlights=${radarDayOut.highlights.length}`);
 
-  // radar_week.json placeholder
+  // Write radar_week.json (safe placeholder)
   writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: calendarOut.generated_at_utc, highlights: [] });
   console.log(`[OK] Wrote ${OUT_RADAR_WEEK}`);
 }
