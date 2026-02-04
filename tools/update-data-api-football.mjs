@@ -185,29 +185,18 @@ async function resolveLeague(entry) {
 }
 
 async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone }) {
-  const all = [];
-  let page = 1;
-  let totalPages = 1;
+  // /fixtures (api-football v3) rejeita parâmetro desconhecido `page` com:
+  //   { "page": "The Page field do not exist." }
+  // Portanto: 1 chamada para o range (nossa janela é pequena: 7 dias).
+  const json = await api.get("/fixtures", {
+    league: league_id,
+    season,
+    from,
+    to,
+    timezone
+  });
 
-  while (page <= totalPages) {
-    const json = await api.get("/fixtures", {
-      league: league_id,
-      season,
-      from,
-      to,
-      timezone,
-      page
-    });
-
-    const resp = json?.response || [];
-    const paging = json?.paging || {};
-    totalPages = Number(paging?.total) || totalPages;
-
-    all.push(...resp);
-    page += 1;
-  }
-
-  return all;
+  return json?.response || [];
 }
 
 async function fetchTeamLastFinished(teamId, lastN, timezone, cache) {
@@ -362,7 +351,7 @@ function pickRadarHighlights(matches) {
     const ra = riskRank[a.risk] ?? 1;
     const rb = riskRank[b.risk] ?? 1;
     if (ra !== rb) return ra - rb;
-    return (Date.parse(a.kickoff_utc) || 0) - (Date.parse(b.kickoff_utc) || 0);
+    return (Date.parse(a.kickoff_utc) || 0) - (Date.parse(b?.kickoff_utc || "") || 0);
   });
 
   return eligible.slice(0, 3);

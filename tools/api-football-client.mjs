@@ -1,6 +1,5 @@
 import { setTimeout as sleep } from "node:timers/promises";
-
-const BASE_URL = "https://v3.football.api-sports.io"; // API-FOOTBALL v3 host
+:contentReference[oaicite:4]{index=4}tps://v3.football.api-sports.io"; // API-FOOTBALL v3 host
 
 function hasApiErrors(json) {
   const e = json?.errors;

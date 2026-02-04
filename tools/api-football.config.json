@@ -1,8 +1,7 @@
 {
   "timezone": "America/Sao_Paulo",
   "days_ahead": 7,
-  "form_window": 5,
-  "goals_window": 5,
+  :contentReference[oaicite:2]{index=2}goals_window": 5,
   "leagues": [
     { "search": "Baiano", "country": "Brazil", "type": "league" },
     { "search": "Cearense", "country": "Brazil", "type": "league" },
