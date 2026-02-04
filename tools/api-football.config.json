@@ -1,11 +1,12 @@
 {
   "timezone": "America/Sao_Paulo",
   "days_ahead": 7,
+  "last_n": 5,
   "leagues": [
     { "search": "Baiano - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
     { "search": "Cearense - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
     { "search": "Pernambucano - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
-    { "search": "Paulista - A1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Paulista - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
     { "search": "Carioca - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
     { "search": "Mineiro - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
     { "search": "Gaúcho - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
@@ -14,17 +15,14 @@
     { "search": "Serie B", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
     { "search": "Copa do Brasil", "country": "Brazil", "type": "cup", "season_rule": "calendar_year" },
 
-    { "search": "CONMEBOL Libertadores", "country": "", "type": "cup", "season_rule": "calendar_year" },
-    { "search": "CONMEBOL Sudamericana", "country": "", "type": "cup", "season_rule": "calendar_year" },
-
-    { "search": "UEFA Champions League", "country": "", "type": "cup", "season_rule": "europe_split" },
-    { "search": "UEFA Europa League", "country": "", "type": "cup", "season_rule": "europe_split" },
-    { "search": "UEFA Europa Conference League", "country": "", "type": "cup", "season_rule": "europe_split" },
-
     { "search": "Premier League", "country": "England", "type": "league", "season_rule": "europe_split" },
     { "search": "La Liga", "country": "Spain", "type": "league", "season_rule": "europe_split" },
     { "search": "Serie A", "country": "Italy", "type": "league", "season_rule": "europe_split" },
     { "search": "Bundesliga", "country": "Germany", "type": "league", "season_rule": "europe_split" },
-    { "search": "Ligue 1", "country": "France", "type": "league", "season_rule": "europe_split" }
+    { "search": "Ligue 1", "country": "France", "type": "league", "season_rule": "europe_split" },
+
+    { "search": "UEFA Champions League", "country": "", "type": "cup", "season_rule": "europe_split" },
+    { "search": "UEFA Europa League", "country": "", "type": "cup", "season_rule": "europe_split" },
+    { "search": "UEFA Europa Conference League", "country": "", "type": "cup", "season_rule": "europe_split" }
   ]
 }
