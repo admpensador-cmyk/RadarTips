@@ -3,26 +3,72 @@
   "days_ahead": 7,
   "last_n": 5,
   "leagues": [
-    { "search": "Baiano - 1",       "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Cearense - 1",     "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Pernambucano - 1", "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Paulista - 1",     "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Carioca - 1",      "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Mineiro - 1",      "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Gaúcho - 1",       "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
+    // ===== BRASIL (Estaduais selecionados) =====
+    { "search": "Baiano - 1",       "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Cearense - 1",     "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Pernambucano - 1", "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Paulista - 1",     "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Carioca - 1",      "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Mineiro - 1",      "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Gaúcho - 1",       "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
 
-    { "search": "Serie A",          "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Serie B",          "country": "Brazil",  "type": "league", "season_rule": "calendar_year" },
-    { "search": "Copa do Brasil",   "country": "Brazil",  "type": "cup",    "season_rule": "calendar_year" },
+    // ===== BRASIL (Nacionais) =====
+    { "search": "Serie A",        "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Serie B",        "country": "Brazil", "type": "league", "season_rule": "calendar_year" },
+    { "search": "Copa do Brasil", "country": "Brazil", "type": "cup",    "season_rule": "calendar_year" },
 
-    { "search": "Premier League",   "country": "England", "type": "league", "season_rule": "europe_split" },
-    { "search": "La Liga",          "country": "Spain",   "type": "league", "season_rule": "europe_split" },
-    { "search": "Serie A",          "country": "Italy",   "type": "league", "season_rule": "europe_split" },
-    { "search": "Bundesliga",       "country": "Germany", "type": "league", "season_rule": "europe_split" },
-    { "search": "Ligue 1",          "country": "France",  "type": "league", "season_rule": "europe_split" },
+    // ===== UEFA (Competições continentais) =====
+    { "search": "UEFA Champions League",         "country": "", "type": "cup", "season_rule": "europe_split" },
+    { "search": "UEFA Europa League",            "country": "", "type": "cup", "season_rule": "europe_split" },
+    { "search": "UEFA Europa Conference League", "country": "", "type": "cup", "season_rule": "europe_split" },
 
-    { "search": "UEFA Champions League",          "country": "", "type": "cup", "season_rule": "europe_split" },
-    { "search": "UEFA Europa League",             "country": "", "type": "cup", "season_rule": "europe_split" },
-    { "search": "UEFA Europa Conference League",  "country": "", "type": "cup", "season_rule": "europe_split" }
+    // ===== INGLATERRA =====
+    { "search": "Premier League", "country": "England", "type": "league", "season_rule": "europe_split" },
+    { "search": "Championship",   "country": "England", "type": "league", "season_rule": "europe_split" },
+    { "search": "FA Cup",         "country": "England", "type": "cup",    "season_rule": "europe_split" },
+    { "search": "League Cup",     "country": "England", "type": "cup",    "season_rule": "europe_split" },
+
+    // ===== ESPANHA =====
+    { "search": "La Liga",        "country": "Spain", "type": "league", "season_rule": "europe_split" },
+    { "search": "Segunda Division","country":"Spain","type":"league","season_rule":"europe_split" },
+    { "search": "Copa del Rey",   "country": "Spain", "type": "cup",   "season_rule": "europe_split" },
+    { "search": "Super Cup",      "country": "Spain", "type": "cup",   "season_rule": "europe_split" },
+
+    // ===== ITÁLIA =====
+    { "search": "Serie A",      "country": "Italy", "type": "league", "season_rule": "europe_split" },
+    { "search": "Serie B",      "country": "Italy", "type": "league", "season_rule": "europe_split" },
+    { "search": "Coppa Italia", "country": "Italy", "type": "cup",   "season_rule": "europe_split" },
+    { "search": "Super Cup",    "country": "Italy", "type": "cup",   "season_rule": "europe_split" },
+
+    // ===== ALEMANHA =====
+    { "search": "Bundesliga",   "country": "Germany", "type": "league", "season_rule": "europe_split" },
+    { "search": "2. Bundesliga", "country":"Germany","type":"league","season_rule":"europe_split" },
+    { "search": "DFB Pokal",    "country": "Germany", "type": "cup",   "season_rule": "europe_split" },
+
+    // ===== FRANÇA =====
+    { "search": "Ligue 1",       "country": "France", "type": "league", "season_rule": "europe_split" },
+    { "search": "Ligue 2",       "country": "France", "type": "league", "season_rule": "europe_split" },
+    { "search": "Coupe de France","country":"France","type":"cup","season_rule":"europe_split" },
+    { "search": "Trophée des Champions","country":"France","type":"cup","season_rule":"europe_split" },
+
+    // ===== OUTRAS LIGAS EUROPEIAS POPULARES =====
+    { "search": "Primeira Liga", "country": "Portugal", "type": "league", "season_rule": "europe_split" },
+    { "search": "Eredivisie",    "country": "Netherlands", "type": "league", "season_rule": "europe_split" },
+    { "search": "Scottish Premiership", "country": "Scotland", "type":"league", "season_rule":"europe_split" },
+    { "search": "Jupiler Pro League",   "country": "Belgium",  "type":"league", "season_rule":"europe_split" },
+    { "search": "Süper Lig",     "country": "Turkey", "type":"league", "season_rule":"europe_split" },
+    { "search": "Super League",  "country": "Greece", "type":"league", "season_rule":"europe_split" },
+
+    // ===== AMÉRICA DO SUL (CONMEBOL) =====
+    { "search": "CONMEBOL Libertadores", "country": "", "type": "cup", "season_rule": "calendar_year" },
+    { "search": "CONMEBOL Sudamericana", "country": "", "type": "cup", "season_rule": "calendar_year" },
+    { "search": "Recopa Sudamericana",   "country": "", "type": "cup", "season_rule": "calendar_year" },
+
+    // ===== NACIONAIS CONMEBOL (bons pra volume) =====
+    { "search": "Primera Division", "country": "Argentina", "type":"league", "season_rule":"calendar_year" },
+    { "search": "Liga MX",          "country": "Mexico",    "type":"league", "season_rule":"calendar_year" },
+
+    // ===== EUA/CANADÁ =====
+    { "search": "MLS", "country": "USA", "type": "league", "season_rule": "calendar_year" }
   ]
 }
