@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 /**
- * Update RadarTips snapshots using API-FOOTBALL (API-SPORTS)
+ * RadarTips data generator (API-FOOTBALL / API-SPORTS)
  *
- * Outputs:
- *  - data/v1/calendar_7d.json
- *  - data/v1/radar_day.json
- *  - data/v1/radar_week.json
+ * Generates:
+ *  - data/v1/calendar_7d.json  (matches[])
+ *  - data/v1/radar_day.json    (items[])
+ *  - data/v1/radar_week.json   (items[])
  *
- * Usage:
+ * Workflow runs:
  *  node tools/update-data-api-football.mjs --mode=daily
- *  node tools/update-data-api-football.mjs --mode=week
  *
  * Env:
- *  APIFOOTBALL_KEY  (or API_FOOTBALL_KEY)
+ *  APIFOOTBALL_KEY (required)
  */
 
 import fs from "node:fs";
@@ -22,11 +21,13 @@ import process from "node:process";
 const API_BASE = "https://v3.football.api-sports.io";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
-const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
-const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
-const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
+const OUT_CAL = path.join(OUT_DIR, "calendar_7d.json");
+const OUT_DAY = path.join(OUT_DIR, "radar_day.json");
+const OUT_WEEK = path.join(OUT_DIR, "radar_week.json");
 
-const ARG_MODE = (() => {
+const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
+
+const MODE = (() => {
   const idx = process.argv.indexOf("--mode");
   if (idx >= 0 && process.argv[idx + 1]) return String(process.argv[idx + 1]).trim();
   const kv = process.argv.find((a) => a.startsWith("--mode="));
@@ -34,13 +35,9 @@ const ARG_MODE = (() => {
   return "daily";
 })();
 
-const KEY =
-  (process.env.APIFOOTBALL_KEY && String(process.env.APIFOOTBALL_KEY).trim()) ||
-  (process.env.API_FOOTBALL_KEY && String(process.env.API_FOOTBALL_KEY).trim()) ||
-  "";
-
+const KEY = (process.env.APIFOOTBALL_KEY || "").trim();
 if (!KEY) {
-  console.error("Missing API key. Set APIFOOTBALL_KEY (or API_FOOTBALL_KEY).");
+  console.error("Missing APIFOOTBALL_KEY");
   process.exit(1);
 }
 
@@ -55,8 +52,27 @@ function writeJsonAtomic(filePath, obj) {
   fs.renameSync(tmp, filePath);
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+}
+
 function nowIso() {
   return new Date().toISOString();
+}
+
+function startOfDayUtc(d = new Date()) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+}
+function addDaysUtc(d, days) {
+  const x = new Date(d.getTime());
+  x.setUTCDate(x.getUTCDate() + days);
+  return x;
+}
+function isoDateOnlyUTC(d) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
 
 function toIso(dt) {
@@ -66,241 +82,300 @@ function toIso(dt) {
   return new Date(t).toISOString();
 }
 
-function startOfDayUtc(d = new Date()) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+function meta(extra = {}) {
+  return {
+    generated_at_utc: nowIso(),
+    mode: MODE,
+    source: "api-football",
+    version: 3,
+    ...extra
+  };
 }
 
-function addDaysUtc(date, days) {
-  const d = new Date(date.getTime());
-  d.setUTCDate(d.getUTCDate() + days);
-  return d;
+function seasonFromRule(rule, now = new Date()) {
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth() + 1; // 1..12
+
+  if (rule === "calendar_year") return y;
+
+  // Season starts around Aug (8). If Jan-Jul => previous year season.
+  if (rule === "europe_split") return m >= 8 ? y : y - 1;
+
+  return y;
 }
 
-function isoDateOnlyUTC(d) {
-  // yyyy-mm-dd
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
+function norm(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 async function apiGet(pathname, params = {}) {
-  const url = new URL(`${API_BASE}${pathname}`);
+  const url = new URL(API_BASE + pathname);
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null || v === "") continue;
     url.searchParams.set(k, String(v));
   }
+
   const res = await fetch(url.toString(), {
-    headers: {
-      "x-apisports-key": KEY
-    }
+    headers: { "x-apisports-key": KEY }
   });
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`API error ${res.status} ${res.statusText}: ${txt}`.slice(0, 500));
+    throw new Error(`API ${res.status} ${res.statusText}: ${txt}`.slice(0, 800));
   }
+
   return res.json();
 }
 
-function uniq(arr) {
-  return [...new Set(arr)];
+/**
+ * Resolve league.id by searching /leagues and then selecting best match by country/type/name.
+ * config item supports:
+ *  { search, country, type, season_rule }
+ * or { id, season_rule }
+ */
+async function resolveLeague(configItem) {
+  const now = new Date();
+  const season = seasonFromRule(configItem.season_rule || "calendar_year", now);
+
+  if (configItem.id) {
+    return {
+      league_id: Number(configItem.id),
+      season,
+      label: `${configItem.search || configItem.id}`
+    };
+  }
+
+  const search = String(configItem.search || "").trim();
+  if (!search) return null;
+
+  const json = await apiGet("/leagues", { search });
+  const resp = Array.isArray(json?.response) ? json.response : [];
+
+  const wantCountry = norm(configItem.country || "");
+  const wantType = norm(configItem.type || "");
+
+  const candidates = resp
+    .map((x) => ({
+      league_id: x?.league?.id,
+      league_name: x?.league?.name,
+      league_type: x?.league?.type,
+      country_name: x?.country?.name || x?.league?.country || ""
+    }))
+    .filter((c) => Number.isFinite(Number(c.league_id)));
+
+  if (!candidates.length) {
+    console.log(`WARN resolveLeague: no candidates for "${search}"`);
+    return null;
+  }
+
+  // Filter by country/type when provided
+  let pool = candidates.filter((c) => {
+    const okCountry = !wantCountry || norm(c.country_name) === wantCountry;
+    const okType = !wantType || norm(c.league_type) === wantType;
+    return okCountry && okType;
+  });
+
+  if (!pool.length) pool = candidates;
+
+  // Prefer exact-ish name match
+  const wantName = norm(search);
+  pool.sort((a, b) => {
+    const an = norm(a.league_name);
+    const bn = norm(b.league_name);
+    const as = an === wantName ? 0 : an.includes(wantName) ? 1 : 2;
+    const bs = bn === wantName ? 0 : bn.includes(wantName) ? 1 : 2;
+    return as - bs;
+  });
+
+  const pick = pool[0];
+  return {
+    league_id: Number(pick.league_id),
+    season,
+    label: pick.league_name
+  };
 }
 
-function safeNum(x, fallback = null) {
-  const n = Number(x);
-  return Number.isFinite(n) ? n : fallback;
+async function fetchFixturesByLeague({ league_id, season, from, to, timezone }) {
+  const out = [];
+  let page = 1;
+
+  while (true) {
+    const json = await apiGet("/fixtures", {
+      league: league_id,
+      season,
+      from,
+      to,
+      timezone,
+      page
+    });
+
+    const resp = Array.isArray(json?.response) ? json.response : [];
+    out.push(...resp);
+
+    const paging = json?.paging || {};
+    const cur = Number(paging.current || page);
+    const total = Number(paging.total || cur);
+
+    if (cur >= total) break;
+    page = cur + 1;
+
+    if (page > 60) break; // safety
+  }
+
+  return out;
 }
 
-function normalizeFixture(fx) {
-  // fx: API-Football fixture object
+function mapFixtureToCalendar(fx) {
   const fixture = fx?.fixture || {};
   const league = fx?.league || {};
   const teams = fx?.teams || {};
-  const goals = fx?.goals || {};
-  const score = fx?.score || {};
   const status = fixture?.status || {};
 
   return {
     fixture_id: fixture?.id ?? null,
-    kickoff_utc: toIso(fixture?.date) || null,
-    timestamp: fixture?.timestamp ?? null,
-    status_short: status?.short ?? null,
-    status_long: status?.long ?? null,
-    elapsed: status?.elapsed ?? null,
-    league_id: league?.id ?? null,
-    league_name: league?.name ?? null,
-    league_round: league?.round ?? null,
-    league_season: league?.season ?? null,
+    kickoff_utc: toIso(fixture?.date),
     country: league?.country ?? null,
-    home_id: teams?.home?.id ?? null,
-    home_name: teams?.home?.name ?? null,
-    away_id: teams?.away?.id ?? null,
-    away_name: teams?.away?.name ?? null,
-    goals_home: goals?.home ?? null,
-    goals_away: goals?.away ?? null,
-    score_halftime_home: score?.halftime?.home ?? null,
-    score_halftime_away: score?.halftime?.away ?? null,
-    score_fulltime_home: score?.fulltime?.home ?? null,
-    score_fulltime_away: score?.fulltime?.away ?? null
+    competition: league?.name ?? null,
+    competition_id: league?.id ?? null,
+    season: league?.season ?? null,
+    round: league?.round ?? null,
+    home: { id: teams?.home?.id ?? null, name: teams?.home?.name ?? null },
+    away: { id: teams?.away?.id ?? null, name: teams?.away?.name ?? null },
+    status_short: status?.short ?? null,
+    status_long: status?.long ?? null
   };
 }
 
-function pickRadarMarketsNormalized(match) {
-  // Minimal and stable: we keep only what UI needs, without heavy recomputation.
-  // You can extend later.
-  const odds = match?.odds || {};
-  const p = match?.probs || {};
-  const lines = match?.lines || {};
-  return {
-    // 1X2
-    odds_home: odds?.home ?? null,
-    odds_draw: odds?.draw ?? null,
-    odds_away: odds?.away ?? null,
-    p_home: p?.home ?? null,
-    p_draw: p?.draw ?? null,
-    p_away: p?.away ?? null,
-    // totals
-    line_goals: lines?.goals ?? null,
-    odds_over: odds?.over ?? null,
-    odds_under: odds?.under ?? null,
-    p_over: p?.over ?? null,
-    p_under: p?.under ?? null
-  };
-}
-
-function mapFixtureToCalendarEntry(fx) {
-  const n = normalizeFixture(fx);
-  return {
-    fixture_id: n.fixture_id,
-    kickoff_utc: n.kickoff_utc,
-    country: n.country,
-    competition: n.league_name,
-    season: n.league_season,
-    round: n.league_round,
-    home: { id: n.home_id, name: n.home_name },
-    away: { id: n.away_id, name: n.away_name },
-    status_short: n.status_short,
-    status_long: n.status_long
-  };
-}
-
-function groupByDate(matches) {
-  const by = {};
-  for (const m of matches) {
-    const k = m?.kickoff_utc ? m.kickoff_utc.slice(0, 10) : "unknown";
-    (by[k] ||= []).push(m);
-  }
-  return by;
-}
-
-function sortByKickoff(matches) {
-  return [...matches].sort((a, b) => {
+function sortByKickoff(arr) {
+  return [...arr].sort((a, b) => {
     const ta = Date.parse(a?.kickoff_utc || "") || 0;
     const tb = Date.parse(b?.kickoff_utc || "") || 0;
     return ta - tb;
   });
 }
 
-function stableMeta() {
-  return {
-    generated_at_utc: nowIso(),
-    source: "api-football",
-    version: 1
-  };
-}
-
-/**
- * Strategy to reduce API usage:
- * - calendar_7d: fetch fixtures by date range once (7 days)
- * - radar_day: derive from calendar_7d + choose "today" and "tomorrow" subset (no extra calls)
- * - radar_week: derive from calendar_7d + choose key matches per day (no extra calls)
- *
- * This avoids repeated fixtures calls that would burn quota.
- */
-async function fetchCalendar7d() {
-  const start = startOfDayUtc(new Date());
-  const end = addDaysUtc(start, 7);
-
-  // API-Football fixtures endpoint supports date range via from/to (YYYY-MM-DD)
-  const from = isoDateOnlyUTC(start);
-  const to = isoDateOnlyUTC(end);
-
-  const json = await apiGet("/fixtures", { from, to });
-  const resp = json?.response || [];
-
-  const matches = resp.map(mapFixtureToCalendarEntry);
-  const sorted = sortByKickoff(matches);
-
-  return {
-    meta: { ...stableMeta(), range: { from, to } },
-    matches: sorted
-  };
-}
-
-function chooseDayItems(calendarMatches) {
-  // "Radar do dia" uses items within next 36h, sorted.
+function chooseDayItems(matches) {
   const now = Date.now();
   const horizon = now + 36 * 60 * 60 * 1000;
-
   const items = [];
-  for (const m of calendarMatches || []) {
+
+  for (const m of matches) {
     const t = Date.parse(m?.kickoff_utc || "");
     if (!Number.isFinite(t)) continue;
-    if (t >= now - 3 * 60 * 60 * 1000 && t <= horizon) {
-      items.push(m);
-    }
+    if (t >= now - 3 * 60 * 60 * 1000 && t <= horizon) items.push(m);
   }
 
   return sortByKickoff(items);
 }
 
-function chooseWeekItems(calendarMatches) {
-  // Picks a compact set: up to N per day, sorted
-  const byDate = groupByDate(calendarMatches || []);
-  const days = Object.keys(byDate).sort();
-  const out = [];
-
-  for (const d of days) {
-    const ms = byDate[d] || [];
-    const sorted = sortByKickoff(ms);
-    // Choose top 20 per day (simple cap to keep file light)
-    out.push(...sorted.slice(0, 20));
+function chooseWeekItems(matches) {
+  // keep all, but cap per day to avoid massive DOM
+  const by = new Map();
+  for (const m of matches) {
+    const d = (m?.kickoff_utc || "unknown").slice(0, 10);
+    if (!by.has(d)) by.set(d, []);
+    by.get(d).push(m);
   }
 
+  const days = [...by.keys()].sort();
+  const out = [];
+  for (const d of days) {
+    const ms = sortByKickoff(by.get(d));
+    out.push(...ms.slice(0, 60)); // cap/day (ajuste se quiser)
+  }
   return out;
+}
+
+async function buildCalendarFromConfig(cfg) {
+  const daysAhead = Number(cfg?.days_ahead ?? 7);
+  const timezone = String(cfg?.timezone || "America/Sao_Paulo");
+  const leagues = Array.isArray(cfg?.leagues) ? cfg.leagues : [];
+
+  if (!leagues.length) throw new Error("Config has no leagues[]");
+
+  const start = startOfDayUtc(new Date());
+  const end = addDaysUtc(start, daysAhead);
+
+  const from = isoDateOnlyUTC(start);
+  const to = isoDateOnlyUTC(end);
+
+  // Resolve league IDs
+  const resolved = [];
+  for (const item of leagues) {
+    const r = await resolveLeague(item);
+    if (r?.league_id) resolved.push(r);
+  }
+
+  if (!resolved.length) throw new Error("Could not resolve any leagues from config.");
+
+  // Fetch fixtures per league
+  const allFixtures = [];
+  for (const r of resolved) {
+    try {
+      const fx = await fetchFixturesByLeague({
+        league_id: r.league_id,
+        season: r.season,
+        from,
+        to,
+        timezone
+      });
+      console.log(`OK league ${r.league_id} season ${r.season} :: ${fx.length} fixtures :: ${r.label}`);
+      allFixtures.push(...fx);
+    } catch (e) {
+      console.log(`WARN league ${r.league_id} failed :: ${r.label} :: ${e?.message || String(e)}`);
+    }
+  }
+
+  const mapped = allFixtures.map(mapFixtureToCalendar);
+
+  // Dedup by fixture_id
+  const byId = new Map();
+  for (const m of mapped) {
+    const id = m?.fixture_id;
+    if (!id) continue;
+    if (!byId.has(id)) byId.set(id, m);
+  }
+
+  const matches = sortByKickoff([...byId.values()]);
+
+  return {
+    meta: meta({
+      range: { from, to },
+      timezone,
+      leagues_resolved: resolved.length
+    }),
+    matches
+  };
 }
 
 async function main() {
   ensureDir(OUT_DIR);
 
-  console.log(`Mode: ${ARG_MODE}`);
-  console.log("Fetching calendar_7d...");
+  if (!fs.existsSync(CONFIG_PATH)) {
+    throw new Error(`Missing config file: ${CONFIG_PATH}`);
+  }
 
-  const calendar = await fetchCalendar7d();
-  writeJsonAtomic(OUT_CAL_7D, calendar);
-  console.log(`Wrote ${OUT_CAL_7D} (${calendar.matches?.length || 0} matches)`);
+  const cfg = readJson(CONFIG_PATH);
 
-  // Build radar_day/radar_week from calendar (no additional API calls)
-  const calendarMatches = calendar.matches || [];
+  const calendar = await buildCalendarFromConfig(cfg);
 
-  const radarDay = {
-    meta: { ...stableMeta(), derived_from: "calendar_7d" },
-    items: chooseDayItems(calendarMatches)
-  };
-  writeJsonAtomic(OUT_RADAR_DAY, radarDay);
-  console.log(`Wrote ${OUT_RADAR_DAY} (${radarDay.items?.length || 0} items)`);
+  const radarDay = { meta: meta({ derived_from: "calendar_7d" }), items: chooseDayItems(calendar.matches) };
+  const radarWeek = { meta: meta({ derived_from: "calendar_7d" }), items: chooseWeekItems(calendar.matches) };
 
-  const radarWeek = {
-    meta: { ...stableMeta(), derived_from: "calendar_7d" },
-    items: chooseWeekItems(calendarMatches)
-  };
-  writeJsonAtomic(OUT_RADAR_WEEK, radarWeek);
-  console.log(`Wrote ${OUT_RADAR_WEEK} (${radarWeek.items?.length || 0} items)`);
+  writeJsonAtomic(OUT_CAL, calendar);
+  writeJsonAtomic(OUT_DAY, radarDay);
+  writeJsonAtomic(OUT_WEEK, radarWeek);
 
-  console.log("Done. Files written to data/v1/.");
+  console.log(`Wrote: ${path.relative(process.cwd(), OUT_CAL)} (${calendar.matches.length})`);
+  console.log(`Wrote: ${path.relative(process.cwd(), OUT_DAY)} (${radarDay.items.length})`);
+  console.log(`Wrote: ${path.relative(process.cwd(), OUT_WEEK)} (${radarWeek.items.length})`);
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error(err?.stack || err?.message || String(err));
   process.exit(1);
 });
