@@ -105,15 +105,16 @@ async function loadJSON(url, fallback){
   }catch{ return fallback; }
 }
 
-// Prefer Worker API (/api/v1) with automatic fallback to static files (/data/v1).
-// This enables real-time live updates without triggering Cloudflare Pages builds.
+// Snapshots (calendar/radar) must come from R2 via the Data Worker (no commit/push).
+// Live polling stays on /api/v1 (we'll implement it next).
 const V1_API_BASE = "/api/v1";
+const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
 const V1_STATIC_BASE = "/data/v1";
 
 async function loadV1JSON(file, fallback){
-  // API first
-  const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
-  if(api) return api;
+  // R2 Data Worker first (fresh snapshots)
+  const data = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
+  if(data) return data;
   // Static fallback
   return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
 }

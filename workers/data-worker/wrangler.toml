@@ -1,0 +1,8 @@
+name = "radartips-data"
+main = "src/index.js"
+compatibility_date = "2026-02-04"
+
+# Binding do R2 (você vai criar/selecionar isso no Cloudflare também)
+[[r2_buckets]]
+binding = "RADARTIPS_DATA"
+bucket_name = "radartips-data"
