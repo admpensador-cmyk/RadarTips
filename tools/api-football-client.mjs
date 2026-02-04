@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
-:contentReference[oaicite:4]{index=4}tps://v3.football.api-sports.io"; // API-FOOTBALL v3 host
+
+const BASE_URL = "https://v3.football.api-sports.io"; // API-FOOTBALL v3 host
 
 function hasApiErrors(json) {
   const e = json?.errors;
@@ -56,7 +57,11 @@ export class ApiFootballClient {
 
       const txt = await res.text();
       let json;
-      try { json = JSON.parse(txt); } catch { json = { raw: txt }; }
+      try {
+        json = JSON.parse(txt);
+      } catch {
+        json = { raw: txt };
+      }
 
       // API-FOOTBALL às vezes devolve HTTP 200 com errors no JSON
       if (res.ok && json && !hasApiErrors(json)) return json;
