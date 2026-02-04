@@ -15,6 +15,10 @@ concurrency:
 jobs:
   build-data:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +33,26 @@ jobs:
           set -euo pipefail
           node tools/update-data-api-football.mjs --mode=daily
 
+          # Garantias: os arquivos que o site usa precisam existir
+          test -f "data/v1/calendar_7d.json"
+          test -f "data/v1/radar_day.json"
+          test -f "data/v1/radar_week.json"
+
+      # (Opcional) Se você quiser versionar snapshots no repo (deixei DESLIGADO)
+      # - name: Commit snapshots (optional)
+      #   run: |
+      #     set -euo pipefail
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      #     git add data/v1/calendar_7d.json data/v1/radar_day.json data/v1/radar_week.json
+      #     if git diff --cached --quiet; then
+      #       echo "No snapshot changes to commit."
+      #       exit 0
+      #     fi
+      #     git commit -m "chore(data): update snapshots"
+      #     git push
+
       - name: Upload snapshots to R2 (optional, no rebuild)
-        shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -46,23 +68,31 @@ jobs:
           npm i -g wrangler@4.62.0
           wrangler --version
 
+          # Confirma presença local
           test -f "data/v1/calendar_7d.json"
           test -f "data/v1/radar_day.json"
+          test -f "data/v1/radar_week.json"
 
           echo "=== PUT (REMOTE) ==="
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
+          wrangler r2 object put --remote --yes "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
             --file "data/v1/calendar_7d.json" \
             --content-type "application/json"
 
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json" \
+          wrangler r2 object put --remote --yes "${R2_BUCKET_NAME}/v1/radar_day.json" \
             --file "data/v1/radar_day.json" \
             --content-type "application/json"
 
+          wrangler r2 object put --remote --yes "${R2_BUCKET_NAME}/v1/radar_week.json" \
+            --file "data/v1/radar_week.json" \
+            --content-type "application/json"
+
           echo "=== GET (REMOTE) + SHA256 (deve bater) ==="
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/r2_calendar_7d.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "/tmp/r2_radar_day.json"
+          wrangler r2 object get --remote --yes "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/r2_calendar_7d.json"
+          wrangler r2 object get --remote --yes "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "/tmp/r2_radar_day.json"
+          wrangler r2 object get --remote --yes "${R2_BUCKET_NAME}/v1/radar_week.json" --file "/tmp/r2_radar_week.json"
 
           sha256sum "data/v1/calendar_7d.json" "/tmp/r2_calendar_7d.json"
           sha256sum "data/v1/radar_day.json"  "/tmp/r2_radar_day.json"
+          sha256sum "data/v1/radar_week.json" "/tmp/r2_radar_week.json"
 
           echo "Uploaded to R2 OK."
