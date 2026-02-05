@@ -13,11 +13,8 @@ var BASE_FILES = [
   "radar_week.json"
 ];
 
-// Files are stored in R2 under: v1/<file>
-function r2KeyV1(file) {
-  return `v1/${file}`;
-}
-__name(r2KeyV1, "r2KeyV1");
+var FINAL_STATUSES = new Set(["FT", "AET", "PEN"]);
+var VOID_STATUSES = new Set(["CANC", "PST", "ABD", "SUSP"]);
 
 function nowIso() {
   return new Date().toISOString();
@@ -45,14 +42,6 @@ function ok(data) {
   return jsonResponse({ ok: true, ...data });
 }
 __name(ok, "ok");
-
-function rawJsonResponse(data, status = 200, headers = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...JSON_HEADERS, ...headers }
-  });
-}
-__name(rawJsonResponse, "rawJsonResponse");
 
 async function requireBindings(env) {
   if (!env?.RADARTIPS_LIVE) {
@@ -84,39 +73,24 @@ async function r2GetJson(env, key) {
 }
 __name(r2GetJson, "r2GetJson");
 
+async function r2PutJson(env, key, value) {
+  await env.R2.put(key, JSON.stringify(value), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" }
+  });
+}
+__name(r2PutJson, "r2PutJson");
+
 async function listBaseFiles(env) {
   const out = {};
   for (const file of BASE_FILES) {
-    out[file] = await r2GetJson(env, r2KeyV1(file));
+    out[file] = await r2GetJson(env, `snapshots/${file}`);
   }
   return out;
 }
 __name(listBaseFiles, "listBaseFiles");
 
-async function serveSnapshotFile(env, file) {
-  const json = await r2GetJson(env, r2KeyV1(file));
-  if (!json) return null;
-  // IMPORTANT: front expects the raw JSON (not wrapped in {ok:true,...})
-  return rawJsonResponse(json);
-}
-__name(serveSnapshotFile, "serveSnapshotFile");
-
 async function handleApiV1(env, pathname) {
   await requireBindings(env);
-
-  // Snapshots (R2)
-  // - /api/v1/calendar_7d.json
-  // - /api/v1/radar_day.json
-  // - /api/v1/radar_week.json
-  if (pathname === "/v1/calendar_7d.json") {
-    return await serveSnapshotFile(env, "calendar_7d.json");
-  }
-  if (pathname === "/v1/radar_day.json") {
-    return await serveSnapshotFile(env, "radar_day.json");
-  }
-  if (pathname === "/v1/radar_week.json") {
-    return await serveSnapshotFile(env, "radar_week.json");
-  }
 
   if (pathname === "/v1/health") {
     return ok({ ts: nowIso() });
@@ -126,65 +100,58 @@ async function handleApiV1(env, pathname) {
     return ok({ ts: nowIso(), data: await listBaseFiles(env) });
   }
 
-  // Live states (KV)
-  // Front expects: { states: [...] }
-  if (pathname === "/v1/live.json") {
-    const states = await kvGetJson(env, "live_states");
-    return rawJsonResponse({ states: Array.isArray(states) ? states : [] });
+  if (pathname === "/v1/live") {
+    return ok({ ts: nowIso(), live: await kvGetJson(env, "live") || [] });
+  }
+
+  if (pathname === "/v1/live/state") {
+    return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
   }
 
   return null;
 }
 __name(handleApiV1, "handleApiV1");
 
-// Cron: prepara base do LIVE (a gente vai evoluir isso na próxima fase)
 async function cronUpdateLive(env) {
   await requireBindings(env);
 
-  // Estrutura de estado (a gente melhora depois)
   const state = await kvGetJson(env, "live_state") || {};
   const liveIds = state.liveIds || [];
 
   if (liveIds.length === 0) {
-    await kvPutJson(env, "live_states", [], 120);
+    await kvPutJson(env, "live", [], 120);
     return;
   }
 
-  const states = [];
+  const fixtures = [];
   for (const id of liveIds) {
     const res = await fetch(`https://v3.football.api-sports.io/fixtures?id=${id}`, {
       headers: { "x-apisports-key": env.APIFOOTBALL_KEY }
     });
     if (!res.ok) continue;
-
     const json = await res.json();
-    const fx = json?.response?.[0];
-    if (!fx) continue;
-
-    const fixture_id = fx?.fixture?.id ?? id;
-    const status_short = fx?.fixture?.status?.short ?? null;
-    const elapsed = fx?.fixture?.status?.elapsed ?? null;
-    const goals_home = fx?.goals?.home ?? null;
-    const goals_away = fx?.goals?.away ?? null;
-
-    states.push({ fixture_id, status_short, elapsed, goals_home, goals_away });
+    if (json?.response?.[0]) fixtures.push(json.response[0]);
   }
 
-  await kvPutJson(env, "live_states", states, 120);
+  await kvPutJson(env, "live", fixtures, 120);
 }
 __name(cronUpdateLive, "cronUpdateLive");
+
+async function cronFinalizeRecent(env) {
+  try {
+    await cronUpdateLive(env);
+  } catch (e) {
+    console.log("cronFinalizeRecent failed:", e.message);
+  }
+}
+__name(cronFinalizeRecent, "cronFinalizeRecent");
 
 var index_default = {
   async fetch(request, env, ctx) {
     const pathname = new URL(request.url).pathname;
 
-    // Support both:
-    // - workers.dev direct: /v1/...
-    // - routed under the site: /api/v1/...
-    const v1Path = pathname.startsWith("/api/v1/") ? pathname.replace(/^\/api/, "") : pathname;
-
-    if (v1Path.startsWith("/v1/")) {
-      const res = await handleApiV1(env, v1Path);
+    if (pathname.startsWith("/v1/")) {
+      const res = await handleApiV1(env, pathname);
       if (res) return res;
     }
 
@@ -193,7 +160,9 @@ var index_default = {
 
   async scheduled(event, env, ctx) {
     ctx.waitUntil(
-      cronUpdateLive(env).catch(e => console.log("cron error:", e.message))
+      cronUpdateLive(env).catch(e =>
+        console.log("cron error:", e.message)
+      )
     );
   }
 };
