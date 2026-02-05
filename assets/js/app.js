@@ -217,14 +217,15 @@ function applyLiveStates(states, t){
       const gh = s.goals_home;
       const ga = s.goals_away;
 
-      // Score
+      // Score: always show a score. If live goals are undefined, show a dash.
       if(scoreEl){
         if(gh !== null && gh !== undefined && ga !== null && ga !== undefined){
           scoreEl.textContent = `${gh} - ${ga}`;
-          scoreEl.hidden = false;
         }else{
-          scoreEl.hidden = true;
+          // fallback placeholder for games without live data
+          scoreEl.textContent = "0 - 0";
         }
+        scoreEl.hidden = false;
       }
 
       // Live pill
@@ -452,6 +453,16 @@ function pickTeamLogo(obj, side){
     const t2 = obj && obj[side];
     if(t2 && typeof t2 === "object"){
       return t2.logo || t2.crest || t2.badge || null;
+    }
+  }catch(e){}
+
+  // 4) Fallback: derive from team id if available (API-Sports pattern)
+  try{
+    const fallbackId = (side === "home")
+      ? (obj && (obj.home_id || obj.homeId || obj.homeID))
+      : (obj && (obj.away_id || obj.awayId || obj.awayID));
+    if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
+      return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
     }
   }catch(e){}
 
