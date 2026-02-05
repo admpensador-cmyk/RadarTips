@@ -433,7 +433,9 @@ function pickTeamLogo(obj, side){
   try{
     const t = obj && obj.teams && obj.teams[side];
     if(t && typeof t === "object"){
-      return t.logo || t.crest || t.badge || null;
+      if(t.logo) return t.logo;
+      if(t.crest) return t.crest;
+      if(t.badge) return t.badge;
     }
   }catch(e){}
 
@@ -511,7 +513,7 @@ function pickCountryFlag(obj){
 
 function tinyImgHTML(src, alt, cls){
   if(!src) return "";
-  return `<img class="${escAttr(cls||"")}" src="${escAttr(src)}" alt="${escAttr(alt||"")}" loading="lazy" referrerpolicy="no-referrer" />`;
+  return `<img class="${escAttr(cls||"")}" src="${escAttr(src)}" alt="${escAttr(alt||"")}" loading="lazy" />`;
 }
 
 function crestHTML(teamName, logoUrl){
@@ -519,7 +521,7 @@ function crestHTML(teamName, logoUrl){
   if(logo){
     const src = escAttr(logo);
     const alt = escAttr(teamName);
-    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" /></span>`;
+    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" /></span>`;
   }
   const hue = _hashHue(teamName);
   const ini = _initials(teamName);
