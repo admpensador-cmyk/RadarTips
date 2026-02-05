@@ -100,8 +100,11 @@ async function handleApiV1(env, pathname) {
     return ok({ ts: nowIso(), data: await listBaseFiles(env) });
   }
 
+  // LIVE endpoint used by the frontend (minute-by-minute polling)
+  // Expected shape: { generatedAt, ttlSeconds, states: [...] }
   if (pathname === "/v1/live") {
-    return ok({ ts: nowIso(), live: await kvGetJson(env, "live") || [] });
+    const states = await kvGetJson(env, "live_states") || [];
+    return jsonResponse({ generatedAt: nowIso(), ttlSeconds: 60, states });
   }
 
   if (pathname === "/v1/live/state") {
@@ -115,25 +118,51 @@ __name(handleApiV1, "handleApiV1");
 async function cronUpdateLive(env) {
   await requireBindings(env);
 
-  const state = await kvGetJson(env, "live_state") || {};
-  const liveIds = state.liveIds || [];
+  // 1 request per minute total: fetch ALL live fixtures, then filter to our leagues.
+  // League allowlist comes from a comma-separated env var.
+  const rawAllow = String(env.LIVE_LEAGUE_IDS || env.ALLOW_LEAGUE_IDS || "");
+  const allowIds = rawAllow
+    .split(",")
+    .map((s) => Number(String(s).trim()))
+    .filter((n) => Number.isFinite(n));
+  const allowSet = new Set(allowIds);
 
-  if (liveIds.length === 0) {
-    await kvPutJson(env, "live", [], 120);
+  if (!env.APIFOOTBALL_KEY) {
+    // No key configured: keep LIVE empty and short-lived.
+    await kvPutJson(env, "live_states", [], 120);
     return;
   }
 
-  const fixtures = [];
-  for (const id of liveIds) {
-    const res = await fetch(`https://v3.football.api-sports.io/fixtures?id=${id}`, {
-      headers: { "x-apisports-key": env.APIFOOTBALL_KEY }
-    });
-    if (!res.ok) continue;
-    const json = await res.json();
-    if (json?.response?.[0]) fixtures.push(json.response[0]);
+  const res = await fetch("https://v3.football.api-sports.io/fixtures?live=all", {
+    headers: { "x-apisports-key": env.APIFOOTBALL_KEY }
+  });
+  if (!res.ok) {
+    // Temporary failure: do not corrupt the UI; keep last value if it exists.
+    return;
   }
 
-  await kvPutJson(env, "live", fixtures, 120);
+  const json = await res.json();
+  const list = json?.response || [];
+  const states = [];
+
+  for (const fx of list) {
+    const leagueId = Number(fx?.league?.id);
+    if (allowSet.size && !allowSet.has(leagueId)) continue;
+
+    const fixtureId = fx?.fixture?.id;
+    const statusShort = String(fx?.fixture?.status?.short || "").toUpperCase();
+    const elapsed = fx?.fixture?.status?.elapsed ?? null;
+
+    states.push({
+      fixture_id: fixtureId,
+      status_short: statusShort,
+      elapsed,
+      goals_home: fx?.goals?.home ?? null,
+      goals_away: fx?.goals?.away ?? null
+    });
+  }
+
+  await kvPutJson(env, "live_states", states, 120);
 }
 __name(cronUpdateLive, "cronUpdateLive");
 
@@ -148,7 +177,18 @@ __name(cronFinalizeRecent, "cronFinalizeRecent");
 
 var index_default = {
   async fetch(request, env, ctx) {
-    const pathname = new URL(request.url).pathname;
+    let pathname = new URL(request.url).pathname;
+
+    // Support both route styles:
+    // - Worker mounted at /api (e.g. https://radartips.com/api)
+    // - Direct /v1 endpoints (e.g. https://<worker>.workers.dev/v1)
+    // And support frontend expectation: /api/v1/live.json
+    // If the Worker route is mounted at /api, the request pathname arrives as /api/...
+    // We normalize it back to /v1/... for routing.
+    if (pathname.startsWith("/api/")) pathname = pathname.slice(4); // drop '/api'
+
+    // Map /v1/*.json -> /v1/*
+    if (pathname.endsWith(".json")) pathname = pathname.slice(0, -5);
 
     if (pathname.startsWith("/v1/")) {
       const res = await handleApiV1(env, pathname);

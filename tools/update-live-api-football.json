@@ -1,0 +1,90 @@
+import fs from "node:fs";
+import path from "node:path";
+
+const API_KEY = process.env.APIFOOTBALL_KEY;
+if (!API_KEY) {
+  console.error("Missing APIFOOTBALL_KEY");
+  process.exit(1);
+}
+
+const root = process.cwd();
+const allow = JSON.parse(fs.readFileSync(path.join(root, "tools/live-competitions.json"), "utf8"));
+const allowSet = new Set((allow.leagueIds || []).map(Number));
+
+async function apiFootballLiveAll() {
+  // Endpoint exato depende do que vocês já usam no daily.
+  // A ideia é: pegar TODOS os fixtures ao vivo num request.
+  const url = "https://v3.football.api-sports.io/fixtures?live=all";
+  const res = await fetch(url, {
+    headers: { "x-apisports-key": API_KEY }
+  });
+  if (!res.ok) throw new Error(`API-FOOTBALL error ${res.status}`);
+  return res.json();
+}
+
+function toStatusShort(st) {
+  // st.short geralmente vem tipo: "1H", "2H", "HT", "FT", "NS"
+  if (st === "HT") return "HT";
+  if (st === "FT") return "FT";
+  if (st === "NS") return "NS";
+  // 1H/2H/ET/P… tratamos como LIVE
+  return "LIVE";
+}
+
+function extractMinute(fx) {
+  // API costuma trazer fixture.status.elapsed e fixture.status.short
+  const elapsed = fx?.fixture?.status?.elapsed;
+  const short = fx?.fixture?.status?.short || "";
+  const minute = Number.isFinite(elapsed) ? elapsed : null;
+  // acréscimos: nem sempre vem. Se vocês não tiverem agora, ok.
+  return { minute, short };
+}
+
+function buildLivePayload(apiJson) {
+  const fixtures = {};
+  const nowIso = new Date().toISOString();
+
+  const list = apiJson?.response || [];
+  for (const fx of list) {
+    const leagueId = Number(fx?.league?.id);
+    if (!allowSet.has(leagueId)) continue;
+
+    const fixtureId = String(fx?.fixture?.id);
+    const { minute, short } = extractMinute(fx);
+    const status = toStatusShort(short);
+
+    const goalsHome = fx?.goals?.home ?? 0;
+    const goalsAway = fx?.goals?.away ?? 0;
+
+    fixtures[fixtureId] = {
+      status,
+      minute: minute ?? null,
+      score: { home: goalsHome, away: goalsAway }
+    };
+  }
+
+  return {
+    generatedAt: nowIso,
+    ttlSeconds: 60,
+    fixtures
+  };
+}
+
+async function main() {
+  const apiJson = await apiFootballLiveAll();
+  const payload = buildLivePayload(apiJson);
+
+  // garante que a rota exista no build estático
+  const outDir = path.join(root, "public", "api", "v1");
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const outFile = path.join(outDir, "live.json");
+  fs.writeFileSync(outFile, JSON.stringify(payload, null, 2) + "\n", "utf8");
+
+  console.log(`Wrote ${outFile} with ${Object.keys(payload.fixtures).length} fixtures`);
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
