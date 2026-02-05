@@ -429,19 +429,30 @@ function _initials(name){
 }
 
 function pickTeamLogo(obj, side){
+  // 1) API-Football / API-Sports common shape: teams.home.logo / teams.away.logo
+  try{
+    const t = obj && obj.teams && obj.teams[side];
+    if(t && typeof t === "object"){
+      return t.logo || t.crest || t.badge || null;
+    }
+  }catch(e){}
+
+  // 2) Flat keys (snapshots / transforms)
   const cand = (side==="home")
     ? ["home_logo","homeLogo","home_crest","home_badge","logo_home","team_home_logo","home_team_logo","home_logo_url"]
     : ["away_logo","awayLogo","away_crest","away_badge","logo_away","team_away_logo","away_team_logo","away_logo_url"];
   for(const k of cand){
     if(obj && obj[k]) return obj[k];
   }
-  // Optional nested shapes: { home: {logo}, away:{logo} }
+
+  // 3) Optional nested shapes: { home: {logo}, away:{logo} }
   try{
-    const t = obj && obj[side];
-    if(t && typeof t === "object"){
-      return t.logo || t.crest || t.badge || null;
+    const t2 = obj && obj[side];
+    if(t2 && typeof t2 === "object"){
+      return t2.logo || t2.crest || t2.badge || null;
     }
   }catch(e){}
+
   return null;
 }
 
