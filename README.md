@@ -85,12 +85,3 @@ Each match (minimum required fields used by the UI):
 
 Notes:
 - If `form_*_details` are missing/empty, the UI renders neutral squares with a tooltip telling that details are missing (no placeholders).
-
-## New web-app frontend (Next.js)
-
-A new Next.js web-app lives at `apps/web`.
-
-- Local dev: `cd apps/web && npm i && npm run dev`
-- Workers preview: `npm run preview`
-- Deploy: `npm run deploy`
-
