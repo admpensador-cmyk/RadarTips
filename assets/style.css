@@ -135,3 +135,161 @@ h1{margin:0;font-size:34px;line-height:1.1}
 .footer .foot-links a{ opacity:.9; text-decoration:none; border-bottom:1px solid transparent; }
 .footer .foot-links a:hover{ opacity:1; border-bottom-color:currentColor; }
 .footer .foot-meta{ display:flex; flex-wrap:wrap; gap:10px 14px; opacity:.85; font-size:12px; }
+
+
+/* =========================
+   RadarTips – UI polish (override)
+   Keep structure; improve visuals only
+   ========================= */
+
+/* Dark, premium background just for radar pages */
+body[data-page="day"],
+body[data-page="week"],
+body[data-page="calendar"]{
+  background:
+    radial-gradient(1200px 700px at 18% 10%, rgba(70,120,255,.22), transparent 60%),
+    radial-gradient(900px 650px at 80% 18%, rgba(0,210,170,.16), transparent 62%),
+    radial-gradient(900px 700px at 60% 85%, rgba(255,170,60,.10), transparent 60%),
+    linear-gradient(180deg, #060912 0%, #070b14 40%, #050812 100%);
+  color: rgba(255,255,255,.92);
+}
+
+/* Container: breathe */
+body[data-page="day"] .container,
+body[data-page="week"] .container,
+body[data-page="calendar"] .container{
+  max-width: 1180px;
+}
+
+/* Topbar polish */
+.topbar{
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 45px rgba(0,0,0,.35);
+}
+
+/* Section titles */
+.section h2{
+  letter-spacing: .2px;
+}
+
+/* 3 top cards grid: keep same structure, nicer cards */
+.grid{
+  gap: 16px;
+}
+.grid .card{
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  box-shadow: 0 18px 55px rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  transform: translateZ(0);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.grid .card:hover{
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.065);
+}
+.grid .card h3{
+  font-size: 18px;
+  line-height: 1.2;
+  margin-top: 8px;
+}
+.grid .card .meta{
+  color: rgba(255,255,255,.65);
+}
+
+/* Badges look cleaner */
+.badge{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.85);
+}
+.badge.top{
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+.badge.risk.low{ background: rgba(24,169,87,.16); border-color: rgba(24,169,87,.30); }
+.badge.risk.med{ background: rgba(224,179,0,.16); border-color: rgba(224,179,0,.30); }
+.badge.risk.high{ background: rgba(224,69,69,.16); border-color: rgba(224,69,69,.30); }
+
+/* PRO lock row: keep same elements, improve buttons */
+.lock{
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+.btn{
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.9);
+}
+.btn.primary{
+  background: rgba(43,111,242,.22);
+  border-color: rgba(43,111,242,.38);
+}
+.btn:hover{
+  border-color: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.085);
+}
+.btn.primary:hover{
+  background: rgba(43,111,242,.28);
+}
+
+/* Calendar area container */
+#calendar_section{
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 55px rgba(0,0,0,.30);
+}
+
+/* Search + pills */
+.controls .input{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  color: rgba(255,255,255,.92);
+}
+.controls .input::placeholder{
+  color: rgba(255,255,255,.45);
+}
+.toggle .pill{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.80);
+}
+.toggle .pill:hover{
+  background: rgba(255,255,255,.075);
+  border-color: rgba(255,255,255,.20);
+}
+
+/* Calendar match rows (created by JS): keep markup, make it crisp */
+.match{
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  box-shadow: 0 12px 40px rgba(0,0,0,.28);
+  transition: transform .14s ease, border-color .14s ease, background .14s ease;
+}
+.match:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.055);
+}
+.match .time{
+  color: rgba(255,255,255,.75);
+  font-weight: 800;
+}
+.match .suggestion{
+  border-left: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.85);
+}
+
+/* Modal polish */
+.modal{
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(8,12,22,.92);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 90px rgba(0,0,0,.55);
+}
+.modal-head{
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}

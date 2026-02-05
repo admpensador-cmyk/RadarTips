@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -25,7 +27,7 @@ export function EmptyState({ locale }: { locale: string }) {
       <CardContent>
         <p className="text-sm text-white/70">{t.body}</p>
         <div className="mt-4">
-          <Button onClick={() => location.reload()}>{t.cta}</Button>
+          <Button onClick={() => window.location.reload()}>{t.cta}</Button>
         </div>
       </CardContent>
     </Card>

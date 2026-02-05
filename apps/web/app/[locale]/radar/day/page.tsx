@@ -4,8 +4,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchRadarDay } from "@/lib/fetch-radar";
 
-export default async function RadarDayPage({ params }: { params: { locale: string } }) {
-  const locale = params.locale || "en";
+export default async function RadarDayPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: rawLocale } = await params;
+  const locale = rawLocale || "en";
 
   let payload;
   try {
@@ -20,9 +25,12 @@ export default async function RadarDayPage({ params }: { params: { locale: strin
           </CardHeader>
           <CardContent>
             <p className="text-sm text-white/70">
-              Não foi possível buscar o JSON do Radar. Verifique a variável <span className="font-mono">RADARTIPS_DATA_BASE_URL</span>.
+              Não foi possível buscar o JSON do Radar. Verifique a variável{" "}
+              <span className="font-mono">RADARTIPS_DATA_BASE_URL</span>.
             </p>
-            <p className="mt-2 text-xs text-white/40">{String((e as Error)?.message ?? e)}</p>
+            <p className="mt-2 text-xs text-white/40">
+              {String((e as Error)?.message ?? e)}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -33,7 +41,11 @@ export default async function RadarDayPage({ params }: { params: { locale: strin
 
   return (
     <div className="space-y-6">
-      <RadarHeader locale={locale} generatedAt={meta?.generated_at ?? null} isMock={meta?.is_mock} />
+      <RadarHeader
+        locale={locale}
+        generatedAt={meta?.generated_at ?? null}
+        isMock={meta?.is_mock}
+      />
 
       <section className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-2">
@@ -49,8 +61,11 @@ export default async function RadarDayPage({ params }: { params: { locale: strin
             </p>
             <div className="mt-4 grid gap-3">
               {highlights?.length ? (
-                highlights.map((h, idx) => (
-                  <div key={idx} className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                highlights.map((h: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-3"
+                  >
                     <div className="text-sm font-medium">{h.title ?? "Pick"}</div>
                     <div className="text-xs text-white/60">{h.subtitle ?? "—"}</div>
                   </div>
@@ -92,10 +107,14 @@ export default async function RadarDayPage({ params }: { params: { locale: strin
           <span className="text-xs text-white/50">(tabela responsiva vem no próximo commit)</span>
         </div>
 
-        {!matches?.length ? <EmptyState locale={locale} /> : (
+        {!matches?.length ? (
+          <EmptyState locale={locale} />
+        ) : (
           <Card>
             <CardContent>
-              <pre className="text-xs text-white/60">{JSON.stringify(matches.slice(0, 3), null, 2)}</pre>
+              <pre className="text-xs text-white/60">
+                {JSON.stringify(matches.slice(0, 3), null, 2)}
+              </pre>
             </CardContent>
           </Card>
         )}
