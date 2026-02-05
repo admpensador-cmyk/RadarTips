@@ -18,6 +18,9 @@
       "risk": "low",
       "suggestion_free": "Under 3.5",
       "pro_locked": true
+      ,"score_home": 0
+      ,"score_away": 0
+      ,"minute": null
     },
     {
       "fixture_id": 1500677,
@@ -36,6 +39,9 @@
       "risk": "low",
       "suggestion_free": "Under 3.5",
       "pro_locked": true
+      ,"score_home": 0
+      ,"score_away": 0
+      ,"minute": null
     },
     {
       "fixture_id": 1514096,
@@ -54,6 +60,9 @@
       "risk": "low",
       "suggestion_free": "Under 3.5",
       "pro_locked": true
+      ,"score_home": 0
+      ,"score_away": 0
+      ,"minute": null
     }
   ]
 }
