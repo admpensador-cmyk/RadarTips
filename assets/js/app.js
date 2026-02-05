@@ -109,20 +109,24 @@ async function loadJSON(url, fallback){
 // This enables real-time live updates without triggering Cloudflare Pages builds.
 const V1_API_BASE = "/api/v1";
 const V1_STATIC_BASE = "/data/v1";
+
+// Snapshots (calendar + radar) must come from the R2 data worker.
+// IMPORTANT: do NOT prefer /api/v1 for these files.
+// If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
+const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json"]);
 
 async function loadV1JSON(file, fallback){
-  // Snapshots (calendar/radar) come from R2 Data Worker (no Pages rebuild needed)
-  if(file === "calendar_7d.json" || file === "radar_day.json" || file === "radar_week.json"){
-    const r2 = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
-    if(r2) return r2;
+  // For snapshots, prefer R2 data worker first.
+  if(SNAPSHOT_FILES.has(file)){
+    const data = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
+    if(data) return data;
+    return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
   }
 
-  // Live and any API-backed endpoints: API first
+  // Default: API first (used for live, etc.), then static fallback.
   const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
   if(api) return api;
-
-  // Static fallback (repo snapshots)
   return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
 }
 
