@@ -14,16 +14,44 @@
 
     { "search": "Serie A", "country": "Brazil", "type": "league" },
     { "search": "Serie B", "country": "Brazil", "type": "league" },
+    { "search": "Serie C", "country": "Brazil", "type": "league" },
     { "search": "Copa do Brasil", "country": "Brazil", "type": "cup" },
 
     { "search": "Premier League", "country": "England", "type": "league" },
+    { "search": "Championship", "country": "England", "type": "league" },
+    { "search": "FA Cup", "country": "England", "type": "cup" },
+
     { "search": "La Liga", "country": "Spain", "type": "league" },
+    { "search": "Segunda Division", "country": "Spain", "type": "league" },
+    { "search": "Copa del Rey", "country": "Spain", "type": "cup" },
+
     { "search": "Serie A", "country": "Italy", "type": "league" },
+    { "search": "Serie B", "country": "Italy", "type": "league" },
+    { "search": "Coppa Italia", "country": "Italy", "type": "cup" },
+
     { "search": "Bundesliga", "country": "Germany", "type": "league" },
+    { "search": "2. Bundesliga", "country": "Germany", "type": "league" },
+    { "search": "DFB Pokal", "country": "Germany", "type": "cup" },
+
     { "search": "Ligue 1", "country": "France", "type": "league" },
+    { "search": "Ligue 2", "country": "France", "type": "league" },
+    { "search": "Coupe de France", "country": "France", "type": "cup" },
 
     { "search": "UEFA Champions League", "country": "", "type": "cup" },
     { "search": "UEFA Europa League", "country": "", "type": "cup" },
-    { "search": "UEFA Europa Conference League", "country": "", "type": "cup" }
+    { "search": "UEFA Europa Conference League", "country": "", "type": "cup" },
+
+    { "search": "Liga MX", "country": "Mexico", "type": "league" },
+    { "search": "Primera Division", "country": "Argentina", "type": "league" },
+    { "search": "Primera Division", "country": "Uruguay", "type": "league" },
+    { "search": "Primera A", "country": "Colombia", "type": "league" },
+    { "search": "Major League Soccer", "country": "USA", "type": "league" },
+
+    { "search": "A-League", "country": "Australia", "type": "league" },
+
+    { "search": "Saudi Pro League", "country": "Saudi Arabia", "type": "league" },
+    { "search": "Premier League", "country": "Egypt", "type": "league" },
+    { "search": "Premiership", "country": "South Africa", "type": "league" },
+    { "search": "J1 League", "country": "Japan", "type": "league" }
   ]
 }
