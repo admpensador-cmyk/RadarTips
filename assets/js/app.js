@@ -105,16 +105,25 @@ async function loadJSON(url, fallback){
   }catch{ return fallback; }
 }
 
-// Prefer Worker API (/api/v1) with automatic fallback to static files (/data/v1).
-// This enables real-time live updates without triggering Cloudflare Pages builds.
-const V1_API_BASE = "/api/v1";
-const V1_STATIC_BASE = "/data/v1";
+// Prefer live via Worker API (/api/v1) and snapshots via R2 Data Worker.
+// Live will be improved later; snapshots must always be fresh from R2.
+const V1_API_BASE = "/api/v1"; // live.json (and future live endpoints)
+const V1_STATIC_BASE = "/data/v1"; // last-resort fallback bundled with the site
+const V1_DATA_WORKER_BASE = "https://radartips-data.m2otta-music.workers.dev/v1"; // R2 snapshots
 
 async function loadV1JSON(file, fallback){
-  // API first
-  const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
-  if(api) return api;
-  // Static fallback
+  // Live: prefer API Worker (minute-by-minute later)
+  if(file === "live.json"){
+    const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
+    if(api) return api;
+    return fallback;
+  }
+
+  // Snapshots: prefer R2 via Data Worker
+  const r2 = await loadJSON(`${V1_DATA_WORKER_BASE}/${file}`, null);
+  if(r2) return r2;
+
+  // Final fallback: static files embedded in the Pages build
   return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
 }
 
