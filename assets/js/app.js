@@ -710,7 +710,7 @@ function renderTop3(t, data){
       </div>
       <div class="scoreline">
         <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
-        <span class="score" data-score hidden>0 - 0</span>
+        <span class="score" data-score>0 - 0</span>
         <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
       </div>
       <div class="meta-actions">
@@ -991,7 +991,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
         ${metaChips}
         <div class="scoreline">
           <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
-          <span class="score" data-score hidden>0 - 0</span>
+        <span class="score" data-score>0 - 0</span>
           <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
         </div>
         <div class="subline">

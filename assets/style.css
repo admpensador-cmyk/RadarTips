@@ -135,3 +135,53 @@ h1{margin:0;font-size:34px;line-height:1.1}
 .footer .foot-links a{ opacity:.9; text-decoration:none; border-bottom:1px solid transparent; }
 .footer .foot-links a:hover{ opacity:1; border-bottom-color:currentColor; }
 .footer .foot-meta{ display:flex; flex-wrap:wrap; gap:10px 14px; opacity:.85; font-size:12px; }
+
+/* Premium overrides for radar cards and list items */
+.crest{
+  width:20px;
+  height:20px;
+  object-fit:contain;
+  margin:0 4px;
+}
+.teams-line{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.team-name{
+  font-weight:800;
+  display:inline-block;
+}
+.scoreline{
+  margin-top:6px;
+  font-weight:800;
+  display:flex;
+  align-items:baseline;
+  gap:4px;
+  color:var(--text);
+}
+.scoreline .score{
+  font-size:16px;
+}
+.scoreline .minute{
+  font-size:12px;
+  color:var(--muted);
+  margin-left:6px;
+}
+.time-col{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.main-col{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.side-col{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  align-items:flex-end;
+}
