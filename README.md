@@ -60,6 +60,40 @@ After a workflow run:
   - `/api/v1/radar_week.json`
 If those URLs return JSON, the UI should update automatically.
 
+
+## Match markets (analysis)
+
+Each match may include an optional analysis block with multiple suggested markets for the fixture. This powers the match modal table (Market | Suggested entry | Risk | Justification).
+
+### `analysis.markets` (optional)
+Array ordered by confidence (best first).
+
+Fields:
+- `key`: internal id (e.g. `goals_ou`, `btts`, `double_chance`, `dnb`)
+- `market`: display name
+- `entry`: suggested pick/line
+- `risk`: `low` | `med` | `high` | `volatile`
+- `confidence`: number 0..1
+- `rationale`: **one short sentence** mentioning risk naturally
+
+Example:
+```json
+{
+  "analysis": {
+    "markets": [
+      {
+        "key": "goals_ou",
+        "market": "Goals (Over/Under)",
+        "entry": "Over 2.5",
+        "risk": "med",
+        "confidence": 0.68,
+        "rationale": "Both attacks are producing consistently, but the risk is medium due to recent variance."
+      }
+    ]
+  }
+}
+```
+
 ## Calendar schema (data/v1/calendar_7d.json)
 
 Top-level:

@@ -290,6 +290,197 @@ function sumGoalsForAgainst(teamId, fixtures, limitN) {
   return { gf, ga, counted };
 }
 
+
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+function goalsPerMatch(agg){
+  if(!agg || !agg.counted) return { gfpm: 0, gapm: 0, tgpm: 0 };
+  const gfpm = agg.gf / agg.counted;
+  const gapm = agg.ga / agg.counted;
+  return { gfpm, gapm, tgpm: gfpm + gapm };
+}
+
+function pointsFromForm(details){
+  // details: [{result:"W"|"D"|"L"}]
+  const arr = Array.isArray(details) ? details : [];
+  let pts = 0, w=0, d=0, l=0;
+  for(const it of arr){
+    const r = String(it?.result || "").toUpperCase();
+    if(r==="W"){ pts += 3; w++; }
+    else if(r==="D"){ pts += 1; d++; }
+    else if(r==="L"){ l++; }
+  }
+  return { pts, w, d, l, n: arr.length };
+}
+
+function volatilityFromFixtures(fixtures, teamId, limitN){
+  // Uses last finished fixtures for the team, computes std dev of total goals
+  const arr = Array.isArray(fixtures) ? fixtures.slice(0, limitN) : [];
+  const totals = [];
+  for(const fx of arr){
+    const homeId = fx?.teams?.home?.id ?? null;
+    const awayId = fx?.teams?.away?.id ?? null;
+    const gH = fx?.goals?.home;
+    const gA = fx?.goals?.away;
+    if(!Number.isFinite(Number(gH)) || !Number.isFinite(Number(gA))) continue;
+    if(homeId !== teamId && awayId !== teamId) continue;
+    totals.push(Number(gH) + Number(gA));
+  }
+  if(totals.length < 2) return 0.0;
+  const mean = totals.reduce((a,b)=>a+b,0) / totals.length;
+  const varr = totals.reduce((a,b)=>a + (b-mean)*(b-mean), 0) / (totals.length - 1);
+  return Math.sqrt(varr);
+}
+
+function riskLabelFrom(volScore){
+  // volScore ~ 0..2+
+  if(volScore >= 1.4) return "volatile";
+  if(volScore >= 1.0) return "high";
+  if(volScore >= 0.6) return "med";
+  return "low";
+}
+
+function buildRationale(kind, risk){
+  const r = (risk==="low") ? "baixo" : (risk==="med") ? "médio" : (risk==="high") ? "alto" : "volátil";
+  if(kind==="goals_over"){
+    return `Tendência de gols acima da média, mas risco ${r} por variação recente.`;
+  }
+  if(kind==="goals_under"){
+    return `Perfil mais controlado de gols, mas risco ${r} por oscilações e contexto.`;
+  }
+  if(kind==="btts_yes"){
+    return `Ambas costumam marcar e conceder, mas risco ${r} pela dependência de eficiência.`;
+  }
+  if(kind==="btts_no"){
+    return `Um lado tende a segurar ou o outro cria pouco, mas risco ${r} por detalhes de jogo.`;
+  }
+  if(kind==="double_chance"){
+    return `Força relativa e forma favorecem proteção, mas risco ${r} por imprevisibilidade do resultado.`;
+  }
+  if(kind==="dnb"){
+    return `Favoritismo leve com proteção do empate, mas risco ${r} por margem curta.`;
+  }
+  return `Cenário provável com risco ${r}.`;
+}
+
+function mkMarket({key, market, entry, risk, confidence, rationale}){
+  return { key, market, entry, risk, confidence: clamp01(confidence), rationale };
+}
+
+function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetails, vol, baseRisk}){
+  const markets = [];
+
+  const h = goalsPerMatch(homeAgg);
+  const a = goalsPerMatch(awayAgg);
+
+  const combined = (h.tgpm + a.tgpm) / 2; // proxy of total goals environment
+  // Confidence grows as we move away from 2.5-ish center
+  let over25Conf = clamp01(0.50 + (combined - 2.6) * 0.18);
+  let under35Conf = clamp01(0.55 + (3.3 - combined) * 0.12);
+
+  // Primary goals suggestion
+  if(combined >= 2.85){
+    const r = (baseRisk==="low" && vol < 0.8) ? "med" : baseRisk;
+    markets.push(mkMarket({
+      key: "goals_ou",
+      market: "Gols (Over/Under)",
+      entry: "Over 2.5",
+      risk: r,
+      confidence: over25Conf,
+      rationale: buildRationale("goals_over", r)
+    }));
+    // safer alt
+    markets.push(mkMarket({
+      key: "goals_ou_safe",
+      market: "Gols (Over/Under)",
+      entry: "Over 1.5",
+      risk: "low",
+      confidence: clamp01(over25Conf + 0.12),
+      rationale: "Linha mais conservadora para reduzir risco."
+    }));
+    // protection
+    markets.push(mkMarket({
+      key: "goals_ou_protect",
+      market: "Gols (Over/Under)",
+      entry: "Under 3.5",
+      risk: (vol > 1.2 ? "med" : "low"),
+      confidence: clamp01(under35Conf + 0.05),
+      rationale: "Proteção contra placar muito elástico."
+    }));
+  }else{
+    const r = (baseRisk==="high" ? "high" : baseRisk);
+    markets.push(mkMarket({
+      key: "goals_ou",
+      market: "Gols (Over/Under)",
+      entry: "Under 3.5",
+      risk: r,
+      confidence: under35Conf,
+      rationale: buildRationale("goals_under", r)
+    }));
+    markets.push(mkMarket({
+      key: "goals_ou_safe",
+      market: "Gols (Over/Under)",
+      entry: "Over 1.5",
+      risk: "med",
+      confidence: clamp01(0.58 + (combined - 2.0) * 0.10),
+      rationale: "Se houver gol cedo, a linha tende a ficar viva (risco médio)."
+    }));
+  }
+
+  // BTTS heuristic
+  const bttsSignal = (h.gfpm >= 1.1 && a.gfpm >= 1.1 && h.gapm >= 0.9 && a.gapm >= 0.9);
+  if(bttsSignal){
+    const r = (vol >= 1.3) ? "high" : "med";
+    markets.push(mkMarket({
+      key: "btts",
+      market: "Ambas marcam",
+      entry: "Sim",
+      risk: r,
+      confidence: clamp01(0.56 + ((h.gfpm+a.gfpm)/2 - 1.1) * 0.10),
+      rationale: buildRationale("btts_yes", r)
+    }));
+  }else{
+    const r = (vol >= 1.2) ? "high" : "med";
+    markets.push(mkMarket({
+      key: "btts",
+      market: "Ambas marcam",
+      entry: "Não",
+      risk: r,
+      confidence: clamp01(0.54 + (1.1 - Math.min(h.gfpm, a.gfpm)) * 0.08),
+      rationale: buildRationale("btts_no", r)
+    }));
+  }
+
+  // Result protection (Double Chance / DNB) via form points
+  const ph = pointsFromForm(formHomeDetails);
+  const pa = pointsFromForm(formAwayDetails);
+  const diff = (ph.pts - pa.pts);
+  if(Math.abs(diff) >= 3){
+    const homeFav = diff > 0;
+    const r = (baseRisk==="low") ? "med" : baseRisk;
+    markets.push(mkMarket({
+      key: "double_chance",
+      market: "Dupla chance",
+      entry: homeFav ? "1X" : "X2",
+      risk: r,
+      confidence: clamp01(0.56 + Math.min(0.18, Math.abs(diff) * 0.03)),
+      rationale: buildRationale("double_chance", r)
+    }));
+    markets.push(mkMarket({
+      key: "dnb",
+      market: "Empate anula",
+      entry: homeFav ? "DNB Casa" : "DNB Fora",
+      risk: (baseRisk==="high" ? "high" : "med"),
+      confidence: clamp01(0.53 + Math.min(0.15, Math.abs(diff) * 0.025)),
+      rationale: buildRationale("dnb", (baseRisk==="high" ? "high" : "med"))
+    }));
+  }
+
+  // Sort by confidence desc and cap
+  markets.sort((a,b)=> (b.confidence ?? 0) - (a.confidence ?? 0));
+  return markets.slice(0, 6);
+}
+
 function pickSuggestionAndRisk(homeAgg, awayAgg) {
   const hAvg = (homeAgg.counted ? (homeAgg.gf + homeAgg.ga) / homeAgg.counted : 2.2);
   const aAvg = (awayAgg.counted ? (awayAgg.gf + awayAgg.ga) / awayAgg.counted : 2.2);
@@ -329,7 +520,9 @@ function mapFixtureToMatchRow(fx, enrich) {
     gf_home: enrich.gf_home,
     ga_home: enrich.ga_home,
     gf_away: enrich.gf_away,
-    ga_away: enrich.ga_away
+    ga_away: enrich.ga_away,
+
+    analysis: enrich.analysis || null
   };
 }
 
@@ -438,6 +631,20 @@ async function main() {
 
     const { suggestion_free, risk } = pickSuggestionAndRisk(homeAgg, awayAgg);
 
+    const volHome = volatilityFromFixtures(homeLast, homeId, goalsWindow);
+    const volAway = volatilityFromFixtures(awayLast, awayId, goalsWindow);
+    const vol = (volHome + volAway) / 2;
+    const baseRisk = riskLabelFrom(vol);
+
+    const markets = buildMarketsForMatch({
+      homeAgg,
+      awayAgg,
+      formHomeDetails,
+      formAwayDetails,
+      vol,
+      baseRisk
+    });
+
     matches.push(
       mapFixtureToMatchRow(fx, {
         suggestion_free,
@@ -447,7 +654,9 @@ async function main() {
         gf_home: homeAgg.gf,
         ga_home: homeAgg.ga,
         gf_away: awayAgg.gf,
-        ga_away: awayAgg.ga
+        ga_away: awayAgg.ga,
+
+        analysis: { markets, volatility: vol }
       })
     );
   }

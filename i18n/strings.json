@@ -553,5 +553,14 @@
     "market_over_prefix": "Über",
     "market_dnb_fmt": "DNB {side}",
     "word_handicap": "Handicap"
-  }
+  },
+  "markets_title": "Mercados analisados",
+  "markets_tooltip": "Outros mercados sugeridos para a partida (com risco e justificativa).",
+  "market_col": "Mercado",
+  "entry_col": "Entrada sugerida",
+  "risk_col": "Risco",
+  "just_col": "Justificativa",
+  "confidence_label": "Confiança",
+  "risk_volatile": "Volátil",
+  "no_markets": "Sem mercados suficientes para esta partida."
 }

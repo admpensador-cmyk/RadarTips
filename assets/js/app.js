@@ -92,6 +92,62 @@ function riskClass(r){
   if(v==="high") return "high";
   return "med";
 }
+
+function marketRiskClass(r){
+  const v=(r||"").toLowerCase();
+  if(v==="low") return "low";
+  if(v==="med" || v==="medium") return "med";
+  if(v==="volatile") return "high"; // reuse high styling
+  if(v==="high") return "high";
+  return "med";
+}
+
+function marketRiskLabel(r){
+  const v=(r||"").toLowerCase();
+  if(v==="low") return (T.risk_low || "Baixo");
+  if(v==="high") return (T.risk_high || "Alto");
+  if(v==="volatile") return (T.risk_volatile || "Volátil");
+  return (T.risk_med || "Médio");
+}
+
+function fmtPct(x){
+  const n = Number(x);
+  if(!Number.isFinite(n)) return "—";
+  return `${Math.round(n*100)}%`;
+}
+
+function renderMarketsTable(markets){
+  const rows = (Array.isArray(markets)?markets:[]).map(m=>{
+    const rlab = marketRiskLabel(m?.risk);
+    const rcls = marketRiskClass(m?.risk);
+    return `
+      <tr>
+        <td class="mt-market">${escAttr(m?.market || "—")}</td>
+        <td class="mt-entry"><div><b>${escAttr(localizeMarket(m?.entry, T) || m?.entry || "—")}</b></div><div class="mt-sub">${escAttr(T.confidence_label || "Confiança")}: ${fmtPct(m?.confidence)}</div></td>
+        <td><span class="badge risk ${rcls}">${escAttr(rlab)}</span></td>
+        <td class="mt-why">${escAttr(m?.rationale || "—")}</td>
+      </tr>
+    `;
+  }).join("");
+
+  if(!rows) return `<div class="smallnote" style="opacity:.8">${escAttr(T.no_markets || "Sem mercados suficientes para esta partida.")}</div>`;
+
+  return `
+    <div class="mt-wrap">
+      <table class="mt">
+        <thead>
+          <tr>
+            <th>${escAttr(T.market_col || "Mercado")}</th>
+            <th>${escAttr(T.entry_col || "Entrada sugerida")}</th>
+            <th>${escAttr(T.risk_col || "Risco")}</th>
+            <th>${escAttr(T.just_col || "Justificativa")}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
 function squareFor(ch){
   if(ch==="W") return "g";
   if(ch==="D") return "y";
@@ -900,6 +956,65 @@ function buildFormSquares(t, details, windowN){
   return Array.from({length:n}).map(()=> `<span class="dot n" ${tipAttr(missing)}></span>`).join("");
 }
 
+
+function renderMarketsTable(markets){
+  const arr = Array.isArray(markets) ? markets : [];
+  if(!arr.length){
+    return `<div class="smallnote">${escAttr(T.no_markets || "Sem mercados suficientes para esta partida.")}</div>`;
+  }
+
+  const headMarket = escAttr(T.market_col || "Mercado");
+  const headEntry = escAttr(T.entry_col || "Entrada sugerida");
+  const headRisk = escAttr(T.risk_col || "Risco");
+  const headJust = escAttr(T.just_col || "Justificativa");
+
+  const rows = arr.map(m=>{
+    const risk = String(m?.risk || "med");
+    const riskCls = marketRiskClass(risk);
+    const riskLabel = (risk==="volatile") ? (T.risk_volatile || "Volátil")
+      : (risk==="low") ? (T.risk_low || "Baixo")
+      : (risk==="high") ? (T.risk_high || "Alto")
+      : (T.risk_med || "Médio");
+
+    const confPct = Math.round((Number(m?.confidence || 0) * 100));
+    const confTxt = `${escAttr(T.confidence_label || "Confiança")}: <b>${confPct}%</b>`;
+
+    return `
+      <tr>
+        <td>
+          <div class="mt-market">${escAttr(m?.market || "-")}</div>
+          <div class="mt-sub">${escAttr(m?.key || "")}</div>
+        </td>
+        <td>
+          <div><b>${escAttr(localizeMarket(m?.entry, T) || m?.entry || "-")}</b></div>
+          <div class="mt-sub">${confTxt}</div>
+        </td>
+        <td><span class="badge risk ${riskCls}">${escAttr(riskLabel)}</span></td>
+        <td class="mt-why">${escAttr(m?.rationale || "-")}</td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <div class="mt-wrap">
+      <table class="mt">
+        <thead>
+          <tr>
+            <th>${headMarket}</th>
+            <th>${headEntry}</th>
+            <th>${headRisk}</th>
+            <th>${headJust}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+
 function renderCalendar(t, matches, viewMode, query, activeDateKey){
   const root = qs("#calendar");
   if(!root) return;
@@ -1131,92 +1246,9 @@ function openModal(type, value){
     title.textContent = T.about_title || "About";
     body.innerHTML = `
       <div class="panel">
-        <div class="panel-title">${escAttr(T.about_intro_title || T.about_title || "About")}</div>
-        <div class="smallnote">${escAttr(T.about_intro || "")}</div>
-      </div>
-
-      <div class="panel" style="margin-top:12px">
-        <div class="panel-title">${escAttr(T.about_steps_title || "How it works")}</div>
-        <div class="smallnote" style="display:flex;flex-direction:column;gap:6px">
-          <div>• ${escAttr(T.about_step1 || "")}</div>
-          <div>• ${escAttr(T.about_step2 || "")}</div>
-          <div>• ${escAttr(T.about_step3 || "")}</div>
+          <div class="panel-title" ${tipAttr(T.markets_tooltip || "")}>${escAttr(T.markets_title || "Mercados analisados")}</div>
+          ${renderMarketsTable(m?.analysis?.markets || [])}
         </div>
-      </div>
-
-      <div class="mnote">
-        <div>${escAttr(T.disclaimer || "")}</div>
-      </div>
-    `;
-    back.style.display = "flex";
-    bindModalClicks();
-    return;
-  }
-
-  // MATCH RADAR
-  if(type === "match"){
-    const key = value || "";
-    const decoded = decodeURIComponent(key);
-    const parts = decoded.split("|");
-    const home = parts[1] || "";
-    const away = parts[2] || "";
-
-    const m = CAL_MATCHES.find(x => (`${x.kickoff_utc}|${x.home}|${x.away}`) === decoded) || null;
-
-    const mCountry = m?.country || "—";
-    const compDisp = competitionDisplay(m?.competition, mCountry, LANG);
-    const mCompRaw = m?.competition || "—";
-    const compVal = competitionValue(m || {competition:mCompRaw});
-
-    const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "—";
-    const riskCls = m ? riskClass(m.risk) : "med";
-    const kickoff = m ? fmtTime(m.kickoff_utc) : "--:--";
-    const suggestion = localizeMarket(m?.suggestion_free, T) || "—";
-
-    title.textContent = `${home} vs ${away}`;
-
-    const goalsTip = T.goals_tooltip || "Goals for/goals against (last 5 matches).";
-    const formHome = buildFormSquares(T, m?.form_home_details || m?.form_home_last || m?.home_last || null, CAL_META.form_window);
-    const formAway = buildFormSquares(T, m?.form_away_details || m?.form_away_last || m?.away_last || null, CAL_META.form_window);
-
-    const homeLogo = pickTeamLogo(m, "home");
-    const awayLogo = pickTeamLogo(m, "away");
-
-    body.innerHTML = `
-      <div class="mhead">
-        <div class="mmeta">
-          <div class="mteams">
-            <div class="team">${crestHTML(home, homeLogo)}<span>${escAttr(home)}</span></div>
-            <div class="vs" style="opacity:.7;font-weight:900">vs</div>
-            <div class="team">${crestHTML(away, awayLogo)}<span>${escAttr(away)}</span></div>
-          </div>
-
-          <div class="mcomp">
-            ${escAttr(compDisp)} • ${escAttr(mCountry)} • <span ${tipAttr(T.kickoff_tooltip || "")}>${kickoff}</span>
-          </div>
-
-          <div class="mbadges">
-            <span class="badge risk ${riskCls}" ${tipAttr(T.risk_tooltip || "")}>${riskText}</span>
-            <span class="badge" ${tipAttr(T.suggestion_tooltip || "")}>${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(suggestion)}</b></span>
-          </div>
-        </div>
-
-        <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
-      </div>
-
-      <div class="mgrid">
-        <div class="panel">
-          <div class="panel-title" ${tipAttr(T.form_tooltip || "")}>${escAttr(T.form_label || "Últimos 5")}</div>
-          <div class="form">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <span style="font-weight:950;opacity:.85">${escAttr(T.home_label || "CASA")}</span>
-              ${formHome}
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-              <span style="font-weight:950;opacity:.85">${escAttr(T.away_label || "FORA")}</span>
-              ${formAway}
-            </div>
-          </div>
         </div>
 
         <div class="panel">
@@ -1660,6 +1692,15 @@ function injectPatchStyles(){
     margin-bottom: 8px;
     opacity: .92;
   }
+
+  .modal .mt-wrap{ overflow:auto; }
+  .modal table.mt{ width:100%; border-collapse:collapse; }
+  .modal table.mt th, .modal table.mt td{ padding:10px 10px; vertical-align:top; }
+  .modal table.mt thead th{ opacity:.85; font-weight:900; text-align:left; }
+  .modal table.mt tbody tr{ border-top:1px solid rgba(255,255,255,.08); }
+  .modal .mt-sub{ font-size:12px; opacity:.75; margin-top:2px; }
+  .modal .mt-why{ line-height:1.25rem; opacity:.9; }
+  .modal .mt-market{ font-weight:800; }
   .modal .mhead{
     display:flex;
     gap:12px;

@@ -1,0 +1,17 @@
+*** Begin Patch
+*** Update File: README.md
+@@
+-Static multi-language site (EN/PT/ES/FR/DE) designed for:
+- - Daily Radar (Top 3)
+- - Weekly Radar
+- - 7-day Calendar (by time / by country)
+- - Free view shows: fixture + suggestion + risk + basic stats
+- - PRO fields are shown as locked (probability/EV/odds)
++Static multi-language site (EN/PT/ES/FR/DE) designed for:
++ - Daily Radar (Top 3)
++ - Weekly Radar
++ - 7-day Calendar (by time / by country)
++ - **Tabela de mercados**: ao clicar em uma partida, o quadro de forma recente é substituído por uma tabela contendo os mercados analisados, a entrada sugerida, o risco e uma justificativa breve. Essa funcionalidade é alimentada por módulos de análise invisíveis ao usuário (gols, resultado, risco e valor de mercado).
++ - Free view shows: fixture + suggestion + risk + basic stats
++ - PRO fields are shown as locked (probability/EV/odds)
+*** End Patch
