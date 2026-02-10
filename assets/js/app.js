@@ -1241,6 +1241,12 @@ function openModal(type, value){
   const title = qs("#modal_title");
   const body = qs("#modal_body");
 
+  // Defensive: competition modal should never receive matchKey (kickoff|home|away).
+  if(type === "competition" && String(value || "").includes("|")){
+    openModal("match", value);
+    return;
+  }
+
   // ABOUT / HOW IT WORKS
   if(type === "about"){
     title.textContent = T.about_title || "About";
@@ -1267,7 +1273,7 @@ function openModal(type, value){
       </div>
 
       <div class="mfooter">
-        <span class="chip" data-open="competition" data-value="${escAttr(compVal || mCompRaw)}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
+        <span class="chip" data-open="competition" data-value="${escAttr(competitionValue(m || {competition:mCompRaw}))}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
         <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${escAttr(T.country_radar || "Radar do País")}</span>
       </div>
 
@@ -1363,7 +1369,13 @@ function bindModalClicks(){
   qsa("#modal_body [data-open]").forEach(el=>{
     el.addEventListener("click", ()=>{
       const type = el.getAttribute("data-open");
-      const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
+      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
+      let val = "";
+      if(type === "match"){
+        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
+      }else{
+        val = el.getAttribute("data-value") || "";
+      }
       openModal(type, val);
     });
   });
@@ -1954,7 +1966,13 @@ async function init(){
         // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
         e.stopPropagation();
         const type = el.getAttribute("data-open");
-        const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
+      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
+      let val = "";
+      if(type === "match"){
+        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
+      }else{
+        val = el.getAttribute("data-value") || "";
+      }
         openModal(type, val);
       });
     });
