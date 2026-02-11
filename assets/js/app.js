@@ -778,7 +778,7 @@ function renderTop3(t, data){
     // FREE callout
     const key = matchKey(item);
     card.setAttribute("data-open","match");
-    card.setAttribute("data-key", key);
+    card.setAttribute("data-value", key);
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
@@ -802,7 +802,7 @@ function renderTop3(t, data){
           <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
         </div>
         <div class="callout-actions">
-          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
+          <button class="btn primary" type="button" data-open="match" data-value="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
         </div>
       </div>
     `;
@@ -1217,7 +1217,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     const row = document.createElement("div");
     row.className = "match";
     row.setAttribute("data-open","match");
-    row.setAttribute("data-key", matchKey(m));
+    row.setAttribute("data-value", matchKey(m));
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
@@ -1408,6 +1408,8 @@ let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
 
 function openModal(type, value){
+  console.log("openModal called:", type, value);
+  
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");
   const body = qs("#modal_body");
