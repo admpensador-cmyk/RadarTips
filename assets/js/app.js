@@ -1241,9 +1241,21 @@ function openModal(type, value){
   const title = qs("#modal_title");
   const body = qs("#modal_body");
 
+  // Always try to decode incoming values from query/hash before using/displaying.
+  // If decodeURIComponent fails, fall back to original value.
+  let rawValue = value;
+  let decodedValue = value;
+  if(typeof value === "string" && value.length){
+    try{
+      decodedValue = decodeURIComponent(value);
+    }catch(e){
+      decodedValue = value;
+    }
+  }
+
   // Defensive: competition modal should never receive matchKey (kickoff|home|away).
-  if(type === "competition" && String(value || "").includes("|")){
-    openModal("match", value);
+  if(type === "competition" && String(decodedValue || "").includes("|")){
+    openModal("match", decodedValue);
     return;
   }
 
@@ -1289,21 +1301,21 @@ function openModal(type, value){
   }
 
   // COUNTRY / COMPETITION RADAR (FREE)
-  const isId = /^[0-9]+$/.test(String(value || "").trim());
+  const isId = /^[0-9]+$/.test(String(decodedValue || "").trim());
   const label = (type==="country") ? (T.country_radar || "Radar do País") : (T.competition_radar || "Radar da Competição");
 
   let list = [];
-  let displayValue = value;
+  let displayValue = decodedValue || rawValue;
 
   if(type==="country"){
-    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(value));
+    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(decodedValue));
   }else{
     if(isId){
-      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(value));
+      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(decodedValue));
       const sample = list[0];
       if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
     }else{
-      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(value));
+      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(decodedValue));
       const sample = list[0];
       if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
     }
