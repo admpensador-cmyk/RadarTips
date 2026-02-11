@@ -1290,13 +1290,6 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       </div>
     ` : "";
 
-    // insert mr-surface as first child (before all content) to detect empty-area clicks
-    const surface = document.createElement("div");
-    surface.className = "mr-surface";
-    surface.setAttribute("aria-hidden", "true");
-    surface.style.cssText = "position:absolute;inset:0;z-index:1;cursor:pointer";
-    row.appendChild(surface);
-
     // ensure row has positioning context for absolute overlay
     if(!row.style.position || row.style.position === "static") row.style.position = "relative";
 
@@ -1333,6 +1326,13 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       </div>
       <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
     `;
+
+    // insert mr-surface after HTML content (prevents destruction from innerHTML reassignment)
+    const surface = document.createElement("div");
+    surface.className = "mr-surface";
+    surface.setAttribute("aria-hidden", "true");
+    surface.style.cssText = "position:absolute;inset:0;z-index:0;cursor:pointer";
+    row.prepend(surface);
 
     return row;
   }
@@ -2263,6 +2263,9 @@ async function init(){
         // Let card-specific handlers manage .card[data-open='match'] clicks
         if(el.matches && el.matches(".card[data-open='match']")) return;
 
+        // Skip [data-open] clicks inside fixture cards; let mr-surface handler manage match opening
+        if(e.target.closest("[data-fixture-id]")) return;
+
         e.stopPropagation();
         const type = el.getAttribute("data-open");
       // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
@@ -2292,32 +2295,15 @@ async function init(){
     // This is the single unified click handler for Match Radar modal opening
     function handleMRSurfaceClick(e){
       e.stopPropagation();
-      const surface = e.currentTarget; // the .mr-surface element
-      const card = surface.closest('.card[data-open="match"], .match[data-open="match"]');
+      const card = e.target.closest('[data-fixture-id]');
       
       if(!card){ return; }
 
-      const fixture = card.getAttribute('data-fixture-id') || '';
-      if(fixture){
-        const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
-        if(found){
-          const val = matchKey(found);
-          showMRToast(`MR: abrir (fixtureId=${fixture})`);
-          openModal('match', val);
-          return;
-        }else{
-          showMRToast(`MR ERRO: fixture not in dataset (${fixture})`);
-          return;
-        }
-      }
+      const fixtureId = card.getAttribute('data-fixture-id');
+      if(!fixtureId){ return; }
 
-      const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
-      if(val){
-        showMRToast(`MR: abrir (val=${val})`);
-        openModal('match', val);
-      }else{
-        showMRToast('MR ERRO: fixtureId missing');
-      }
+      // Open match modal with fixtureId
+      openModal('match', fixtureId);
     }
 
     // bind mr-surface handlers to ALL match-type cards (both Radar .card and Calendar .match)
