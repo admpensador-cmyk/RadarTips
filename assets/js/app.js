@@ -2245,6 +2245,48 @@ async function init(){
   }
 
   function bindOpenHandlers(){
+    // TEMP DEBUG: visual click inspector (capture-phase)
+    try{
+      if(!qs('#click-debug-overlay')){
+        const dbg = document.createElement('div');
+        dbg.id = 'click-debug-overlay';
+        dbg.style.position = 'fixed';
+        dbg.style.left = '10px';
+        dbg.style.bottom = '10px';
+        dbg.style.padding = '6px 8px';
+        dbg.style.background = 'rgba(0,0,0,0.85)';
+        dbg.style.color = '#fff';
+        dbg.style.fontSize = '12px';
+        dbg.style.borderRadius = '6px';
+        dbg.style.zIndex = '2147483647';
+        dbg.style.maxWidth = '360px';
+        dbg.style.pointerEvents = 'none';
+        dbg.textContent = 'CLICK: ready';
+        document.body.appendChild(dbg);
+      }
+
+      // capture-phase listener to inspect clicks before other handlers
+      document.addEventListener('click', function clickDebug(e){
+        try{
+          const target = e.target || {};
+          const tag = (target.tagName || 'UNKNOWN');
+          const cls = (target.className && typeof target.className === 'string') ? target.className.split(' ')[0] : (target.className || '');
+          const openEl = target.closest ? target.closest('[data-open]') : null;
+          const openType = openEl ? (openEl.getAttribute('data-open') || '') : '';
+          const openVal = openEl ? (openEl.getAttribute('data-value') || openEl.getAttribute('data-key') || '') : '';
+          const fxEl = target.closest ? target.closest('[data-fixture-id]') : null;
+          const fixtureId = fxEl ? fxEl.getAttribute('data-fixture-id') || '' : '';
+          const out = `CLICK: data-open=${openType||'-'} value=${openVal||'-'} fixtureId=${fixtureId||'-'} target=${tag} ${cls?('.'+cls):''}`;
+          const dbgNode = qs('#click-debug-overlay');
+          if(dbgNode) dbgNode.textContent = out;
+        }catch(err){/* ignore */}
+
+        // Do not open any modal while diagnosing
+        e.stopPropagation();
+        e.preventDefault();
+      }, true);
+    }catch(err){/* ignore debug overlay init errors */}
+
     // any [data-open] outside modal (cards, chips, matches)
     qsa("[data-open]").forEach(el=>{
       if(el.dataset.boundOpen === "1") return;
