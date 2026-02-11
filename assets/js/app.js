@@ -1327,13 +1327,6 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
     `;
 
-    // insert mr-surface after HTML content (prevents destruction from innerHTML reassignment)
-    const surface = document.createElement("div");
-    surface.className = "mr-surface";
-    surface.setAttribute("aria-hidden", "true");
-    surface.style.cssText = "position:absolute;inset:0;z-index:0;cursor:pointer";
-    row.prepend(surface);
-
     return row;
   }
 
@@ -2263,7 +2256,7 @@ async function init(){
         // Let card-specific handlers manage .card[data-open='match'] clicks
         if(el.matches && el.matches(".card[data-open='match']")) return;
 
-        // Skip [data-open] clicks inside fixture cards; let mr-surface handler manage match opening
+        // Skip [data-open] clicks inside fixture cards; let global capture handler manage card clicks
         if(e.target.closest("[data-fixture-id]")) return;
 
         e.stopPropagation();
@@ -2291,27 +2284,25 @@ async function init(){
       });
     });
 
-    // UNIFIED: handle ALL .mr-surface overlays (both .card[data-open='match'] and .match rows in calendar)
-    // This is the single unified click handler for Match Radar modal opening
-    function handleMRSurfaceClick(e){
-      e.stopPropagation();
+    // Global capture-phase handler for game card clicks (Radar + Calendar)
+    // Delegate click handling at document level to catch fixture card opens before stopPropagation
+    document.addEventListener('click', function handleFixtureCardClick(e){
       const card = e.target.closest('[data-fixture-id]');
-      
-      if(!card){ return; }
+      if(!card) return; // not a fixture card
+
+      // Block clicks on interactive elements within the card
+      const blockedElements = 'a,button,[data-open],img,svg';
+      const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions';
+      if(e.target.closest(blockedElements) || e.target.closest(blockedClasses)) return;
 
       const fixtureId = card.getAttribute('data-fixture-id');
-      if(!fixtureId){ return; }
+      if(!fixtureId) return;
 
-      // Open match modal with fixtureId
+      // Block propagation and open match modal
+      e.stopPropagation();
+      e.preventDefault();
       openModal('match', fixtureId);
-    }
-
-    // bind mr-surface handlers to ALL match-type cards (both Radar .card and Calendar .match)
-    qsa('.mr-surface').forEach(surface => {
-      if(surface.dataset.boundMRSurface === "1") return;
-      surface.dataset.boundMRSurface = "1";
-      surface.addEventListener('click', handleMRSurfaceClick);
-    });
+    }, true); // capture phase
 
     // cards as buttons: open match modal ONLY when mr-surface is clicked
     // We create a transparent overlay `.mr-surface` inside each card and open modal only on its clicks.
