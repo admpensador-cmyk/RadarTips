@@ -770,7 +770,7 @@ function renderTop3(t, data){
         <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
       </div>
       <div class="meta-actions">
-        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionValue(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
+        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionKey(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
         <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
       </div>
     `;
@@ -890,6 +890,86 @@ function competitionValue(m){
   const id = m && (m.competition_id || m.league_id || m.leagueId);
   if(id !== undefined && id !== null && String(id).trim() !== "") return String(id);
   return String(m?.competition || "");
+}
+
+// Build a competition key to open the competition modal.
+// Prefer `leagueId|season` when possible, otherwise return leagueName.
+function competitionKey(m){
+  const id = m && (m.competition_id || m.league_id || m.leagueId);
+  const compName = String(m?.competition || "").trim();
+  let season = m?.season || m?.season_id || m?.seasonId;
+  if(!season){
+    try{
+      const d = new Date(m?.kickoff_utc);
+      if(!isNaN(d.getTime())) season = String(d.getUTCFullYear());
+    }catch(e){ /* ignore */ }
+  }
+
+  if(id !== undefined && id !== null && String(id).trim() !== ""){
+    const key = season ? `${String(id)}|${String(season)}` : `${String(id)}`;
+    return encodeURIComponent(key);
+  }
+
+  // fallback to name
+  return encodeURIComponent(compName || "");
+}
+
+// Parse a decoded radar key into structured object
+function parseRadarKey(k){
+  if(!k || String(k).trim()==="") return {mode: "competition", leagueName: ""};
+  const str = String(k).trim();
+
+  // Try fixture: kickoffISO|home|away (allow extra '|' in team names by joining remainder)
+  const parts = str.split("|");
+  if(parts.length >= 3){
+    const kickoff = parts[0];
+    const home = parts[1];
+    const away = parts.slice(2).join("|");
+    const d = new Date(kickoff);
+    if(!isNaN(d.getTime())){
+      return {mode: "fixture", kickoffISO: kickoff, homeName: home, awayName: away};
+    }
+  }
+
+  // Try key:value pairs like league:123|season:2025
+  if(str.includes(":") && str.includes("|")){
+    const obj = {};
+    str.split("|").forEach(p=>{
+      const idx = p.indexOf(":");
+      if(idx>0){
+        const k2 = p.slice(0,idx).trim().toLowerCase();
+        const v2 = p.slice(idx+1).trim();
+        obj[k2]=v2;
+      }
+    });
+    if(obj.league || obj.leagueid || obj.league_id){
+      return {mode: "competition", leagueId: obj.league || obj.leagueid || obj.league_id, season: obj.season};
+    }
+  }
+
+  // Try numericId|season or id|year
+  if(parts.length === 2 && /^[0-9]+$/.test(parts[0].trim())){
+    return {mode: "competition", leagueId: parts[0].trim(), season: parts[1].trim()};
+  }
+
+  // Fallback: treat entire string as league name
+  return {mode: "competition", leagueName: str};
+}
+
+// Find a fixture in CAL_MATCHES tolerant to small time differences and normalized names
+function findMatchByFixture(kickoffISO, homeName, awayName){
+  const tol = 5 * 60 * 1000; // 5 minutes
+  const hk = normalize(homeName);
+  const ak = normalize(awayName);
+  const t0 = new Date(kickoffISO).getTime();
+  return CAL_MATCHES.find(m=>{
+    try{
+      const mk = normalize(m.home);
+      const akm = normalize(m.away);
+      const dt = Math.abs(new Date(m.kickoff_utc).getTime() - t0);
+      return mk === hk && akm === ak && dt <= tol;
+    }catch(e){ return false; }
+  }) || null;
 }
 
 
@@ -1175,17 +1255,18 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
       for(const [compRaw, ms] of map.entries()){
         const compDisp = competitionDisplay(compRaw, countryName, LANG);
-        const compVal = competitionValue(ms[0] || {competition:compRaw});
+        const compValRaw = competitionValue(ms[0] || {competition:compRaw});
+        const compKey = competitionKey(ms[0] || {competition:compRaw});
         const compLogoUrl = pickCompetitionLogo(ms[0] || null);
         const compIcon = compLogoUrl ? tinyImgHTML(compLogoUrl, compDisp, "comp-logo") : icoSpan("trophy");
 
         const sub = document.createElement("div");
         sub.className = "subgroup";
         sub.innerHTML = `
-          <div class="subhead collapsible" data-collapse="competition" data-country="${escAttr(countryName)}" data-key="${escAttr(compVal || compRaw)}" role="button" tabindex="0" aria-expanded="true">
+          <div class="subhead collapsible" data-collapse="competition" data-country="${escAttr(countryName)}" data-key="${escAttr(compValRaw || compRaw)}" role="button" tabindex="0" aria-expanded="true">
             <div class="subtitle"><span class="chev" aria-hidden="true"></span>${compIcon}<span>${escAttr(compDisp)}</span></div>
             <div class="group-actions">
-              <span class="chip" data-open="competition" data-value="${escAttr(compVal || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
+              <span class="chip" data-open="competition" data-value="${escAttr(compKey || compValRaw || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
             </div>
           </div>
           <div class="matches"></div>
@@ -1193,7 +1274,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
 
         // Apply persisted collapse state (competition)
-        const _compKeyVal = String(compVal || compRaw);
+        const _compKeyVal = String(compValRaw || compRaw);
         const _sCollapsed = isCompetitionCollapsed(countryName, _compKeyVal);
         sub.classList.toggle("collapsed", _sCollapsed);
         const _sHead = sub.querySelector(".subhead");
@@ -1253,8 +1334,13 @@ function openModal(type, value){
     }
   }
 
-  // Defensive: competition modal should never receive matchKey (kickoff|home|away).
-  if(type === "competition" && String(decodedValue || "").includes("|")){
+  // Parse incoming key and decide mode (fixture vs competition)
+  const parsed = parseRadarKey(decodedValue);
+  if(RADAR_DEBUG) console.log("RADAR DEBUG: raw=", rawValue, "decoded=", decodedValue, "parsed=", parsed);
+
+  // If user explicitly opened a competition but the parsed key looks like a fixture, redirect to match mode
+  if(type === "competition" && parsed && parsed.mode === "fixture"){
+    if(RADAR_DEBUG) console.log("RADAR DEBUG: redirecting competition->match");
     openModal("match", decodedValue);
     return;
   }
@@ -1285,7 +1371,7 @@ function openModal(type, value){
       </div>
 
       <div class="mfooter">
-        <span class="chip" data-open="competition" data-value="${escAttr(competitionValue(m || {competition:mCompRaw}))}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
+        <span class="chip" data-open="competition" data-value="${escAttr(competitionKey(m || {competition:mCompRaw}) || mCompRaw)}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
         <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${escAttr(T.country_radar || "Radar do País")}</span>
       </div>
 
@@ -1300,61 +1386,94 @@ function openModal(type, value){
     return;
   }
 
-  // COUNTRY / COMPETITION RADAR (FREE)
-  const isId = /^[0-9]+$/.test(String(decodedValue || "").trim());
-  const label = (type==="country") ? (T.country_radar || "Radar do País") : (T.competition_radar || "Radar da Competição");
-
+  // COUNTRY / COMPETITION / FIXTURE RADAR
   let list = [];
   let displayValue = decodedValue || rawValue;
 
-  if(type==="country"){
-    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(decodedValue));
-  }else{
-    if(isId){
-      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(decodedValue));
-      const sample = list[0];
-      if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
-    }else{
-      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(decodedValue));
-      const sample = list[0];
-      if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
-    }
-  }
+  if(type === "match" || parsed.mode === "fixture"){
+    // Fixture mode
+    const kickoffISO = parsed.kickoffISO || decodedValue;
+    const homeName = parsed.homeName || "";
+    const awayName = parsed.awayName || "";
+    const found = findMatchByFixture(kickoffISO, homeName, awayName);
+    if(found) list = [found];
+    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
+    title.textContent = `Match Radar: ${displayValue}`;
 
-  title.textContent = displayValue ? `${label}: ${displayValue}` : label;
-
-  const rows = list
-    .sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc))
-    .map(m=>{
-      const key = matchKey(m);
-      const riskText = (m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med;
-
-      const homeLogo = pickTeamLogo(m, "home");
-      const awayLogo = pickTeamLogo(m, "away");
-
-      const compDisp = competitionDisplay(m.competition, m.country, LANG);
-
-      return `
-        <div class="match" data-open="match" data-key="${key}" role="button" tabindex="0" ${tipAttr(`${T.match_radar}: ${m.home} vs ${m.away}`)}>
-          <div class="time">${fmtTime(m.kickoff_utc)}</div>
-          <div>
-            <div class="teams">
-              <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-              <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
-            </div>
-            <div class="meta-chips" style="margin-top:8px">
-              <span class="meta-chip">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
-              <span class="meta-chip">${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
-            </div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>
-              ${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(localizeMarket(m.suggestion_free, T) || "—")}</b> • ${escAttr(riskText)}
+    let rows = "";
+    if(list.length){
+      rows = list.map(m=>{
+        const key = matchKey(m);
+        const riskText = (m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med;
+        const homeLogo = pickTeamLogo(m, "home");
+        const awayLogo = pickTeamLogo(m, "away");
+        const compDisp = competitionDisplay(m.competition, m.country, LANG);
+        return `
+          <div class="match" data-open="match" data-key="${key}" role="button" tabindex="0" ${tipAttr(`${T.match_radar}: ${m.home} vs ${m.away}`)}>
+            <div class="time">${fmtTime(m.kickoff_utc)}</div>
+            <div>
+              <div class="teams">
+                <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+                <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+              </div>
+              <div class="meta-chips" style="margin-top:8px">
+                <span class="meta-chip">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
+                <span class="meta-chip">${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
+              </div>
+              <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>
+                ${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(localizeMarket(m.suggestion_free, T) || "—")}</b> • ${escAttr(riskText)}
+              </div>
             </div>
           </div>
-        </div>
-      `;
-    }).join("");
+        `;
+      }).join("");
+    }else{
+      rows = `<div class="smallnote">Match not found in current dataset.</div>`;
+    }
 
-  body.innerHTML = `
+    body.innerHTML = `
+      <div class="mhead">
+        <div class="mmeta">
+          <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
+          <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+        ${rows}
+      </div>
+    `;
+
+    back.style.display = "flex";
+    bindModalClicks();
+    return;
+  }
+
+  if(type==="country"){
+    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(decodedValue));
+    const sample = list[0];
+    if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
+    title.textContent = displayValue ? `${T.country_radar || "Radar do País"}: ${displayValue}` : (T.country_radar || "Radar do País");
+  }else{
+    // competition mode: use parsed fields (leagueId+season preferred)
+    if(parsed.leagueId){
+      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(parsed.leagueId));
+      if(parsed.season){
+        list = list.filter(m => String(m?.season || new Date(m.kickoff_utc).getUTCFullYear()) === String(parsed.season));
+      }
+      const sample = list[0];
+      displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueId;
+    }else if(parsed.leagueName){
+      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(parsed.leagueName));
+      const sample = list[0];
+      displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueName;
+    }
+
+    title.textContent = displayValue ? `${T.competition_radar || "Radar da Competição"}: ${displayValue}` : (T.competition_radar || "Radar da Competição");
+  }
+
+    if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
+
+    body.innerHTML = `
     <div class="mhead">
       <div class="mmeta">
         <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
