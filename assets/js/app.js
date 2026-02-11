@@ -731,12 +731,10 @@ function isEmptyCardClick(event) {
   let current = event.target;
   while (current && current.closest && !current.classList.contains('card')) {
     if (isClickableElement(current)) {
-      console.log('DEBUG MR: click on interactive element:', current.tagName, current.className); // DEBUG MR: remover depois
       return false;
     }
     current = current.parentElement;
   }
-  console.log('DEBUG MR: click on empty card area'); // DEBUG MR: remover depois
   return true;
 }
 
@@ -2271,22 +2269,16 @@ async function init(){
 
     // cards as buttons: open match modal ONLY on empty area clicks
     qsa(".card[data-open='match']").forEach(el=>{
-      if(el.dataset.boundCardClick === "1") return; // DEBUG MR: remover depois (changed from boundCardKey)
+      if(el.dataset.boundCardClick === "1") return;
       el.dataset.boundCardClick = "1";
       
       // Click handler for empty card area
       el.addEventListener("click", (e)=>{
-        console.log("DEBUG MR: card click event -", "target:", e.target.tagName, "className:", e.target.className); // DEBUG MR: remover depois
-        
         if (isEmptyCardClick(e)) {
-          console.log("DEBUG MR: opening match modal for card"); // DEBUG MR: remover depois
           e.stopPropagation();
           const type = el.getAttribute("data-open");
           const val = el.getAttribute("data-value") || "";
-          console.log("DEBUG MR: calling openModal with:", type, val); // DEBUG MR: remover depois
           openModal(type, val);
-        } else {
-          console.log("DEBUG MR: skipping modal (click on interactive element)"); // DEBUG MR: remover depois
         }
       });
       
