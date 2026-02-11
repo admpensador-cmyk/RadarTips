@@ -2241,63 +2241,42 @@ async function init(){
   }
 
   function bindOpenHandlers(){
-    // DEBUG OVERLAY
-    if(!qs('#click-debug')) {
-      const dbg = document.createElement('div');
-      dbg.id = 'click-debug';
-      dbg.style.cssText = 'position:fixed;left:10px;bottom:10px;padding:8px 10px;background:rgba(0,0,0,0.9);color:#0f0;font-size:11px;font-family:monospace;z-index:9999;max-width:400px;white-space:pre-wrap;word-break:break-all';
-      dbg.textContent = 'READY';
-      document.body.appendChild(dbg);
-    }
+    // Handle fixture card clicks (match radar)
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-fixture-id]');
+      if (!card) return;
 
-    // Fixture card click delegation (capture-phase for priority)
-    document.addEventListener('click', function handleFixtureCardClick(e){
-      const dbg = qs('#click-debug');
-      const target = e.target;
-      const targetInfo = `${target.tagName}${target.className ? '.'+target.className.split(' ')[0] : ''}`;
-      
-      const card = target.closest('[data-fixture-id]');
-      const cardInfo = card ? `CARD FOUND (fixtureId=${card.getAttribute('data-fixture-id')})` : 'NO CARD';
-      
-      const blockedSelector = 'a,button,[data-open],img,svg,input,select,textarea,label';
-      const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions,.meta-chips,button';
-      const blockedBySelector = target.closest(blockedSelector) ? 'YES(selector)' : 'NO';
-      const blockedByClass = target.closest(blockedClasses) ? 'YES(class)' : 'NO';
-      
-      if(dbg) dbg.textContent = `CLICK\ntarget: ${targetInfo}\n${cardInfo}\nblocked-sel: ${blockedBySelector}\nblocked-cls: ${blockedByClass}`;
-      
-      if(!card) return;
-      
-      const isBlocked = target.closest(blockedSelector) || target.closest(blockedClasses);
-      if(isBlocked) {
-        if(dbg) dbg.textContent += '\nACTION: BLOCKED';
-        return;
-      }
+      // Block interactive elements
+      if (e.target.closest('a, button, img, svg')) return;
 
       const fixtureId = card.getAttribute('data-fixture-id');
-      if(!fixtureId) return;
+      if (!fixtureId) return;
 
-      if(dbg) dbg.textContent += `\nACTION: OPENING MATCH(${fixtureId})`;
       e.stopPropagation();
       e.preventDefault();
       openModal('match', fixtureId);
-    }, true);
+    }, true); // capture phase
 
-    // any [data-open] outside modal (cards, chips, matches)
-    qsa("[data-open]").forEach(el=>{
+    // Handle all other [data-open] elements (competition, country radars, etc.)
+    qsa("[data-open]:not([data-fixture-id])").forEach(el=>{
       if(el.dataset.boundOpen === "1") return;
       el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
-        // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
+        // Prevent nested [data-open] from triggering multiple modals
         if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
 
-        // Let card-specific handlers manage .card[data-open='match'] clicks
-        if(el.matches && el.matches(".card[data-open='match']")) return;
-
-        // Skip [data-open] clicks inside fixture cards; let global capture handler manage card clicks
-        if(e.target.closest("[data-fixture-id]")) return;
-
         e.stopPropagation();
+        const type = el.getAttribute("data-open");
+      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
+      let val = "";
+      if(type === "match"){
+        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
+      }else{
+        val = el.getAttribute("data-value") || "";
+      }
+        openModal(type, val);
+      });
+    });
         const type = el.getAttribute("data-open");
       // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
       let val = "";
