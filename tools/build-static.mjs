@@ -108,7 +108,9 @@ async function main() {
     }
     // Inject a small build badge into every page so humans can visually confirm deployed bundle
     try{
-      const badgeDate = new Date().toISOString().slice(0,10);
+      const d = new Date();
+      const pad = (n)=> String(n).padStart(2,'0');
+      const badgeDate = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
       const badgeHtml = `\n<!-- build-badge -->\n<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: ${newName || 'unknown'} | ${badgeDate}</div>\n<!-- /build-badge -->\n`;
       if(/<\/body>/i.test(html)){
         html = html.replace(/<\/body>/i, badgeHtml + "</body>");

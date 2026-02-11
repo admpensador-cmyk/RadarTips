@@ -2272,28 +2272,99 @@ async function init(){
       });
     });
 
-    // cards as buttons: open match modal ONLY on empty area clicks
+    // cards as buttons: open match modal ONLY when mr-surface is clicked
+    // We create a transparent overlay `.mr-surface` inside each card and open modal only on its clicks.
+    function showMRToast(msg){
+      try{
+        // TEMP: visual proof for manual validation
+        let t = qs('#mr-toast');
+        if(!t){
+          t = document.createElement('div');
+          t.id = 'mr-toast';
+          t.style.position = 'fixed';
+          t.style.left = '10px';
+          t.style.bottom = '10px';
+          t.style.padding = '8px 10px';
+          t.style.background = 'rgba(0,0,0,0.85)';
+          t.style.color = '#fff';
+          t.style.fontSize = '13px';
+          t.style.borderRadius = '6px';
+          t.style.zIndex = '2147483647';
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        if(window.__mr_toast_timeout) clearTimeout(window.__mr_toast_timeout);
+        window.__mr_toast_timeout = setTimeout(()=>{ t.style.transition = 'opacity 400ms'; t.style.opacity = '0'; }, 3500);
+      }catch(e){/* ignore */}
+    }
+
     qsa(".card[data-open='match']").forEach(el=>{
       if(el.dataset.boundCardClick === "1") return;
       el.dataset.boundCardClick = "1";
-      
-      // Click handler for empty card area
-      el.addEventListener("click", (e)=>{
-        if (isEmptyCardClick(e)) {
-          e.stopPropagation();
-          const type = el.getAttribute("data-open");
-          const val = el.getAttribute("data-value") || "";
-          openModal(type, val);
+
+      // ensure card has positioning so overlay can cover it
+      try{ if(!el.style.position) el.style.position = el.style.position || 'relative'; }catch(e){}
+
+      // create transparent overlay surface if missing
+      let surface = el.querySelector('.mr-surface');
+      if(!surface){
+        surface = document.createElement('div');
+        surface.className = 'mr-surface';
+        surface.setAttribute('aria-hidden','true');
+        surface.style.position = 'absolute';
+        surface.style.left = '0';
+        surface.style.top = '0';
+        surface.style.right = '0';
+        surface.style.bottom = '0';
+        surface.style.zIndex = '1';
+        surface.style.background = 'transparent';
+        el.insertBefore(surface, el.firstChild);
+      }
+
+      // clicking only on the overlay opens the Match Radar
+      surface.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const card = e.currentTarget.closest('.card[data-open="match"]');
+        if(!card){ showMRToast('MR ERRO: card not found'); return; }
+
+        const fixture = card.getAttribute('data-fixture-id') || '';
+        if(fixture){
+          const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
+          if(found){
+            const val = matchKey(found);
+            showMRToast(`MR: abrir (fixtureId=${fixture})`); // TEMP: remove after verification
+            openModal('match', val);
+            return;
+          }else{
+            showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); // TEMP
+            return;
+          }
+        }
+
+        const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
+        if(val){
+          showMRToast(`MR: abrir (val=${val})`); // TEMP
+          openModal('match', val);
+        }else{
+          showMRToast('MR ERRO: fixtureId missing'); // TEMP
         }
       });
-      
-      // Keyboard handler (Enter/Space to open modal)
+
+      // keyboard handler (Enter/Space to open modal) on the card element
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
-          const type = el.getAttribute("data-open");
-          const val = el.getAttribute("data-value") || "";
-          openModal(type, val);
+          const card = el;
+          const fixture = card.getAttribute('data-fixture-id') || '';
+          if(fixture){
+            const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
+            if(found){ showMRToast(`MR: abrir (fixtureId=${fixture})`); openModal('match', matchKey(found)); return; }
+            showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); return;
+          }
+          const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
+          if(val){ showMRToast(`MR: abrir (val=${val})`); openModal('match', val); }
+          else showMRToast('MR ERRO: fixtureId missing');
         }
       });
     });
