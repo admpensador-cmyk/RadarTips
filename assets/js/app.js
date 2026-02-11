@@ -2241,28 +2241,47 @@ async function init(){
   }
 
   function bindOpenHandlers(){
+    // DEBUG OVERLAY
+    if(!qs('#click-debug')) {
+      const dbg = document.createElement('div');
+      dbg.id = 'click-debug';
+      dbg.style.cssText = 'position:fixed;left:10px;bottom:10px;padding:8px 10px;background:rgba(0,0,0,0.9);color:#0f0;font-size:11px;font-family:monospace;z-index:9999;max-width:400px;white-space:pre-wrap;word-break:break-all';
+      dbg.textContent = 'READY';
+      document.body.appendChild(dbg);
+    }
+
     // Fixture card click delegation (capture-phase for priority)
     document.addEventListener('click', function handleFixtureCardClick(e){
-      const card = e.target.closest('[data-fixture-id]');
-      if(!card) return; // not a fixture card click
-
-      console.log('FIXTURE CARD CLICK:', {target: e.target.tagName, fixtureId: card.getAttribute('data-fixture-id')});
-
-      // Block clicks on interactive elements
+      const dbg = qs('#click-debug');
+      const target = e.target;
+      const targetInfo = `${target.tagName}${target.className ? '.'+target.className.split(' ')[0] : ''}`;
+      
+      const card = target.closest('[data-fixture-id]');
+      const cardInfo = card ? `CARD FOUND (fixtureId=${card.getAttribute('data-fixture-id')})` : 'NO CARD';
+      
       const blockedSelector = 'a,button,[data-open],img,svg,input,select,textarea,label';
       const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions,.meta-chips,button';
-      const isBlocked = e.target.closest(blockedSelector) || e.target.closest(blockedClasses);
-      if(isBlocked) { console.log('BLOCKED by element:', e.target.tagName); return; }
+      const blockedBySelector = target.closest(blockedSelector) ? 'YES(selector)' : 'NO';
+      const blockedByClass = target.closest(blockedClasses) ? 'YES(class)' : 'NO';
+      
+      if(dbg) dbg.textContent = `CLICK\ntarget: ${targetInfo}\n${cardInfo}\nblocked-sel: ${blockedBySelector}\nblocked-cls: ${blockedByClass}`;
+      
+      if(!card) return;
+      
+      const isBlocked = target.closest(blockedSelector) || target.closest(blockedClasses);
+      if(isBlocked) {
+        if(dbg) dbg.textContent += '\nACTION: BLOCKED';
+        return;
+      }
 
       const fixtureId = card.getAttribute('data-fixture-id');
       if(!fixtureId) return;
 
-      // Prevent bubbling to generic [data-open] handler before opening match
-      console.log('OPENING MATCH:', fixtureId);
+      if(dbg) dbg.textContent += `\nACTION: OPENING MATCH(${fixtureId})`;
       e.stopPropagation();
       e.preventDefault();
       openModal('match', fixtureId);
-    }, true); // capture phase: runs BEFORE bubbling handlers
+    }, true);
 
     // any [data-open] outside modal (cards, chips, matches)
     qsa("[data-open]").forEach(el=>{
