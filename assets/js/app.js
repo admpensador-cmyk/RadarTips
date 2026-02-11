@@ -1094,6 +1094,96 @@ function renderMarketsTable(markets){
   `;
 }
 
+// Render suggestions panel for a single match (FREE markets)
+function renderSuggestions(match){
+  const markets = match?.analysis?.markets || match?.markets || match?.suggestions || [];
+  if(!Array.isArray(markets) || markets.length===0){
+    return `<div class="smallnote">${escAttr(T.no_markets || "Sem sugestões disponíveis.")}</div>`;
+  }
+
+  const rows = markets.map(m=>{
+    const conf = Math.round((Number(m?.confidence || m?.probability || 0) * 100));
+    const evNum = (m?.ev !== undefined) ? Number(m.ev) : (m?.expected_value !== undefined ? Number(m.expected_value) : NaN);
+    const evTxt = Number.isFinite(evNum) ? (evNum>0? `+${evNum.toFixed(2)}` : `${evNum.toFixed(2)}`) : `${conf}%`;
+    const evCls = Number.isFinite(evNum) ? (evNum>0? 'ev-positive' : 'ev-negative') : (conf>=50? 'ev-positive':'ev-negative');
+    const riskLbl = marketRiskLabel(m?.risk);
+    const riskCls = marketRiskClass(m?.risk);
+    const rationale = m?.rationale || m?.why || m?.justification || "";
+
+    return `
+      <div class="suggestion-row">
+        <div class="suggestion-left">
+          <div style="font-weight:900">${escAttr(m?.market || "-")}</div>
+          <div class="mt-sub">${escAttr(localizeMarket(m?.entry, T) || m?.entry || "-")}</div>
+        </div>
+        <div class="suggestion-right">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span class="ev-badge ${evCls}">${escAttr(evTxt)}</span>
+            <span class="badge risk ${riskCls}">${escAttr(riskLbl)}</span>
+            <span style="opacity:.85;font-size:13px;margin-left:auto">${escAttr(T.confidence_label || 'Confiança')}: <b>${conf}%</b></span>
+          </div>
+          <div style="opacity:.9">${escAttr(rationale || '')}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `<div class="suggestions-grid">${rows}</div>`;
+}
+
+// Render comparative statistics panel for a match
+function renderStats(match){
+  const stats = match?.stats || {};
+  const hs = stats.home || {};
+  const as = stats.away || {};
+
+  const choose = (obj, names)=>{
+    for(const n of names){
+      if(obj && (obj[n] !== undefined) && obj[n] !== null) return Number(obj[n]);
+    }
+    return null;
+  };
+
+  const metrics = [
+    {id:'possession', label: T.possession_label || 'Possession', names:['possession','possession_pct','possession_home']},
+    {id:'xg', label: T.xg_label || 'xG', names:['xg','xg_for','xg_home']},
+    {id:'shots', label: T.shots_label || 'Shots', names:['shots','shots_for','shots_home']},
+    {id:'shots_on_target', label: T.shots_on_target_label || 'Shots on target', names:['shots_on_target','sot','shots_target']},
+    {id:'corners', label: T.corners_label || 'Corners', names:['corners','corners_for']},
+    {id:'cards', label: T.cards_label || 'Cards', names:['cards','yellow_cards','red_cards','cards_total']},
+    {id:'passes', label: T.passes_label || 'Passes', names:['passes','passes_total','pass_accuracy']}
+  ];
+
+  const rows = metrics.map(met=>{
+    const L = choose(hs, met.names);
+    const R = choose(as, met.names);
+    if(L === null && R === null) return '';
+
+    const lnum = (L===null||isNaN(L)) ? '—' : (Number.isFinite(L) ? (Math.round(L*100)/100) : '—');
+    const rnum = (R===null||isNaN(R)) ? '—' : (Number.isFinite(R) ? (Math.round(R*100)/100) : '—');
+
+    const lval = Number.isFinite(Number(L)) ? Number(L) : 0;
+    const rval = Number.isFinite(Number(R)) ? Number(R) : 0;
+    const total = (lval + rval) || 0;
+    const lPct = total>0 ? Math.round((lval/total)*100) : 50;
+    const rPct = total>0 ? Math.round((rval/total)*100) : 50;
+
+    return `
+      <div class="stat-row">
+        <div class="stat-label">${escAttr(met.label)}</div>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar-left" style="width:${lPct}%;"></div>
+          <div class="stat-bar-right" style="width:${rPct}%;"></div>
+        </div>
+        <div class="stat-values">${escAttr(String(lnum))} • ${escAttr(String(rnum))}</div>
+      </div>
+    `;
+  }).filter(Boolean).join("");
+
+  if(!rows) return `<div class="smallnote">${escAttr(T.no_stats || 'Estatísticas indisponíveis.')}</div>`;
+  return `<div class="stats-panel">${rows}</div>`;
+}
+
 
 function renderCalendar(t, matches, viewMode, query, activeDateKey){
   const root = qs("#calendar");
@@ -1400,48 +1490,58 @@ function openModal(type, value){
     displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
     title.textContent = `Match Radar: ${displayValue}`;
 
-    let rows = "";
-    if(list.length){
-      rows = list.map(m=>{
-        const key = matchKey(m);
-        const riskText = (m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med;
-        const homeLogo = pickTeamLogo(m, "home");
-        const awayLogo = pickTeamLogo(m, "away");
-        const compDisp = competitionDisplay(m.competition, m.country, LANG);
-        return `
-          <div class="match" data-open="match" data-key="${key}" role="button" tabindex="0" ${tipAttr(`${T.match_radar}: ${m.home} vs ${m.away}`)}>
-            <div class="time">${fmtTime(m.kickoff_utc)}</div>
-            <div>
-              <div class="teams">
-                <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-                <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
-              </div>
-              <div class="meta-chips" style="margin-top:8px">
-                <span class="meta-chip">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
-                <span class="meta-chip">${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
-              </div>
-              <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>
-                ${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(localizeMarket(m.suggestion_free, T) || "—")}</b> • ${escAttr(riskText)}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }else{
-      rows = `<div class="smallnote">Match not found in current dataset.</div>`;
+    if(!list.length){
+      body.innerHTML = `<div class="smallnote">Match not found in current dataset.</div>`;
+      back.style.display = "flex";
+      bindModalClicks();
+      return;
     }
 
+    const m = list[0];
+    const key = matchKey(m);
+    const homeLogo = pickTeamLogo(m, "home");
+    const awayLogo = pickTeamLogo(m, "away");
+    const compDisp = competitionDisplay(m.competition, m.country, LANG);
+
+    // Tabbed modal: Suggestions + Stats
     body.innerHTML = `
       <div class="mhead">
         <div class="mmeta">
-          <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
+          <div class="mcomp">${escAttr(compDisp)}</div>
           <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
         </div>
+        <div class="mbadges">
+          <div class="mteams"><div class="team">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div><div class="team">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div></div>
+        </div>
       </div>
-      <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-        ${rows}
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="suggestions">${escAttr(T.suggestions_tab || "Sugestões")}</button>
+        <button class="tab-btn" data-tab="stats">${escAttr(T.stats_tab || "Estatísticas")}</button>
+      </div>
+
+      <div class="tab-panels">
+        <div class="tab-panel" id="suggestions-panel">${renderSuggestions(m)}</div>
+        <div class="tab-panel" id="stats-panel" style="display:none">${renderStats(m)}</div>
+      </div>
+
+      <div class="mnote">
+        <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
       </div>
     `;
+
+    // Bind internal tab toggles
+    const btns = qsa("#modal_body .tab-btn");
+    btns.forEach(b=>{
+      b.addEventListener("click", ()=>{
+        btns.forEach(x=>x.classList.remove("active"));
+        b.classList.add("active");
+        const tab = b.getAttribute("data-tab");
+        qs("#suggestions-panel").style.display = (tab==="suggestions") ? "block" : "none";
+        qs("#stats-panel").style.display = (tab==="stats") ? "block" : "none";
+      });
+      b.addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); b.click(); } });
+    });
 
     back.style.display = "flex";
     bindModalClicks();
@@ -1903,6 +2003,27 @@ function injectPatchStyles(){
     background: rgba(43,111,242,.10);
     font-weight: 800;
   }
+
+  /* Modal tabs: Suggestions / Stats */
+  .modal .tab-buttons{ display:flex; gap:8px; margin-top:12px; }
+  .modal .tab-btn{ background:transparent; border:1px solid rgba(255,255,255,.06); padding:8px 12px; border-radius:10px; cursor:pointer; color:inherit; }
+  .modal .tab-btn.active{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.12); font-weight:900; }
+  .modal .tab-panel{ margin-top:12px; }
+
+  .suggestions-grid{ display:grid; grid-template-columns: 1fr; gap:8px; }
+  .suggestion-row{ display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:10px; background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.03); }
+  .suggestion-left{ min-width:220px; max-width:320px; }
+  .suggestion-right{ flex:1; }
+  .ev-badge{ font-weight:900; padding:6px 10px; border-radius:999px; }
+  .ev-positive{ background:rgba(46,170,86,.12); color:#2eaA56; }
+  .ev-negative{ background:rgba(220,60,60,.08); color:#dc3c3c; }
+
+  .stat-row{ display:flex; align-items:center; gap:12px; padding:8px 0; }
+  .stat-label{ width:140px; font-weight:800; opacity:.92; }
+  .stat-bar-wrap{ flex:1; background:rgba(255,255,255,.03); height:14px; border-radius:8px; overflow:hidden; display:flex; align-items:center; }
+  .stat-bar-left{ height:100%; background:linear-gradient(90deg,#2eaA56,#2eaA56); }
+  .stat-bar-right{ height:100%; background:linear-gradient(90deg,#ffb443,#ffb443); margin-left:auto; }
+  .stat-values{ width:88px; text-align:right; font-weight:800; }
 
   /* Nested calendar (country -> competition) */
   .group .subgroup{
