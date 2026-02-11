@@ -1290,6 +1290,16 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
       </div>
     ` : "";
 
+    // insert mr-surface as first child (before all content) to detect empty-area clicks
+    const surface = document.createElement("div");
+    surface.className = "mr-surface";
+    surface.setAttribute("aria-hidden", "true");
+    surface.style.cssText = "position:absolute;inset:0;z-index:1;cursor:pointer";
+    row.appendChild(surface);
+
+    // ensure row has positioning context for absolute overlay
+    if(!row.style.position || row.style.position === "static") row.style.position = "relative";
+
     row.innerHTML = `
       <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
       <div>
@@ -1507,18 +1517,24 @@ function openModal(type, value){
   let displayValue = decodedValue || rawValue;
 
   if(type === "match" || parsed.mode === "fixture"){
-    // Fixture mode
+    // Fixture mode: show loading shell immediately, then populate
     const kickoffISO = parsed.kickoffISO || decodedValue;
     const homeName = parsed.homeName || "";
     const awayName = parsed.awayName || "";
+    const fixtureId = value; // preserve raw value which may contain fixtureId
+    
+    // TEMP: show loading shell immediately with fixtureId
+    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
+    title.textContent = `Match Radar (fixtureId=${fixtureId})`; // TEMP: include fixtureId in header
+    body.innerHTML = `<div class="loading" style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>`;
+    back.style.display = "flex";
+    
+    // NOW search for match data
     const found = findMatchByFixture(kickoffISO, homeName, awayName);
     if(found) list = [found];
-    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
-    title.textContent = `Match Radar: ${displayValue}`;
 
     if(!list.length){
       body.innerHTML = `<div class="smallnote">Match not found in current dataset.</div>`;
-      back.style.display = "flex";
       bindModalClicks();
       return;
     }
@@ -2272,6 +2288,45 @@ async function init(){
       });
     });
 
+    // UNIFIED: handle ALL .mr-surface overlays (both .card[data-open='match'] and .match rows in calendar)
+    // This is the single unified click handler for Match Radar modal opening
+    function handleMRSurfaceClick(e){
+      e.stopPropagation();
+      const surface = e.currentTarget; // the .mr-surface element
+      const card = surface.closest('.card[data-open="match"], .match[data-open="match"]');
+      
+      if(!card){ return; }
+
+      const fixture = card.getAttribute('data-fixture-id') || '';
+      if(fixture){
+        const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
+        if(found){
+          const val = matchKey(found);
+          showMRToast(`MR: abrir (fixtureId=${fixture})`);
+          openModal('match', val);
+          return;
+        }else{
+          showMRToast(`MR ERRO: fixture not in dataset (${fixture})`);
+          return;
+        }
+      }
+
+      const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
+      if(val){
+        showMRToast(`MR: abrir (val=${val})`);
+        openModal('match', val);
+      }else{
+        showMRToast('MR ERRO: fixtureId missing');
+      }
+    }
+
+    // bind mr-surface handlers to ALL match-type cards (both Radar .card and Calendar .match)
+    qsa('.mr-surface').forEach(surface => {
+      if(surface.dataset.boundMRSurface === "1") return;
+      surface.dataset.boundMRSurface = "1";
+      surface.addEventListener('click', handleMRSurfaceClick);
+    });
+
     // cards as buttons: open match modal ONLY when mr-surface is clicked
     // We create a transparent overlay `.mr-surface` inside each card and open modal only on its clicks.
     function showMRToast(msg){
@@ -2304,7 +2359,7 @@ async function init(){
       el.dataset.boundCardClick = "1";
 
       // ensure card has positioning so overlay can cover it
-      try{ if(!el.style.position) el.style.position = el.style.position || 'relative'; }catch(e){}
+      if(!el.style.position || el.style.position === "static") el.style.position = "relative";
 
       // create transparent overlay surface if missing
       let surface = el.querySelector('.mr-surface');
@@ -2312,44 +2367,9 @@ async function init(){
         surface = document.createElement('div');
         surface.className = 'mr-surface';
         surface.setAttribute('aria-hidden','true');
-        surface.style.position = 'absolute';
-        surface.style.left = '0';
-        surface.style.top = '0';
-        surface.style.right = '0';
-        surface.style.bottom = '0';
-        surface.style.zIndex = '1';
-        surface.style.background = 'transparent';
+        surface.style.cssText = "position:absolute;inset:0;z-index:1;background:transparent;cursor:pointer";
         el.insertBefore(surface, el.firstChild);
       }
-
-      // clicking only on the overlay opens the Match Radar
-      surface.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const card = e.currentTarget.closest('.card[data-open="match"]');
-        if(!card){ showMRToast('MR ERRO: card not found'); return; }
-
-        const fixture = card.getAttribute('data-fixture-id') || '';
-        if(fixture){
-          const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
-          if(found){
-            const val = matchKey(found);
-            showMRToast(`MR: abrir (fixtureId=${fixture})`); // TEMP: remove after verification
-            openModal('match', val);
-            return;
-          }else{
-            showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); // TEMP
-            return;
-          }
-        }
-
-        const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
-        if(val){
-          showMRToast(`MR: abrir (val=${val})`); // TEMP
-          openModal('match', val);
-        }else{
-          showMRToast('MR ERRO: fixtureId missing'); // TEMP
-        }
-      });
 
       // keyboard handler (Enter/Space to open modal) on the card element
       el.addEventListener("keydown", (e)=>{
