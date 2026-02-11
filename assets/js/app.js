@@ -2244,14 +2244,19 @@ async function init(){
     // Handle fixture card clicks (match radar)
     document.addEventListener('click', (e) => {
       const card = e.target.closest('[data-fixture-id]');
+      console.log('CLICK EVENT:', {target: e.target.tagName, hasCard: !!card, fixtureId: card?.getAttribute('data-fixture-id')});
+      
       if (!card) return;
 
       // Block interactive elements
-      if (e.target.closest('a, button, img, svg')) return;
+      const isInteractive = e.target.closest('a, button, img, svg');
+      console.log('IS INTERACTIVE:', isInteractive?.tagName || 'no');
+      if (isInteractive) return;
 
       const fixtureId = card.getAttribute('data-fixture-id');
       if (!fixtureId) return;
 
+      console.log('OPENING MATCH RADAR WITH FIXTURE:', fixtureId);
       e.stopPropagation();
       e.preventDefault();
       openModal('match', fixtureId);
@@ -2262,6 +2267,8 @@ async function init(){
       if(el.dataset.boundOpen === "1") return;
       el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
+        console.log('DATA-OPEN HANDLER:', {type: el.getAttribute('data-open'), target: e.target.tagName});
+        
         // Prevent nested [data-open] from triggering multiple modals
         if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
 
@@ -2274,6 +2281,7 @@ async function init(){
       }else{
         val = el.getAttribute("data-value") || "";
       }
+        console.log('OPENING:', type, val);
         openModal(type, val);
       });
     });
