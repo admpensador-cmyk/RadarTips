@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RadarTips</title>
+  <script>
+    (function(){
+      function pick(){
+        var host=(location.hostname||"").toLowerCase();
+        if(host.endsWith(".com.br")) return "pt";
+        var l=(navigator.language||"").toLowerCase();
+        if(l.indexOf("pt")===0) return "pt";
+        if(l.indexOf("es")===0) return "es";
+        if(l.indexOf("fr")===0) return "fr";
+        if(l.indexOf("de")===0) return "de";
+        return "en";
+      }
+      if(location.pathname==="/"||location.pathname===""){
+        location.replace("/"+pick()+"/radar/day/");
+      }
+    })();
+  </script>
+</head>
+<body style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;padding:30px;">
+  Redirecting…
+</body>
+</html>

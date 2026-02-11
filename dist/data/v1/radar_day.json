@@ -1,0 +1,68 @@
+{
+  "generated_at_utc": "2026-02-03T12:01:54.680Z",
+  "highlights": [
+    {
+      "fixture_id": 1512656,
+      "competition_id": 609,
+      "home_id": 13090,
+      "away_id": 18799,
+      "country": "Brazil",
+      "competition": "Cearense - 1",
+      "home": "Maranguape",
+      "away": "Tirol/CEFAT",
+      "home_logo": "https://media.api-sports.io/football/teams/13090.png",
+      "away_logo": "https://media.api-sports.io/football/teams/18799.png",
+      "competition_logo": "https://media.api-sports.io/football/leagues/609.png",
+      "country_flag": "https://media.api-sports.io/flags/br.svg",
+      "kickoff_utc": "2026-02-03T19:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "pro_locked": true
+      ,"score_home": 0
+      ,"score_away": 0
+      ,"minute": null
+    },
+    {
+      "fixture_id": 1500677,
+      "competition_id": 602,
+      "home_id": 9997,
+      "away_id": 1224,
+      "country": "Brazil",
+      "competition": "Baiano - 1",
+      "home": "Atlético Alagoinhas",
+      "away": "Juazeirense",
+      "home_logo": "https://media.api-sports.io/football/teams/9997.png",
+      "away_logo": "https://media.api-sports.io/football/teams/1224.png",
+      "competition_logo": "https://media.api-sports.io/football/leagues/602.png",
+      "country_flag": "https://media.api-sports.io/flags/br.svg",
+      "kickoff_utc": "2026-02-03T19:15:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "pro_locked": true
+      ,"score_home": 0
+      ,"score_away": 0
+      ,"minute": null
+    },
+    {
+      "fixture_id": 1514096,
+      "competition_id": 604,
+      "home_id": 795,
+      "away_id": 10677,
+      "country": "Brazil",
+      "competition": "Catarinense - 1",
+      "home": "Joinville",
+      "away": "Marcílio Dias",
+      "home_logo": "https://media.api-sports.io/football/teams/795.png",
+      "away_logo": "https://media.api-sports.io/football/teams/10677.png",
+      "competition_logo": "https://media.api-sports.io/football/leagues/604.png",
+      "country_flag": "https://media.api-sports.io/flags/br.svg",
+      "kickoff_utc": "2026-02-03T20:00:00-03:00",
+      "risk": "low",
+      "suggestion_free": "Under 3.5",
+      "pro_locked": true
+      ,"score_home": 0
+      ,"score_away": 0
+      ,"minute": null
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://radartips.com/en/radar/day/</loc></url>
+  <url><loc>https://radartips.com/en/radar/week/</loc></url>
+  <url><loc>https://radartips.com/en/calendar/</loc></url>
+
+  <url><loc>https://radartips.com/pt/radar/day/</loc></url>
+  <url><loc>https://radartips.com/pt/radar/week/</loc></url>
+  <url><loc>https://radartips.com/pt/calendar/</loc></url>
+
+  <url><loc>https://radartips.com/es/radar/day/</loc></url>
+  <url><loc>https://radartips.com/es/radar/week/</loc></url>
+  <url><loc>https://radartips.com/es/calendar/</loc></url>
+
+  <url><loc>https://radartips.com/fr/radar/day/</loc></url>
+  <url><loc>https://radartips.com/fr/radar/week/</loc></url>
+  <url><loc>https://radartips.com/fr/calendar/</loc></url>
+
+  <url><loc>https://radartips.com/de/radar/day/</loc></url>
+  <url><loc>https://radartips.com/de/radar/week/</loc></url>
+  <url><loc>https://radartips.com/de/calendar/</loc></url>
+</urlset>

@@ -1,0 +1,9 @@
+{
+  "name": "radartips",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build-static.mjs",
+    "hash:js": "node tools/hash-js.mjs"
+  }
+}

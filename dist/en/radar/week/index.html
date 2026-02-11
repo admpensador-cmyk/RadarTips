@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RadarTips • Radar</title>
+  <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
+  <link rel="icon" href="/assets/favicon.svg" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=11" />
+</head>
+<body data-page="week">
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brandline">
+          <div class="logo">
+            <span id="brand">RadarTips</span>
+            <span class="badge-mini" id="disclaimer">—</span>
+          </div>
+        </div>
+        <div class="mini" id="subtitle"></div>
+      </div>
+
+      <div class="nav">
+        <a class="pill" data-nav="day" href="#">—</a>
+        <a class="pill" data-nav="week" href="#">—</a>
+        <a class="pill" data-nav="calendar" href="#">—</a>
+
+        <span style="width:10px"></span>
+
+        
+        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
+
+        <span class="lang" data-lang="en">EN</span>
+        <span class="lang" data-lang="pt">PT</span>
+        <span class="lang" data-lang="es">ES</span>
+        <span class="lang" data-lang="fr">FR</span>
+        <span class="lang" data-lang="de">DE</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <h1 id="hero_title">Radar</h1>
+      <p id="hero_sub">—</p>
+
+    <div class="pitchbar" id="pitchbar" hidden aria-label="O que é o RadarTips">
+      <div class="pitchbox">
+        <div class="pitch-kicker" id="pitch_kicker">—</div>
+        <div class="pitch-actions">
+          <button class="btn" type="button" data-open="about" id="btn_about">—</button>
+          <a class="btn ghost" id="btn_browse" href="#">—</a>
+        </div>
+        <div class="pitch-freepro" id="pitch_free_pro">—</div>
+      </div>
+      <div class="pitchbox pitchbox-right">
+        <div id="pitch_markets"></div>
+      </div>
+    </div>
+
+
+      <div class="grid">
+        <div class="card" data-slot="1">
+          <div class="row">
+            <span class="badge risk low">en</span>
+            <span class="badge top" style="opacity:.75">TOP 1</span>
+          </div>
+          <h3>—</h3>
+          <div class="meta"></div>
+          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+        </div>
+
+        <div class="card" data-slot="2">
+          <div class="row">
+            <span class="badge risk med">en</span>
+            <span class="badge top" style="opacity:.75">TOP 2</span>
+          </div>
+          <h3>—</h3>
+          <div class="meta"></div>
+          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+        </div>
+
+        <div class="card" data-slot="3">
+          <div class="row">
+            <span class="badge risk high">en</span>
+            <span class="badge top" style="opacity:.75">TOP 3</span>
+          </div>
+          <h3>—</h3>
+          <div class="meta"></div>
+          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="calendar_section">
+      <h2 id="calendar_title">—</h2>
+      <div class="sub" id="calendar_sub">—</div>
+
+      <div class="controls">
+        <div class="toggle">
+          <button class="pill" id="btn_time" type="button">—</button>
+          <button class="pill" id="btn_country" type="button">—</button>
+        </div>
+        <input class="input" id="search" type="text" placeholder="—" />
+      </div>
+
+      <div class="cal" id="calendar"></div>
+    </div>
+
+    <div class="footer">
+      © <span id="year"></span> RadarTips
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal_backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title" id="modal_title">Radar</div>
+        <button class="btn" id="modal_close" type="button">×</button>
+      </div>
+      <div class="modal-body" id="modal_body"></div>
+    </div>
+  </div>
+
+  <script src="/assets/app.cba3bb4ebed9.js"></script>
+</body>
+</html>
