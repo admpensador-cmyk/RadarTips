@@ -711,6 +711,35 @@ function matchKey(m){
   return encodeURIComponent(`${m.kickoff_utc}|${m.home}|${m.away}`);
 }
 
+// DEBUG MR: Helper to determine if a click target is on an interactive element (not "empty space")
+function isClickableElement(el) {
+  if (!el) return false;
+  // Check tag names
+  if (['IMG', 'BUTTON', 'A', 'INPUT', 'LABEL', 'SVG', 'PATH'].includes(el.tagName)) return true;
+  // Check data attributes
+  if (el.getAttribute('role') === 'button' || el.getAttribute('data-open')) return true;
+  // Check classes/patterns
+  const classStr = el.className || '';
+  if (classStr.includes('meta-actions') || classStr.includes('meta-link') || classStr.includes('btn') || classStr.includes('chip') || classStr.includes('crest') || classStr.includes('score') || classStr.includes('team') || classStr.includes('logo')) {
+    return true;
+  }
+  return false;
+}
+
+// DEBUG MR: Check if click is on "empty card area" (not on interactive content)
+function isEmptyCardClick(event) {
+  let current = event.target;
+  while (current && current.closest && !current.classList.contains('card')) {
+    if (isClickableElement(current)) {
+      console.log('DEBUG MR: click on interactive element:', current.tagName, current.className); // DEBUG MR: remover depois
+      return false;
+    }
+    current = current.parentElement;
+  }
+  console.log('DEBUG MR: click on empty card area'); // DEBUG MR: remover depois
+  return true;
+}
+
 function renderTop3(t, data){
   const slots = data.highlights || [];
   const cards = qsa(".card[data-slot]");
@@ -800,9 +829,6 @@ function renderTop3(t, data){
         <div class="callout-sub">
           <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
           <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
-        </div>
-        <div class="callout-actions">
-          <button class="btn primary" type="button" data-open="match" data-value="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
         </div>
       </div>
     `;
@@ -2243,14 +2269,34 @@ async function init(){
       });
     });
 
-    // cards as buttons
+    // cards as buttons: open match modal ONLY on empty area clicks
     qsa(".card[data-open='match']").forEach(el=>{
-      if(el.dataset.boundCardKey === "1") return;
-      el.dataset.boundCardKey = "1";
+      if(el.dataset.boundCardClick === "1") return; // DEBUG MR: remover depois (changed from boundCardKey)
+      el.dataset.boundCardClick = "1";
+      
+      // Click handler for empty card area
+      el.addEventListener("click", (e)=>{
+        console.log("DEBUG MR: card click event -", "target:", e.target.tagName, "className:", e.target.className); // DEBUG MR: remover depois
+        
+        if (isEmptyCardClick(e)) {
+          console.log("DEBUG MR: opening match modal for card"); // DEBUG MR: remover depois
+          e.stopPropagation();
+          const type = el.getAttribute("data-open");
+          const val = el.getAttribute("data-value") || "";
+          console.log("DEBUG MR: calling openModal with:", type, val); // DEBUG MR: remover depois
+          openModal(type, val);
+        } else {
+          console.log("DEBUG MR: skipping modal (click on interactive element)"); // DEBUG MR: remover depois
+        }
+      });
+      
+      // Keyboard handler (Enter/Space to open modal)
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
-          el.click();
+          const type = el.getAttribute("data-open");
+          const val = el.getAttribute("data-value") || "";
+          openModal(type, val);
         }
       });
     });
