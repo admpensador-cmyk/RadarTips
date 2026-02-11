@@ -2250,15 +2250,19 @@ async function init(){
       const card = e.target.closest('[data-fixture-id]');
       if(!card) return; // not a fixture card click
 
+      console.log('FIXTURE CARD CLICK:', {target: e.target.tagName, fixtureId: card.getAttribute('data-fixture-id')});
+
       // Block clicks on interactive elements
       const blockedSelector = 'a,button,[data-open],img,svg,input,select,textarea,label';
       const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions,.meta-chips,button';
-      if(e.target.closest(blockedSelector) || e.target.closest(blockedClasses)) return;
+      const isBlocked = e.target.closest(blockedSelector) || e.target.closest(blockedClasses);
+      if(isBlocked) { console.log('BLOCKED by element:', e.target.tagName); return; }
 
       const fixtureId = card.getAttribute('data-fixture-id');
       if(!fixtureId) return;
 
       // Prevent bubbling to generic [data-open] handler before opening match
+      console.log('OPENING MATCH:', fixtureId);
       e.stopPropagation();
       e.preventDefault();
       openModal('match', fixtureId);
