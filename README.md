@@ -12,6 +12,12 @@ Static multi-language site (EN/PT/ES/FR/DE) designed for:
 - Build command: (empty)
 - Output directory: /
 
+Cloudflare Pages recommended settings for this repo (ensure Pages runs the static build):
+- Build command: `npm run build`
+- Output directory: `dist`
+
+Note: `npm run build` runs `node tools/build-static.mjs` which generates the `dist/` folder and produces a hashed bundle under `dist/assets/` (e.g. `app.cba3bb4ebed9.js`). Pages must publish the `dist/` directory for the site to reflect the built assets.
+
 ## Data
 The UI prefers live data from the Worker API:
 - /api/v1/radar_day.json

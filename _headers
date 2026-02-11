@@ -1,5 +1,14 @@
 /*
   Cache-Control: no-cache
 
+# API JSON - always fresh
 /data/v1/*
   Cache-Control: no-store, max-age=0
+
+# HTML pages: prefer revalidation so users see new builds quickly
+/*.html
+  Cache-Control: no-cache
+
+# Static assets (hashed) - long cache + immutable
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
