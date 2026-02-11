@@ -804,8 +804,6 @@ function renderTop3(t, data){
 
     // FREE callout
     const key = matchKey(item);
-    card.setAttribute("data-open","match");
-    card.setAttribute("data-value", key);
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
@@ -1240,8 +1238,6 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
   function renderMatchRow(m, showMeta){
     const row = document.createElement("div");
     row.className = "match";
-    row.setAttribute("data-open","match");
-    row.setAttribute("data-value", matchKey(m));
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
