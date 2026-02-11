@@ -2242,6 +2242,11 @@ async function init(){
       el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
         // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
+        if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
+
+        // Let card-specific handlers manage .card[data-open='match'] clicks
+        if(el.matches && el.matches(".card[data-open='match']")) return;
+
         e.stopPropagation();
         const type = el.getAttribute("data-open");
       // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
