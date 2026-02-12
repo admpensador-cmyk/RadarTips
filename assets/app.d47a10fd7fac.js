@@ -116,38 +116,7 @@ function fmtPct(x){
   return `${Math.round(n*100)}%`;
 }
 
-function renderMarketsTable(markets){
-  const rows = (Array.isArray(markets)?markets:[]).map(m=>{
-    const rlab = marketRiskLabel(m?.risk);
-    const rcls = marketRiskClass(m?.risk);
-    return `
-      <tr>
-        <td class="mt-market">${escAttr(m?.market || "—")}</td>
-        <td class="mt-entry"><div><b>${escAttr(localizeMarket(m?.entry, T) || m?.entry || "—")}</b></div><div class="mt-sub">${escAttr(T.confidence_label || "Confiança")}: ${fmtPct(m?.confidence)}</div></td>
-        <td><span class="badge risk ${rcls}">${escAttr(rlab)}</span></td>
-        <td class="mt-why">${escAttr(m?.rationale || "—")}</td>
-      </tr>
-    `;
-  }).join("");
-
-  if(!rows) return `<div class="smallnote" style="opacity:.8">${escAttr(T.no_markets || "Sem mercados suficientes para esta partida.")}</div>`;
-
-  return `
-    <div class="mt-wrap">
-      <table class="mt">
-        <thead>
-          <tr>
-            <th>${escAttr(T.market_col || "Mercado")}</th>
-            <th>${escAttr(T.entry_col || "Entrada sugerida")}</th>
-            <th>${escAttr(T.risk_col || "Risco")}</th>
-            <th>${escAttr(T.just_col || "Justificativa")}</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  `;
-}
+// renderMarketsTable is defined later in the file (kept the single implementation there)
 function squareFor(ch){
   if(ch==="W") return "g";
   if(ch==="D") return "y";
@@ -2285,17 +2254,7 @@ async function init(){
         openModal(type, val);
       });
     });
-        const type = el.getAttribute("data-open");
-      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
-      let val = "";
-      if(type === "match"){
-        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
-      }else{
-        val = el.getAttribute("data-value") || "";
-      }
-        openModal(type, val);
-      });
-    });
+    
 
     // keyboard on match rows
     qsa(".match[role='button']").forEach(el=>{

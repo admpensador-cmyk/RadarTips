@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
-const OLD_HASH = 'app.cba3bb4ebed9.js';
-const NEW_HASH = 'app.83cd2791f8b3.js';
+const OLD_HASH = 'app.83cd2791f8b3.js';
+const NEW_HASH = 'app.d47a10fd7fac.js';
 
 async function listHtmlFiles(dir) {
   const out = [];
