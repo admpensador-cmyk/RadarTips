@@ -2225,181 +2225,67 @@ async function init(){
   }
 
   function bindOpenHandlers(){
-    // Handle fixture card clicks (match radar)
-    document.addEventListener('click', (e) => {
-      const card = e.target.closest('[data-fixture-id]');
-      console.log('CLICK EVENT:', {target: e.target.tagName, hasCard: !!card, fixtureId: card?.getAttribute('data-fixture-id')});
-      
-      if (!card) return;
+    // Bind the match-card click handler ONCE (rerender() calls bindOpenHandlers repeatedly)
+    if(!window.__MR_CARD_CLICK_BOUND__){
+      window.__MR_CARD_CLICK_BOUND__ = true;
 
-      // Block interactive elements
-      const isInteractive = e.target.closest('a, button, img, svg');
-      console.log('IS INTERACTIVE:', isInteractive?.tagName || 'no');
-      if (isInteractive) return;
+      document.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-fixture-id]');
+        if(!card) return;
 
-      const fixtureId = card.getAttribute('data-fixture-id');
-      if (!fixtureId) return;
+        // Ignore real controls inside the card (do NOT block team/logo/score areas)
+        if(e.target.closest('a,button,input,select,textarea,label,[role="button"],[role="link"]')) return;
 
-      console.log('OPENING MATCH RADAR V2 WITH FIXTURE:', fixtureId);
-      e.stopPropagation();
-      e.preventDefault();
-      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
-    }, true); // capture phase
+        const fixtureId = card.getAttribute('data-fixture-id');
+        if(!fixtureId) return;
+
+        // Find the match object in the loaded calendar dataset
+        const match = (window.CAL_MATCHES || []).find(m => {
+          const id = m?.fixture_id ?? m?.fixtureId ?? m?.fixture ?? m?.id;
+          return String(id) === String(fixtureId);
+        });
+
+        if(!match){
+          console.warn('[MatchRadar] match not found for fixtureId:', fixtureId);
+          return;
+        }
+
+        const key = matchKey(match);
+
+        // Open using the site modal system (key-based), NOT window.openMatchRadarV2 (may not exist in prod)
+        e.preventDefault();
+        e.stopPropagation();
+        openModal('match', key);
+      }, true); // capture phase
+    }
 
     // Handle all other [data-open] elements (competition, country radars, etc.)
     qsa("[data-open]:not([data-fixture-id])").forEach(el=>{
       if(el.dataset.boundOpen === "1") return;
       el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
-        console.log('DATA-OPEN HANDLER:', {type: el.getAttribute('data-open'), target: e.target.tagName});
-        
         // Prevent nested [data-open] from triggering multiple modals
         if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
 
         e.stopPropagation();
         const type = el.getAttribute("data-open");
-      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
-      let val = "";
-      if(type === "match"){
-        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
-      }else{
-        val = el.getAttribute("data-value") || "";
-      }
-        console.log('OPENING:', type, val);
+        // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
+        let val = "";
+        if(type === "match"){
+          val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
+        }else{
+          val = el.getAttribute("data-value") || "";
+        }
         openModal(type, val);
       });
     });
-    
 
     // keyboard on match rows
     qsa(".match[role='button']").forEach(el=>{
       if(el.dataset.boundKey === "1") return;
       el.dataset.boundKey = "1";
       el.addEventListener("keydown", (e)=>{
-        if(e.key === "Enter" || e.key === " "){
-          e.preventDefault();
-          el.click();
-        }
-      });
-    });
-
-    // Global capture-phase handler for game card clicks (Radar + Calendar)
-    // Delegate click handling at document level to catch fixture card opens before stopPropagation
-    document.addEventListener('click', function handleFixtureCardClick(e){
-      const card = e.target.closest('[data-fixture-id]');
-      if(!card) return; // not a fixture card
-
-      // Block clicks on interactive elements within the card
-      const blockedElements = 'a,button,[data-open],img,svg';
-      const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions';
-      if(e.target.closest(blockedElements) || e.target.closest(blockedClasses)) return;
-
-      const fixtureId = card.getAttribute('data-fixture-id');
-      if(!fixtureId) return;
-
-      // Block propagation and open match radar v2
-      e.stopPropagation();
-      e.preventDefault();
-      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
-    }, true); // capture phase
-
-    // cards as buttons: open match modal ONLY when mr-surface is clicked
-    // We create a transparent overlay `.mr-surface` inside each card and open modal only on its clicks.
-    function showMRToast(msg){
-      try{
-        // TEMP: visual proof for manual validation
-        let t = qs('#mr-toast');
-        if(!t){
-          t = document.createElement('div');
-          t.id = 'mr-toast';
-          t.style.position = 'fixed';
-          t.style.left = '10px';
-          t.style.bottom = '10px';
-          t.style.padding = '8px 10px';
-          t.style.background = 'rgba(0,0,0,0.85)';
-          t.style.color = '#fff';
-          t.style.fontSize = '13px';
-          t.style.borderRadius = '6px';
-          t.style.zIndex = '2147483647';
-          document.body.appendChild(t);
-        }
-        t.textContent = msg;
-        t.style.opacity = '1';
-        if(window.__mr_toast_timeout) clearTimeout(window.__mr_toast_timeout);
-        window.__mr_toast_timeout = setTimeout(()=>{ t.style.transition = 'opacity 400ms'; t.style.opacity = '0'; }, 3500);
-      }catch(e){/* ignore */}
-    }
-
-    qsa(".card[data-open='match']").forEach(el=>{
-      if(el.dataset.boundCardClick === "1") return;
-      el.dataset.boundCardClick = "1";
-
-      // ensure card has positioning so overlay can cover it
-      if(!el.style.position || el.style.position === "static") el.style.position = "relative";
-
-      // create transparent overlay surface if missing
-      let surface = el.querySelector('.mr-surface');
-      if(!surface){
-        surface = document.createElement('div');
-        surface.className = 'mr-surface';
-        surface.setAttribute('aria-hidden','true');
-        surface.style.cssText = "position:absolute;inset:0;z-index:1;background:transparent;cursor:pointer";
-        el.insertBefore(surface, el.firstChild);
-      }
-
-      // keyboard handler (Enter/Space to open modal) on the card element
-      el.addEventListener("keydown", (e)=>{
-        if(e.key === "Enter" || e.key === " "){
-          e.preventDefault();
-          const card = el;
-          const fixture = card.getAttribute('data-fixture-id') || '';
-          if(fixture){
-            const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
-            if(found){ showMRToast(`MR: abrir (fixtureId=${fixture})`); if(window.openMatchRadarV2) { openMatchRadarV2(matchKey(found)); return; } }
-            showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); return;
-          }
-          const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
-          if(val){ showMRToast(`MR: abrir (val=${val})`); if(window.openMatchRadarV2) { openMatchRadarV2(val); } }
-          else showMRToast('MR ERRO: fixtureId missing');
-        }
-      });
-    });
-
-    // collapsible headers (country groups + competition subgroups)
-    qsa(".collapsible[data-collapse]").forEach(el=>{
-      if(el.dataset.boundCollapse === "1") return;
-      el.dataset.boundCollapse = "1";
-      const handle = (e)=>{
-        // If the click is for a modal action, do nothing (those handlers stop propagation anyway)
-        if(e && e.target && e.target.closest && e.target.closest("[data-open]")) return;
-
-        const kind = el.getAttribute("data-collapse") || "";
-        const parent = (kind === "competition") ? el.closest(".subgroup") : el.closest(".group");
-        if(!parent) return;
-
-        parent.classList.toggle("collapsed");
-        const expanded = !parent.classList.contains("collapsed");
-        el.setAttribute("aria-expanded", expanded ? "true" : "false");
-
-        // Persist collapse choice
-        try{
-          if(kind === "competition"){
-            const c = el.getAttribute("data-country") || "";
-            const k = el.getAttribute("data-key") || "";
-            setCompetitionCollapsed(c, k, !expanded);
-          }else{
-            const k = el.getAttribute("data-key") || "";
-            setCountryCollapsed(k, !expanded);
-          }
-        }catch(e){}
-      };
-
-      el.addEventListener("click", handle);
-      el.addEventListener("keydown", (e)=>{
-        if(e.key === "Enter" || e.key === " "){
-          e.preventDefault();
-          handle(e);
-        }
+        if(e.key==="Enter" || e.key===" "){ e.preventDefault(); el.click(); }
       });
     });
   }
