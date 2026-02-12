@@ -114,19 +114,19 @@ async function handleApiV1(env, pathname) {
   // Serve snapshot files (calendar_7d, radar_day, radar_week) from R2
   if (pathname === "/v1/calendar_7d") {
     const data = await r2GetJson(env, "snapshots/calendar_7d.json");
-    if (!data) return new Response("Not found", { status: 404 });
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
     return jsonResponse(data);
   }
 
   if (pathname === "/v1/radar_day") {
     const data = await r2GetJson(env, "snapshots/radar_day.json");
-    if (!data) return new Response("Not found", { status: 404 });
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
     return jsonResponse(data);
   }
 
   if (pathname === "/v1/radar_week") {
     const data = await r2GetJson(env, "snapshots/radar_week.json");
-    if (!data) return new Response("Not found", { status: 404 });
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
     return jsonResponse(data);
   }
 
@@ -198,6 +198,11 @@ var index_default = {
   async fetch(request, env, ctx) {
     let pathname = new URL(request.url).pathname;
 
+    // Handle health check endpoint (no normalization needed)
+    if (pathname === "/api/__health") {
+      return jsonResponse({ ok: true, ts: nowIso() }, 200);
+    }
+
     // Support both route styles:
     // - Worker mounted at /api (e.g. https://radartips.com/api)
     // - Direct /v1 endpoints (e.g. https://<worker>.workers.dev/v1)
@@ -214,7 +219,7 @@ var index_default = {
       if (res) return res;
     }
 
-    return new Response("Not found", { status: 404 });
+    return jsonResponse({ error: "Not found", ok: false }, 404);
   },
 
   async scheduled(event, env, ctx) {
