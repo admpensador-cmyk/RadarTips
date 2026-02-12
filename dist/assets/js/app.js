@@ -804,8 +804,6 @@ function renderTop3(t, data){
 
     // FREE callout
     const key = matchKey(item);
-    card.setAttribute("data-open","match");
-    card.setAttribute("data-value", key);
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
@@ -1240,8 +1238,6 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
   function renderMatchRow(m, showMeta){
     const row = document.createElement("div");
     row.className = "match";
-    row.setAttribute("data-open","match");
-    row.setAttribute("data-value", matchKey(m));
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
@@ -1289,6 +1285,9 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
         <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
       </div>
     ` : "";
+
+    // ensure row has positioning context for absolute overlay
+    if(!row.style.position || row.style.position === "static") row.style.position = "relative";
 
     row.innerHTML = `
       <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
@@ -1507,18 +1506,24 @@ function openModal(type, value){
   let displayValue = decodedValue || rawValue;
 
   if(type === "match" || parsed.mode === "fixture"){
-    // Fixture mode
+    // Fixture mode: show loading shell immediately, then populate
     const kickoffISO = parsed.kickoffISO || decodedValue;
     const homeName = parsed.homeName || "";
     const awayName = parsed.awayName || "";
+    const fixtureId = value; // preserve raw value which may contain fixtureId
+    
+    // TEMP: show loading shell immediately with fixtureId
+    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
+    title.textContent = `Match Radar (fixtureId=${fixtureId})`; // TEMP: include fixtureId in header
+    body.innerHTML = `<div class="loading" style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>`;
+    back.style.display = "flex";
+    
+    // NOW search for match data
     const found = findMatchByFixture(kickoffISO, homeName, awayName);
     if(found) list = [found];
-    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
-    title.textContent = `Match Radar: ${displayValue}`;
 
     if(!list.length){
       body.innerHTML = `<div class="smallnote">Match not found in current dataset.</div>`;
-      back.style.display = "flex";
       bindModalClicks();
       return;
     }
@@ -2236,18 +2241,50 @@ async function init(){
   }
 
   function bindOpenHandlers(){
-    // any [data-open] outside modal (cards, chips, matches)
-    qsa("[data-open]").forEach(el=>{
+    // Handle fixture card clicks (match radar)
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-fixture-id]');
+      console.log('CLICK EVENT:', {target: e.target.tagName, hasCard: !!card, fixtureId: card?.getAttribute('data-fixture-id')});
+      
+      if (!card) return;
+
+      // Block interactive elements
+      const isInteractive = e.target.closest('a, button, img, svg');
+      console.log('IS INTERACTIVE:', isInteractive?.tagName || 'no');
+      if (isInteractive) return;
+
+      const fixtureId = card.getAttribute('data-fixture-id');
+      if (!fixtureId) return;
+
+      console.log('OPENING MATCH RADAR V2 WITH FIXTURE:', fixtureId);
+      e.stopPropagation();
+      e.preventDefault();
+      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
+    }, true); // capture phase
+
+    // Handle all other [data-open] elements (competition, country radars, etc.)
+    qsa("[data-open]:not([data-fixture-id])").forEach(el=>{
       if(el.dataset.boundOpen === "1") return;
       el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
-        // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
+        console.log('DATA-OPEN HANDLER:', {type: el.getAttribute('data-open'), target: e.target.tagName});
+        
+        // Prevent nested [data-open] from triggering multiple modals
         if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
 
-        // Let card-specific handlers manage .card[data-open='match'] clicks
-        if(el.matches && el.matches(".card[data-open='match']")) return;
-
         e.stopPropagation();
+        const type = el.getAttribute("data-open");
+      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
+      let val = "";
+      if(type === "match"){
+        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
+      }else{
+        val = el.getAttribute("data-value") || "";
+      }
+        console.log('OPENING:', type, val);
+        openModal(type, val);
+      });
+    });
         const type = el.getAttribute("data-open");
       // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
       let val = "";
@@ -2272,28 +2309,84 @@ async function init(){
       });
     });
 
-    // cards as buttons: open match modal ONLY on empty area clicks
+    // Global capture-phase handler for game card clicks (Radar + Calendar)
+    // Delegate click handling at document level to catch fixture card opens before stopPropagation
+    document.addEventListener('click', function handleFixtureCardClick(e){
+      const card = e.target.closest('[data-fixture-id]');
+      if(!card) return; // not a fixture card
+
+      // Block clicks on interactive elements within the card
+      const blockedElements = 'a,button,[data-open],img,svg';
+      const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions';
+      if(e.target.closest(blockedElements) || e.target.closest(blockedClasses)) return;
+
+      const fixtureId = card.getAttribute('data-fixture-id');
+      if(!fixtureId) return;
+
+      // Block propagation and open match radar v2
+      e.stopPropagation();
+      e.preventDefault();
+      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
+    }, true); // capture phase
+
+    // cards as buttons: open match modal ONLY when mr-surface is clicked
+    // We create a transparent overlay `.mr-surface` inside each card and open modal only on its clicks.
+    function showMRToast(msg){
+      try{
+        // TEMP: visual proof for manual validation
+        let t = qs('#mr-toast');
+        if(!t){
+          t = document.createElement('div');
+          t.id = 'mr-toast';
+          t.style.position = 'fixed';
+          t.style.left = '10px';
+          t.style.bottom = '10px';
+          t.style.padding = '8px 10px';
+          t.style.background = 'rgba(0,0,0,0.85)';
+          t.style.color = '#fff';
+          t.style.fontSize = '13px';
+          t.style.borderRadius = '6px';
+          t.style.zIndex = '2147483647';
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        if(window.__mr_toast_timeout) clearTimeout(window.__mr_toast_timeout);
+        window.__mr_toast_timeout = setTimeout(()=>{ t.style.transition = 'opacity 400ms'; t.style.opacity = '0'; }, 3500);
+      }catch(e){/* ignore */}
+    }
+
     qsa(".card[data-open='match']").forEach(el=>{
       if(el.dataset.boundCardClick === "1") return;
       el.dataset.boundCardClick = "1";
-      
-      // Click handler for empty card area
-      el.addEventListener("click", (e)=>{
-        if (isEmptyCardClick(e)) {
-          e.stopPropagation();
-          const type = el.getAttribute("data-open");
-          const val = el.getAttribute("data-value") || "";
-          openModal(type, val);
-        }
-      });
-      
-      // Keyboard handler (Enter/Space to open modal)
+
+      // ensure card has positioning so overlay can cover it
+      if(!el.style.position || el.style.position === "static") el.style.position = "relative";
+
+      // create transparent overlay surface if missing
+      let surface = el.querySelector('.mr-surface');
+      if(!surface){
+        surface = document.createElement('div');
+        surface.className = 'mr-surface';
+        surface.setAttribute('aria-hidden','true');
+        surface.style.cssText = "position:absolute;inset:0;z-index:1;background:transparent;cursor:pointer";
+        el.insertBefore(surface, el.firstChild);
+      }
+
+      // keyboard handler (Enter/Space to open modal) on the card element
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
-          const type = el.getAttribute("data-open");
-          const val = el.getAttribute("data-value") || "";
-          openModal(type, val);
+          const card = el;
+          const fixture = card.getAttribute('data-fixture-id') || '';
+          if(fixture){
+            const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
+            if(found){ showMRToast(`MR: abrir (fixtureId=${fixture})`); if(window.openMatchRadarV2) { openMatchRadarV2(matchKey(found)); return; } }
+            showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); return;
+          }
+          const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
+          if(val){ showMRToast(`MR: abrir (val=${val})`); if(window.openMatchRadarV2) { openMatchRadarV2(val); } }
+          else showMRToast('MR ERRO: fixtureId missing');
         }
       });
     });

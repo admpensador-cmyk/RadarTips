@@ -1,3 +1,7 @@
 # OpenNext / Workers build output
 .worker-next
 .open-next
+
+# block zip artifacts
+dist/*.zip
+**/*.zip

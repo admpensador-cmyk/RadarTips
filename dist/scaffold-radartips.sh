@@ -1029,6 +1029,8 @@ page() {
     </div>
   </div>
 
+  <link rel="stylesheet" href="/assets/css/match-radar-v2.css" />
+  <script src="/assets/js/match-radar-v2.js"></script>
   <script src="/assets/js/app.js"></script>
 </body>
 </html>

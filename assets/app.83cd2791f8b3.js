@@ -711,6 +711,33 @@ function matchKey(m){
   return encodeURIComponent(`${m.kickoff_utc}|${m.home}|${m.away}`);
 }
 
+// DEBUG MR: Helper to determine if a click target is on an interactive element (not "empty space")
+function isClickableElement(el) {
+  if (!el) return false;
+  // Check tag names
+  if (['IMG', 'BUTTON', 'A', 'INPUT', 'LABEL', 'SVG', 'PATH'].includes(el.tagName)) return true;
+  // Check data attributes
+  if (el.getAttribute('role') === 'button' || el.getAttribute('data-open')) return true;
+  // Check classes/patterns
+  const classStr = el.className || '';
+  if (classStr.includes('meta-actions') || classStr.includes('meta-link') || classStr.includes('btn') || classStr.includes('chip') || classStr.includes('crest') || classStr.includes('score') || classStr.includes('team') || classStr.includes('logo')) {
+    return true;
+  }
+  return false;
+}
+
+// DEBUG MR: Check if click is on "empty card area" (not on interactive content)
+function isEmptyCardClick(event) {
+  let current = event.target;
+  while (current && current.closest && !current.classList.contains('card')) {
+    if (isClickableElement(current)) {
+      return false;
+    }
+    current = current.parentElement;
+  }
+  return true;
+}
+
 function renderTop3(t, data){
   const slots = data.highlights || [];
   const cards = qsa(".card[data-slot]");
@@ -770,15 +797,13 @@ function renderTop3(t, data){
         <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
       </div>
       <div class="meta-actions">
-        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionValue(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
+        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionKey(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
         <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
       </div>
     `;
 
     // FREE callout
     const key = matchKey(item);
-    card.setAttribute("data-open","match");
-    card.setAttribute("data-key", key);
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
@@ -800,9 +825,6 @@ function renderTop3(t, data){
         <div class="callout-sub">
           <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
           <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
-        </div>
-        <div class="callout-actions">
-          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
         </div>
       </div>
     `;
@@ -890,6 +912,86 @@ function competitionValue(m){
   const id = m && (m.competition_id || m.league_id || m.leagueId);
   if(id !== undefined && id !== null && String(id).trim() !== "") return String(id);
   return String(m?.competition || "");
+}
+
+// Build a competition key to open the competition modal.
+// Prefer `leagueId|season` when possible, otherwise return leagueName.
+function competitionKey(m){
+  const id = m && (m.competition_id || m.league_id || m.leagueId);
+  const compName = String(m?.competition || "").trim();
+  let season = m?.season || m?.season_id || m?.seasonId;
+  if(!season){
+    try{
+      const d = new Date(m?.kickoff_utc);
+      if(!isNaN(d.getTime())) season = String(d.getUTCFullYear());
+    }catch(e){ /* ignore */ }
+  }
+
+  if(id !== undefined && id !== null && String(id).trim() !== ""){
+    const key = season ? `${String(id)}|${String(season)}` : `${String(id)}`;
+    return encodeURIComponent(key);
+  }
+
+  // fallback to name
+  return encodeURIComponent(compName || "");
+}
+
+// Parse a decoded radar key into structured object
+function parseRadarKey(k){
+  if(!k || String(k).trim()==="") return {mode: "competition", leagueName: ""};
+  const str = String(k).trim();
+
+  // Try fixture: kickoffISO|home|away (allow extra '|' in team names by joining remainder)
+  const parts = str.split("|");
+  if(parts.length >= 3){
+    const kickoff = parts[0];
+    const home = parts[1];
+    const away = parts.slice(2).join("|");
+    const d = new Date(kickoff);
+    if(!isNaN(d.getTime())){
+      return {mode: "fixture", kickoffISO: kickoff, homeName: home, awayName: away};
+    }
+  }
+
+  // Try key:value pairs like league:123|season:2025
+  if(str.includes(":") && str.includes("|")){
+    const obj = {};
+    str.split("|").forEach(p=>{
+      const idx = p.indexOf(":");
+      if(idx>0){
+        const k2 = p.slice(0,idx).trim().toLowerCase();
+        const v2 = p.slice(idx+1).trim();
+        obj[k2]=v2;
+      }
+    });
+    if(obj.league || obj.leagueid || obj.league_id){
+      return {mode: "competition", leagueId: obj.league || obj.leagueid || obj.league_id, season: obj.season};
+    }
+  }
+
+  // Try numericId|season or id|year
+  if(parts.length === 2 && /^[0-9]+$/.test(parts[0].trim())){
+    return {mode: "competition", leagueId: parts[0].trim(), season: parts[1].trim()};
+  }
+
+  // Fallback: treat entire string as league name
+  return {mode: "competition", leagueName: str};
+}
+
+// Find a fixture in CAL_MATCHES tolerant to small time differences and normalized names
+function findMatchByFixture(kickoffISO, homeName, awayName){
+  const tol = 5 * 60 * 1000; // 5 minutes
+  const hk = normalize(homeName);
+  const ak = normalize(awayName);
+  const t0 = new Date(kickoffISO).getTime();
+  return CAL_MATCHES.find(m=>{
+    try{
+      const mk = normalize(m.home);
+      const akm = normalize(m.away);
+      const dt = Math.abs(new Date(m.kickoff_utc).getTime() - t0);
+      return mk === hk && akm === ak && dt <= tol;
+    }catch(e){ return false; }
+  }) || null;
 }
 
 
@@ -1014,6 +1116,96 @@ function renderMarketsTable(markets){
   `;
 }
 
+// Render suggestions panel for a single match (FREE markets)
+function renderSuggestions(match){
+  const markets = match?.analysis?.markets || match?.markets || match?.suggestions || [];
+  if(!Array.isArray(markets) || markets.length===0){
+    return `<div class="smallnote">${escAttr(T.no_markets || "Sem sugestões disponíveis.")}</div>`;
+  }
+
+  const rows = markets.map(m=>{
+    const conf = Math.round((Number(m?.confidence || m?.probability || 0) * 100));
+    const evNum = (m?.ev !== undefined) ? Number(m.ev) : (m?.expected_value !== undefined ? Number(m.expected_value) : NaN);
+    const evTxt = Number.isFinite(evNum) ? (evNum>0? `+${evNum.toFixed(2)}` : `${evNum.toFixed(2)}`) : `${conf}%`;
+    const evCls = Number.isFinite(evNum) ? (evNum>0? 'ev-positive' : 'ev-negative') : (conf>=50? 'ev-positive':'ev-negative');
+    const riskLbl = marketRiskLabel(m?.risk);
+    const riskCls = marketRiskClass(m?.risk);
+    const rationale = m?.rationale || m?.why || m?.justification || "";
+
+    return `
+      <div class="suggestion-row">
+        <div class="suggestion-left">
+          <div style="font-weight:900">${escAttr(m?.market || "-")}</div>
+          <div class="mt-sub">${escAttr(localizeMarket(m?.entry, T) || m?.entry || "-")}</div>
+        </div>
+        <div class="suggestion-right">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span class="ev-badge ${evCls}">${escAttr(evTxt)}</span>
+            <span class="badge risk ${riskCls}">${escAttr(riskLbl)}</span>
+            <span style="opacity:.85;font-size:13px;margin-left:auto">${escAttr(T.confidence_label || 'Confiança')}: <b>${conf}%</b></span>
+          </div>
+          <div style="opacity:.9">${escAttr(rationale || '')}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `<div class="suggestions-grid">${rows}</div>`;
+}
+
+// Render comparative statistics panel for a match
+function renderStats(match){
+  const stats = match?.stats || {};
+  const hs = stats.home || {};
+  const as = stats.away || {};
+
+  const choose = (obj, names)=>{
+    for(const n of names){
+      if(obj && (obj[n] !== undefined) && obj[n] !== null) return Number(obj[n]);
+    }
+    return null;
+  };
+
+  const metrics = [
+    {id:'possession', label: T.possession_label || 'Possession', names:['possession','possession_pct','possession_home']},
+    {id:'xg', label: T.xg_label || 'xG', names:['xg','xg_for','xg_home']},
+    {id:'shots', label: T.shots_label || 'Shots', names:['shots','shots_for','shots_home']},
+    {id:'shots_on_target', label: T.shots_on_target_label || 'Shots on target', names:['shots_on_target','sot','shots_target']},
+    {id:'corners', label: T.corners_label || 'Corners', names:['corners','corners_for']},
+    {id:'cards', label: T.cards_label || 'Cards', names:['cards','yellow_cards','red_cards','cards_total']},
+    {id:'passes', label: T.passes_label || 'Passes', names:['passes','passes_total','pass_accuracy']}
+  ];
+
+  const rows = metrics.map(met=>{
+    const L = choose(hs, met.names);
+    const R = choose(as, met.names);
+    if(L === null && R === null) return '';
+
+    const lnum = (L===null||isNaN(L)) ? '—' : (Number.isFinite(L) ? (Math.round(L*100)/100) : '—');
+    const rnum = (R===null||isNaN(R)) ? '—' : (Number.isFinite(R) ? (Math.round(R*100)/100) : '—');
+
+    const lval = Number.isFinite(Number(L)) ? Number(L) : 0;
+    const rval = Number.isFinite(Number(R)) ? Number(R) : 0;
+    const total = (lval + rval) || 0;
+    const lPct = total>0 ? Math.round((lval/total)*100) : 50;
+    const rPct = total>0 ? Math.round((rval/total)*100) : 50;
+
+    return `
+      <div class="stat-row">
+        <div class="stat-label">${escAttr(met.label)}</div>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar-left" style="width:${lPct}%;"></div>
+          <div class="stat-bar-right" style="width:${rPct}%;"></div>
+        </div>
+        <div class="stat-values">${escAttr(String(lnum))} • ${escAttr(String(rnum))}</div>
+      </div>
+    `;
+  }).filter(Boolean).join("");
+
+  if(!rows) return `<div class="smallnote">${escAttr(T.no_stats || 'Estatísticas indisponíveis.')}</div>`;
+  return `<div class="stats-panel">${rows}</div>`;
+}
+
 
 function renderCalendar(t, matches, viewMode, query, activeDateKey){
   const root = qs("#calendar");
@@ -1046,8 +1238,6 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
   function renderMatchRow(m, showMeta){
     const row = document.createElement("div");
     row.className = "match";
-    row.setAttribute("data-open","match");
-    row.setAttribute("data-key", matchKey(m));
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
@@ -1095,6 +1285,9 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
         <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
       </div>
     ` : "";
+
+    // ensure row has positioning context for absolute overlay
+    if(!row.style.position || row.style.position === "static") row.style.position = "relative";
 
     row.innerHTML = `
       <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
@@ -1175,17 +1368,18 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
       for(const [compRaw, ms] of map.entries()){
         const compDisp = competitionDisplay(compRaw, countryName, LANG);
-        const compVal = competitionValue(ms[0] || {competition:compRaw});
+        const compValRaw = competitionValue(ms[0] || {competition:compRaw});
+        const compKey = competitionKey(ms[0] || {competition:compRaw});
         const compLogoUrl = pickCompetitionLogo(ms[0] || null);
         const compIcon = compLogoUrl ? tinyImgHTML(compLogoUrl, compDisp, "comp-logo") : icoSpan("trophy");
 
         const sub = document.createElement("div");
         sub.className = "subgroup";
         sub.innerHTML = `
-          <div class="subhead collapsible" data-collapse="competition" data-country="${escAttr(countryName)}" data-key="${escAttr(compVal || compRaw)}" role="button" tabindex="0" aria-expanded="true">
+          <div class="subhead collapsible" data-collapse="competition" data-country="${escAttr(countryName)}" data-key="${escAttr(compValRaw || compRaw)}" role="button" tabindex="0" aria-expanded="true">
             <div class="subtitle"><span class="chev" aria-hidden="true"></span>${compIcon}<span>${escAttr(compDisp)}</span></div>
             <div class="group-actions">
-              <span class="chip" data-open="competition" data-value="${escAttr(compVal || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
+              <span class="chip" data-open="competition" data-value="${escAttr(compKey || compValRaw || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
             </div>
           </div>
           <div class="matches"></div>
@@ -1193,7 +1387,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
 
         // Apply persisted collapse state (competition)
-        const _compKeyVal = String(compVal || compRaw);
+        const _compKeyVal = String(compValRaw || compRaw);
         const _sCollapsed = isCompetitionCollapsed(countryName, _compKeyVal);
         sub.classList.toggle("collapsed", _sCollapsed);
         const _sHead = sub.querySelector(".subhead");
@@ -1237,13 +1431,32 @@ let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
 
 function openModal(type, value){
+  console.log("openModal called:", type, value);
+  
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");
   const body = qs("#modal_body");
 
-  // Defensive: competition modal should never receive matchKey (kickoff|home|away).
-  if(type === "competition" && String(value || "").includes("|")){
-    openModal("match", value);
+  // Always try to decode incoming values from query/hash before using/displaying.
+  // If decodeURIComponent fails, fall back to original value.
+  let rawValue = value;
+  let decodedValue = value;
+  if(typeof value === "string" && value.length){
+    try{
+      decodedValue = decodeURIComponent(value);
+    }catch(e){
+      decodedValue = value;
+    }
+  }
+
+  // Parse incoming key and decide mode (fixture vs competition)
+  const parsed = parseRadarKey(decodedValue);
+  if(RADAR_DEBUG) console.log("RADAR DEBUG: raw=", rawValue, "decoded=", decodedValue, "parsed=", parsed);
+
+  // If user explicitly opened a competition but the parsed key looks like a fixture, redirect to match mode
+  if(type === "competition" && parsed && parsed.mode === "fixture"){
+    if(RADAR_DEBUG) console.log("RADAR DEBUG: redirecting competition->match");
+    openModal("match", decodedValue);
     return;
   }
 
@@ -1273,7 +1486,7 @@ function openModal(type, value){
       </div>
 
       <div class="mfooter">
-        <span class="chip" data-open="competition" data-value="${escAttr(competitionValue(m || {competition:mCompRaw}))}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
+        <span class="chip" data-open="competition" data-value="${escAttr(competitionKey(m || {competition:mCompRaw}) || mCompRaw)}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
         <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${escAttr(T.country_radar || "Radar do País")}</span>
       </div>
 
@@ -1288,61 +1501,110 @@ function openModal(type, value){
     return;
   }
 
-  // COUNTRY / COMPETITION RADAR (FREE)
-  const isId = /^[0-9]+$/.test(String(value || "").trim());
-  const label = (type==="country") ? (T.country_radar || "Radar do País") : (T.competition_radar || "Radar da Competição");
-
+  // COUNTRY / COMPETITION / FIXTURE RADAR
   let list = [];
-  let displayValue = value;
+  let displayValue = decodedValue || rawValue;
 
-  if(type==="country"){
-    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(value));
-  }else{
-    if(isId){
-      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(value));
-      const sample = list[0];
-      if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
-    }else{
-      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(value));
-      const sample = list[0];
-      if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
+  if(type === "match" || parsed.mode === "fixture"){
+    // Fixture mode: show loading shell immediately, then populate
+    const kickoffISO = parsed.kickoffISO || decodedValue;
+    const homeName = parsed.homeName || "";
+    const awayName = parsed.awayName || "";
+    const fixtureId = value; // preserve raw value which may contain fixtureId
+    
+    // TEMP: show loading shell immediately with fixtureId
+    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
+    title.textContent = `Match Radar (fixtureId=${fixtureId})`; // TEMP: include fixtureId in header
+    body.innerHTML = `<div class="loading" style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>`;
+    back.style.display = "flex";
+    
+    // NOW search for match data
+    const found = findMatchByFixture(kickoffISO, homeName, awayName);
+    if(found) list = [found];
+
+    if(!list.length){
+      body.innerHTML = `<div class="smallnote">Match not found in current dataset.</div>`;
+      bindModalClicks();
+      return;
     }
+
+    const m = list[0];
+    const key = matchKey(m);
+    const homeLogo = pickTeamLogo(m, "home");
+    const awayLogo = pickTeamLogo(m, "away");
+    const compDisp = competitionDisplay(m.competition, m.country, LANG);
+
+    // Tabbed modal: Suggestions + Stats
+    body.innerHTML = `
+      <div class="mhead">
+        <div class="mmeta">
+          <div class="mcomp">${escAttr(compDisp)}</div>
+          <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
+        </div>
+        <div class="mbadges">
+          <div class="mteams"><div class="team">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div><div class="team">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div></div>
+        </div>
+      </div>
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="suggestions">${escAttr(T.suggestions_tab || "Sugestões")}</button>
+        <button class="tab-btn" data-tab="stats">${escAttr(T.stats_tab || "Estatísticas")}</button>
+      </div>
+
+      <div class="tab-panels">
+        <div class="tab-panel" id="suggestions-panel">${renderSuggestions(m)}</div>
+        <div class="tab-panel" id="stats-panel" style="display:none">${renderStats(m)}</div>
+      </div>
+
+      <div class="mnote">
+        <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
+      </div>
+    `;
+
+    // Bind internal tab toggles
+    const btns = qsa("#modal_body .tab-btn");
+    btns.forEach(b=>{
+      b.addEventListener("click", ()=>{
+        btns.forEach(x=>x.classList.remove("active"));
+        b.classList.add("active");
+        const tab = b.getAttribute("data-tab");
+        qs("#suggestions-panel").style.display = (tab==="suggestions") ? "block" : "none";
+        qs("#stats-panel").style.display = (tab==="stats") ? "block" : "none";
+      });
+      b.addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); b.click(); } });
+    });
+
+    back.style.display = "flex";
+    bindModalClicks();
+    return;
   }
 
-  title.textContent = displayValue ? `${label}: ${displayValue}` : label;
+  if(type==="country"){
+    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(decodedValue));
+    const sample = list[0];
+    if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
+    title.textContent = displayValue ? `${T.country_radar || "Radar do País"}: ${displayValue}` : (T.country_radar || "Radar do País");
+  }else{
+    // competition mode: use parsed fields (leagueId+season preferred)
+    if(parsed.leagueId){
+      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(parsed.leagueId));
+      if(parsed.season){
+        list = list.filter(m => String(m?.season || new Date(m.kickoff_utc).getUTCFullYear()) === String(parsed.season));
+      }
+      const sample = list[0];
+      displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueId;
+    }else if(parsed.leagueName){
+      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(parsed.leagueName));
+      const sample = list[0];
+      displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueName;
+    }
 
-  const rows = list
-    .sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc))
-    .map(m=>{
-      const key = matchKey(m);
-      const riskText = (m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med;
+    title.textContent = displayValue ? `${T.competition_radar || "Radar da Competição"}: ${displayValue}` : (T.competition_radar || "Radar da Competição");
+  }
 
-      const homeLogo = pickTeamLogo(m, "home");
-      const awayLogo = pickTeamLogo(m, "away");
+    if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
 
-      const compDisp = competitionDisplay(m.competition, m.country, LANG);
-
-      return `
-        <div class="match" data-open="match" data-key="${key}" role="button" tabindex="0" ${tipAttr(`${T.match_radar}: ${m.home} vs ${m.away}`)}>
-          <div class="time">${fmtTime(m.kickoff_utc)}</div>
-          <div>
-            <div class="teams">
-              <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-              <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
-            </div>
-            <div class="meta-chips" style="margin-top:8px">
-              <span class="meta-chip">${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
-              <span class="meta-chip">${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
-            </div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>
-              ${escAttr(T.suggestion_label || "Sugestão")}: <b>${escAttr(localizeMarket(m.suggestion_free, T) || "—")}</b> • ${escAttr(riskText)}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-  body.innerHTML = `
+    body.innerHTML = `
     <div class="mhead">
       <div class="mmeta">
         <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
@@ -1773,6 +2035,27 @@ function injectPatchStyles(){
     font-weight: 800;
   }
 
+  /* Modal tabs: Suggestions / Stats */
+  .modal .tab-buttons{ display:flex; gap:8px; margin-top:12px; }
+  .modal .tab-btn{ background:transparent; border:1px solid rgba(255,255,255,.06); padding:8px 12px; border-radius:10px; cursor:pointer; color:inherit; }
+  .modal .tab-btn.active{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.12); font-weight:900; }
+  .modal .tab-panel{ margin-top:12px; }
+
+  .suggestions-grid{ display:grid; grid-template-columns: 1fr; gap:8px; }
+  .suggestion-row{ display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:10px; background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.03); }
+  .suggestion-left{ min-width:220px; max-width:320px; }
+  .suggestion-right{ flex:1; }
+  .ev-badge{ font-weight:900; padding:6px 10px; border-radius:999px; }
+  .ev-positive{ background:rgba(46,170,86,.12); color:#2eaA56; }
+  .ev-negative{ background:rgba(220,60,60,.08); color:#dc3c3c; }
+
+  .stat-row{ display:flex; align-items:center; gap:12px; padding:8px 0; }
+  .stat-label{ width:140px; font-weight:800; opacity:.92; }
+  .stat-bar-wrap{ flex:1; background:rgba(255,255,255,.03); height:14px; border-radius:8px; overflow:hidden; display:flex; align-items:center; }
+  .stat-bar-left{ height:100%; background:linear-gradient(90deg,#2eaA56,#2eaA56); }
+  .stat-bar-right{ height:100%; background:linear-gradient(90deg,#ffb443,#ffb443); margin-left:auto; }
+  .stat-values{ width:88px; text-align:right; font-weight:800; }
+
   /* Nested calendar (country -> competition) */
   .group .subgroup{
     margin-top: 10px;
@@ -1958,13 +2241,50 @@ async function init(){
   }
 
   function bindOpenHandlers(){
-    // any [data-open] outside modal (cards, chips, matches)
-    qsa("[data-open]").forEach(el=>{
+    // Handle fixture card clicks (match radar)
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-fixture-id]');
+      console.log('CLICK EVENT:', {target: e.target.tagName, hasCard: !!card, fixtureId: card?.getAttribute('data-fixture-id')});
+      
+      if (!card) return;
+
+      // Block interactive elements
+      const isInteractive = e.target.closest('a, button, img, svg');
+      console.log('IS INTERACTIVE:', isInteractive?.tagName || 'no');
+      if (isInteractive) return;
+
+      const fixtureId = card.getAttribute('data-fixture-id');
+      if (!fixtureId) return;
+
+      console.log('OPENING MATCH RADAR V2 WITH FIXTURE:', fixtureId);
+      e.stopPropagation();
+      e.preventDefault();
+      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
+    }, true); // capture phase
+
+    // Handle all other [data-open] elements (competition, country radars, etc.)
+    qsa("[data-open]:not([data-fixture-id])").forEach(el=>{
       if(el.dataset.boundOpen === "1") return;
       el.dataset.boundOpen = "1";
       el.addEventListener("click", (e)=>{
-        // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
+        console.log('DATA-OPEN HANDLER:', {type: el.getAttribute('data-open'), target: e.target.tagName});
+        
+        // Prevent nested [data-open] from triggering multiple modals
+        if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
+
         e.stopPropagation();
+        const type = el.getAttribute("data-open");
+      // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
+      let val = "";
+      if(type === "match"){
+        val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
+      }else{
+        val = el.getAttribute("data-value") || "";
+      }
+        console.log('OPENING:', type, val);
+        openModal(type, val);
+      });
+    });
         const type = el.getAttribute("data-open");
       // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
       let val = "";
@@ -1989,14 +2309,84 @@ async function init(){
       });
     });
 
-    // cards as buttons
+    // Global capture-phase handler for game card clicks (Radar + Calendar)
+    // Delegate click handling at document level to catch fixture card opens before stopPropagation
+    document.addEventListener('click', function handleFixtureCardClick(e){
+      const card = e.target.closest('[data-fixture-id]');
+      if(!card) return; // not a fixture card
+
+      // Block clicks on interactive elements within the card
+      const blockedElements = 'a,button,[data-open],img,svg';
+      const blockedClasses = '.meta-link,.chip,.pill,.badge,.team,.score,.logo,.crest,.escudo,.meta,.actions';
+      if(e.target.closest(blockedElements) || e.target.closest(blockedClasses)) return;
+
+      const fixtureId = card.getAttribute('data-fixture-id');
+      if(!fixtureId) return;
+
+      // Block propagation and open match radar v2
+      e.stopPropagation();
+      e.preventDefault();
+      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
+    }, true); // capture phase
+
+    // cards as buttons: open match modal ONLY when mr-surface is clicked
+    // We create a transparent overlay `.mr-surface` inside each card and open modal only on its clicks.
+    function showMRToast(msg){
+      try{
+        // TEMP: visual proof for manual validation
+        let t = qs('#mr-toast');
+        if(!t){
+          t = document.createElement('div');
+          t.id = 'mr-toast';
+          t.style.position = 'fixed';
+          t.style.left = '10px';
+          t.style.bottom = '10px';
+          t.style.padding = '8px 10px';
+          t.style.background = 'rgba(0,0,0,0.85)';
+          t.style.color = '#fff';
+          t.style.fontSize = '13px';
+          t.style.borderRadius = '6px';
+          t.style.zIndex = '2147483647';
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        if(window.__mr_toast_timeout) clearTimeout(window.__mr_toast_timeout);
+        window.__mr_toast_timeout = setTimeout(()=>{ t.style.transition = 'opacity 400ms'; t.style.opacity = '0'; }, 3500);
+      }catch(e){/* ignore */}
+    }
+
     qsa(".card[data-open='match']").forEach(el=>{
-      if(el.dataset.boundCardKey === "1") return;
-      el.dataset.boundCardKey = "1";
+      if(el.dataset.boundCardClick === "1") return;
+      el.dataset.boundCardClick = "1";
+
+      // ensure card has positioning so overlay can cover it
+      if(!el.style.position || el.style.position === "static") el.style.position = "relative";
+
+      // create transparent overlay surface if missing
+      let surface = el.querySelector('.mr-surface');
+      if(!surface){
+        surface = document.createElement('div');
+        surface.className = 'mr-surface';
+        surface.setAttribute('aria-hidden','true');
+        surface.style.cssText = "position:absolute;inset:0;z-index:1;background:transparent;cursor:pointer";
+        el.insertBefore(surface, el.firstChild);
+      }
+
+      // keyboard handler (Enter/Space to open modal) on the card element
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
-          el.click();
+          const card = el;
+          const fixture = card.getAttribute('data-fixture-id') || '';
+          if(fixture){
+            const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
+            if(found){ showMRToast(`MR: abrir (fixtureId=${fixture})`); if(window.openMatchRadarV2) { openMatchRadarV2(matchKey(found)); return; } }
+            showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); return;
+          }
+          const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
+          if(val){ showMRToast(`MR: abrir (val=${val})`); if(window.openMatchRadarV2) { openMatchRadarV2(val); } }
+          else showMRToast('MR ERRO: fixtureId missing');
         }
       });
     });

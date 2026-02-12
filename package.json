@@ -6,7 +6,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node tools/build-static.mjs",
-    "hash:js": "node tools/hash-js.mjs"
+    "build": "node tools/build.mjs",
+    "build:static": "node tools/build-static.mjs",
+    "build:hash": "node tools/hash-js.mjs",
+    "test": "node tools/final-validation.mjs"
   }
 }

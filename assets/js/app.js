@@ -2256,10 +2256,10 @@ async function init(){
       const fixtureId = card.getAttribute('data-fixture-id');
       if (!fixtureId) return;
 
-      console.log('OPENING MATCH RADAR WITH FIXTURE:', fixtureId);
+      console.log('OPENING MATCH RADAR V2 WITH FIXTURE:', fixtureId);
       e.stopPropagation();
       e.preventDefault();
-      openModal('match', fixtureId);
+      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
     }, true); // capture phase
 
     // Handle all other [data-open] elements (competition, country radars, etc.)
@@ -2323,10 +2323,10 @@ async function init(){
       const fixtureId = card.getAttribute('data-fixture-id');
       if(!fixtureId) return;
 
-      // Block propagation and open match modal
+      // Block propagation and open match radar v2
       e.stopPropagation();
       e.preventDefault();
-      openModal('match', fixtureId);
+      if(window.openMatchRadarV2) return window.openMatchRadarV2(fixtureId);
     }, true); // capture phase
 
     // cards as buttons: open match modal ONLY when mr-surface is clicked
@@ -2381,11 +2381,11 @@ async function init(){
           const fixture = card.getAttribute('data-fixture-id') || '';
           if(fixture){
             const found = CAL_MATCHES.find(m => String(m.fixture_id || m.id || m.fixture || m.fixtureId) === String(fixture));
-            if(found){ showMRToast(`MR: abrir (fixtureId=${fixture})`); openModal('match', matchKey(found)); return; }
+            if(found){ showMRToast(`MR: abrir (fixtureId=${fixture})`); if(window.openMatchRadarV2) { openMatchRadarV2(matchKey(found)); return; } }
             showMRToast(`MR ERRO: fixture not in dataset (${fixture})`); return;
           }
           const val = card.getAttribute('data-value') || card.getAttribute('data-key') || '';
-          if(val){ showMRToast(`MR: abrir (val=${val})`); openModal('match', val); }
+          if(val){ showMRToast(`MR: abrir (val=${val})`); if(window.openMatchRadarV2) { openMatchRadarV2(val); } }
           else showMRToast('MR ERRO: fixtureId missing');
         }
       });
