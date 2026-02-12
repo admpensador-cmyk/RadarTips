@@ -1,3 +1,6 @@
+// Import Match Radar V2 into main bundle
+import './match-radar-v2.js';
+
 const LANGS = ["en","pt","es","fr","de"];
 const LEGAL_PATHS = {
   en: { how:"/en/how-it-works/", about:"/en/about/", contact:"/en/contact/", terms:"/en/terms/", privacy:"/en/privacy/", aff:"/en/affiliates/", rg:"/en/responsible-gambling/" },
@@ -2093,6 +2096,18 @@ async function init(){
   LANG = pathLang() || detectLang();
   const dict = await loadJSON("/i18n/strings.json", {});
   T = dict[LANG] || dict.en;
+
+  // Global translation helper for Match Radar V2 and other modules
+  window.t = function(key, defaultValue) {
+    if(!T) return defaultValue || key;
+    const keys = String(key).split('.');
+    let val = T;
+    for(const k of keys) {
+      val = val && val[k];
+      if(!val) return defaultValue || key;
+    }
+    return val || defaultValue || key;
+  };
 
   initThemeToggle(T);
 

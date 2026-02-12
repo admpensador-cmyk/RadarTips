@@ -40,15 +40,8 @@ async function main() {
   const newPath = path.join(OUT_DIR, newName);
   await fs.writeFile(newPath, buf);
 
-  // 2b) Se existir, gere também match-radar-v2 hashed assets
-  let newV2JsName = null;
+  // 2b) Se existir, gere também CSS (match-radar-v2.js is now imported into app.js)
   let newV2CssName = null;
-  try{
-    const buf2 = await fs.readFile(SRC_V2_JS);
-    const h2 = sha256Short(buf2);
-    newV2JsName = `match-radar-v2.${h2}.js`;
-    await fs.writeFile(path.join(OUT_DIR, newV2JsName), buf2);
-  }catch(e){ /* missing v2 js - ok */ }
   try{
     const bufCss = await fs.readFile(SRC_V2_CSS);
     const h3 = sha256Short(bufCss);
@@ -68,18 +61,13 @@ async function main() {
       .replace(/assets\/app\.js(\?[^"']*)?/g, `assets/${newName}`)
       .replace(/assets\/js\/app\.js(\?[^"']*)?/g, `assets/${newName}`);
 
-    // Replace match-radar-v2 references if we generated them
-    if(newV2JsName){
-      html = html
-        .replace(/\/assets\/js\/match-radar-v2\.js(\?[^"']*)?/g, `/assets/${newV2JsName}`)
-        .replace(/assets\/js\/match-radar-v2\.js(\?[^"']*)?/g, `assets/${newV2JsName}`)
-        .replace(/\/assets\/match-radar-v2\.js(\?[^"']*)?/g, `/assets/${newV2JsName}`)
-        .replace(/assets\/match-radar-v2\.js(\?[^"']*)?/g, `assets/${newV2JsName}`);
-      // Also replace already-hashed references like match-radar-v2.<hash>.js
-      html = html
-        .replace(/\/assets\/match-radar-v2\.[a-f0-9]{12}\.js(\?[^"']*)?/g, `/assets/${newV2JsName}`)
-        .replace(/assets\/match-radar-v2\.[a-f0-9]{12}\.js(\?[^"']*)?/g, `assets/${newV2JsName}`);
-    }
+    // Remove match-radar-v2.js script tag (it's now imported into app.js)
+    html = html
+      .replace(/<script\s+src="[^"]*match-radar-v2\.[a-f0-9]*\.js[^"]*"\s*><\/script>\s*/g, '')
+      .replace(/<script\s+src="[^"]*match-radar-v2\.js[^"]*"\s*><\/script>\s*/g, '')
+      .replace(/<script\s+src="\/assets\/match-radar-v2\.[a-f0-9]*\.js[^"]*"\s*><\/script>\s*/g, '');
+
+    // Update match-radar-v2.css references if we generated them
     if(newV2CssName){
       html = html
         .replace(/\/assets\/css\/match-radar-v2\.css(\?[^"']*)?/g, `/assets/${newV2CssName}`)
