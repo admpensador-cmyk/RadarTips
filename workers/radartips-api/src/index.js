@@ -111,6 +111,25 @@ async function handleApiV1(env, pathname) {
     return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
   }
 
+  // Serve snapshot files (calendar_7d, radar_day, radar_week) from R2
+  if (pathname === "/v1/calendar_7d") {
+    const data = await r2GetJson(env, "snapshots/calendar_7d.json");
+    if (!data) return new Response("Not found", { status: 404 });
+    return jsonResponse(data);
+  }
+
+  if (pathname === "/v1/radar_day") {
+    const data = await r2GetJson(env, "snapshots/radar_day.json");
+    if (!data) return new Response("Not found", { status: 404 });
+    return jsonResponse(data);
+  }
+
+  if (pathname === "/v1/radar_week") {
+    const data = await r2GetJson(env, "snapshots/radar_week.json");
+    if (!data) return new Response("Not found", { status: 404 });
+    return jsonResponse(data);
+  }
+
   return null;
 }
 __name(handleApiV1, "handleApiV1");
