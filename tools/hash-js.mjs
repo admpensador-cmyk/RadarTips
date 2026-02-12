@@ -75,6 +75,10 @@ async function main() {
         .replace(/assets\/js\/match-radar-v2\.js(\?[^"']*)?/g, `assets/${newV2JsName}`)
         .replace(/\/assets\/match-radar-v2\.js(\?[^"']*)?/g, `/assets/${newV2JsName}`)
         .replace(/assets\/match-radar-v2\.js(\?[^"']*)?/g, `assets/${newV2JsName}`);
+      // Also replace already-hashed references like match-radar-v2.<hash>.js
+      html = html
+        .replace(/\/assets\/match-radar-v2\.[a-f0-9]{12}\.js(\?[^"']*)?/g, `/assets/${newV2JsName}`)
+        .replace(/assets\/match-radar-v2\.[a-f0-9]{12}\.js(\?[^"']*)?/g, `assets/${newV2JsName}`);
     }
     if(newV2CssName){
       html = html
@@ -82,6 +86,10 @@ async function main() {
         .replace(/assets\/css\/match-radar-v2\.css(\?[^"']*)?/g, `assets/${newV2CssName}`)
         .replace(/\/assets\/match-radar-v2\.css(\?[^"']*)?/g, `/assets/${newV2CssName}`)
         .replace(/assets\/match-radar-v2\.css(\?[^"']*)?/g, `assets/${newV2CssName}`);
+      // Also replace already-hashed references like match-radar-v2.<hash>.css
+      html = html
+        .replace(/\/assets\/match-radar-v2\.[a-f0-9]{12}\.css(\?[^"']*)?/g, `/assets/${newV2CssName}`)
+        .replace(/assets\/match-radar-v2\.[a-f0-9]{12}\.css(\?[^"']*)?/g, `assets/${newV2CssName}`);
     }
 
     await fs.writeFile(file, html, "utf8");
