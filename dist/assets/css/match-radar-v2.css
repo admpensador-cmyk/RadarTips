@@ -11,7 +11,10 @@
 .mr-table{width:100%;border-collapse:collapse;font-size:14px}
 .mr-table th,.mr-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);text-align:left}
 .mr-market{font-weight:600}
-.mr-note{color:#9fb0c9}
+.mr-pick{font-weight:500;color:#38bdf8}
+.mr-risk{color:#fbbf24}
+.mr-odd{color:#10b981;font-weight:500}
+.mr-reason{color:#9fb0c9}
 .mr-v2-empty{padding:18px;text-align:center;color:#9fb0c9}
 .mr-stat-row{display:block;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.02)}
 .mr-left{float:left;width:60px}
@@ -20,5 +23,15 @@
 .mr-bar{clear:both;height:10px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden;margin-top:8px}
 .mr-bar-left{height:100%;background:linear-gradient(90deg,#38bdf8,#06b6d4)}
 .mr-bar-right{height:100%;background:rgba(255,255,255,.08)}
+.mr-stats-header{padding:12px;border-bottom:1px solid rgba(255,255,255,.02);font-size:13px;color:#9fb0c9}
+.mr-stat-info{margin:4px 0}
+.mr-stats-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+.mr-stat-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:12px;font-size:13px}
+.mr-stat-card-title{font-weight:600;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:8px}
+.mr-stat-row-item{display:flex;justify-content:space-between;padding:6px 0;align-items:center}
+.mr-stat-label{color:#9fb0c9}
+.mr-stat-value{color:#e6eef8;font-weight:500}
+.mr-stat-row-empty{color:#9fb0c9;padding:12px;text-align:center}
+@media(max-width:640px){.mr-stats-cards{grid-template-columns:1fr}}
 .mr-table-wrap::-webkit-scrollbar{height:8px}
 .mr-table-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:8px}

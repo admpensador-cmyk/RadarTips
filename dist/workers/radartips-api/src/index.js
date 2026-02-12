@@ -111,9 +111,111 @@ async function handleApiV1(env, pathname) {
     return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
   }
 
+  // Serve snapshot files (calendar_7d, radar_day, radar_week) from R2
+  if (pathname === "/v1/calendar_7d") {
+    const data = await r2GetJson(env, "snapshots/calendar_7d.json");
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+    return jsonResponse(data);
+  }
+
+  if (pathname === "/v1/radar_day") {
+    const data = await r2GetJson(env, "snapshots/radar_day.json");
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+    return jsonResponse(data);
+  }
+
+  if (pathname === "/v1/radar_week") {
+    const data = await r2GetJson(env, "snapshots/radar_week.json");
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+    return jsonResponse(data);
+  }
+
   return null;
 }
 __name(handleApiV1, "handleApiV1");
+
+async function handleTeamStats(env, url) {
+  await requireBindings(env);
+
+  const urlObj = new URL(url);
+  const teamId = urlObj.searchParams.get("team");
+  const leagueId = urlObj.searchParams.get("league");
+  const season = urlObj.searchParams.get("season");
+
+  if (!teamId || !leagueId || !season) {
+    return jsonResponse(
+      { error: "Missing required params: team, league, season", ok: false },
+      400
+    );
+  }
+
+  // Try KV cache first (TTL: 6-12 hours)
+  const cacheKey = `teamstats:${teamId}:${leagueId}:${season}`;
+  const cached = await kvGetJson(env, cacheKey);
+  if (cached) return jsonResponse(cached);
+
+  // Fetch from API-FOOTBALL
+  if (!env.APIFOOTBALL_KEY) {
+    return jsonResponse(
+      { error: "API key not configured", ok: false },
+      500
+    );
+  }
+
+  try {
+    const res = await fetch(
+      `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&league=${leagueId}&season=${season}`,
+      {
+        headers: { "x-apisports-key": env.APIFOOTBALL_KEY }
+      }
+    );
+
+    if (!res.ok) {
+      return jsonResponse(
+        { error: "Failed to fetch from API-FOOTBALL", ok: false, status: res.status },
+        res.status
+      );
+    }
+
+    const json = await res.json();
+    const statsObj = json?.response;
+
+    if (!statsObj) {
+      return jsonResponse(
+        { error: "No statistics found", ok: false },
+        404
+      );
+    }
+
+    // Extract relevant stats
+    const stats = {
+      games: statsObj.fixtures?.played || null,
+      goals_for_total: statsObj.goals?.for?.total || null,
+      goals_for_avg: statsObj.goals?.for?.average || null,
+      goals_against_total: statsObj.goals?.against?.total || null,
+      goals_against_avg: statsObj.goals?.against?.average || null,
+      corners_total: statsObj.corners?.total || null,
+      corners_avg: statsObj.corners?.average || null,
+      cards_total: statsObj.cards?.yellow?.total || null,
+      cards_avg: statsObj.cards?.yellow?.average || null
+    };
+
+    // Remove null values
+    Object.keys(stats).forEach(k => stats[k] === null && delete stats[k]);
+
+    // Cache for 6 hours (21600 seconds)
+    await kvPutJson(env, cacheKey, stats, 21600);
+
+    return jsonResponse(stats);
+  } catch (e) {
+    console.log("Team stats fetch error:", e.message);
+    return jsonResponse(
+      { error: "Internal server error", ok: false },
+      500
+    );
+  }
+}
+__name(handleTeamStats, "handleTeamStats");
 
 async function cronUpdateLive(env) {
   await requireBindings(env);
@@ -179,6 +281,16 @@ var index_default = {
   async fetch(request, env, ctx) {
     let pathname = new URL(request.url).pathname;
 
+    // Handle health check endpoint (no normalization needed)
+    if (pathname === "/api/__health") {
+      return jsonResponse({ ok: true, ts: nowIso() }, 200);
+    }
+
+    // Handle team stats endpoint (no normalization needed, parse query params)
+    if (pathname === "/api/team-stats") {
+      return await handleTeamStats(env, request.url);
+    }
+
     // Support both route styles:
     // - Worker mounted at /api (e.g. https://radartips.com/api)
     // - Direct /v1 endpoints (e.g. https://<worker>.workers.dev/v1)
@@ -195,7 +307,7 @@ var index_default = {
       if (res) return res;
     }
 
-    return new Response("Not found", { status: 404 });
+    return jsonResponse({ error: "Not found", ok: false }, 404);
   },
 
   async scheduled(event, env, ctx) {
