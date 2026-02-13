@@ -118,6 +118,7 @@
           // Extract market and pick data
           const market = entry.market || entry.marketLabel || entry.label || '';
           const pick = entry.pick || entry.selection || '';
+          const line = entry.line || entry.lineValue || entry.threshold || pick || '—';
           
           // Probability should be a number 0-1
           let p = Number(entry.p || entry.probability || entry.confidence || entry.prob || NaN);
@@ -138,6 +139,7 @@
           return { 
             market, 
             pick: pick || '—',
+            line,
             p,
             risk,
             odd_fair,
@@ -228,8 +230,12 @@
     const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
 
-    const header = `<div class="mr-v2-head"><div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div><button class="mr-v2-close">×</button></div>`;
-    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`;
+    const homeLogo = pickTeamLogo(data, 'home');
+    const awayLogo = pickTeamLogo(data, 'away');
+    const homeShield = crestHTML(data.home.name, homeLogo);
+    const awayShield = crestHTML(data.away.name, awayLogo);
+    const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:8px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
+    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">Mercados</button><button class="mr-v2-tab" data-tab="stats">Estatísticas</button></div>`;
     const body = `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`;
 
     box.innerHTML = header + tabs + body;
@@ -274,18 +280,16 @@
       const oddStr = odd_fair !== null ? Number(odd_fair).toFixed(2) : '—';
       
       const market = escapeHtml(m.market || '—');
-      const pick = escapeHtml(m.pick || '—');
       const line = escapeHtml(m.line || '—');
       const reason = escapeHtml(m.reason || '—');
       
-      return `<tr><td class="mr-market">${market}</td><td class="mr-pick">${pick}</td><td class="mr-line">${line}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
+      return `<tr><td class="mr-market">${market}</td><td class="mr-line">${line}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
     }).join('');
     
     const headerHtml = `
       <thead>
         <tr>
           <th>Mercado</th>
-          <th>Entrada</th>
           <th>Linha</th>
           <th>Risco</th>
           <th>Odd Justa</th>
@@ -309,7 +313,6 @@
     const gaAway = data.ga_away;
     const formHomeDetails = Array.isArray(data.form_home_details) ? data.form_home_details : [];
     const formAwayDetails = Array.isArray(data.form_away_details) ? data.form_away_details : [];
-    const volatility = data.analysis?.volatility || null;
     
     // Check if we have essential data
     const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
@@ -328,9 +331,6 @@
     // Info header
     html += `<div style="font-size:0.9em;color:#888;margin-bottom:15px;">`;
     html += `Últimos ${goalsWindow} jogos`;
-    if(volatility) {
-      html += ` • Volatilidade: ${escapeHtml(volatility)}`;
-    }
     html += `</div>`;
     
     // Home team card
@@ -355,7 +355,7 @@
       const draws = formHomeDetails.filter(f => f.result === 'D').length;
       const losses = formHomeDetails.filter(f => f.result === 'L').length;
       html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${draws}-${losses}</span>`;
+      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${losses}-${draws}</span>`;
       html += `</div>`;
     }
     html += `</div>`;
@@ -382,7 +382,7 @@
       const draws = formAwayDetails.filter(f => f.result === 'D').length;
       const losses = formAwayDetails.filter(f => f.result === 'L').length;
       html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${draws}-${losses}</span>`;
+      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${losses}-${draws}</span>`;
       html += `</div>`;
     }
     html += `</div>`;
