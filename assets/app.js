@@ -245,6 +245,7 @@
 
     const homeLogo = pickTeamLogo(data, 'home');
     const awayLogo = pickTeamLogo(data, 'away');
+    console.log('[renderModal] Logos returned:', { homeLogo, awayLogo, dataHome: data.home, dataAway: data.away });
     const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
     const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
     const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
