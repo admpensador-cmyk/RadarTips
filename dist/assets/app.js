@@ -1102,7 +1102,7 @@ function crestHTML(teamName, logoUrl){
   if(logo){
     const src = escAttr(logo);
     const alt = escAttr(teamName);
-    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" /></span>`;
+    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" onerror="console.error('[IMG ERROR]', '${teamName}', '${src}'); this.style.display='none'; this.parentElement.innerHTML='<span class=\\'crest\\' style=\\'--h:${_hashHue(teamName)}\\' aria-hidden=\\'true\\'>${escAttr(_initials(teamName))}</span>';" /></span>`;
   }
   const hue = _hashHue(teamName);
   const ini = _initials(teamName);
