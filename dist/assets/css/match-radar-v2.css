@@ -9,12 +9,14 @@
 .mr-v2-body{padding:12px}
 .mr-table-wrap{overflow:auto}
 .mr-table{width:100%;border-collapse:collapse;font-size:14px}
-.mr-table th,.mr-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);text-align:left}
-.mr-market{font-weight:600}
+.mr-table th,.mr-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.03);text-align:left;word-wrap:break-word;white-space:normal;line-height:1.4}
+.mr-table th{font-weight:600;color:#e6eef8;background:rgba(255,255,255,.01)}
+.mr-market{font-weight:600;color:#e6eef8}
 .mr-pick{font-weight:500;color:#38bdf8}
+.mr-line{color:#9fb0c9}
 .mr-risk{color:#fbbf24}
 .mr-odd{color:#10b981;font-weight:500}
-.mr-reason{color:#9fb0c9}
+.mr-reason{color:#b0bcc9;max-width:280px;white-space:normal;word-wrap:break-word}
 .mr-v2-empty{padding:18px;text-align:center;color:#9fb0c9}
 .mr-stat-row{display:block;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.02)}
 .mr-left{float:left;width:60px}
@@ -23,6 +25,7 @@
 .mr-bar{clear:both;height:10px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden;margin-top:8px}
 .mr-bar-left{height:100%;background:linear-gradient(90deg,#38bdf8,#06b6d4)}
 .mr-bar-right{height:100%;background:rgba(255,255,255,.08)}
+.mr-stats-container{font-size:13px}
 .mr-stats-header{padding:12px;border-bottom:1px solid rgba(255,255,255,.02);font-size:13px;color:#9fb0c9}
 .mr-stat-info{margin:4px 0}
 .mr-stats-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}

@@ -86,17 +86,18 @@
     try{
       const CAL = window.CAL_MATCHES || [];
       const found = CAL.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
-      if(found) return normalizeMatch(found);
+      if(found) return normalizeMatch(found, window.CAL_SNAPSHOT_META);
     }catch(e){/*ignore*/}
 
     // 2) fetch calendar snapshot
     const data = await fetchWithFallback('/api/v1/calendar_7d.json','/data/v1/calendar_7d.json');
     if(!data || !Array.isArray(data.matches)) return null;
+    const snapshotMeta = { goals_window: data.goals_window, form_window: data.form_window };
     const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
-    return found ? normalizeMatch(found) : null;
+    return found ? normalizeMatch(found, snapshotMeta) : null;
   }
 
-  function normalizeMatch(m){
+  function normalizeMatch(m, snapshotMeta){
     const fixtureId = String(m.fixture_id||m.id||m.fixture||m.fixtureId||'');
     const home = { name: m.home?.name||m.home_team||m.home_team_name||m.home||'', score: m.home?.score ?? m.goals_home ?? null, id: m.home?.id || m.home_id };
     const away = { name: m.away?.name||m.away_team||m.away_team_name||m.away||'', score: m.away?.score ?? m.goals_away ?? null, id: m.away?.id || m.away_id };
@@ -117,6 +118,7 @@
           // Extract market and pick data
           const market = entry.market || entry.marketLabel || entry.label || '';
           const pick = entry.pick || entry.selection || '';
+          const line = entry.line || entry.lineValue || entry.threshold || pick || '—';
           
           // Probability should be a number 0-1
           let p = Number(entry.p || entry.probability || entry.confidence || entry.prob || NaN);
@@ -137,6 +139,7 @@
           return { 
             market, 
             pick: pick || '—',
+            line,
             p,
             risk,
             odd_fair,
@@ -145,10 +148,41 @@
         });
       }
     }catch(e){ markets = []; }
+    
+    // If no markets from analysis, create dummy market from suggestion_free
+    if(markets.length === 0 && m.suggestion_free) {
+      markets = [{
+        market: 'Sugestão Livre',
+        pick: m.suggestion_free,
+        line: String(m.suggestion_free || '').trim(),  // Ensure it's a trimmed string
+        p: null,
+        risk: null,
+        odd_fair: null,
+        reason: ''
+      }];
+      console.log('[normalizeMatch] Created dummy market from suggestion_free:', m.suggestion_free);
+    }
 
     const stats = m.stats || m.statistics || m.analysis?.stats || null;
+    
+    // Stats-related fields from snapshot
+    const gf_home = m.gf_home;
+    const ga_home = m.ga_home;
+    const gf_away = m.gf_away;
+    const ga_away = m.ga_away;
+    const form_home_details = m.form_home_details;
+    const form_away_details = m.form_away_details;
+    const goals_window = m.goals_window || snapshotMeta?.goals_window || 5;
+    const form_window = m.form_window || snapshotMeta?.form_window || 5;
+    const analysis = m.analysis || {};
 
-    return { fixtureId, home, away, league, season, datetimeUtc, markets, stats };
+    return { 
+      fixtureId, home, away, league, season, datetimeUtc, markets, stats,
+      gf_home, ga_home, gf_away, ga_away, 
+      form_home_details, form_away_details,
+      goals_window, form_window,
+      analysis
+    };
   }
 
   // Simple DOM helpers
@@ -161,8 +195,9 @@
     // Se houver contexto da nova arquitetura, usar match direto
     if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
       const ctx = window.__MATCH_CTX__;
-      const data = normalizeMatch(ctx.match);
+      const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
       data.radarMeta = ctx.meta;
+      console.log('[openMatchRadarV2] Normalized match data:', data, 'raw match:', ctx.match);
       window.__MATCH_CTX__ = null;
       renderModal(data);
       return;
@@ -210,8 +245,12 @@
     const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
 
-    const header = `<div class="mr-v2-head"><div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div><button class="mr-v2-close">×</button></div>`;
-    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`;
+    const homeLogo = pickTeamLogo(data, 'home');
+    const awayLogo = pickTeamLogo(data, 'away');
+    const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
+    const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
+    const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
+    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">Mercados</button><button class="mr-v2-tab" data-tab="stats">Estatísticas</button></div>`;
     const body = `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`;
 
     box.innerHTML = header + tabs + body;
@@ -238,8 +277,9 @@
     const panel = ov.querySelector('[data-panel="markets"]');
     if(!panel) return;
     const arr = Array.isArray(data.markets)?data.markets:[];
+    console.log('[renderMarketsTab] markets array:', arr, 'suggestion_free:', data.suggestion_free);
     if(!arr || arr.length===0){ 
-      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_markets', 'Sem dados disponíveis')}</div>`; 
+      panel.innerHTML = `<div class="mr-v2-empty">Sem dados disponíveis</div>`; 
       return; 
     }
     
@@ -256,20 +296,20 @@
       const oddStr = odd_fair !== null ? Number(odd_fair).toFixed(2) : '—';
       
       const market = escapeHtml(m.market || '—');
-      const pick = escapeHtml(m.pick || '—');
+      const line = escapeHtml(m.line || '—');
       const reason = escapeHtml(m.reason || '—');
       
-      return `<tr><td class="mr-market">${market}</td><td class="mr-pick">${pick}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
+      return `<tr><td class="mr-market">${market}</td><td class="mr-line">${line}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
     }).join('');
     
     const headerHtml = `
       <thead>
         <tr>
-          <th>${t('match_radar.columns.market', 'Mercado')}</th>
-          <th>${t('match_radar.columns.pick', 'Entrada')}</th>
-          <th>${t('match_radar.columns.risk', 'Risco')}</th>
-          <th>${t('match_radar.columns.fair_odds', 'Odd Justa')}</th>
-          <th>${t('match_radar.columns.reason', 'Justificativa')}</th>
+          <th>Mercado</th>
+          <th>Linha</th>
+          <th>Risco</th>
+          <th>Odd Justa</th>
+          <th>Justificativa</th>
         </tr>
       </thead>
     `;
@@ -277,115 +317,122 @@
     panel.innerHTML = `<div class="mr-table-wrap"><table class="mr-table">${headerHtml}<tbody>${rows}</tbody></table></div>`;
   }
 
-  async function renderStatsTab(ov, data){
+  function renderStatsTab(ov, data){
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
     
-    // If stats are empty, try to fetch from API
-    if(!data.stats || Object.keys(data.stats).length === 0) {
-      if(data.league?.id && data.season && data.home?.id && data.away?.id) {
-        try{
-          const homeStats = await fetchTeamStats(data.home.id, data.league.id, data.season);
-          const awayStats = await fetchTeamStats(data.away.id, data.league.id, data.season);
-          
-          if(homeStats || awayStats) {
-            renderStatsCards(panel, data, homeStats, awayStats);
-            return;
-          }
-        }catch(e){/* ignore API errors */}
-      }
-    }
+    // Extract fields from match data
+    const goalsWindow = data.goals_window || 5;
+    const gfHome = data.gf_home;
+    const gaHome = data.ga_home;
+    const gfAway = data.gf_away;
+    const gaAway = data.ga_away;
+    const formHomeDetails = Array.isArray(data.form_home_details) ? data.form_home_details : [];
+    const formAwayDetails = Array.isArray(data.form_away_details) ? data.form_away_details : [];
     
-    // Fallback to inline stats if available
-    const s = data.stats || {};
-    if(s && typeof s === 'object' && Object.keys(s).length > 0) {
-      // simple rows
-      const rows = [];
-      const pushStat = (label, left, right) => rows.push({label, left: left==null?'—':String(left), right: right==null?'—':String(right)});
-
-      if(s.xg) pushStat('xG', s.xg.home, s.xg.away);
-      if(s.possession) pushStat('Posse', s.possession.homePct ?? s.possession.home, s.possession.awayPct ?? s.possession.away);
-      if(s.shotsTotal) pushStat('Remates', s.shotsTotal.home, s.shotsTotal.away);
-      if(s.shotsOn) pushStat('Remates no alvo', s.shotsOn.home, s.shotsOn.away);
-      if(s.bigChances) pushStat('Grandes oportunidades', s.bigChances.home, s.bigChances.away);
-      if(s.corners) pushStat('Cantos', s.corners.home, s.corners.away);
-      if(s.passes) pushStat('Passe (%)', s.passes.home?.pct ?? s.passes.home?.pct, s.passes.away?.pct ?? s.passes.away?.pct);
-      if(s.yellows) pushStat('Amarelos', s.yellows.home, s.yellows.away);
-
-      if(rows.length > 0) {
-        const html = rows.map(r=>{
-          const l = Number(String(r.left).replace('%','')) || 0;
-          const rt = Number(String(r.right).replace('%','')) || 0;
-          const total = Math.max(l, rt) || 1;
-          const lw = Math.round((l/(l+rt||1))*100);
-          const rw = 100 - lw;
-          return `<div class="mr-stat-row"><div class="mr-left">${escapeHtml(r.left)}</div><div class="mr-label">${escapeHtml(r.label)}</div><div class="mr-right">${escapeHtml(r.right)}</div><div class="mr-bar"><div class="mr-bar-left" style="width:${lw}%;"></div><div class="mr-bar-right" style="width:${rw}%;"></div></div></div>`;
-        }).join('');
-        panel.innerHTML = `<div class="mr-stats-wrap">${html}</div>`;
-        return;
-      }
-    }
+    // Check if we have essential data
+    const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
+    const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
     
-    panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
-  }
-
-  async function fetchTeamStats(teamId, leagueId, season) {
-    try {
-      const url = `/api/team-stats?team=${teamId}&league=${leagueId}&season=${season}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if(res.ok) return await res.json();
-    } catch(e) {}
-    return null;
-  }
-
-  function renderStatsCards(panel, data, homeStats, awayStats) {
-    if(!homeStats && !awayStats) {
-      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
+    if(!hasGoalsData && !hasFormData) {
+      panel.innerHTML = `<div class="mr-v2-empty">Estatísticas indisponíveis</div>`;
       return;
     }
-
-    const leagueName = data.league?.name || '—';
-    const season = data.season || '—';
-
-    let html = `<div class="mr-stats-header">`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.competition', 'Competição')}: ${escapeHtml(leagueName)}</div>`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.season', 'Temporada')}: ${season}</div>`;
+    
+    const homeName = data.home?.name || data.home || '—';
+    const awayName = data.away?.name || data.away || '—';
+    
+    let html = `<div class="mr-stats-container" style="padding:20px;">`;
+    
+    // Info header
+    html += `<div style="font-size:0.9em;color:#888;margin-bottom:15px;">`;
+    html += `Últimos ${goalsWindow} jogos`;
     html += `</div>`;
-
-    if(homeStats) {
-      html += renderStatCard(data.home.name, homeStats);
-    }
-    if(awayStats) {
-      html += renderStatCard(data.away.name, awayStats);
-    }
-
-    panel.innerHTML = `<div class="mr-stats-cards">${html}</div>`;
-  }
-
-  function renderStatCard(teamName, stats) {
-    let cardHtml = `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(teamName)}</div>`;
     
-    const rows = [];
-    if(stats.games !== undefined) rows.push({ label: t('match_radar.stats.games', 'Jogos'), value: stats.games });
-    if(stats.goals_for_total !== undefined) rows.push({ label: t('match_radar.stats.goals_for_total', 'Gols marcados'), value: stats.goals_for_total });
-    if(stats.goals_for_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_for_avg', 'Gols marcados (média)'), value: Number(stats.goals_for_avg).toFixed(2) });
-    if(stats.goals_against_total !== undefined) rows.push({ label: t('match_radar.stats.goals_against_total', 'Gols sofridos'), value: stats.goals_against_total });
-    if(stats.goals_against_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_against_avg', 'Gols sofridos (média)'), value: Number(stats.goals_against_avg).toFixed(2) });
-    if(stats.corners_total !== undefined) rows.push({ label: 'Escanteios', value: stats.corners_total });
-    if(stats.corners_avg !== undefined) rows.push({ label: 'Escanteios (média)', value: Number(stats.corners_avg).toFixed(2) });
-    if(stats.cards_total !== undefined) rows.push({ label: 'Cartões', value: stats.cards_total });
-    if(stats.cards_avg !== undefined) rows.push({ label: 'Cartões (média)', value: Number(stats.cards_avg).toFixed(2) });
-
-    if(rows.length === 0) {
-      cardHtml += `<div class="mr-stat-row-empty">${t('match_radar.no_stats', 'Sem dados')}</div>`;
-    } else {
-      rows.forEach(r => {
-        cardHtml += `<div class="mr-stat-row-item"><span class="mr-stat-label">${escapeHtml(r.label)}:</span><span class="mr-stat-value">${escapeHtml(r.value)}</span></div>`;
-      });
+    // Home team card
+    html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;margin-bottom:15px;">`;
+    html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(homeName)}</div>`;
+    if(hasGoalsData) {
+      const avgGF = (gfHome / goalsWindow).toFixed(2);
+      const avgGA = (gaHome / goalsWindow).toFixed(2);
+      const avgTotal = ((gfHome + gaHome) / goalsWindow).toFixed(2);
+      
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.95em;">`;
+      html += `<div><span style="color:#999;">Jogos:</span> <span style="color:#fff;font-weight:500;">${goalsWindow}</span></div>`;
+      html += `<div><span style="color:#999;">GF:</span> <span style="color:#fff;font-weight:500;">${gfHome}</span></div>`;
+      html += `<div><span style="color:#999;">GA:</span> <span style="color:#fff;font-weight:500;">${gaHome}</span></div>`;
+      html += `<div><span style="color:#999;">Média GF:</span> <span style="color:#fff;font-weight:500;">${avgGF}</span></div>`;
+      html += `<div><span style="color:#999;">Média GA:</span> <span style="color:#fff;font-weight:500;">${avgGA}</span></div>`;
+      html += `<div><span style="color:#999;">Total médio:</span> <span style="color:#fff;font-weight:500;">${avgTotal}</span></div>`;
+      html += `</div>`;
     }
+    if(formHomeDetails.length > 0) {
+      const wins = formHomeDetails.filter(f => f.result === 'W').length;
+      const draws = formHomeDetails.filter(f => f.result === 'D').length;
+      const losses = formHomeDetails.filter(f => f.result === 'L').length;
+      html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
+      html += `<span style="color:#999;">Forma:</span> `;
+      html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
+      // Add Win boxes
+      for(let i = 0; i < wins; i++) {
+        html += `<div style="width:16px;height:16px;background:#22c55e;border-radius:2px;"></div>`;
+      }
+      // Add Loss boxes
+      for(let i = 0; i < losses; i++) {
+        html += `<div style="width:16px;height:16px;background:#ef4444;border-radius:2px;"></div>`;
+      }
+      // Add Draw boxes
+      for(let i = 0; i < draws; i++) {
+        html += `<div style="width:16px;height:16px;background:#eab308;border-radius:2px;"></div>`;
+      }
+      html += `</div>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
     
-    cardHtml += `</div>`;
-    return cardHtml;
+    // Away team card
+    html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;">`;
+    html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(awayName)}</div>`;
+    if(hasGoalsData) {
+      const avgGF = (gfAway / goalsWindow).toFixed(2);
+      const avgGA = (gaAway / goalsWindow).toFixed(2);
+      const avgTotal = ((gfAway + gaAway) / goalsWindow).toFixed(2);
+      
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.95em;">`;
+      html += `<div><span style="color:#999;">Jogos:</span> <span style="color:#fff;font-weight:500;">${goalsWindow}</span></div>`;
+      html += `<div><span style="color:#999;">GF:</span> <span style="color:#fff;font-weight:500;">${gfAway}</span></div>`;
+      html += `<div><span style="color:#999;">GA:</span> <span style="color:#fff;font-weight:500;">${gaAway}</span></div>`;
+      html += `<div><span style="color:#999;">Média GF:</span> <span style="color:#fff;font-weight:500;">${avgGF}</span></div>`;
+      html += `<div><span style="color:#999;">Média GA:</span> <span style="color:#fff;font-weight:500;">${avgGA}</span></div>`;
+      html += `<div><span style="color:#999;">Total médio:</span> <span style="color:#fff;font-weight:500;">${avgTotal}</span></div>`;
+      html += `</div>`;
+    }
+    if(formAwayDetails.length > 0) {
+      const wins = formAwayDetails.filter(f => f.result === 'W').length;
+      const draws = formAwayDetails.filter(f => f.result === 'D').length;
+      const losses = formAwayDetails.filter(f => f.result === 'L').length;
+      html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
+      html += `<span style="color:#999;">Forma:</span> `;
+      html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
+      // Add Win boxes
+      for(let i = 0; i < wins; i++) {
+        html += `<div style="width:16px;height:16px;background:#22c55e;border-radius:2px;"></div>`;
+      }
+      // Add Loss boxes
+      for(let i = 0; i < losses; i++) {
+        html += `<div style="width:16px;height:16px;background:#ef4444;border-radius:2px;"></div>`;
+      }
+      // Add Draw boxes
+      for(let i = 0; i < draws; i++) {
+        html += `<div style="width:16px;height:16px;background:#eab308;border-radius:2px;"></div>`;
+      }
+      html += `</div>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+    
+    html += `</div>`;
+    panel.innerHTML = html;
   }
 
   function formatScore(data){
@@ -981,8 +1028,8 @@ function pickTeamLogo(obj, side){
   // 4) Fallback: derive from team id if available (API-Sports pattern)
   try{
     const fallbackId = (side === "home")
-      ? (obj && (obj.home_id || obj.homeId || obj.homeID))
-      : (obj && (obj.away_id || obj.awayId || obj.awayID));
+      ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
+      : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
     if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
       return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
     }
@@ -2043,6 +2090,7 @@ async function resolveMatchByFixtureId(fixtureId) {
   // Update CAL_MATCHES with fetched data
   CAL_MATCHES = cal.matches;
   window.CAL_MATCHES = CAL_MATCHES;
+  window.CAL_SNAPSHOT_META = { goals_window: cal.goals_window, form_window: cal.form_window };
   
   const found = cal.matches.find(m => {
     const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
@@ -3104,9 +3152,8 @@ async function init(){
         }
 
         // 3) Abre modal com match + meta
-        const key = matchKey(match);
         window.__MATCH_CTX__ = { match, meta, fixtureId };
-        openModal('match', key);
+        openMatchRadarV2(fixtureId);
       }, true);
     }
 
