@@ -148,6 +148,19 @@
         });
       }
     }catch(e){ markets = []; }
+    
+    // If no markets from analysis, create dummy market from suggestion_free
+    if(markets.length === 0 && m.suggestion_free) {
+      markets = [{
+        market: 'Sugestão Livre',
+        pick: m.suggestion_free,
+        line: m.suggestion_free,
+        p: null,
+        risk: null,
+        odd_fair: null,
+        reason: ''
+      }];
+    }
 
     const stats = m.stats || m.statistics || m.analysis?.stats || null;
     
@@ -232,9 +245,9 @@
 
     const homeLogo = pickTeamLogo(data, 'home');
     const awayLogo = pickTeamLogo(data, 'away');
-    const homeShield = crestHTML(data.home.name, homeLogo);
-    const awayShield = crestHTML(data.away.name, awayLogo);
-    const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:8px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
+    const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
+    const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
+    const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
     const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">Mercados</button><button class="mr-v2-tab" data-tab="stats">Estatísticas</button></div>`;
     const body = `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`;
 
@@ -355,7 +368,21 @@
       const draws = formHomeDetails.filter(f => f.result === 'D').length;
       const losses = formHomeDetails.filter(f => f.result === 'L').length;
       html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${losses}-${draws}</span>`;
+      html += `<span style="color:#999;">Forma:</span> `;
+      html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
+      // Add Win boxes
+      for(let i = 0; i < wins; i++) {
+        html += `<div style="width:16px;height:16px;background:#22c55e;border-radius:2px;"></div>`;
+      }
+      // Add Loss boxes
+      for(let i = 0; i < losses; i++) {
+        html += `<div style="width:16px;height:16px;background:#ef4444;border-radius:2px;"></div>`;
+      }
+      // Add Draw boxes
+      for(let i = 0; i < draws; i++) {
+        html += `<div style="width:16px;height:16px;background:#eab308;border-radius:2px;"></div>`;
+      }
+      html += `</div>`;
       html += `</div>`;
     }
     html += `</div>`;
@@ -382,7 +409,21 @@
       const draws = formAwayDetails.filter(f => f.result === 'D').length;
       const losses = formAwayDetails.filter(f => f.result === 'L').length;
       html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${losses}-${draws}</span>`;
+      html += `<span style="color:#999;">Forma:</span> `;
+      html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
+      // Add Win boxes
+      for(let i = 0; i < wins; i++) {
+        html += `<div style="width:16px;height:16px;background:#22c55e;border-radius:2px;"></div>`;
+      }
+      // Add Loss boxes
+      for(let i = 0; i < losses; i++) {
+        html += `<div style="width:16px;height:16px;background:#ef4444;border-radius:2px;"></div>`;
+      }
+      // Add Draw boxes
+      for(let i = 0; i < draws; i++) {
+        html += `<div style="width:16px;height:16px;background:#eab308;border-radius:2px;"></div>`;
+      }
+      html += `</div>`;
       html += `</div>`;
     }
     html += `</div>`;
