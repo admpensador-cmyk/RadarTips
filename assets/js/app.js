@@ -118,7 +118,8 @@
           // Extract market and pick data
           const market = entry.market || entry.marketLabel || entry.label || '';
           const pick = entry.pick || entry.selection || '';
-          const line = entry.line || entry.lineValue || entry.threshold || pick || '—';
+          const line = entry.line || entry.lineValue || entry.threshold || entry.stake || entry.odds || entry.value || entry.betValue || entry.amount || pick || '—';
+          console.log('[normalizeMatch] Market entry:', { market, pick, line, entry });
           
           // Probability should be a number 0-1
           let p = Number(entry.p || entry.probability || entry.confidence || entry.prob || NaN);
