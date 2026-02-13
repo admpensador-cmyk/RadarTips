@@ -150,16 +150,20 @@
     }catch(e){ markets = []; }
     
     // If no markets from analysis, create dummy market from suggestion_free
+    console.log('[normalizeMatch] markets.length=', markets.length, 'suggestion_free=', m.suggestion_free);
     if(markets.length === 0 && m.suggestion_free) {
       markets = [{
         market: 'Sugestão Livre',
         pick: m.suggestion_free,
-        line: m.suggestion_free,
+        line: String(m.suggestion_free || '').trim(),  // Ensure it's a trimmed string
         p: null,
         risk: null,
         odd_fair: null,
         reason: ''
       }];
+      console.log('[normalizeMatch] Created dummy market from suggestion_free:', m.suggestion_free, 'final markets:', markets);
+    } else if(markets.length === 0) {
+      console.log('[normalizeMatch] NO dummy market created - no suggestion_free available');
     }
 
     const stats = m.stats || m.statistics || m.analysis?.stats || null;
@@ -196,6 +200,7 @@
       const ctx = window.__MATCH_CTX__;
       const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
       data.radarMeta = ctx.meta;
+      console.log('[openMatchRadarV2] Normalized match data:', data, 'raw match:', ctx.match);
       window.__MATCH_CTX__ = null;
       renderModal(data);
       return;
@@ -1028,8 +1033,11 @@ function pickTeamLogo(obj, side){
     const fallbackId = (side === "home")
       ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
       : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
+    console.log(`[pickTeamLogo] side=${side}, fallbackId=`, fallbackId, 'obj.home=', obj?.home, 'obj.away=', obj?.away);
     if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
-      return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      const url = `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      console.log(`[pickTeamLogo] Returning API-Sports URL:`, url);
+      return url;
     }
   }catch(e){}
 
