@@ -179,19 +179,7 @@
     // Se houver contexto da nova arquitetura, usar match direto
     if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
       const ctx = window.__MATCH_CTX__;
-      console.log('[RADAR] __MATCH_CTX__ found:', {
-        match_gf_home: ctx.match.gf_home,
-        match_ga_home: ctx.match.ga_home,
-        match_goals_window: ctx.match.goals_window,
-        CAL_SNAPSHOT_META: window.CAL_SNAPSHOT_META
-      });
       const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
-      console.log('[RADAR] normalizeMatch result:', {
-        data_gf_home: data.gf_home,
-        data_ga_home: data.ga_home,
-        data_goals_window: data.goals_window,
-        dataKeys: Object.keys(data)
-      });
       data.radarMeta = ctx.meta;
       window.__MATCH_CTX__ = null;
       renderModal(data);
@@ -269,7 +257,7 @@
     if(!panel) return;
     const arr = Array.isArray(data.markets)?data.markets:[];
     if(!arr || arr.length===0){ 
-      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_markets', 'Sem dados disponíveis')}</div>`; 
+      panel.innerHTML = `<div class="mr-v2-empty">Sem dados disponíveis</div>`; 
       return; 
     }
     
@@ -287,19 +275,21 @@
       
       const market = escapeHtml(m.market || '—');
       const pick = escapeHtml(m.pick || '—');
+      const line = escapeHtml(m.line || '—');
       const reason = escapeHtml(m.reason || '—');
       
-      return `<tr><td class="mr-market">${market}</td><td class="mr-pick">${pick}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
+      return `<tr><td class="mr-market">${market}</td><td class="mr-pick">${pick}</td><td class="mr-line">${line}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
     }).join('');
     
     const headerHtml = `
       <thead>
         <tr>
-          <th>${t('match_radar.columns.market', 'Mercado')}</th>
-          <th>${t('match_radar.columns.pick', 'Entrada')}</th>
-          <th>${t('match_radar.columns.risk', 'Risco')}</th>
-          <th>${t('match_radar.columns.fair_odds', 'Odd Justa')}</th>
-          <th>${t('match_radar.columns.reason', 'Justificativa')}</th>
+          <th>Mercado</th>
+          <th>Entrada</th>
+          <th>Linha</th>
+          <th>Risco</th>
+          <th>Odd Justa</th>
+          <th>Justificativa</th>
         </tr>
       </thead>
     `;
@@ -311,22 +301,8 @@
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
     
-    // DEBUG: Log incoming data
-    console.log('[STATS] renderStatsTab called with data:', {
-      goals_window: data.goals_window,
-      form_window: data.form_window,
-      gf_home: data.gf_home,
-      ga_home: data.ga_home,
-      gf_away: data.gf_away,
-      ga_away: data.ga_away,
-      has_form_home: Array.isArray(data.form_home_details) && data.form_home_details.length > 0,
-      has_form_away: Array.isArray(data.form_away_details) && data.form_away_details.length > 0,
-      dataKeys: Object.keys(data)
-    });
-    
     // Extract fields from match data
     const goalsWindow = data.goals_window || 5;
-    const formWindow = data.form_window || 5;
     const gfHome = data.gf_home;
     const gaHome = data.ga_home;
     const gfAway = data.gf_away;
@@ -339,67 +315,75 @@
     const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
     const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
     
-    console.log('[STATS] hasGoalsData:', hasGoalsData, 'hasFormData:', hasFormData);
-    
     if(!hasGoalsData && !hasFormData) {
-      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis')}</div>`;
+      panel.innerHTML = `<div class="mr-v2-empty">Estatísticas indisponíveis</div>`;
       return;
     }
     
     const homeName = data.home?.name || data.home || '—';
     const awayName = data.away?.name || data.away || '—';
     
-    let html = `<div class="mr-stats-cards">`;
+    let html = `<div class="mr-stats-container" style="padding:20px;">`;
     
-    // Header
-    html += `<div class="mr-stats-header">`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.recorte', 'Recorte')}: ${t('match_radar.stats.last_n_games', 'últimos {n} jogos').replace('{n}', goalsWindow)}</div>`;
+    // Info header
+    html += `<div style="font-size:0.9em;color:#888;margin-bottom:15px;">`;
+    html += `Últimos ${goalsWindow} jogos`;
     if(volatility) {
-      html += `<div class="mr-stat-info">${t('match_radar.stats.volatility', 'Volatilidade')}: ${escapeHtml(volatility)}</div>`;
+      html += ` • Volatilidade: ${escapeHtml(volatility)}`;
     }
     html += `</div>`;
     
     // Home team card
-    html += `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(homeName)}</div>`;
+    html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;margin-bottom:15px;">`;
+    html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(homeName)}</div>`;
     if(hasGoalsData) {
       const avgGF = (gfHome / goalsWindow).toFixed(2);
       const avgGA = (gaHome / goalsWindow).toFixed(2);
       const avgTotal = ((gfHome + gaHome) / goalsWindow).toFixed(2);
       
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.games', 'Jogos analisados')}:</span><span class="mr-stat-value">${goalsWindow}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_for', 'GF (gols marcados)')}:</span><span class="mr-stat-value">${gfHome}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_against', 'GA (gols sofridos)')}:</span><span class="mr-stat-value">${gaHome}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_gf', 'Média GF/jogo')}:</span><span class="mr-stat-value">${avgGF}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_ga', 'Média GA/jogo')}:</span><span class="mr-stat-value">${avgGA}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_total', 'Total médio/jogo')}:</span><span class="mr-stat-value">${avgTotal}</span></div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.95em;">`;
+      html += `<div><span style="color:#999;">Jogos:</span> <span style="color:#fff;font-weight:500;">${goalsWindow}</span></div>`;
+      html += `<div><span style="color:#999;">GF:</span> <span style="color:#fff;font-weight:500;">${gfHome}</span></div>`;
+      html += `<div><span style="color:#999;">GA:</span> <span style="color:#fff;font-weight:500;">${gaHome}</span></div>`;
+      html += `<div><span style="color:#999;">Média GF:</span> <span style="color:#fff;font-weight:500;">${avgGF}</span></div>`;
+      html += `<div><span style="color:#999;">Média GA:</span> <span style="color:#fff;font-weight:500;">${avgGA}</span></div>`;
+      html += `<div><span style="color:#999;">Total médio:</span> <span style="color:#fff;font-weight:500;">${avgTotal}</span></div>`;
+      html += `</div>`;
     }
     if(formHomeDetails.length > 0) {
       const wins = formHomeDetails.filter(f => f.result === 'W').length;
       const draws = formHomeDetails.filter(f => f.result === 'D').length;
       const losses = formHomeDetails.filter(f => f.result === 'L').length;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.form', 'Forma (W-D-L)')}:</span><span class="mr-stat-value">${wins}-${draws}-${losses}</span></div>`;
+      html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
+      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${draws}-${losses}</span>`;
+      html += `</div>`;
     }
     html += `</div>`;
     
     // Away team card
-    html += `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(awayName)}</div>`;
+    html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;">`;
+    html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(awayName)}</div>`;
     if(hasGoalsData) {
       const avgGF = (gfAway / goalsWindow).toFixed(2);
       const avgGA = (gaAway / goalsWindow).toFixed(2);
       const avgTotal = ((gfAway + gaAway) / goalsWindow).toFixed(2);
       
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.games', 'Jogos analisados')}:</span><span class="mr-stat-value">${goalsWindow}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_for', 'GF (gols marcados)')}:</span><span class="mr-stat-value">${gfAway}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_against', 'GA (gols sofridos)')}:</span><span class="mr-stat-value">${gaAway}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_gf', 'Média GF/jogo')}:</span><span class="mr-stat-value">${avgGF}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_ga', 'Média GA/jogo')}:</span><span class="mr-stat-value">${avgGA}</span></div>`;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_total', 'Total médio/jogo')}:</span><span class="mr-stat-value">${avgTotal}</span></div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.95em;">`;
+      html += `<div><span style="color:#999;">Jogos:</span> <span style="color:#fff;font-weight:500;">${goalsWindow}</span></div>`;
+      html += `<div><span style="color:#999;">GF:</span> <span style="color:#fff;font-weight:500;">${gfAway}</span></div>`;
+      html += `<div><span style="color:#999;">GA:</span> <span style="color:#fff;font-weight:500;">${gaAway}</span></div>`;
+      html += `<div><span style="color:#999;">Média GF:</span> <span style="color:#fff;font-weight:500;">${avgGF}</span></div>`;
+      html += `<div><span style="color:#999;">Média GA:</span> <span style="color:#fff;font-weight:500;">${avgGA}</span></div>`;
+      html += `<div><span style="color:#999;">Total médio:</span> <span style="color:#fff;font-weight:500;">${avgTotal}</span></div>`;
+      html += `</div>`;
     }
     if(formAwayDetails.length > 0) {
       const wins = formAwayDetails.filter(f => f.result === 'W').length;
       const draws = formAwayDetails.filter(f => f.result === 'D').length;
       const losses = formAwayDetails.filter(f => f.result === 'L').length;
-      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.form', 'Forma (W-D-L)')}:</span><span class="mr-stat-value">${wins}-${draws}-${losses}</span></div>`;
+      html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
+      html += `<span style="color:#999;">Forma:</span> <span style="color:#fff;font-weight:500;">${wins}-${draws}-${losses}</span>`;
+      html += `</div>`;
     }
     html += `</div>`;
     
