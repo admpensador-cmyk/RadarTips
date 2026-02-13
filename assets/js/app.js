@@ -147,8 +147,25 @@
     }catch(e){ markets = []; }
 
     const stats = m.stats || m.statistics || m.analysis?.stats || null;
+    
+    // Stats-related fields from snapshot
+    const gf_home = m.gf_home;
+    const ga_home = m.ga_home;
+    const gf_away = m.gf_away;
+    const ga_away = m.ga_away;
+    const form_home_details = m.form_home_details;
+    const form_away_details = m.form_away_details;
+    const goals_window = m.goals_window;
+    const form_window = m.form_window;
+    const analysis = m.analysis || {};
 
-    return { fixtureId, home, away, league, season, datetimeUtc, markets, stats };
+    return { 
+      fixtureId, home, away, league, season, datetimeUtc, markets, stats,
+      gf_home, ga_home, gf_away, ga_away, 
+      form_home_details, form_away_details,
+      goals_window, form_window,
+      analysis
+    };
   }
 
   // Simple DOM helpers
