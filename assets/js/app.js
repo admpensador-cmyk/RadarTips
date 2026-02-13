@@ -179,7 +179,19 @@
     // Se houver contexto da nova arquitetura, usar match direto
     if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
       const ctx = window.__MATCH_CTX__;
+      console.log('[RADAR] __MATCH_CTX__ found:', {
+        match_gf_home: ctx.match.gf_home,
+        match_ga_home: ctx.match.ga_home,
+        match_goals_window: ctx.match.goals_window,
+        CAL_SNAPSHOT_META: window.CAL_SNAPSHOT_META
+      });
       const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
+      console.log('[RADAR] normalizeMatch result:', {
+        data_gf_home: data.gf_home,
+        data_ga_home: data.ga_home,
+        data_goals_window: data.goals_window,
+        dataKeys: Object.keys(data)
+      });
       data.radarMeta = ctx.meta;
       window.__MATCH_CTX__ = null;
       renderModal(data);
@@ -299,6 +311,19 @@
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
     
+    // DEBUG: Log incoming data
+    console.log('[STATS] renderStatsTab called with data:', {
+      goals_window: data.goals_window,
+      form_window: data.form_window,
+      gf_home: data.gf_home,
+      ga_home: data.ga_home,
+      gf_away: data.gf_away,
+      ga_away: data.ga_away,
+      has_form_home: Array.isArray(data.form_home_details) && data.form_home_details.length > 0,
+      has_form_away: Array.isArray(data.form_away_details) && data.form_away_details.length > 0,
+      dataKeys: Object.keys(data)
+    });
+    
     // Extract fields from match data
     const goalsWindow = data.goals_window || 5;
     const formWindow = data.form_window || 5;
@@ -313,6 +338,8 @@
     // Check if we have essential data
     const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
     const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
+    
+    console.log('[STATS] hasGoalsData:', hasGoalsData, 'hasFormData:', hasFormData);
     
     if(!hasGoalsData && !hasFormData) {
       panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis')}</div>`;
