@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Integrated Build Pipeline v2
+ * Integrated Build Pipeline v3
  * 
  * This is the OFFICIAL build command. It ensures:
- * 1. Hash-js runs FIRST (updates source HTML + generates hashes)
+ * 0. Clean old bundles FIRST (removes all app.<hash>.js artifacts)
+ * 1. Hash-js runs (updates source HTML + generates hashes)
  * 2. Build-static runs AFTER (copies everything to dist with correct refs)
  * 3. No manual steps required - single command does it all
  */
@@ -11,6 +12,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { cleanBundles } from './clean-bundles.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -37,8 +39,13 @@ async function main() {
     console.log('║           Radartips Integrated Build Pipeline            ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
 
+    // Step 0: Clean old bundles
+    console.log('\n🧹 Step 0: Clean old hashed bundles');
+    console.log('   (removes: assets/app.*.js, dist/assets/app.*.js)');
+    await cleanBundles();
+
     // Step 1: Hash all assets and update source HTML
-    console.log('\n📦 Step 1: Update asset hashes and source HTML references');
+    console.log('📦 Step 1: Update asset hashes and source HTML references');
     console.log('   (updates: assets/*.js, assets/*.css, all source .html files)');
     await runCmd('node', ['tools/hash-js.mjs']);
 
