@@ -2218,7 +2218,7 @@ function findMatchByFixtureId(fixtureId) {
   return null;
 }
 
-async function openModal(type, value){
+function openModal(type, value){
   console.log("openModal called:", type, value);
   
   const back = qs("#modal_backdrop");
