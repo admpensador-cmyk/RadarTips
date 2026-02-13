@@ -82,15 +82,16 @@
   }
 
   async function getMatchRadarV2Data(fixtureId){
-    // 1) try find in CAL_MATCHES
+    // Legacy function - prefer using resolveMatchByFixtureId() instead
+    // 1) try find in cache
     try{
       const CAL = window.CAL_MATCHES || [];
       const found = CAL.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
       if(found) return normalizeMatch(found);
     }catch(e){/*ignore*/}
 
-    // 2) fetch calendar snapshot
-    const data = await fetchWithFallback('/api/v1/calendar_7d.json','/data/v1/calendar_7d.json');
+    // 2) fetch from calendar_7d with correct URLs (NO /api/v1/)
+    const data = await fetchWithFallback('/data/v1/calendar_7d.json','/calendar_7d.json');
     if(!data || !Array.isArray(data.matches)) return null;
     const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
     return found ? normalizeMatch(found) : null;
@@ -154,13 +155,40 @@
   // Simple DOM helpers
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
 
-  function openMatchRadarV2(fixtureId){
+  function openMatchRadarV2(param){
     ensureStyles();
     renderLoadingModal();
-    getMatchRadarV2Data(fixtureId).then(data => {
-      if(!data) return renderEmpty();
+    
+    // Support both new object API and legacy fixtureId
+    if(typeof param === 'object' && param.match){
+      // New API: {match, meta, fixtureId}
+      const data = normalizeMatch(param.match);
+      
+      // Merge radar metadata if present
+      if(param.meta){
+        data.radarMeta = param.meta;
+      }
+      
       renderModal(data);
-    }).catch(()=>renderEmpty());
+    } else {
+      // Legacy API: plain fixtureId
+      const fixtureId = param;
+      getMatchRadarV2Data(fixtureId).then(data => {
+        if(!data) return renderEmpty();
+        renderModal(data);
+      }).catch(()=>renderEmpty());
+    }
+  }
+  
+  function openMatchRadarFallback(fixtureId){
+    ensureStyles();
+    removeModal();
+    const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
+    const box = el('div','mr-v2-box');
+    box.innerHTML = `<div class="mr-v2-head"><div class="mr-v2-title">Jogo não encontrado</div><button class="mr-v2-close">×</button></div><div class="mr-v2-body"><div class="mr-v2-empty"><p>O jogo com ID <strong>${escapeHtml(String(fixtureId))}</strong> não foi encontrado no calendário.</p><p>Possíveis razões:</p><ul><li>O jogo ainda não começou ou já terminou há mais de 7 dias</li><li>O ID do jogo está incorreto</li><li>Os dados ainda não foram atualizados</li></ul></div></div>`;
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+    bindModalClose(ov);
   }
 
   // modal management
@@ -269,25 +297,9 @@
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
     
-    // If stats are empty, try to fetch from API
-    if(!data.stats || Object.keys(data.stats).length === 0) {
-      if(data.league?.id && data.season && data.home?.id && data.away?.id) {
-        try{
-          const homeStats = await fetchTeamStats(data.home.id, data.league.id, data.season);
-          const awayStats = await fetchTeamStats(data.away.id, data.league.id, data.season);
-          
-          if(homeStats || awayStats) {
-            renderStatsCards(panel, data, homeStats, awayStats);
-            return;
-          }
-        }catch(e){/* ignore API errors */}
-      }
-    }
-    
-    // Fallback to inline stats if available
+    // 1) Try inline stats from calendar_7d first
     const s = data.stats || {};
     if(s && typeof s === 'object' && Object.keys(s).length > 0) {
-      // simple rows
       const rows = [];
       const pushStat = (label, left, right) => rows.push({label, left: left==null?'—':String(left), right: right==null?'—':String(right)});
 
@@ -314,7 +326,23 @@
       }
     }
     
-    panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
+    // 2) Try to fetch from API (fallback)
+    if(data.league?.id && data.season && data.home?.id && data.away?.id) {
+      try{
+        const homeStats = await fetchTeamStats(data.home.id, data.league.id, data.season);
+        const awayStats = await fetchTeamStats(data.away.id, data.league.id, data.season);
+        
+        if(homeStats || awayStats) {
+          renderStatsCards(panel, data, homeStats, awayStats);
+          return;
+        }
+      }catch(e){/* ignore API errors */}
+    }
+    
+    // 3) SEMPRE mostrar mensagem (nunca deixar vazio)
+    const unavailableMsg = t('match_radar.stats.unavailable', 'Sem estatísticas disponíveis para este jogo ainda.');
+    panel.innerHTML = `<div class="mr-v2-empty"><p>${escapeHtml(unavailableMsg)}</p></div>`;
+  }
   }
 
   async function fetchTeamStats(teamId, leagueId, season) {
@@ -1900,18 +1928,166 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
 let T = null;
 let LANG = null;
+
+// =============================================================================
+// CACHES GLOBAIS: calendar_7d = single source of truth; radar = overlay apenas
+// =============================================================================
+window.__CAL7D_CACHE = { data: null, loadedAt: 0 };
+window.__RADAR_DAY_CACHE = { data: null, loadedAt: 0 };
+window.__RADAR_WEEK_CACHE = { data: null, loadedAt: 0 };
+
+// Legacy aliases for backwards compatibility (read-only)
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
 let RADAR_DAY_DATA = null;
 let RADAR_WEEK_DATA = null;
 
-// Find match by fixtureId across all available datasets
-function findMatchByFixtureId(fixtureId){
-  if(!fixtureId) return null;
+// Update legacy aliases when caches are populated
+function updateLegacyAliases() {
+  if (window.__CAL7D_CACHE.data?.matches) {
+    CAL_MATCHES = window.__CAL7D_CACHE.data.matches;
+    window.CAL_MATCHES = CAL_MATCHES;
+    if (window.__CAL7D_CACHE.data.meta) {
+      CAL_META = window.__CAL7D_CACHE.data.meta;
+    }
+  }
+  if (window.__RADAR_DAY_CACHE.data) {
+    RADAR_DAY_DATA = window.__RADAR_DAY_CACHE.data;
+  }
+  if (window.__RADAR_WEEK_CACHE.data) {
+    RADAR_WEEK_DATA = window.__RADAR_WEEK_CACHE.data;
+  }
+}
+
+// =============================================================================
+// FETCH FUNCTIONS: calendar_7d com cache + fallback URLs
+// =============================================================================
+async function getCalendar7d() {
+  const cache = window.__CAL7D_CACHE;
+  const now = Date.now();
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+  // Return cached data if fresh
+  if (cache.data && (now - cache.loadedAt) < CACHE_TTL) {
+    return cache.data;
+  }
+
+  // Try multiple URLs in order
+  const urls = [
+    "/data/v1/calendar_7d.json",
+    "/calendar_7d.json",
+    "../data/v1/calendar_7d.json",
+    "../../data/v1/calendar_7d.json"
+  ];
+
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) continue;
+
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("json")) continue;
+
+      const data = await r.json();
+      if (data && Array.isArray(data.matches)) {
+        cache.data = data;
+        cache.loadedAt = now;
+        updateLegacyAliases();
+        console.info('[calendar_7d] loaded from:', url, `(${data.matches.length} matches)`);
+        return data;
+      }
+    } catch (e) {
+      // Continue to next URL
+    }
+  }
+
+  console.warn('[calendar_7d] failed to load from any URL');
+  return cache.data; // Return stale cache if available
+}
+
+async function getRadarDay() {
+  const cache = window.__RADAR_DAY_CACHE;
+  const now = Date.now();
+  const CACHE_TTL = 5 * 60 * 1000;
+
+  if (cache.data && (now - cache.loadedAt) < CACHE_TTL) {
+    return cache.data;
+  }
+
+  const urls = [
+    "/data/radar/day.json",
+    "../data/radar/day.json",
+    "../../data/radar/day.json"
+  ];
+
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) continue;
+
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("json")) continue;
+
+      const data = await r.json();
+      cache.data = data;
+      cache.loadedAt = now;
+      updateLegacyAliases();
+      console.info('[radar_day] loaded from:', url);
+      return data;
+    } catch (e) {}
+  }
+
+  console.warn('[radar_day] failed to load');
+  return cache.data;
+}
+
+async function getRadarWeek() {
+  const cache = window.__RADAR_WEEK_CACHE;
+  const now = Date.now();
+  const CACHE_TTL = 5 * 60 * 1000;
+
+  if (cache.data && (now - cache.loadedAt) < CACHE_TTL) {
+    return cache.data;
+  }
+
+  const urls = [
+    "/data/v1/radar_week.json",
+    "../data/v1/radar_week.json",
+    "../../data/v1/radar_week.json"
+  ];
+
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) continue;
+
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("json")) continue;
+
+      const data = await r.json();
+      cache.data = data;
+      cache.loadedAt = now;
+      updateLegacyAliases();
+      console.info('[radar_week] loaded from:', url);
+      return data;
+    } catch (e) {}
+  }
+
+  console.warn('[radar_week] failed to load');
+  return cache.data;
+}
+
+// =============================================================================
+// MATCH RESOLUTION: calendar_7d APENAS (single source of truth)
+// =============================================================================
+function findCalendarMatchByFixtureId(cal, fixtureId) {
+  if (!cal || !Array.isArray(cal.matches)) return null;
+  if (!fixtureId) return null;
+
   const fid = Number(fixtureId);
-  if(isNaN(fid)) return null;
-  
-  const matchesId = (m) => {
+  if (isNaN(fid)) return null;
+
+  return cal.matches.find(m => {
     const candidates = [
       m?.fixture_id,
       m?.fixtureId,
@@ -1919,150 +2095,126 @@ function findMatchByFixtureId(fixtureId){
       m?.id
     ];
     return candidates.some(c => c != null && Number(c) === fid);
-  };
-  
-  // 1) Search in Calendar data (CAL_MATCHES)
-  if(Array.isArray(window.CAL_MATCHES)){
-    const found = window.CAL_MATCHES.find(matchesId);
-    if(found) return found;
-  }
-  
-  // 2) Search in Radar Day highlights
-  if(RADAR_DAY_DATA && Array.isArray(RADAR_DAY_DATA.highlights)){
-    const found = RADAR_DAY_DATA.highlights.find(matchesId);
-    if(found) return found;
-  }
-  
-  // 3) Search in Radar Day matches (if present)
-  if(RADAR_DAY_DATA && Array.isArray(RADAR_DAY_DATA.matches)){
-    const found = RADAR_DAY_DATA.matches.find(matchesId);
-    if(found) return found;
-  }
-  
-  // 4) Search in Radar Week items
-  if(RADAR_WEEK_DATA && Array.isArray(RADAR_WEEK_DATA.items)){
-    const found = RADAR_WEEK_DATA.items.find(matchesId);
-    if(found) return found;
-  }
-  
-  return null;
+  });
 }
 
-// Smart fetch with multiple sources for fixture resolution
-async function fetchDatasetSmart(source) {
-  const paths = {
-    radar_day: ["/data/v1/radar_day.json", "../data/v1/radar_day.json", "../../data/v1/radar_day.json"],
-    radar_week: ["/data/v1/radar_week.json", "../data/v1/radar_week.json", "../../data/v1/radar_week.json"],
-    calendar_7d: ["/data/v1/calendar_7d.json", "/calendar_7d.json", "../data/v1/calendar_7d.json", "../../data/v1/calendar_7d.json", "../../../data/v1/calendar_7d.json"]
-  };
-  
-  const candidates = paths[source] || [];
-  
-  for (const url of candidates) {
-    try {
-      const r = await fetch(url, { cache: "no-store" });
-      if (!r.ok) continue;
-      
-      const ct = (r.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("json") && !ct.includes("application/")) continue;
-      
-      const data = await r.json();
-      console.info(`[${source}] loaded from:`, url);
-      return data;
-    } catch (e) {}
-  }
-  
-  console.warn(`[${source}] not found in any candidate URL`);
-  return null;
-}
-
-// Resolve match by fixtureId with cascading lookup across all sources
-async function resolveMatchByFixtureId(fixtureId, context = null) {
+async function resolveMatchByFixtureId(fixtureId) {
   if (!fixtureId) return null;
-  
+
+  // 1) Try cache first
+  const cal = window.__CAL7D_CACHE.data;
+  if (cal) {
+    const match = findCalendarMatchByFixtureId(cal, fixtureId);
+    if (match) {
+      console.info('[FixtureResolve] Found', fixtureId, 'in calendar cache');
+      return match;
+    }
+  }
+
+  // 2) Fetch calendar_7d if not cached
+  console.info('[FixtureResolve] Fetching calendar_7d for fixture', fixtureId);
+  const calFetched = await getCalendar7d();
+  if (calFetched) {
+    const match = findCalendarMatchByFixtureId(calFetched, fixtureId);
+    if (match) {
+      console.info('[FixtureResolve] Found', fixtureId, 'in calendar_7d');
+      return match;
+    }
+  }
+
+  console.warn('[FixtureResolve] Fixture', fixtureId, 'not found in calendar_7d');
+  return null;
+}
+
+// =============================================================================
+// RADAR METADATA OVERLAY: extrair apenas EV/risco/nota/ranking
+// =============================================================================
+function findRadarMetaByFixtureId(radar, fixtureId) {
+  if (!radar || !fixtureId) return null;
+
   const fid = Number(fixtureId);
   if (isNaN(fid)) return null;
-  
-  const matchesId = (m) => {
-    const candidates = [m?.fixture_id, m?.fixtureId, m?.fixture?.id, m?.id];
+
+  const matchesId = (item) => {
+    const candidates = [
+      item?.fixture_id,
+      item?.fixtureId,
+      item?.fixture?.id,
+      item?.id
+    ];
     return candidates.some(c => c != null && Number(c) === fid);
   };
-  
-  // Define search order based on context
-  const searchOrder = [];
-  if (context === 'radar_day') {
-    searchOrder.push(
-      { name: 'radar_day_highlights', check: () => RADAR_DAY_DATA?.highlights },
-      { name: 'radar_day_matches', check: () => RADAR_DAY_DATA?.matches },
-      { name: 'calendar', check: () => window.CAL_MATCHES },
-      { name: 'radar_week', check: () => RADAR_WEEK_DATA?.items }
-    );
-  } else if (context === 'radar_week') {
-    searchOrder.push(
-      { name: 'radar_week', check: () => RADAR_WEEK_DATA?.items },
-      { name: 'calendar', check: () => window.CAL_MATCHES },
-      { name: 'radar_day_highlights', check: () => RADAR_DAY_DATA?.highlights },
-      { name: 'radar_day_matches', check: () => RADAR_DAY_DATA?.matches }
-    );
-  } else {
-    // calendar or unknown context - prefer calendar first
-    searchOrder.push(
-      { name: 'calendar', check: () => window.CAL_MATCHES },
-      { name: 'radar_day_highlights', check: () => RADAR_DAY_DATA?.highlights },
-      { name: 'radar_day_matches', check: () => RADAR_DAY_DATA?.matches },
-      { name: 'radar_week', check: () => RADAR_WEEK_DATA?.items }
-    );
-  }
-  
-  // Try in-memory caches first
-  for (const src of searchOrder) {
-    const arr = src.check();
-    if (Array.isArray(arr)) {
-      const found = arr.find(matchesId);
-      if (found) {
-        console.info(`[FixtureResolve] Found ${fid} in cache:`, src.name);
-        return found;
-      }
+
+  // Search in radar_day: highlights[] or matches[]
+  if (Array.isArray(radar.highlights)) {
+    const item = radar.highlights.find(matchesId);
+    if (item) {
+      return {
+        risk: item.risk,
+        ev: item.ev,
+        note: item.note || item.justification,
+        market: item.market,
+        rank: item.rank,
+        score: item.score,
+        category: item.category,
+        source: 'radar_day_highlights'
+      };
     }
   }
-  
-  // Not in cache - fetch on-demand (prioritize by context)
-  console.info(`[FixtureResolve] ${fid} not in cache, fetching...`);
-  
-  const fetchOrder = context === 'radar_day' ? ['radar_day', 'radar_week', 'calendar_7d'] :
-                     context === 'radar_week' ? ['radar_week', 'radar_day', 'calendar_7d'] :
-                     ['calendar_7d', 'radar_day', 'radar_week'];
-  
-  for (const source of fetchOrder) {
-    try {
-      const data = await fetchDatasetSmart(source);
-      if (!data) continue;
-      
-      let matches = [];
-      if (source === 'calendar_7d' && Array.isArray(data.matches)) {
-        matches = data.matches;
-        if (matches.length > 0) window.CAL_MATCHES = matches;
-      } else if (source === 'radar_day' && Array.isArray(data.highlights)) {
-        matches = data.highlights;
-        if (!RADAR_DAY_DATA) RADAR_DAY_DATA = {};
-        RADAR_DAY_DATA.highlights = matches;
-      } else if (source === 'radar_week' && Array.isArray(data.items)) {
-        matches = data.items;
-        if (!RADAR_WEEK_DATA) RADAR_WEEK_DATA = {};
-        RADAR_WEEK_DATA.items = matches;
-      }
-      
-      const found = matches.find(matchesId);
-      if (found) {
-        console.info(`[FixtureResolve] Found ${fid} in fetched:`, source);
-        return found;
-      }
-    } catch (e) {
-      console.error(`[FixtureResolve] Error fetching ${source}:`, e);
+
+  if (Array.isArray(radar.matches)) {
+    const item = radar.matches.find(matchesId);
+    if (item) {
+      return {
+        risk: item.risk,
+        ev: item.ev,
+        note: item.note || item.justification,
+        market: item.market,
+        rank: item.rank,
+        score: item.score,
+        category: item.category,
+        source: 'radar_day_matches'
+      };
     }
   }
-  
-  console.warn(`[FixtureResolve] ${fid} not found in any source`);
+
+  // Search in radar_week: items[]
+  if (Array.isArray(radar.items)) {
+    const item = radar.items.find(matchesId);
+    if (item) {
+      return {
+        risk: item.risk,
+        ev: item.ev,
+        note: item.note || item.justification,
+        market: item.market,
+        rank: item.rank,
+        score: item.score,
+        category: item.category,
+        source: 'radar_week'
+      };
+    }
+  }
+
+  return null;
+}
+
+// Legacy function for backwards compatibility (deprecated)
+function findMatchByFixtureId(fixtureId) {
+  console.warn('[DEPRECATED] findMatchByFixtureId: use resolveMatchByFixtureId instead');
+  if (!fixtureId) return null;
+  const fid = Number(fixtureId);
+  if (isNaN(fid)) return null;
+
+  // Only search in calendar (legacy behavior)
+  if (Array.isArray(window.CAL_MATCHES)) {
+    const matchesId = (m) => {
+      const candidates = [m?.fixture_id, m?.fixtureId, m?.fixture?.id, m?.id];
+      return candidates.some(c => c != null && Number(c) === fid);
+    };
+    const found = window.CAL_MATCHES.find(matchesId);
+    if (found) return found;
+  }
+
   return null;
 }
 
@@ -3001,28 +3153,34 @@ async function init(){
         e.preventDefault();
         e.stopPropagation();
 
-        // Determine context based on current page type
-        const pageContext = pageType(); // 'day', 'week', 'calendar', or null
-        const resolveContext = pageContext === 'day' ? 'radar_day' :
-                              pageContext === 'week' ? 'radar_week' :
-                              'calendar';
-
-        // Find the match object - try cache first, then fetch async with page context
-        let match = findMatchByFixtureId(fixtureId);
+        // 1) SEMPRE resolve o match base do calendar_7d (single source of truth)
+        const match = await resolveMatchByFixtureId(fixtureId);
         
         if(!match){
-          // Not in cache - fetch on-demand with appropriate context
-          match = await resolveMatchByFixtureId(fixtureId, resolveContext);
+          // Match not found in calendar - open fallback modal with clear message
+          console.error('[MatchRadar] fixture not found in calendar_7d:', fixtureId);
+          openMatchRadarFallback(fixtureId);
+          return;
         }
-        
-        if(match){
-          const key = matchKey(match);
-          openModal('match', key);
-        } else {
-          // Only use fallback as last resort after async fetch failed
-          console.warn('[MatchRadar] match not found even after fetch for fixtureId:', fixtureId);
-          openModal('match', `fixture:${fixtureId}`);
+
+        // 2) Se estiver em página de radar, buscar metadata overlay opcional
+        const path = window.location.pathname || '';
+        let meta = null;
+
+        if(path.includes('/radar/day')){
+          const radarDay = await getRadarDay();
+          if(radarDay){
+            meta = findRadarMetaByFixtureId(radarDay, fixtureId);
+          }
+        } else if(path.includes('/radar/week')){
+          const radarWeek = await getRadarWeek();
+          if(radarWeek){
+            meta = findRadarMetaByFixtureId(radarWeek, fixtureId);
+          }
         }
+
+        // 3) Abrir modal com match + meta
+        openMatchRadarV2({ match, meta, fixtureId });
       }, true); // capture phase
     }
 
