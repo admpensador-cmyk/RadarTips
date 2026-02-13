@@ -1948,94 +1948,122 @@ function findMatchByFixtureId(fixtureId){
   return null;
 }
 
-// Smart fetch for calendar_7d with multiple URL candidates (prod 404 fix)
-async function fetchCalendar7dSmart() {
-  const candidates = [
-    "/data/v1/calendar_7d.json",
-    "/calendar_7d.json",
-    "../data/v1/calendar_7d.json",
-    "../../data/v1/calendar_7d.json",
-    "../../../data/v1/calendar_7d.json",
-    "/api/v1/calendar_7d.json"
-  ];
-
+// Smart fetch with multiple sources for fixture resolution
+async function fetchDatasetSmart(source) {
+  const paths = {
+    radar_day: ["/data/v1/radar_day.json", "../data/v1/radar_day.json", "../../data/v1/radar_day.json"],
+    radar_week: ["/data/v1/radar_week.json", "../data/v1/radar_week.json", "../../data/v1/radar_week.json"],
+    calendar_7d: ["/data/v1/calendar_7d.json", "/calendar_7d.json", "../data/v1/calendar_7d.json", "../../data/v1/calendar_7d.json", "../../../data/v1/calendar_7d.json"]
+  };
+  
+  const candidates = paths[source] || [];
+  
   for (const url of candidates) {
     try {
       const r = await fetch(url, { cache: "no-store" });
       if (!r.ok) continue;
       
-      // Validate content-type to avoid accepting HTML 404 pages
       const ct = (r.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("json") && !ct.includes("application/")) {
-        continue;
-      }
+      if (!ct.includes("json") && !ct.includes("application/")) continue;
       
       const data = await r.json();
-      console.info("[Calendar7d] loaded from:", url);
+      console.info(`[${source}] loaded from:`, url);
       return data;
-    } catch (e) {
-      // Try next candidate
-    }
+    } catch (e) {}
   }
   
-  console.warn("[Calendar7d] not found in any candidate URL");
+  console.warn(`[${source}] not found in any candidate URL`);
   return null;
 }
 
-// Fetch match data on-demand from calendar_7d when not in cache
-async function getMatchForFixtureId(fixtureId){
-  if(!fixtureId) return null;
+// Resolve match by fixtureId with cascading lookup across all sources
+async function resolveMatchByFixtureId(fixtureId, context = null) {
+  if (!fixtureId) return null;
   
-  // First try in-memory caches
-  const cached = findMatchByFixtureId(fixtureId);
-  if(cached) return cached;
-  
-  // Not in cache - fetch calendar_7d on-demand using smart URL fallback
   const fid = Number(fixtureId);
-  if(isNaN(fid)) return null;
+  if (isNaN(fid)) return null;
   
-  try {
-    const data = await fetchCalendar7dSmart();
-    if(!data) return null;
-    
-    // Extract matches array
-    let matches = [];
-    if(Array.isArray(data.matches)){
-      matches = data.matches;
-    }
-    // Grouped by day/country (flatten nested structures)
-    else if(typeof data === 'object'){
-      for(const key in data){
-        const val = data[key];
-        if(Array.isArray(val)){
-          matches = matches.concat(val);
-        } else if(val && typeof val === 'object' && Array.isArray(val.matches)){
-          matches = matches.concat(val.matches);
-        }
+  const matchesId = (m) => {
+    const candidates = [m?.fixture_id, m?.fixtureId, m?.fixture?.id, m?.id];
+    return candidates.some(c => c != null && Number(c) === fid);
+  };
+  
+  // Define search order based on context
+  const searchOrder = [];
+  if (context === 'radar_day') {
+    searchOrder.push(
+      { name: 'radar_day_highlights', check: () => RADAR_DAY_DATA?.highlights },
+      { name: 'radar_day_matches', check: () => RADAR_DAY_DATA?.matches },
+      { name: 'calendar', check: () => window.CAL_MATCHES },
+      { name: 'radar_week', check: () => RADAR_WEEK_DATA?.items }
+    );
+  } else if (context === 'radar_week') {
+    searchOrder.push(
+      { name: 'radar_week', check: () => RADAR_WEEK_DATA?.items },
+      { name: 'calendar', check: () => window.CAL_MATCHES },
+      { name: 'radar_day_highlights', check: () => RADAR_DAY_DATA?.highlights },
+      { name: 'radar_day_matches', check: () => RADAR_DAY_DATA?.matches }
+    );
+  } else {
+    // calendar or unknown context - prefer calendar first
+    searchOrder.push(
+      { name: 'calendar', check: () => window.CAL_MATCHES },
+      { name: 'radar_day_highlights', check: () => RADAR_DAY_DATA?.highlights },
+      { name: 'radar_day_matches', check: () => RADAR_DAY_DATA?.matches },
+      { name: 'radar_week', check: () => RADAR_WEEK_DATA?.items }
+    );
+  }
+  
+  // Try in-memory caches first
+  for (const src of searchOrder) {
+    const arr = src.check();
+    if (Array.isArray(arr)) {
+      const found = arr.find(matchesId);
+      if (found) {
+        console.info(`[FixtureResolve] Found ${fid} in cache:`, src.name);
+        return found;
       }
     }
-    
-    // Update CAL_MATCHES cache with fetched data
-    if(matches.length > 0 && window.CAL_MATCHES){
-      window.CAL_MATCHES = matches;
-    }
-    
-    // Search in matches
-    const found = matches.find(m => {
-      const candidates = [
-        m?.fixture_id,
-        m?.fixtureId,
-        m?.fixture?.id,
-        m?.id
-      ];
-      return candidates.some(c => c != null && Number(c) === fid);
-    });
-    
-    return found || null;
-  } catch(e) {
-    console.error('[Calendar7d] fetch error:', e);
-    return null;
   }
+  
+  // Not in cache - fetch on-demand (prioritize by context)
+  console.info(`[FixtureResolve] ${fid} not in cache, fetching...`);
+  
+  const fetchOrder = context === 'radar_day' ? ['radar_day', 'radar_week', 'calendar_7d'] :
+                     context === 'radar_week' ? ['radar_week', 'radar_day', 'calendar_7d'] :
+                     ['calendar_7d', 'radar_day', 'radar_week'];
+  
+  for (const source of fetchOrder) {
+    try {
+      const data = await fetchDatasetSmart(source);
+      if (!data) continue;
+      
+      let matches = [];
+      if (source === 'calendar_7d' && Array.isArray(data.matches)) {
+        matches = data.matches;
+        if (matches.length > 0) window.CAL_MATCHES = matches;
+      } else if (source === 'radar_day' && Array.isArray(data.highlights)) {
+        matches = data.highlights;
+        if (!RADAR_DAY_DATA) RADAR_DAY_DATA = {};
+        RADAR_DAY_DATA.highlights = matches;
+      } else if (source === 'radar_week' && Array.isArray(data.items)) {
+        matches = data.items;
+        if (!RADAR_WEEK_DATA) RADAR_WEEK_DATA = {};
+        RADAR_WEEK_DATA.items = matches;
+      }
+      
+      const found = matches.find(matchesId);
+      if (found) {
+        console.info(`[FixtureResolve] Found ${fid} in fetched:`, source);
+        return found;
+      }
+    } catch (e) {
+      console.error(`[FixtureResolve] Error fetching ${source}:`, e);
+    }
+  }
+  
+  console.warn(`[FixtureResolve] ${fid} not found in any source`);
+  return null;
 }
 
 async function openModal(type, value){
@@ -2129,12 +2157,12 @@ async function openModal(type, value){
     let found = null;
     if(String(decodedValue).startsWith('fixture:')){
       const fixtureId = String(decodedValue).replace('fixture:', '');
-      // Try cache first, then fetch on-demand
-      found = await getMatchForFixtureId(fixtureId);
-      if(RADAR_DEBUG) console.log("RADAR DEBUG: searching by fixtureId (async):", fixtureId, "found:", !!found);
+      // Use resolveMatchByFixtureId with no specific context (will try all sources)
+      found = await resolveMatchByFixtureId(fixtureId, null);
+      if(window.RADAR_DEBUG) console.log("RADAR DEBUG: searching by fixtureId (async):", fixtureId, "found:", !!found);
     } else {
       found = findMatchByFixture(kickoffISO, homeName, awayName);
-      if(RADAR_DEBUG) console.log("RADAR DEBUG: searching by kickoff/teams:", {kickoffISO, homeName, awayName}, "found:", !!found);
+      if(window.RADAR_DEBUG) console.log("RADAR DEBUG: searching by kickoff/teams:", {kickoffISO, homeName, awayName}, "found:", !!found);
     }
     
     if(found) list = [found];
@@ -2973,12 +3001,18 @@ async function init(){
         e.preventDefault();
         e.stopPropagation();
 
-        // Find the match object - try cache first, then fetch async
+        // Determine context based on current page type
+        const pageContext = pageType(); // 'day', 'week', 'calendar', or null
+        const resolveContext = pageContext === 'day' ? 'radar_day' :
+                              pageContext === 'week' ? 'radar_week' :
+                              'calendar';
+
+        // Find the match object - try cache first, then fetch async with page context
         let match = findMatchByFixtureId(fixtureId);
         
         if(!match){
-          // Not in cache - fetch on-demand from calendar_7d
-          match = await getMatchForFixtureId(fixtureId);
+          // Not in cache - fetch on-demand with appropriate context
+          match = await resolveMatchByFixtureId(fixtureId, resolveContext);
         }
         
         if(match){
