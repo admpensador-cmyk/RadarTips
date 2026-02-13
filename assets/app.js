@@ -1098,6 +1098,7 @@ function tinyImgHTML(src, alt, cls){
 
 function crestHTML(teamName, logoUrl){
   const logo = logoUrl || null;
+  console.log('[crestHTML]', teamName, 'logoUrl:', logoUrl, 'using logo?', !!logo);
   if(logo){
     const src = escAttr(logo);
     const alt = escAttr(teamName);
