@@ -1926,22 +1926,41 @@ window.__RADAR_WEEK_CACHE = { data: null, loadedAt: 0 };
 async function getCalendar7d() {
   const cache = window.__CAL7D_CACHE;
   const now = Date.now();
-  if (cache.data && (now - cache.loadedAt) < 300000) return cache.data;
+  if (cache.data && (now - cache.loadedAt) < 300000) {
+    console.log('[getCalendar7d] Using cached data');
+    return cache.data;
+  }
   
-  const urls = ["/data/v1/calendar_7d.json", "/calendar_7d.json", "../data/v1/calendar_7d.json"];
+  const urls = ["/data/v1/calendar_7d.json", "/calendar_7d.json", "../data/v1/calendar_7d.json", "../../data/v1/calendar_7d.json"];
   for (const url of urls) {
     try {
+      console.log('[getCalendar7d] Trying URL:', url);
       const r = await fetch(url, { cache: "no-store" });
-      if (r.ok && r.headers.get("content-type").includes("json")) {
-        const data = await r.json();
-        if (data && Array.isArray(data.matches)) {
-          cache.data = data;
-          cache.loadedAt = now;
-          return data;
-        }
+      console.log('[getCalendar7d]', url, 'status:', r.status);
+      
+      if (!r.ok) continue;
+      
+      const ct = r.headers.get("content-type") || "";
+      if (!ct.includes("json")) {
+        console.warn('[getCalendar7d]', url, 'has wrong content-type:', ct);
+        continue;
       }
-    } catch (e) {}
+      
+      const data = await r.json();
+      if (data && Array.isArray(data.matches)) {
+        console.log('[getCalendar7d] SUCCESS from', url, '- loaded', data.matches.length, 'matches');
+        cache.data = data;
+        cache.loadedAt = now;
+        return data;
+      } else {
+        console.warn('[getCalendar7d]', url, 'missing matches array or invalid structure');
+      }
+    } catch (e) {
+      console.warn('[getCalendar7d]', url, 'error:', e.message);
+    }
   }
+  
+  console.warn('[getCalendar7d] No valid URL found, returning stale cache or null');
   return cache.data;
 }
 
@@ -1991,13 +2010,51 @@ async function resolveMatchByFixtureId(fixtureId) {
   const fid = Number(fixtureId);
   if (isNaN(fid)) return null;
   
-  const cal = await getCalendar7d();
-  if (cal && Array.isArray(cal.matches)) {
-    return cal.matches.find(m => {
-      const candidates = [m?.fixture_id, m?.fixtureId, m?.id];
+  console.log('[FixtureResolve] Looking for fixture:', fid);
+  
+  // 1) Try cache first
+  if (Array.isArray(CAL_MATCHES) && CAL_MATCHES.length > 0) {
+    const found = CAL_MATCHES.find(m => {
+      const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
       return candidates.some(c => c != null && Number(c) === fid);
     });
+    if (found) {
+      console.log('[FixtureResolve] Found in CAL_MATCHES cache');
+      return found;
+    }
   }
+  
+  // 2) Fetch calendar_7d if not found in cache
+  console.log('[FixtureResolve] Not in cache, fetching calendar_7d...');
+  const cal = await getCalendar7d();
+  
+  if (!cal) {
+    console.warn('[FixtureResolve] calendar_7d returned null');
+    return null;
+  }
+  
+  if (!Array.isArray(cal.matches)) {
+    console.warn('[FixtureResolve] calendar_7d has no matches array');
+    return null;
+  }
+  
+  console.log('[FixtureResolve] calendar_7d loaded with', cal.matches.length, 'matches');
+  
+  // Update CAL_MATCHES with fetched data
+  CAL_MATCHES = cal.matches;
+  window.CAL_MATCHES = CAL_MATCHES;
+  
+  const found = cal.matches.find(m => {
+    const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
+    return candidates.some(c => c != null && Number(c) === fid);
+  });
+  
+  if (found) {
+    console.log('[FixtureResolve] Found in fetched calendar_7d');
+    return found;
+  }
+  
+  console.warn('[FixtureResolve] Fixture', fid, 'not found in calendar_7d');
   return null;
 }
 
