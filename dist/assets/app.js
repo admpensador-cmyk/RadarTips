@@ -1028,10 +1028,13 @@ function pickTeamLogo(obj, side){
       ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
       : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
     if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
-      return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      const url = `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      console.log('[pickTeamLogo]', side, 'ID:', fallbackId, 'URL:', url);
+      return url;
     }
   }catch(e){}
 
+  console.log('[pickTeamLogo]', side, 'No logo found, obj:', obj);
   return null;
 }
 
