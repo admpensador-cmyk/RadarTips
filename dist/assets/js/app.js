@@ -532,15 +532,103 @@ const V1_STATIC_BASE = "/data/v1";
 
 // Snapshots (calendar + radar) must come from the R2 data worker.
 // IMPORTANT: do NOT prefer /api/v1 for these files.
+// Debug flag for calendar data loading (set to false in production)
+const DEBUG_CAL = false;
+
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
 const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json"]);
 
+// Normalize calendar payload to handle multiple API formats
+function normalizeCalendarPayload(data) {
+  if (!data || typeof data !== 'object') {
+    if (DEBUG_CAL) console.warn('[CAL] Invalid data received:', typeof data);
+    return { matches: [], meta: {} };
+  }
+
+  let matches = [];
+  let meta = {};
+
+  // Format 1: Standard format with matches array
+  if (Array.isArray(data.matches)) {
+    matches = data.matches;
+    meta = {
+      form_window: data.form_window || 5,
+      goals_window: data.goals_window || 5,
+      generated_at_utc: data.generated_at_utc
+    };
+  }
+  // Format 2: Alternative array fields
+  else if (Array.isArray(data.items)) {
+    matches = data.items;
+  }
+  else if (Array.isArray(data.fixtures)) {
+    matches = data.fixtures;
+  }
+  else if (Array.isArray(data.games)) {
+    matches = data.games;
+  }
+  // Format 3: Nested data.matches (some APIs wrap in data)
+  else if (data.data && Array.isArray(data.data.matches)) {
+    matches = data.data.matches;
+    meta = data.data.meta || {};
+  }
+  // Format 4: API-sports style response array
+  else if (Array.isArray(data.response)) {
+    matches = data.response.map(item => {
+      // Map API-sports format to internal format
+      const fixture = item.fixture || {};
+      const teams = item.teams || {};
+      const league = item.league || {};
+      
+      return {
+        fixture_id: fixture.id,
+        kickoff_utc: fixture.date,
+        home: teams.home?.name || '',
+        away: teams.away?.name || '',
+        country: league.country || '',
+        competition: league.name || '',
+        league_id: league.id
+      };
+    });
+  }
+  // Format 5: Direct array (legacy)
+  else if (Array.isArray(data)) {
+    matches = data;
+  }
+
+  if (DEBUG_CAL) {
+    console.warn('[CAL] Normalized payload:', {
+      input_keys: Object.keys(data),
+      matches_count: matches.length,
+      meta
+    });
+  }
+
+  return { matches, meta };
+}
+
 async function loadV1JSON(file, fallback){
   // For snapshots, prefer R2 data worker first.
   if(SNAPSHOT_FILES.has(file)){
+    if (DEBUG_CAL && file === 'calendar_7d.json') {
+      console.warn('[CAL] Attempting R2 worker:', `${V1_DATA_BASE}/${file}`);
+    }
     const data = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
-    if(data) return data;
+    if(data) {
+      if (DEBUG_CAL && file === 'calendar_7d.json') {
+        console.warn('[CAL] R2 worker responded:', {
+          keys: Object.keys(data),
+          has_matches: Array.isArray(data.matches),
+          matches_count: Array.isArray(data.matches) ? data.matches.length : 'N/A',
+          generated_at: data.generated_at_utc || data.timestamp || 'unknown'
+        });
+      }
+      return data;
+    }
+    if (DEBUG_CAL && file === 'calendar_7d.json') {
+      console.warn('[CAL] R2 worker failed, trying static fallback:', `${V1_STATIC_BASE}/${file}`);
+    }
     return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
   }
 
@@ -1590,10 +1678,29 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
   });
 
   if(!filtered.length){
+    // Distinguish between "no data at all" vs "filtered to zero"
+    const hasAnyMatches = (matches || []).length > 0;
+    const isFiltered = (activeDateKey && activeDateKey !== "7d") || q;
+    
+    let title, subtitle;
+    if (!hasAnyMatches) {
+      // No matches loaded at all - data issue
+      title = t.calendar_no_data || "Calendar data unavailable";
+      subtitle = t.calendar_no_data_hint || "calendar_7d.json is empty or invalid. Check data source.";
+    } else if (isFiltered) {
+      // Matches exist but filter returned zero
+      title = t.empty_list || "Sem jogos encontrados.";
+      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
+    } else {
+      // Edge case: shouldn't happen
+      title = t.empty_list || "Sem jogos encontrados.";
+      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
+    }
+    
     root.innerHTML = `
       <div class="empty-state">
-        <div class="empty-title">${escAttr(t.empty_list || "Sem jogos encontrados.")}</div>
-        <div class="empty-sub">${escAttr(t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.")}</div>
+        <div class="empty-title">${escAttr(title)}</div>
+        <div class="empty-sub">${escAttr(subtitle)}</div>
       </div>
     `;
     return;
@@ -2156,7 +2263,24 @@ function ensureSidebar(t, lang){
   `;
 }
 
-function build7Days(){
+function build7Days(availableDateKeys){
+  // If calendar data provides specific dates, use those instead of "today+7"
+  if (availableDateKeys && availableDateKeys.length > 0) {
+    const dates = availableDateKeys
+      .slice(0, 7) // Max 7 days
+      .map(key => {
+        const [y, m, d] = key.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      });
+    
+    if (DEBUG_CAL) {
+      console.warn('[CAL] Using dates from calendar data:', availableDateKeys.slice(0, 7));
+    }
+    
+    return dates;
+  }
+  
+  // Fallback: traditional "today + 7" behavior
   const today = new Date();
   today.setHours(0,0,0,0);
   const days = [];
@@ -2567,25 +2691,73 @@ async function init(){
 
   let viewMode = "country";
   let q = "";
-  const data = await loadV1JSON("calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+  const rawData = await loadV1JSON("calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+  
+  if (DEBUG_CAL) {
+    console.warn('[CAL] Raw data received:', {
+      exists: !!rawData,
+      type: typeof rawData,
+      keys: rawData ? Object.keys(rawData) : [],
+      is_array: Array.isArray(rawData),
+      has_matches_key: rawData ? 'matches' in rawData : false
+    });
+  }
+  
+  // Normalize the payload to handle multiple formats
+  const normalized = normalizeCalendarPayload(rawData);
+  const data = {
+    matches: normalized.matches,
+    form_window: normalized.meta.form_window || rawData?.form_window || 5,
+    goals_window: normalized.meta.goals_window || rawData?.goals_window || 5
+  };
+  
+  if (DEBUG_CAL) {
+    console.warn('[CAL] After normalization:', {
+      matches_count: data.matches.length,
+      first_match: data.matches[0] ? {
+        home: data.matches[0].home,
+        away: data.matches[0].away,
+        kickoff_utc: data.matches[0].kickoff_utc,
+        country: data.matches[0].country
+      } : null,
+      second_match: data.matches[1] ? {
+        home: data.matches[1].home,
+        away: data.matches[1].away,
+        kickoff_utc: data.matches[1].kickoff_utc,
+        country: data.matches[1].country
+      } : null
+    });
+  }
+  
   if (!data || isMockDataset(data) || (Array.isArray(data.matches) && data.matches.length===0)) {
     // Calendar can stay empty; UI will show no matches.
   }
 
   CAL_MATCHES = data.matches || [];
   CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
+  
+  // Extract available dates from calendar data
+  let availableDateKeys = [];
   if(CAL_MATCHES.length){
-    const dateKeys = CAL_MATCHES.map(m=> localDateKey(m.kickoff_utc)).filter(Boolean);
-    const uniq = [...new Set(dateKeys)].sort();
-    if(uniq.length && !uniq.includes(activeDate)){
-      activeDate = uniq[uniq.length - 1];
+    availableDateKeys = [...new Set(CAL_MATCHES.map(m=> localDateKey(m.kickoff_utc)).filter(Boolean))].sort();
+    
+    if (DEBUG_CAL) {
+      console.warn('[CAL] Available dates in data:', availableDateKeys);
     }
   }
-
-  // Date strip
+  
+  // Date strip - generate days from calendar data if available
   const strip = ensureDateStrip(T);
-  const days = build7Days();
-  let activeDate = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(days[0]); // default: Hoje
+  const days = build7Days(availableDateKeys.length > 0 ? availableDateKeys : null);
+  let activeDate = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(days[0]); // default: first available day
+  
+  if (DEBUG_CAL) {
+    console.warn('[CAL] Date strip initialized:', {
+      days_count: days.length,
+      first_day: days[0].toISOString().substring(0, 10),
+      activeDate
+    });
+  }
 
   function renderStrip(){
     if(!strip) return;
