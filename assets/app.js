@@ -150,7 +150,6 @@
     }catch(e){ markets = []; }
     
     // If no markets from analysis, create dummy market from suggestion_free
-    console.log('[normalizeMatch] markets.length=', markets.length, 'suggestion_free=', m.suggestion_free);
     if(markets.length === 0 && m.suggestion_free) {
       markets = [{
         market: 'Sugestão Livre',
@@ -161,9 +160,7 @@
         odd_fair: null,
         reason: ''
       }];
-      console.log('[normalizeMatch] Created dummy market from suggestion_free:', m.suggestion_free, 'final markets:', markets);
-    } else if(markets.length === 0) {
-      console.log('[normalizeMatch] NO dummy market created - no suggestion_free available');
+      console.log('[normalizeMatch] Created dummy market from suggestion_free:', m.suggestion_free);
     }
 
     const stats = m.stats || m.statistics || m.analysis?.stats || null;
@@ -1033,11 +1030,8 @@ function pickTeamLogo(obj, side){
     const fallbackId = (side === "home")
       ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
       : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
-    console.log(`[pickTeamLogo] side=${side}, fallbackId=`, fallbackId, 'obj.home=', obj?.home, 'obj.away=', obj?.away);
     if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
-      const url = `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
-      console.log(`[pickTeamLogo] Returning API-Sports URL:`, url);
-      return url;
+      return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
     }
   }catch(e){}
 
