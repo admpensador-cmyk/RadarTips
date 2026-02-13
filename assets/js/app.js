@@ -86,17 +86,18 @@
     try{
       const CAL = window.CAL_MATCHES || [];
       const found = CAL.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
-      if(found) return normalizeMatch(found);
+      if(found) return normalizeMatch(found, window.CAL_SNAPSHOT_META);
     }catch(e){/*ignore*/}
 
     // 2) fetch calendar snapshot
     const data = await fetchWithFallback('/api/v1/calendar_7d.json','/data/v1/calendar_7d.json');
     if(!data || !Array.isArray(data.matches)) return null;
+    const snapshotMeta = { goals_window: data.goals_window, form_window: data.form_window };
     const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
-    return found ? normalizeMatch(found) : null;
+    return found ? normalizeMatch(found, snapshotMeta) : null;
   }
 
-  function normalizeMatch(m){
+  function normalizeMatch(m, snapshotMeta){
     const fixtureId = String(m.fixture_id||m.id||m.fixture||m.fixtureId||'');
     const home = { name: m.home?.name||m.home_team||m.home_team_name||m.home||'', score: m.home?.score ?? m.goals_home ?? null, id: m.home?.id || m.home_id };
     const away = { name: m.away?.name||m.away_team||m.away_team_name||m.away||'', score: m.away?.score ?? m.goals_away ?? null, id: m.away?.id || m.away_id };
@@ -155,8 +156,8 @@
     const ga_away = m.ga_away;
     const form_home_details = m.form_home_details;
     const form_away_details = m.form_away_details;
-    const goals_window = m.goals_window;
-    const form_window = m.form_window;
+    const goals_window = m.goals_window || snapshotMeta?.goals_window || 5;
+    const form_window = m.form_window || snapshotMeta?.form_window || 5;
     const analysis = m.analysis || {};
 
     return { 
@@ -178,7 +179,7 @@
     // Se houver contexto da nova arquitetura, usar match direto
     if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
       const ctx = window.__MATCH_CTX__;
-      const data = normalizeMatch(ctx.match);
+      const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
       data.radarMeta = ctx.meta;
       window.__MATCH_CTX__ = null;
       renderModal(data);
@@ -2034,6 +2035,7 @@ async function resolveMatchByFixtureId(fixtureId) {
   // Update CAL_MATCHES with fetched data
   CAL_MATCHES = cal.matches;
   window.CAL_MATCHES = CAL_MATCHES;
+  window.CAL_SNAPSHOT_META = { goals_window: cal.goals_window, form_window: cal.form_window };
   
   const found = cal.matches.find(m => {
     const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
