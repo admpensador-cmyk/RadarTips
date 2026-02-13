@@ -535,6 +535,7 @@ const V1_STATIC_BASE = "/data/v1";
 // Debug flag for calendar data loading (set to false in production)
 const DEBUG_CAL = false;
 const RADAR_DEBUG = false;
+window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scripts
 
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
@@ -2931,7 +2932,7 @@ async function init(){
     if(!window.__MR_CARD_CLICK_BOUND__){
       window.__MR_CARD_CLICK_BOUND__ = true;
 
-      document.addEventListener('click', (e) => {
+      document.addEventListener('click', async (e) => {
         const card = e.target.closest('[data-fixture-id]');
         if(!card) return;
 
@@ -2942,19 +2943,23 @@ async function init(){
         const fixtureId = card.getAttribute('data-fixture-id');
         if(!fixtureId) return;
 
-        // Find the match object across all loaded datasets
-        const match = findMatchByFixtureId(fixtureId);
-
-        // Open modal even if match not found (will show fallback message)
         e.preventDefault();
         e.stopPropagation();
+
+        // Find the match object - try cache first, then fetch async
+        let match = findMatchByFixtureId(fixtureId);
+        
+        if(!match){
+          // Not in cache - fetch on-demand from calendar_7d
+          match = await getMatchForFixtureId(fixtureId);
+        }
         
         if(match){
           const key = matchKey(match);
           openModal('match', key);
         } else {
-          // Fallback: open modal with fixtureId to attempt fetch or show unavailable message
-          console.warn('[MatchRadar] match not found in loaded datasets for fixtureId:', fixtureId, '- opening with fallback');
+          // Only use fallback as last resort after async fetch failed
+          console.warn('[MatchRadar] match not found even after fetch for fixtureId:', fixtureId);
           openModal('match', `fixture:${fixtureId}`);
         }
       }, true); // capture phase
