@@ -277,115 +277,89 @@
     panel.innerHTML = `<div class="mr-table-wrap"><table class="mr-table">${headerHtml}<tbody>${rows}</tbody></table></div>`;
   }
 
-  async function renderStatsTab(ov, data){
+  function renderStatsTab(ov, data){
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
     
-    // If stats are empty, try to fetch from API
-    if(!data.stats || Object.keys(data.stats).length === 0) {
-      if(data.league?.id && data.season && data.home?.id && data.away?.id) {
-        try{
-          const homeStats = await fetchTeamStats(data.home.id, data.league.id, data.season);
-          const awayStats = await fetchTeamStats(data.away.id, data.league.id, data.season);
-          
-          if(homeStats || awayStats) {
-            renderStatsCards(panel, data, homeStats, awayStats);
-            return;
-          }
-        }catch(e){/* ignore API errors */}
-      }
-    }
+    // Extract fields from match data
+    const goalsWindow = data.goals_window || 5;
+    const formWindow = data.form_window || 5;
+    const gfHome = data.gf_home;
+    const gaHome = data.ga_home;
+    const gfAway = data.gf_away;
+    const gaAway = data.ga_away;
+    const formHomeDetails = Array.isArray(data.form_home_details) ? data.form_home_details : [];
+    const formAwayDetails = Array.isArray(data.form_away_details) ? data.form_away_details : [];
+    const volatility = data.analysis?.volatility || null;
     
-    // Fallback to inline stats if available
-    const s = data.stats || {};
-    if(s && typeof s === 'object' && Object.keys(s).length > 0) {
-      // simple rows
-      const rows = [];
-      const pushStat = (label, left, right) => rows.push({label, left: left==null?'—':String(left), right: right==null?'—':String(right)});
-
-      if(s.xg) pushStat('xG', s.xg.home, s.xg.away);
-      if(s.possession) pushStat('Posse', s.possession.homePct ?? s.possession.home, s.possession.awayPct ?? s.possession.away);
-      if(s.shotsTotal) pushStat('Remates', s.shotsTotal.home, s.shotsTotal.away);
-      if(s.shotsOn) pushStat('Remates no alvo', s.shotsOn.home, s.shotsOn.away);
-      if(s.bigChances) pushStat('Grandes oportunidades', s.bigChances.home, s.bigChances.away);
-      if(s.corners) pushStat('Cantos', s.corners.home, s.corners.away);
-      if(s.passes) pushStat('Passe (%)', s.passes.home?.pct ?? s.passes.home?.pct, s.passes.away?.pct ?? s.passes.away?.pct);
-      if(s.yellows) pushStat('Amarelos', s.yellows.home, s.yellows.away);
-
-      if(rows.length > 0) {
-        const html = rows.map(r=>{
-          const l = Number(String(r.left).replace('%','')) || 0;
-          const rt = Number(String(r.right).replace('%','')) || 0;
-          const total = Math.max(l, rt) || 1;
-          const lw = Math.round((l/(l+rt||1))*100);
-          const rw = 100 - lw;
-          return `<div class="mr-stat-row"><div class="mr-left">${escapeHtml(r.left)}</div><div class="mr-label">${escapeHtml(r.label)}</div><div class="mr-right">${escapeHtml(r.right)}</div><div class="mr-bar"><div class="mr-bar-left" style="width:${lw}%;"></div><div class="mr-bar-right" style="width:${rw}%;"></div></div></div>`;
-        }).join('');
-        panel.innerHTML = `<div class="mr-stats-wrap">${html}</div>`;
-        return;
-      }
-    }
+    // Check if we have essential data
+    const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
+    const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
     
-    panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
-  }
-
-  async function fetchTeamStats(teamId, leagueId, season) {
-    try {
-      const url = `/api/team-stats?team=${teamId}&league=${leagueId}&season=${season}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if(res.ok) return await res.json();
-    } catch(e) {}
-    return null;
-  }
-
-  function renderStatsCards(panel, data, homeStats, awayStats) {
-    if(!homeStats && !awayStats) {
-      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
+    if(!hasGoalsData && !hasFormData) {
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis')}</div>`;
       return;
     }
-
-    const leagueName = data.league?.name || '—';
-    const season = data.season || '—';
-
-    let html = `<div class="mr-stats-header">`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.competition', 'Competição')}: ${escapeHtml(leagueName)}</div>`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.season', 'Temporada')}: ${season}</div>`;
+    
+    const homeName = data.home?.name || data.home || '—';
+    const awayName = data.away?.name || data.away || '—';
+    
+    let html = `<div class="mr-stats-cards">`;
+    
+    // Header
+    html += `<div class="mr-stats-header">`;
+    html += `<div class="mr-stat-info">${t('match_radar.stats.recorte', 'Recorte')}: ${t('match_radar.stats.last_n_games', 'últimos {n} jogos').replace('{n}', goalsWindow)}</div>`;
+    if(volatility) {
+      html += `<div class="mr-stat-info">${t('match_radar.stats.volatility', 'Volatilidade')}: ${escapeHtml(volatility)}</div>`;
+    }
     html += `</div>`;
-
-    if(homeStats) {
-      html += renderStatCard(data.home.name, homeStats);
-    }
-    if(awayStats) {
-      html += renderStatCard(data.away.name, awayStats);
-    }
-
-    panel.innerHTML = `<div class="mr-stats-cards">${html}</div>`;
-  }
-
-  function renderStatCard(teamName, stats) {
-    let cardHtml = `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(teamName)}</div>`;
     
-    const rows = [];
-    if(stats.games !== undefined) rows.push({ label: t('match_radar.stats.games', 'Jogos'), value: stats.games });
-    if(stats.goals_for_total !== undefined) rows.push({ label: t('match_radar.stats.goals_for_total', 'Gols marcados'), value: stats.goals_for_total });
-    if(stats.goals_for_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_for_avg', 'Gols marcados (média)'), value: Number(stats.goals_for_avg).toFixed(2) });
-    if(stats.goals_against_total !== undefined) rows.push({ label: t('match_radar.stats.goals_against_total', 'Gols sofridos'), value: stats.goals_against_total });
-    if(stats.goals_against_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_against_avg', 'Gols sofridos (média)'), value: Number(stats.goals_against_avg).toFixed(2) });
-    if(stats.corners_total !== undefined) rows.push({ label: 'Escanteios', value: stats.corners_total });
-    if(stats.corners_avg !== undefined) rows.push({ label: 'Escanteios (média)', value: Number(stats.corners_avg).toFixed(2) });
-    if(stats.cards_total !== undefined) rows.push({ label: 'Cartões', value: stats.cards_total });
-    if(stats.cards_avg !== undefined) rows.push({ label: 'Cartões (média)', value: Number(stats.cards_avg).toFixed(2) });
-
-    if(rows.length === 0) {
-      cardHtml += `<div class="mr-stat-row-empty">${t('match_radar.no_stats', 'Sem dados')}</div>`;
-    } else {
-      rows.forEach(r => {
-        cardHtml += `<div class="mr-stat-row-item"><span class="mr-stat-label">${escapeHtml(r.label)}:</span><span class="mr-stat-value">${escapeHtml(r.value)}</span></div>`;
-      });
+    // Home team card
+    html += `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(homeName)}</div>`;
+    if(hasGoalsData) {
+      const avgGF = (gfHome / goalsWindow).toFixed(2);
+      const avgGA = (gaHome / goalsWindow).toFixed(2);
+      const avgTotal = ((gfHome + gaHome) / goalsWindow).toFixed(2);
+      
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.games', 'Jogos analisados')}:</span><span class="mr-stat-value">${goalsWindow}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_for', 'GF (gols marcados)')}:</span><span class="mr-stat-value">${gfHome}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_against', 'GA (gols sofridos)')}:</span><span class="mr-stat-value">${gaHome}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_gf', 'Média GF/jogo')}:</span><span class="mr-stat-value">${avgGF}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_ga', 'Média GA/jogo')}:</span><span class="mr-stat-value">${avgGA}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_total', 'Total médio/jogo')}:</span><span class="mr-stat-value">${avgTotal}</span></div>`;
     }
+    if(formHomeDetails.length > 0) {
+      const wins = formHomeDetails.filter(f => f.result === 'W').length;
+      const draws = formHomeDetails.filter(f => f.result === 'D').length;
+      const losses = formHomeDetails.filter(f => f.result === 'L').length;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.form', 'Forma (W-D-L)')}:</span><span class="mr-stat-value">${wins}-${draws}-${losses}</span></div>`;
+    }
+    html += `</div>`;
     
-    cardHtml += `</div>`;
-    return cardHtml;
+    // Away team card
+    html += `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(awayName)}</div>`;
+    if(hasGoalsData) {
+      const avgGF = (gfAway / goalsWindow).toFixed(2);
+      const avgGA = (gaAway / goalsWindow).toFixed(2);
+      const avgTotal = ((gfAway + gaAway) / goalsWindow).toFixed(2);
+      
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.games', 'Jogos analisados')}:</span><span class="mr-stat-value">${goalsWindow}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_for', 'GF (gols marcados)')}:</span><span class="mr-stat-value">${gfAway}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.goals_against', 'GA (gols sofridos)')}:</span><span class="mr-stat-value">${gaAway}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_gf', 'Média GF/jogo')}:</span><span class="mr-stat-value">${avgGF}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_ga', 'Média GA/jogo')}:</span><span class="mr-stat-value">${avgGA}</span></div>`;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.avg_total', 'Total médio/jogo')}:</span><span class="mr-stat-value">${avgTotal}</span></div>`;
+    }
+    if(formAwayDetails.length > 0) {
+      const wins = formAwayDetails.filter(f => f.result === 'W').length;
+      const draws = formAwayDetails.filter(f => f.result === 'D').length;
+      const losses = formAwayDetails.filter(f => f.result === 'L').length;
+      html += `<div class="mr-stat-row-item"><span class="mr-stat-label">${t('match_radar.stats.form', 'Forma (W-D-L)')}:</span><span class="mr-stat-value">${wins}-${draws}-${losses}</span></div>`;
+    }
+    html += `</div>`;
+    
+    html += `</div>`;
+    panel.innerHTML = html;
   }
 
   function formatScore(data){
