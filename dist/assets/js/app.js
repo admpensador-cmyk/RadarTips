@@ -534,6 +534,7 @@ const V1_STATIC_BASE = "/data/v1";
 // IMPORTANT: do NOT prefer /api/v1 for these files.
 // Debug flag for calendar data loading (set to false in production)
 const DEBUG_CAL = false;
+const RADAR_DEBUG = false;
 
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
