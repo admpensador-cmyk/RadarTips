@@ -1948,6 +1948,40 @@ function findMatchByFixtureId(fixtureId){
   return null;
 }
 
+// Smart fetch for calendar_7d with multiple URL candidates (prod 404 fix)
+async function fetchCalendar7dSmart() {
+  const candidates = [
+    "/data/v1/calendar_7d.json",
+    "/calendar_7d.json",
+    "../data/v1/calendar_7d.json",
+    "../../data/v1/calendar_7d.json",
+    "../../../data/v1/calendar_7d.json",
+    "/api/v1/calendar_7d.json"
+  ];
+
+  for (const url of candidates) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) continue;
+      
+      // Validate content-type to avoid accepting HTML 404 pages
+      const ct = (r.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("json") && !ct.includes("application/")) {
+        continue;
+      }
+      
+      const data = await r.json();
+      console.info("[Calendar7d] loaded from:", url);
+      return data;
+    } catch (e) {
+      // Try next candidate
+    }
+  }
+  
+  console.warn("[Calendar7d] not found in any candidate URL");
+  return null;
+}
+
 // Fetch match data on-demand from calendar_7d when not in cache
 async function getMatchForFixtureId(fixtureId){
   if(!fixtureId) return null;
@@ -1956,59 +1990,52 @@ async function getMatchForFixtureId(fixtureId){
   const cached = findMatchByFixtureId(fixtureId);
   if(cached) return cached;
   
-  // Not in cache - fetch calendar_7d on-demand
+  // Not in cache - fetch calendar_7d on-demand using smart URL fallback
   const fid = Number(fixtureId);
   if(isNaN(fid)) return null;
   
-  const urls = [
-    '/api/v1/calendar_7d.json',
-    '/data/v1/calendar_7d.json'
-  ];
-  
-  for(const url of urls){
-    try{
-      const data = await loadJSON(url, null);
-      if(!data) continue;
-      
-      // Flatten matches from various possible structures
-      let matches = [];
-      
-      // Standard: { matches: [...] }
-      if(Array.isArray(data.matches)){
-        matches = data.matches;
-      }
-      // Grouped by day/country (flatten nested structures)
-      else if(typeof data === 'object'){
-        for(const key in data){
-          const val = data[key];
-          if(Array.isArray(val)){
-            matches = matches.concat(val);
-          } else if(val && typeof val === 'object' && Array.isArray(val.matches)){
-            matches = matches.concat(val.matches);
-          }
+  try {
+    const data = await fetchCalendar7dSmart();
+    if(!data) return null;
+    
+    // Extract matches array
+    let matches = [];
+    if(Array.isArray(data.matches)){
+      matches = data.matches;
+    }
+    // Grouped by day/country (flatten nested structures)
+    else if(typeof data === 'object'){
+      for(const key in data){
+        const val = data[key];
+        if(Array.isArray(val)){
+          matches = matches.concat(val);
+        } else if(val && typeof val === 'object' && Array.isArray(val.matches)){
+          matches = matches.concat(val.matches);
         }
       }
-      
-      // Search in flattened matches
-      const found = matches.find(m => {
-        const candidates = [
-          m?.fixture_id,
-          m?.fixtureId,
-          m?.fixture?.id,
-          m?.id
-        ];
-        return candidates.some(c => c != null && Number(c) === fid);
-      });
-      
-      if(found) return found;
-      
-    }catch(e){
-      // Try next URL
-      continue;
     }
+    
+    // Update CAL_MATCHES cache with fetched data
+    if(matches.length > 0 && window.CAL_MATCHES){
+      window.CAL_MATCHES = matches;
+    }
+    
+    // Search in matches
+    const found = matches.find(m => {
+      const candidates = [
+        m?.fixture_id,
+        m?.fixtureId,
+        m?.fixture?.id,
+        m?.id
+      ];
+      return candidates.some(c => c != null && Number(c) === fid);
+    });
+    
+    return found || null;
+  } catch(e) {
+    console.error('[Calendar7d] fetch error:', e);
+    return null;
   }
-  
-  return null;
 }
 
 async function openModal(type, value){
