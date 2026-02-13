@@ -3124,9 +3124,8 @@ async function init(){
         }
 
         // 3) Abre modal com match + meta
-        const key = matchKey(match);
         window.__MATCH_CTX__ = { match, meta, fixtureId };
-        openModal('match', key);
+        openMatchRadarV2(fixtureId);
       }, true);
     }
 
