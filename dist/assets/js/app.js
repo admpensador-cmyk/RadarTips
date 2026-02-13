@@ -1900,6 +1900,52 @@ let T = null;
 let LANG = null;
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
+let RADAR_DAY_DATA = null;
+let RADAR_WEEK_DATA = null;
+
+// Find match by fixtureId across all available datasets
+function findMatchByFixtureId(fixtureId){
+  if(!fixtureId) return null;
+  const id = String(fixtureId);
+  
+  // 1) Search in Calendar data (CAL_MATCHES)
+  if(Array.isArray(window.CAL_MATCHES)){
+    const found = window.CAL_MATCHES.find(m => {
+      const matchId = m?.fixture_id ?? m?.fixtureId ?? m?.fixture ?? m?.id;
+      return String(matchId) === id;
+    });
+    if(found) return found;
+  }
+  
+  // 2) Search in Radar Day highlights
+  if(RADAR_DAY_DATA && Array.isArray(RADAR_DAY_DATA.highlights)){
+    const found = RADAR_DAY_DATA.highlights.find(m => {
+      const matchId = m?.fixture_id ?? m?.fixtureId ?? m?.fixture ?? m?.id;
+      return String(matchId) === id;
+    });
+    if(found) return found;
+  }
+  
+  // 3) Search in Radar Day matches (if present)
+  if(RADAR_DAY_DATA && Array.isArray(RADAR_DAY_DATA.matches)){
+    const found = RADAR_DAY_DATA.matches.find(m => {
+      const matchId = m?.fixture_id ?? m?.fixtureId ?? m?.fixture ?? m?.id;
+      return String(matchId) === id;
+    });
+    if(found) return found;
+  }
+  
+  // 4) Search in Radar Week items
+  if(RADAR_WEEK_DATA && Array.isArray(RADAR_WEEK_DATA.items)){
+    const found = RADAR_WEEK_DATA.items.find(m => {
+      const matchId = m?.fixture_id ?? m?.fixtureId ?? m?.fixture ?? m?.id;
+      return String(matchId) === id;
+    });
+    if(found) return found;
+  }
+  
+  return null;
+}
 
 function openModal(type, value){
   console.log("openModal called:", type, value);
@@ -1981,20 +2027,37 @@ function openModal(type, value){
     const kickoffISO = parsed.kickoffISO || decodedValue;
     const homeName = parsed.homeName || "";
     const awayName = parsed.awayName || "";
-    const fixtureId = value; // preserve raw value which may contain fixtureId
     
-    // TEMP: show loading shell immediately with fixtureId
-    displayValue = `${kickoffISO} | ${homeName} vs ${awayName}`;
-    title.textContent = `Match Radar (fixtureId=${fixtureId})`; // TEMP: include fixtureId in header
-    body.innerHTML = `<div class="loading" style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>`;
-    back.style.display = "flex";
+    // Check if value is in format "fixture:XXXXX" (fallback mode)
+    let found = null;
+    if(String(decodedValue).startsWith('fixture:')){
+      const fixtureId = String(decodedValue).replace('fixture:', '');
+      found = findMatchByFixtureId(fixtureId);
+      if(RADAR_DEBUG) console.log("RADAR DEBUG: searching by fixtureId:", fixtureId, "found:", !!found);
+    } else {
+      found = findMatchByFixture(kickoffISO, homeName, awayName);
+      if(RADAR_DEBUG) console.log("RADAR DEBUG: searching by kickoff/teams:", {kickoffISO, homeName, awayName}, "found:", !!found);
+    }
     
-    // NOW search for match data
-    const found = findMatchByFixture(kickoffISO, homeName, awayName);
     if(found) list = [found];
 
+    // Prepare display value
+    displayValue = homeName && awayName ? `${kickoffISO} | ${homeName} vs ${awayName}` : decodedValue;
+    title.textContent = found ? `Match Radar` : `Match Radar (${T.loading || "loading"}...)`;
+    
+    // Show loading while searching
+    body.innerHTML = `<div class="loading" style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>`;
+    back.style.display = "flex";
+
     if(!list.length){
-      body.innerHTML = `<div class="smallnote">Match not found in current dataset.</div>`;
+      // Fallback: show "data unavailable" message instead of aborting
+      body.innerHTML = `
+        <div class="smallnote" style="padding:20px;text-align:center;">
+          <div style="font-size:1.1em;margin-bottom:10px;">${escAttr(T.match_not_found_title || "Dados do jogo ainda não disponíveis")}</div>
+          <div style="opacity:0.7;">${escAttr(T.match_not_found_subtitle || "Tente novamente em alguns segundos.")}</div>
+          ${String(decodedValue).startsWith('fixture:') ? `<div style="margin-top:10px;font-size:0.9em;opacity:0.5;">Fixture ID: ${escAttr(String(decodedValue).replace('fixture:', ''))}</div>` : ''}
+        </div>
+      `;
       bindModalClicks();
       return;
     }
@@ -2647,6 +2710,7 @@ async function init(){
     setText("hero_sub", T.hero_sub_day);
     renderPitch();
     const radar = await loadV1JSON("radar_day.json", {highlights:[]});
+    RADAR_DAY_DATA = radar; // Store globally for Match Radar lookup
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
     showUpdatingMessage(top);
@@ -2659,6 +2723,7 @@ async function init(){
     setText("hero_sub", T.hero_sub_week);
     renderPitch();
     const week = await loadV1JSON("radar_week.json", {items:[]});
+    RADAR_WEEK_DATA = week; // Store globally for Match Radar lookup
     const items = Array.isArray(week?.items) ? week.items : [];
     if(!week || isMockDataset(week) || items.length===0){
       renderTop3(T, {highlights:[]});
@@ -2811,23 +2876,21 @@ async function init(){
         const fixtureId = card.getAttribute('data-fixture-id');
         if(!fixtureId) return;
 
-        // Find the match object in the loaded calendar dataset
-        const match = (window.CAL_MATCHES || []).find(m => {
-          const id = m?.fixture_id ?? m?.fixtureId ?? m?.fixture ?? m?.id;
-          return String(id) === String(fixtureId);
-        });
+        // Find the match object across all loaded datasets
+        const match = findMatchByFixtureId(fixtureId);
 
-        if(!match){
-          console.warn('[MatchRadar] match not found for fixtureId:', fixtureId);
-          return;
-        }
-
-        const key = matchKey(match);
-
-        // Open using the site modal system (key-based), NOT window.openMatchRadarV2 (may not exist in prod)
+        // Open modal even if match not found (will show fallback message)
         e.preventDefault();
         e.stopPropagation();
-        openModal('match', key);
+        
+        if(match){
+          const key = matchKey(match);
+          openModal('match', key);
+        } else {
+          // Fallback: open modal with fixtureId to attempt fetch or show unavailable message
+          console.warn('[MatchRadar] match not found in loaded datasets for fixtureId:', fixtureId, '- opening with fallback');
+          openModal('match', `fixture:${fixtureId}`);
+        }
       }, true); // capture phase
     }
 
