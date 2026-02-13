@@ -118,8 +118,7 @@
           // Extract market and pick data
           const market = entry.market || entry.marketLabel || entry.label || '';
           const pick = entry.pick || entry.selection || '';
-          const line = entry.line || entry.lineValue || entry.threshold || entry.stake || entry.odds || entry.value || entry.betValue || entry.amount || pick || '—';
-          console.log('[normalizeMatch] Market entry:', { market, pick, line, entry });
+          const line = entry.line || entry.lineValue || entry.threshold || entry.stake || entry.odds || entry.value || entry.betValue || entry.amount || entry.entry || pick || '—';
           
           // Probability should be a number 0-1
           let p = Number(entry.p || entry.probability || entry.confidence || entry.prob || NaN);
@@ -161,7 +160,6 @@
         odd_fair: null,
         reason: ''
       }];
-      console.log('[normalizeMatch] Created dummy market from suggestion_free:', m.suggestion_free);
     }
 
     const stats = m.stats || m.statistics || m.analysis?.stats || null;
@@ -198,7 +196,6 @@
       const ctx = window.__MATCH_CTX__;
       const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
       data.radarMeta = ctx.meta;
-      console.log('[openMatchRadarV2] Normalized match data:', data, 'raw match:', ctx.match);
       window.__MATCH_CTX__ = null;
       renderModal(data);
       return;
@@ -278,7 +275,6 @@
     const panel = ov.querySelector('[data-panel="markets"]');
     if(!panel) return;
     const arr = Array.isArray(data.markets)?data.markets:[];
-    console.log('[renderMarketsTab] markets array:', arr, 'suggestion_free:', data.suggestion_free);
     if(!arr || arr.length===0){ 
       panel.innerHTML = `<div class="mr-v2-empty">Sem dados disponíveis</div>`; 
       return; 
