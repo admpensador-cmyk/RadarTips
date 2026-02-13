@@ -9,13 +9,15 @@ http.get(url, (res) => {
   let data = '';
   res.on('data', chunk => data += chunk);
   res.on('end', () => {
-    const hasMrV2Css = data.includes('match-radar-v2.cf390008e08b.css');
-    const hasMrV2Js = data.includes('match-radar-v2.fa12c94e8201.js');
-    const hasAppHash = data.includes('app.83cd2791f8b3.js');
-    
-    console.log('✅ CSS MR V2 linkado:', hasMrV2Css ? 'SIM (/assets/match-radar-v2.cf390008e08b.css)' : 'NÃO');
-    console.log('✅ JS MR V2 linkado:', hasMrV2Js ? 'SIM (/assets/match-radar-v2.fa12c94e8201.js)' : 'NÃO');
-    console.log('✅ APP com hash:', hasAppHash ? 'SIM (/assets/app.83cd2791f8b3.js)' : 'NÃO');
+    const cssMatch = data.match(/\/assets\/match-radar-v2\.[a-f0-9]{12}\.css/);
+    const appMatch = data.match(/\/assets\/app\.[a-f0-9]{12}\.js/);
+    const hasMrV2Css = !!cssMatch;
+    const hasAppHash = !!appMatch;
+    const hasMrV2Js = /\/assets\/match-radar-v2\.[a-f0-9]{12}\.js/.test(data);
+
+    console.log('✅ CSS MR V2 linkado:', hasMrV2Css ? `SIM (${cssMatch[0]})` : 'NÃO');
+    console.log('✅ JS MR V2 separado (esperado NAO):', hasMrV2Js ? 'SIM' : 'NÃO');
+    console.log('✅ APP com hash:', hasAppHash ? `SIM (${appMatch[0]})` : 'NÃO');
     console.log('');
     console.log('🎯 SMOKE TEST MANUAL (aplicação aberta no navegador):');
     console.log('   URL: http://localhost:8080/pt/radar/day/index.html');

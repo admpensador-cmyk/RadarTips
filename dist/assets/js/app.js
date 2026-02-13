@@ -2182,6 +2182,13 @@ async function init(){
 
   CAL_MATCHES = data.matches || [];
   CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
+  if(CAL_MATCHES.length){
+    const dateKeys = CAL_MATCHES.map(m=> localDateKey(m.kickoff_utc)).filter(Boolean);
+    const uniq = [...new Set(dateKeys)].sort();
+    if(uniq.length && !uniq.includes(activeDate)){
+      activeDate = uniq[uniq.length - 1];
+    }
+  }
 
   // Date strip
   const strip = ensureDateStrip(T);
