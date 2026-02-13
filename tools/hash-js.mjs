@@ -59,7 +59,9 @@ async function main() {
       .replace(/\/assets\/app\.js(\?[^"']*)?/g, `/assets/${newName}`)
       .replace(/\/assets\/js\/app\.js(\?[^"']*)?/g, `/assets/${newName}`)
       .replace(/assets\/app\.js(\?[^"']*)?/g, `assets/${newName}`)
-      .replace(/assets\/js\/app\.js(\?[^"']*)?/g, `assets/${newName}`);
+      .replace(/assets\/js\/app\.js(\?[^"']*)?/g, `assets/${newName}`)
+      .replace(/\/assets\/app\.[a-f0-9]{12}\.js(\?[^"']*)?/g, `/assets/${newName}`)
+      .replace(/assets\/app\.[a-f0-9]{12}\.js(\?[^"']*)?/g, `assets/${newName}`);
 
     // Remove match-radar-v2.js script tag (it's now imported into app.js)
     html = html

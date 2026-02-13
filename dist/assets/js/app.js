@@ -2234,7 +2234,8 @@ async function init(){
         if(!card) return;
 
         // Ignore real controls inside the card (do NOT block team/logo/score areas)
-        if(e.target.closest('a,button,input,select,textarea,label,[role="button"],[role="link"]')) return;
+        const interactive = e.target.closest('a,button,input,select,textarea,label,[role="button"],[role="link"]');
+        if(interactive && interactive !== card) return;
 
         const fixtureId = card.getAttribute('data-fixture-id');
         if(!fixtureId) return;
