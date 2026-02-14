@@ -131,7 +131,9 @@ async function main() {
     let html = await fs.readFile(file, "utf8");
     if (newName) {
       // Replace ALL references: assets/app.js AND assets/app.<oldhash>.js
-      html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/${newName}`);
+      // Add cache-busting query param based on hash to force CDN/browser refresh
+      const cacheBust = newName.match(/app\.([a-f0-9]{12})\.js/)?.[1]?.slice(0, 8) || Date.now();
+      html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/${newName}?v=${cacheBust}`);
     }
     // Inject a small build badge into every page so humans can visually confirm deployed bundle
     try{
