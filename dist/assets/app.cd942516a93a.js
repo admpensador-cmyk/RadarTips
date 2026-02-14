@@ -191,6 +191,7 @@
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
 
   function openMatchRadarV2(fixtureId){
+    console.log('[V2] openMatchRadarV2 ENTRY, fixtureId:', fixtureId, '__MATCH_CTX__:', window.__MATCH_CTX__);
     ensureStyles();
     renderLoadingModal();
     
