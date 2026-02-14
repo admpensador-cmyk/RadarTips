@@ -36,19 +36,45 @@ function sha256Short(buf) {
   return createHash("sha256").update(buf).digest("hex").slice(0, 12);
 }
 
-async function listHtmlFiles(dir) {
+async function listHtmlFiles(dir, excludeDirs = new Set()) {
   const out = [];
   const entries = await fs.readdir(dir, { withFileTypes: true });
 
   for (const e of entries) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
-      out.push(...(await listHtmlFiles(p)));
+      if (excludeDirs.has(e.name)) continue;
+      out.push(...(await listHtmlFiles(p, excludeDirs)));
     } else if (e.isFile() && e.name.toLowerCase().endsWith(".html")) {
       out.push(p);
     }
   }
   return out;
+}
+
+async function updateHtmlFiles(htmlFiles, newName) {
+  for (const file of htmlFiles) {
+    let html = await fs.readFile(file, "utf8");
+    if (newName) {
+      // Replace ALL references: assets/app.js AND assets/app.<oldhash>.js
+      // Add cache-busting query param based on hash to force CDN/browser refresh
+      const cacheBust = newName.match(/app\.([a-f0-9]{12})\.js/)?.[1]?.slice(0, 8) || Date.now();
+      html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/${newName}?v=${cacheBust}`);
+    }
+    // Inject a small build badge into every page so humans can visually confirm deployed bundle
+    try{
+      const d = new Date();
+      const pad = (n)=> String(n).padStart(2,'0');
+      const badgeDate = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const badgeHtml = `\n<!-- build-badge -->\n<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: ${newName || 'unknown'} | ${badgeDate}</div>\n<!-- /build-badge -->\n`;
+      if(/<\/body>/i.test(html)){
+        html = html.replace(/<\/body>/i, badgeHtml + "</body>");
+      }else{
+        html = html + badgeHtml;
+      }
+    }catch(e){ /* don't fail build for badge issues */ }
+    await fs.writeFile(file, html);
+  }
 }
 
 async function main() {
@@ -126,28 +152,31 @@ async function main() {
   }
 
   const htmlFiles = await listHtmlFiles(DIST);
+  await updateHtmlFiles(htmlFiles, newName);
 
-  for (const file of htmlFiles) {
-    let html = await fs.readFile(file, "utf8");
-    if (newName) {
-      // Replace ALL references: assets/app.js AND assets/app.<oldhash>.js
-      // Add cache-busting query param based on hash to force CDN/browser refresh
-      const cacheBust = newName.match(/app\.([a-f0-9]{12})\.js/)?.[1]?.slice(0, 8) || Date.now();
-      html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/${newName}?v=${cacheBust}`);
-    }
-    // Inject a small build badge into every page so humans can visually confirm deployed bundle
-    try{
-      const d = new Date();
-      const pad = (n)=> String(n).padStart(2,'0');
-      const badgeDate = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      const badgeHtml = `\n<!-- build-badge -->\n<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: ${newName || 'unknown'} | ${badgeDate}</div>\n<!-- /build-badge -->\n`;
-      if(/<\/body>/i.test(html)){
-        html = html.replace(/<\/body>/i, badgeHtml + "</body>");
-      }else{
-        html = html + badgeHtml;
+  // If Pages is serving repo root, update HTML there too (exclude dist/node_modules/.git)
+  const rootHtmlFiles = await listHtmlFiles(ROOT, new Set(["dist", "node_modules", ".git"]));
+  await updateHtmlFiles(rootHtmlFiles, newName);
+
+  // Ensure hashed bundle exists in root assets and prune old hashes
+  if (newName) {
+    const rootAssets = path.join(ROOT, "assets");
+    await ensureDir(rootAssets);
+    const distBundlePath = path.join(distAssets, newName);
+    const rootBundlePath = path.join(rootAssets, newName);
+    await fs.copyFile(distBundlePath, rootBundlePath).catch(() => {});
+
+    const pruneOldHashes = async (dir) => {
+      const files = await fs.readdir(dir).catch(() => []);
+      for (const f of files) {
+        if (/^app\.[a-f0-9]{12}\.js$/.test(f) && f !== newName) {
+          await fs.rm(path.join(dir, f), { force: true });
+        }
       }
-    }catch(e){ /* don't fail build for badge issues */ }
-    await fs.writeFile(file, html);
+    };
+
+    await pruneOldHashes(distAssets);
+    await pruneOldHashes(rootAssets);
   }
 
   console.log("Build complete:", newName);
