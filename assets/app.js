@@ -181,9 +181,9 @@
       form_home_details, form_away_details,
       goals_window, form_window,
       analysis,
-      // Flat IDs for logo picking compatibility
-      home_id: m.home_id,
-      away_id: m.away_id
+      // Flat IDs for logo picking compatibility (from normalized home/away)
+      home_id: home.id,
+      away_id: away.id
     };
   }
 
