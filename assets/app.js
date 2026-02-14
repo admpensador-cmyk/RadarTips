@@ -191,25 +191,19 @@
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
 
   function openMatchRadarV2(fixtureId){
-    console.log('[DEBUG] === openMatchRadarV2 CALLED ===');
-    console.log('[DEBUG] fixtureId:', fixtureId);
     ensureStyles();
     renderLoadingModal();
     
     // Se houver contexto da nova arquitetura, usar match direto
     if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
-      console.log('[DEBUG] __MATCH_CTX__ present, proceeding with normalization');
       const ctx = window.__MATCH_CTX__;
       const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
-      console.log('[DEBUG] Normalized match:', { home_id: data.home_id, away_id: data.away_id, home: data.home, away: data.away });
       data.radarMeta = ctx.meta;
       window.__MATCH_CTX__ = null;
-      console.log('[DEBUG] About to call renderModal');
       renderModal(data);
       return;
     }
     
-    console.log('[DEBUG] __MATCH_CTX__ is NULL, falling back to getMatchRadarV2Data');
     // Fallback para legacy behavior
     getMatchRadarV2Data(fixtureId).then(data => {
       if(!data) return renderEmpty();
@@ -2206,8 +2200,6 @@ async function fetchDatasetSmart(source) {
 
 async function openModal(type, value){
   console.log("openModal called:", type, value);
-  console.log('[DEBUG] === LEGACY openModal FIRED ===');
-  console.log('[DEBUG] openModal type:', type, 'value:', value);
   
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");

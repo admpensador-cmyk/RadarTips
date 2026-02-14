@@ -2200,8 +2200,6 @@ async function fetchDatasetSmart(source) {
 
 async function openModal(type, value){
   console.log("openModal called:", type, value);
-  console.log('[DEBUG] === LEGACY openModal FIRED ===');
-  console.log('[DEBUG] openModal type:', type, 'value:', value);
   
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");
@@ -3131,16 +3129,13 @@ async function init(){
         const fixtureId = card.getAttribute('data-fixture-id');
         if(!fixtureId) return;
 
-        console.log('[DEBUG] Card click handler fired, fixtureId:', fixtureId);
         e.preventDefault();
         e.stopPropagation();
 
         // 1) Sempre resolve do calendar_7d (single source of truth)
         const match = await resolveMatchByFixtureId(fixtureId);
-        console.log('[DEBUG] resolveMatchByFixtureId result:', match ? 'FOUND' : 'NULL');
         if(!match) {
           console.error('[MatchRadar] fixture not found in calendar_7d:', fixtureId);
-          console.log('[DEBUG] Falling back to legacy openModal');
           openModal('match', `fixture:${fixtureId}`);
           return;
         }
@@ -3158,7 +3153,6 @@ async function init(){
 
         // 3) Abre modal com match + meta
         window.__MATCH_CTX__ = { match, meta, fixtureId };
-        console.log('[DEBUG] __MATCH_CTX__ set:', { home_id: match.home_id, away_id: match.away_id, fixtureId });
         openMatchRadarV2(fixtureId);
       }, true);
     }
@@ -3173,7 +3167,6 @@ async function init(){
 
         e.stopPropagation();
         const type = el.getAttribute("data-open");
-        console.log('[DEBUG] data-open handler fired, type:', type, 'value:', el.getAttribute('data-value'));
         // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
         let val = "";
         if(type === "match"){
