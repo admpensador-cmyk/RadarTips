@@ -180,7 +180,10 @@
       gf_home, ga_home, gf_away, ga_away, 
       form_home_details, form_away_details,
       goals_window, form_window,
-      analysis
+      analysis,
+      // Flat IDs for logo picking compatibility
+      home_id: m.home_id,
+      away_id: m.away_id
     };
   }
 
@@ -245,7 +248,6 @@
 
     const homeLogo = pickTeamLogo(data, 'home');
     const awayLogo = pickTeamLogo(data, 'away');
-    console.log('[renderModal] Logos returned:', { homeLogo, awayLogo, dataHome: data.home, dataAway: data.away });
     const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
     const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
     const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
@@ -1029,13 +1031,10 @@ function pickTeamLogo(obj, side){
       ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
       : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
     if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
-      const url = `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
-      console.log('[pickTeamLogo]', side, 'ID:', fallbackId, 'URL:', url);
-      return url;
+      return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
     }
   }catch(e){}
 
-  console.log('[pickTeamLogo]', side, 'No logo found, obj:', obj);
   return null;
 }
 
@@ -1099,13 +1098,10 @@ function tinyImgHTML(src, alt, cls){
 
 function crestHTML(teamName, logoUrl){
   const logo = logoUrl || null;
-  console.log('[crestHTML]', teamName, 'logoUrl:', logoUrl, 'using logo?', !!logo);
   if(logo){
     const src = escAttr(logo);
     const alt = escAttr(teamName);
-    const fallbackHue = _hashHue(teamName);
-    const fallbackIni = escAttr(_initials(teamName));
-    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" onerror="console.error('[IMG ERROR]', this.src); this.onerror=null; this.parentElement.style.setProperty('--h', '${fallbackHue}'); this.parentElement.classList.remove('crest--img'); this.parentElement.textContent='${fallbackIni}';" /></span>`;
+    return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" /></span>`;
   }
   const hue = _hashHue(teamName);
   const ini = _initials(teamName);
