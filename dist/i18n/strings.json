@@ -124,7 +124,11 @@
     "match_radar.stats.goals_against_total": "Goals Conceded",
     "match_radar.stats.goals_against_avg": "Goals Conceded (avg)",
     "match_radar.no_markets": "No markets available",
-    "match_radar.no_stats": "No statistics available"
+    "match_radar.no_stats": "No statistics available",
+    "match_radar.loading": "Loading...",
+    "match_radar.empty": "Data unavailable",
+    "match_radar.stats.form": "Form",
+    "match_radar.form_window": "Last {n} matches"
   },
   "pt": {
     "brand": "RadarTips",
@@ -251,7 +255,11 @@
     "match_radar.stats.goals_against_total": "Gols Sofridos",
     "match_radar.stats.goals_against_avg": "Gols Sofridos (média)",
     "match_radar.no_markets": "Sem mercados disponíveis",
-    "match_radar.no_stats": "Sem estatísticas disponíveis"
+    "match_radar.no_stats": "Sem estatísticas disponíveis",
+    "match_radar.loading": "Carregando...",
+    "match_radar.empty": "Dados indisponíveis",
+    "match_radar.stats.form": "Forma",
+    "match_radar.form_window": "Últimos {n} jogos"
   },
   "es": {
     "brand": "RadarTips",
@@ -378,7 +386,11 @@
     "match_radar.stats.goals_against_total": "Goles Concedidos",
     "match_radar.stats.goals_against_avg": "Goles Concedidos (promedio)",
     "match_radar.no_markets": "Sin mercados disponibles",
-    "match_radar.no_stats": "No hay estadísticas disponibles"
+    "match_radar.no_stats": "No hay estadísticas disponibles",
+    "match_radar.loading": "Cargando...",
+    "match_radar.empty": "Datos no disponibles",
+    "match_radar.stats.form": "Forma",
+    "match_radar.form_window": "Últimos {n} partidos"
   },
   "fr": {
     "brand": "RadarTips",
@@ -489,7 +501,27 @@
     "market_under_prefix": "Moins de",
     "market_over_prefix": "Plus de",
     "market_dnb_fmt": "DNB {side}",
-    "word_handicap": "Handicap"
+    "word_handicap": "Handicap",
+    "match_radar.tabs.markets": "Marchés",
+    "match_radar.tabs.stats": "Statistiques",
+    "match_radar.columns.market": "Marché",
+    "match_radar.columns.pick": "Sélection",
+    "match_radar.columns.risk": "Risque",
+    "match_radar.columns.fair_odds": "Cotes Justes",
+    "match_radar.columns.reason": "Raison",
+    "match_radar.stats.competition": "Compétition",
+    "match_radar.stats.season": "Saison",
+    "match_radar.stats.games": "Matchs",
+    "match_radar.stats.goals_for_total": "Buts Marqués",
+    "match_radar.stats.goals_for_avg": "Buts Marqués (moy)",
+    "match_radar.stats.goals_against_total": "Buts Encaissés",
+    "match_radar.stats.goals_against_avg": "Buts Encaissés (moy)",
+    "match_radar.no_markets": "Aucun marché disponible",
+    "match_radar.no_stats": "Aucune statistique disponible",
+    "match_radar.loading": "Chargement...",
+    "match_radar.empty": "Données indisponibles",
+    "match_radar.stats.form": "Forme",
+    "match_radar.form_window": "Derniers {n} matchs"
   },
   "de": {
     "brand": "RadarTips",
@@ -616,7 +648,11 @@
     "match_radar.stats.goals_against_total": "Gegentore",
     "match_radar.stats.goals_against_avg": "Gegentore (Durchschnitt)",
     "match_radar.no_markets": "Keine Märkte verfügbar",
-    "match_radar.no_stats": "Keine Statistiken verfügbar"
+    "match_radar.no_stats": "Keine Statistiken verfügbar",
+    "match_radar.loading": "Wird geladen...",
+    "match_radar.empty": "Daten nicht verfügbar",
+    "match_radar.stats.form": "Form",
+    "match_radar.form_window": "Letzte {n} Spiele"
   },
   "markets_title": "Mercados analisados",
   "markets_tooltip": "Outros mercados sugeridos para a partida (com risco e justificativa).",

@@ -335,7 +335,7 @@
     const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
     
     if(!hasGoalsData && !hasFormData) {
-      panel.innerHTML = `<div class="mr-v2-empty">Estatísticas indisponíveis</div>`;
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis')}</div>`;
       return;
     }
     
@@ -344,12 +344,13 @@
     
     let html = `<div class="mr-stats-container" style="padding:20px;">`;
     
-    // Info header
+    // Info header - "Last X matches"
     html += `<div style="font-size:0.9em;color:#888;margin-bottom:15px;">`;
-    html += `Últimos ${goalsWindow} jogos`;
+    const lastMatches = `${t('match_radar.form_window', `Últimos ${goalsWindow} jogos`).replace('{n}', goalsWindow)}`;
+    html += lastMatches !== 'match_radar.form_window' ? lastMatches : `Últimos ${goalsWindow} jogos`;
     html += `</div>`;
     
-    // Home team card
+    // Home team card (continued as before)
     html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;margin-bottom:15px;">`;
     html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(homeName)}</div>`;
     if(hasGoalsData) {
@@ -371,7 +372,7 @@
       const draws = formHomeDetails.filter(f => f.result === 'D').length;
       const losses = formHomeDetails.filter(f => f.result === 'L').length;
       html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">Forma:</span> `;
+      html += `<span style="color:#999;">${t('match_radar.stats.form', 'Forma')}:</span> `;
       html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
       // Add Win boxes
       for(let i = 0; i < wins; i++) {
@@ -412,7 +413,7 @@
       const draws = formAwayDetails.filter(f => f.result === 'D').length;
       const losses = formAwayDetails.filter(f => f.result === 'L').length;
       html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">Forma:</span> `;
+      html += `<span style="color:#999;">${t('match_radar.stats.form', 'Forma')}:</span> `;
       html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
       // Add Win boxes
       for(let i = 0; i < wins; i++) {

@@ -165,7 +165,7 @@
     removeModal();
     const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
-    box.innerHTML = `<div class="mr-v2-head"><div class="mr-v2-title">Loading...</div><button class="mr-v2-close">×</button></div><div class="mr-v2-body">Carregando...</div>`;
+    box.innerHTML = `<div class="mr-v2-head"><div class="mr-v2-title">${t('match_radar.loading', 'Loading...')}</div><button class="mr-v2-close">×</button></div><div class="mr-v2-body">${t('match_radar.loading', 'Carregando...')}</div>`;
     ov.appendChild(box);
     document.body.appendChild(ov);
     bindModalClose(ov);
@@ -175,7 +175,7 @@
     const body = qsBody();
     if(!body) return; // nothing
     const modal = document.querySelector('#mr-v2-overlay .mr-v2-body');
-    if(modal) modal.innerHTML = '<div class="mr-v2-empty">Sem dados disponíveis</div>';
+    if(modal) modal.innerHTML = `<div class="mr-v2-empty">${t('match_radar.empty', 'Dados indisponíveis')}</div>`;
   }
 
   function removeModal(){
@@ -433,10 +433,10 @@
     if(stats.goals_for_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_for_avg', 'Gols marcados (média)'), value: Number(stats.goals_for_avg).toFixed(2) });
     if(stats.goals_against_total !== undefined) rows.push({ label: t('match_radar.stats.goals_against_total', 'Gols sofridos'), value: stats.goals_against_total });
     if(stats.goals_against_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_against_avg', 'Gols sofridos (média)'), value: Number(stats.goals_against_avg).toFixed(2) });
-    if(stats.corners_total !== undefined) rows.push({ label: 'Escanteios', value: stats.corners_total });
-    if(stats.corners_avg !== undefined) rows.push({ label: 'Escanteios (média)', value: Number(stats.corners_avg).toFixed(2) });
-    if(stats.cards_total !== undefined) rows.push({ label: 'Cartões', value: stats.cards_total });
-    if(stats.cards_avg !== undefined) rows.push({ label: 'Cartões (média)', value: Number(stats.cards_avg).toFixed(2) });
+    if(stats.corners_total !== undefined) rows.push({ label: t('match_radar.stats.corners_total', 'Escanteios') || 'Escanteios', value: stats.corners_total });
+    if(stats.corners_avg !== undefined) rows.push({ label: t('match_radar.stats.corners_avg', 'Escanteios (média)') || 'Escanteios (média)', value: Number(stats.corners_avg).toFixed(2) });
+    if(stats.cards_total !== undefined) rows.push({ label: t('match_radar.stats.cards_total', 'Cartões') || 'Cartões', value: stats.cards_total });
+    if(stats.cards_avg !== undefined) rows.push({ label: t('match_radar.stats.cards_avg', 'Cartões (média)') || 'Cartões (média)', value: Number(stats.cards_avg).toFixed(2) });
 
     if(rows.length === 0) {
       cardHtml += `<div class="mr-stat-row-empty">${t('match_radar.no_stats', 'Sem dados')}</div>`;
