@@ -61,6 +61,15 @@ async function updateHtmlFiles(htmlFiles, newName) {
       const cacheBust = newName.match(/app\.([a-f0-9]{12})\.js/)?.[1]?.slice(0, 8) || Date.now();
       html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/${newName}?v=${cacheBust}`);
     }
+
+    // Inject GA4 snippet right after <head>, if missing
+    const gaId = "G-ME07NV3W8Y";
+    const hasGa = /googletagmanager\.com\/gtag\/js\?id=G-ME07NV3W8Y/i.test(html)
+      || /gtag\(['"]config['"],\s*['"]G-ME07NV3W8Y['"]/i.test(html);
+    if (!hasGa && /<head>/i.test(html)) {
+      const gaSnippet = `\n  <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>\n  <script>window.dataLayer=window.dataLayer||[]; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','${gaId}', { anonymize_ip: true });</script>\n`;
+      html = html.replace(/<head>/i, `<head>${gaSnippet}`);
+    }
     // Inject a small build badge into every page so humans can visually confirm deployed bundle
     try{
       const d = new Date();
