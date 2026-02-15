@@ -251,7 +251,7 @@
     const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
     const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
     const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
-    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">Mercados</button><button class="mr-v2-tab" data-tab="stats">Estatísticas</button></div>`;
+    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`;
     const body = `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`;
 
     box.innerHTML = header + tabs + body;
@@ -279,7 +279,7 @@
     if(!panel) return;
     const arr = Array.isArray(data.markets)?data.markets:[];
     if(!arr || arr.length===0){ 
-      panel.innerHTML = `<div class="mr-v2-empty">Sem dados disponíveis</div>`; 
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.empty', 'Sem dados disponíveis')}</div>`; 
       return; 
     }
     
@@ -305,11 +305,11 @@
     const headerHtml = `
       <thead>
         <tr>
-          <th>Mercado</th>
-          <th>Linha</th>
-          <th>Risco</th>
-          <th>Odd Justa</th>
-          <th>Justificativa</th>
+          <th>${t('match_radar.columns.market', 'Mercado')}</th>
+          <th>${t('match_radar.columns.line', 'Linha')}</th>
+          <th>${t('match_radar.columns.risk', 'Risco')}</th>
+          <th>${t('match_radar.columns.odd_fair', 'Odd Justa')}</th>
+          <th>${t('match_radar.columns.reason', 'Justificativa')}</th>
         </tr>
       </thead>
     `;
