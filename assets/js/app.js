@@ -2932,18 +2932,27 @@ function injectPatchStyles(){
 
 async function init(){
   LANG = pathLang() || detectLang();
+  console.log('[RADARTIPS] Detected language:', LANG, 'from path:', location.pathname);
   const dict = await loadJSON("/i18n/strings.json", {});
   T = dict[LANG] || dict.en;
+  console.log('[RADARTIPS] Loaded translations for:', LANG, 'Keys available:', Object.keys(T).slice(0, 20));
 
   // Global translation helper for Match Radar V2 and other modules
   window.t = function(key, defaultValue) {
-    if(!T) return defaultValue || key;
+    if(!T) {
+      console.warn('[RADARTIPS] T not loaded, returning defaultValue for key:', key);
+      return defaultValue || key;
+    }
     const keys = String(key).split('.');
     let val = T;
     for(const k of keys) {
       val = val && val[k];
-      if(!val) return defaultValue || key;
+      if(!val) {
+        console.debug('[RADARTIPS] Translation key not found:', key, '-> using defaultValue:', defaultValue);
+        return defaultValue || key;
+      }
     }
+    //console.debug('[RADARTIPS] Translation found for:', key, '-> value:', val);
     return val || defaultValue || key;
   };
 
