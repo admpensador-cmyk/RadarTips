@@ -10,7 +10,7 @@
   function t(key, defaultValue){
     try{
       if(typeof window !== 'undefined' && window.t && typeof window.t === 'function') {
-        return window.t(key) || defaultValue || key;
+        return window.t(key, defaultValue) || defaultValue || key;
       }
     }catch(e){}
     return defaultValue || key;
