@@ -1003,9 +1003,9 @@ function pickTeamLogo(obj, side){
   try{
     const t = obj && obj.teams && obj.teams[side];
     if(t && typeof t === "object"){
-      if(t.logo) return t.logo;
-      if(t.crest) return t.crest;
-      if(t.badge) return t.badge;
+      if(t.logo) { console.log(`[pickTeamLogo] ${side} found logo in teams.${side}.logo:`, t.logo); return t.logo; }
+      if(t.crest) { console.log(`[pickTeamLogo] ${side} found crest in teams.${side}.crest:`, t.crest); return t.crest; }
+      if(t.badge) {console.log(`[pickTeamLogo] ${side} found badge in teams.${side}.badge:`, t.badge); return t.badge; }
     }
   }catch(e){}
 
@@ -1014,14 +1014,15 @@ function pickTeamLogo(obj, side){
     ? ["home_logo","homeLogo","home_crest","home_badge","logo_home","team_home_logo","home_team_logo","home_logo_url"]
     : ["away_logo","awayLogo","away_crest","away_badge","logo_away","team_away_logo","away_team_logo","away_logo_url"];
   for(const k of cand){
-    if(obj && obj[k]) return obj[k];
+    if(obj && obj[k]) { console.log(`[pickTeamLogo] ${side} found at flat key ${k}:`, obj[k]); return obj[k]; }
   }
 
   // 3) Optional nested shapes: { home: {logo}, away:{logo} }
   try{
     const t2 = obj && obj[side];
     if(t2 && typeof t2 === "object"){
-      return t2.logo || t2.crest || t2.badge || null;
+      const found = t2.logo || t2.crest || t2.badge || null;
+      if(found) { console.log(`[pickTeamLogo] ${side} found in nested obj.${side}:`, found); return found; }
     }
   }catch(e){}
 
@@ -1031,10 +1032,13 @@ function pickTeamLogo(obj, side){
       ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
       : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
     if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
-      return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      const url = `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      console.log(`[pickTeamLogo] ${side} fallback from ID ${fallbackId}:`, url);
+      return url;
     }
   }catch(e){}
 
+  console.log(`[pickTeamLogo] ${side} returned null`);
   return null;
 }
 
