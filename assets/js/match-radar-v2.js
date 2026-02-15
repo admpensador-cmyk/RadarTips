@@ -296,6 +296,36 @@
     });
   }
 
+  const REASON_KEY_MAP = {
+    "Perfil mais controlado de gols, mas risco alto por oscilações e contexto.": "match_radar.reason.controlled_goals_high_risk",
+    "Força relativa e forma favorecem proteção, mas risco alto por imprevisibilidade do resultado.": "match_radar.reason.relative_strength_protection",
+    "Se houver gol cedo, a linha tende a ficar viva (risco médio).": "match_radar.reason.early_goal_live_line",
+    "Favoritismo leve com proteção do empate, mas risco alto por margem curta.": "match_radar.reason.slight_favorite_dnb",
+    "Um lado tende a segurar ou o outro cria pouco, mas risco alto por detalhes de jogo.": "match_radar.reason.one_side_low_creation"
+  };
+
+  function resolveReasonText(reason, entry){
+    const lang = (document.documentElement && document.documentElement.lang) ? document.documentElement.lang.toLowerCase() : "";
+    if(reason && typeof reason === "object"){
+      return reason[lang] || reason.en || reason.pt || reason.es || reason.fr || reason.de || "";
+    }
+    if(entry){
+      const byLang = entry[`reason_${lang}`] || entry[`rationale_${lang}`] || entry[`note_${lang}`];
+      if(byLang) return byLang;
+      const i18nObj = entry.reason_i18n || entry.rationale_i18n || entry.note_i18n;
+      if(i18nObj && typeof i18nObj === "object"){
+        return i18nObj[lang] || i18nObj.en || i18nObj.pt || i18nObj.es || i18nObj.fr || i18nObj.de || "";
+      }
+    }
+    if(typeof reason === "string"){
+      const trimmed = reason.trim();
+      const key = REASON_KEY_MAP[trimmed];
+      if(key) return t(key, trimmed);
+      return trimmed;
+    }
+    return "";
+  }
+
   function renderMarketsTab(ov, data){
     const panel = ov.querySelector('[data-panel="markets"]');
     if(!panel) return;
@@ -319,7 +349,8 @@
       
       const market = escapeHtml(m.market || '—');
       const pick = escapeHtml(m.pick || '—');
-      const reason = escapeHtml(m.reason || '—');
+      const reasonText = resolveReasonText(m.reason, m) || '—';
+      const reason = escapeHtml(reasonText);
       
       return `<tr><td class="mr-market">${market}</td><td class="mr-pick">${pick}</td><td class="mr-risk">${riskStr}</td><td class="mr-odd">${oddStr}</td><td class="mr-reason">${reason}</td></tr>`;
     }).join('');
