@@ -190,12 +190,89 @@
 
   function qsBody(){ return document.querySelector('#mr-v2-overlay'); }
 
+  function _hashHue(str){
+    let h = 0;
+    const s = String(str || "");
+    for(let i=0;i<s.length;i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h % 360;
+  }
+
+  function _initials(name){
+    const s = String(name || "").trim();
+    if(!s) return "??";
+    const parts = s.split(/\s+/).filter(Boolean);
+    if(parts.length === 1){
+      return parts[0].slice(0, 3).toUpperCase();
+    }
+    const a = parts[0][0] || "";
+    const b = parts[1][0] || "";
+    const c = parts[parts.length-1][0] || "";
+    const out = (a + b + (parts.length > 2 ? c : "")).toUpperCase();
+    return out.slice(0, 3);
+  }
+
+  function pickTeamLogo(obj, side){
+    // 1) API-Football / API-Sports common shape: teams.home.logo / teams.away.logo
+    try{
+      const t = obj && obj.teams && obj.teams[side];
+      if(t && typeof t === "object"){
+        if(t.logo) return t.logo;
+        if(t.crest) return t.crest;
+        if(t.badge) return t.badge;
+      }
+    }catch(e){}
+
+    // 2) Flat keys (snapshots / transforms)
+    const cand = (side==="home")
+      ? ["home_logo","homeLogo","home_crest","home_badge","logo_home","team_home_logo","home_team_logo","home_logo_url"]
+      : ["away_logo","awayLogo","away_crest","away_badge","logo_away","team_away_logo","away_team_logo","away_logo_url"];
+    for(const k of cand){
+      if(obj && obj[k]) return obj[k];
+    }
+
+    // 3) Optional nested shapes: { home: {logo}, away:{logo} }
+    try{
+      const t2 = obj && obj[side];
+      if(t2 && typeof t2 === "object"){
+        return t2.logo || t2.crest || t2.badge || null;
+      }
+    }catch(e){}
+
+    // 4) Fallback: derive from team id if available (API-Sports pattern)
+    try{
+      const fallbackId = (side === "home")
+        ? (obj && (obj.home_id || obj.homeId || obj.homeID || (obj.home && obj.home.id)))
+        : (obj && (obj.away_id || obj.awayId || obj.awayID || (obj.away && obj.away.id)));
+      if(fallbackId !== undefined && fallbackId !== null && String(fallbackId).trim() !== ""){
+        return `https://media.api-sports.io/football/teams/${String(fallbackId).trim()}.png`;
+      }
+    }catch(e){}
+
+    return null;
+  }
+
+  function crestHTML(teamName, logoUrl){
+    const logo = logoUrl || null;
+    if(logo){
+      const src = escapeHtml(logo);
+      const alt = escapeHtml(teamName);
+      return `<span class="crest crest--img" aria-hidden="true"><img src="${src}" alt="${alt}" loading="lazy" style="width:100%;height:100%;object-fit:contain;" /></span>`;
+    }
+    const hue = _hashHue(teamName);
+    const ini = _initials(teamName);
+    return `<span class="crest" style="--h:${hue}" aria-hidden="true">${escapeHtml(ini)}</span>`;
+  }
+
   function renderModal(data){
     removeModal();
     const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
 
-    const header = `<div class="mr-v2-head"><div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div><button class="mr-v2-close">×</button></div>`;
+    const homeLogo = pickTeamLogo(data, 'home');
+    const awayLogo = pickTeamLogo(data, 'away');
+    const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
+    const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
+    const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
     const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`;
     const body = `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`;
 
