@@ -2455,13 +2455,32 @@ async function renderCompetitionStandings(leagueId, season){
 
   // Load from API/R2/static
   const standings = await loadV1JSON(standingsFile, null);
-  console.log("[STANDINGS] Loaded data:", { standingsFile, has_standings: standings && standings.standings, count: standings?.standings?.length || 0 });
+  const keys = standings && typeof standings === "object" ? Object.keys(standings) : [];
+  const responseStandings = standings?.response?.[0]?.league?.standings?.[0];
+  console.log("[STANDINGS] Loaded data:", {
+    standingsFile,
+    keys,
+    has_direct_standings: Array.isArray(standings?.standings),
+    direct_count: standings?.standings?.length || 0,
+    has_response_standings: Array.isArray(responseStandings),
+    response_count: Array.isArray(responseStandings) ? responseStandings.length : 0
+  });
   
   if(!standings || !standings.standings || standings.standings.length === 0){
+    console.log("[STANDINGS] Missing direct standings array", {
+      standingsFile,
+      keys,
+      has_response_standings: Array.isArray(responseStandings),
+      response_count: Array.isArray(responseStandings) ? responseStandings.length : 0
+    });
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
   }
 
   const table = standings.standings;
+  const sampleTeams = Array.isArray(table)
+    ? table.slice(0, 5).map(row => row?.team?.name || row?.team || row?.name || "—")
+    : [];
+  console.log("[STANDINGS] Sample teams:", sampleTeams);
   
   // Reject dummy data (Team 1, Team 2, etc.) - indicates snapshot not yet populated with real data
   const isDummy = table.some(row => {
