@@ -2294,29 +2294,6 @@ function computeCompetitionAggregates(matches){
     xgAvg: 0
   };
 
-function inferSeasonFromMatches(list) {
-  if (!list || list.length === 0) return null;
-  const first = list[0];
-  if (!first.kickoff_utc) return null;
-  try {
-    const d = new Date(first.kickoff_utc);
-    if (isNaN(d.getTime())) return null;
-    return String(d.getUTCFullYear());
-  } catch (e) {
-    return null;
-  }
-}
-
-function getCompetitionSnapshotNames(leagueId, season) {
-  if (!leagueId || !season) {
-    return { standingsFile: null, compstatsFile: null };
-  }
-  return {
-    standingsFile: `standings_${leagueId}_${season}.json`,
-    compstatsFile: `compstats_${leagueId}_${season}.json`,
-  };
-}
-
   const teams = new Set();
   let matchesWithScore = 0;
 
@@ -2441,6 +2418,30 @@ function getCompetitionSnapshotNames(leagueId, season) {
   }
 
   return agg;
+}
+
+// Helper functions for competition snapshots
+function inferSeasonFromMatches(list) {
+  if (!list || list.length === 0) return null;
+  const first = list[0];
+  if (!first.kickoff_utc) return null;
+  try {
+    const d = new Date(first.kickoff_utc);
+    if (isNaN(d.getTime())) return null;
+    return String(d.getUTCFullYear());
+  } catch (e) {
+    return null;
+  }
+}
+
+function getCompetitionSnapshotNames(leagueId, season) {
+  if (!leagueId || !season) {
+    return { standingsFile: null, compstatsFile: null };
+  }
+  return {
+    standingsFile: `standings_${leagueId}_${season}.json`,
+    compstatsFile: `compstats_${leagueId}_${season}.json`,
+  };
 }
 
 async function renderCompetitionStandings(leagueId, season){
