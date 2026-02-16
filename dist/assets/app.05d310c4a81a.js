@@ -2278,6 +2278,29 @@ function computeCompetitionAggregates(matches){
     xgAvg: 0
   };
 
+function inferSeasonFromMatches(list) {
+  if (!list || list.length === 0) return null;
+  const first = list[0];
+  if (!first.kickoff_utc) return null;
+  try {
+    const d = new Date(first.kickoff_utc);
+    if (isNaN(d.getTime())) return null;
+    return String(d.getUTCFullYear());
+  } catch (e) {
+    return null;
+  }
+}
+
+function getCompetitionSnapshotNames(leagueId, season) {
+  if (!leagueId || !season) {
+    return { standingsFile: null, compstatsFile: null };
+  }
+  return {
+    standingsFile: `standings_${leagueId}_${season}.json`,
+    compstatsFile: `compstats_${leagueId}_${season}.json`,
+  };
+}
+
   const teams = new Set();
   let matchesWithScore = 0;
 
@@ -2405,15 +2428,17 @@ function computeCompetitionAggregates(matches){
 }
 
 async function renderCompetitionStandings(leagueId, season){
-  if(!leagueId || !season){
-    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
+  const { standingsFile } = getCompetitionSnapshotNames(leagueId, season);
+  
+  if(!standingsFile){
+    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (sem leagueId/season)</div>`;
   }
 
   // Load from API/R2/static
-  const standings = await loadV1JSON(`standings_${leagueId}_${season}.json`, null);
+  const standings = await loadV1JSON(standingsFile, null);
   
   if(!standings || !standings.standings || standings.standings.length === 0){
-    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (leagueId=${leagueId} season=${season})</div>`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo esperado: ${escAttr(standingsFile)}</div></div>`;
   }
 
   const table = standings.standings;
@@ -2449,7 +2474,7 @@ async function renderCompetitionStandings(leagueId, season){
     </tr>`;
   }).join("");
 
-  return `<table class="standings-table">
+  return `<div class="standings-wrap"><table class="standings-table">
     <thead>
       <tr>
         <th>#</th>
@@ -2467,76 +2492,26 @@ async function renderCompetitionStandings(leagueId, season){
     <tbody>
       ${rows}
     </tbody>
-  </table>`;
+  </table></div>`;
 }
 
 async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
+  const { compstatsFile } = getCompetitionSnapshotNames(leagueId, season);
+  
   // Try to load from snapshot first
-  if(leagueId && season){
-    const compStats = await loadV1JSON(`compstats_${leagueId}_${season}.json`, null);
+  if(compstatsFile){
+    const compStats = await loadV1JSON(compstatsFile, null);
     if(compStats && compStats.metrics){
       return renderCompStatsDisplay(compStats);
     }
   }
 
-  // Fallback: calculate from matches in browser (for testing)
-  if(fallbackMatches && fallbackMatches.length > 0){
-    const agg = computeCompetitionAggregates(fallbackMatches);
-    
-    const fmt = (v, decimals = 2) => {
-      if(typeof v !== "number" || isNaN(v)) return "—";
-      return v.toFixed(decimals);
-    };
-
-    const stats = [
-      { label: T.goals_per_game || "Gols por jogo", value: fmt(agg.goalsAvg) },
-      { label: T.shots_per_game || "Chutes por jogo", value: fmt(agg.shotsAvg) },
-      { label: T.sot_per_game || "Chutes ao gol por jogo", value: fmt(agg.shotsOnTargetAvg) },
-      { label: T.corners_per_game || "Escanteios por jogo", value: fmt(agg.cornersAvg) },
-      { label: T.cards_per_game || "Cartões por jogo", value: fmt(agg.cardsAvg) },
-    ];
-
-    const optionalStats = [];
-    if(agg.possessionCount > 0){
-      optionalStats.push({ label: T.possession_avg || "Posse média", value: fmt(agg.possessionAvg) + "%" });
-    }
-    if(agg.xgCount > 0){
-      optionalStats.push({ label: T.xg_per_game || "xG por jogo", value: fmt(agg.xgAvg) });
-    }
-    if(agg.bttsRate > 0){
-      optionalStats.push({ label: T.btts_rate || "BTTS %", value: String(agg.bttsRate) + "%" });
-    }
-    if(agg.over25Rate > 0){
-      optionalStats.push({ label: T.over25_rate || "Over 2.5 %", value: String(agg.over25Rate) + "%" });
-    }
-
-    const allStats = [...stats, ...optionalStats];
-
-    return `
-      <div class="panel" style="margin-bottom:12px;">
-        <div class="panel-title">${escAttr(T.stats_base_label || "Base")}</div>
-        <div style="opacity:.85;font-size:.9em;">
-          <div>${escAttr(T.matches_sample || "Partidas consideradas")}: <b>${escAttr(String(agg.matchesCount))}</b></div>
-          <div>${escAttr(T.teams_sample || "Times na amostra")}: <b>${escAttr(String(agg.teamsCount))}</b></div>
-          <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(T.period_7days || "7 dias")}</b></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-title">${escAttr(T.statistics_label || "Estatísticas")}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          ${allStats.map(s => `
-            <div class="stat-card" style="padding:10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
-              <div style="font-size:.9em;opacity:.8;">${escAttr(s.label)}</div>
-              <div style="font-size:1.2em;font-weight:900;margin-top:4px;">${escAttr(s.value)}</div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
+  // Fallback: show unavailable message with expected filename
+  if(compstatsFile){
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo esperado: ${escAttr(compstatsFile)}</div></div>`;
   }
 
-  return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")}</div>`;
+  return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")} (sem leagueId/season)</div>`;
 }
 
 function renderCompStatsDisplay(compStats){
@@ -2790,32 +2765,53 @@ async function openModal(type, value){
     title.textContent = displayValue ? `${T.competition_radar || "Radar da Competição"}: ${displayValue}` : (T.competition_radar || "Radar da Competição");
   }
 
-    const rows = list.map(m=>{
-      const key = matchKey(m);
-      const homeLogo = pickTeamLogo(m, "home");
-      const awayLogo = pickTeamLogo(m, "away");
-      const compDisp = competitionDisplay(m.competition, m.country, LANG);
-      return `
-        <div class="match" role="button" tabindex="0" data-open="match" data-key="${escAttr(key)}">
-          <div class="time" ${tipAttr(T.kickoff_tooltip || "")}>
-            ${fmtTime(m.kickoff_utc)}
+  // Build rows for both country and competition modals
+  const rows = list.map(m=>{
+    const key = matchKey(m);
+    const homeLogo = pickTeamLogo(m, "home");
+    const awayLogo = pickTeamLogo(m, "away");
+    const compDisp = competitionDisplay(m.competition, m.country, LANG);
+    return `
+      <div class="match" role="button" tabindex="0" data-open="match" data-key="${escAttr(key)}">
+        <div class="time" ${tipAttr(T.kickoff_tooltip || "")}>
+          ${fmtTime(m.kickoff_utc)}
+        </div>
+        <div>
+          <div class="teams">
+            <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+            <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
           </div>
-          <div>
-            <div class="teams">
-              <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-              <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
-            </div>
-            <div class="meta-chips" style="margin-top:8px">
-              <span class="meta-chip" ${tipAttr(T.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
-              <span class="meta-chip" ${tipAttr(T.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
-            </div>
+          <div class="meta-chips" style="margin-top:8px">
+            <span class="meta-chip" ${tipAttr(T.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
+            <span class="meta-chip" ${tipAttr(T.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
           </div>
         </div>
-      `;
-    }).join("");
+      </div>
+    `;
+  }).join("");
 
-    if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
+  if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
 
+  if(type === "country"){
+    // COUNTRY MODAL: Simple game list, NO tabs
+    body.innerHTML = `
+    <div class="mhead">
+      <div class="mmeta">
+        <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
+        <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
+      </div>
+      <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
+    </div>
+
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+      ${rows || `<div class="smallnote">${escAttr(T.empty_list || "Sem jogos encontrados.")}</div>`}
+    </div>
+
+    <div class="mnote">
+      <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
+    </div>
+  `;
+  }else{
     // COMPETITION MODAL WITH TABS (Jogos, Classificação, Estatísticas)
     const leagueId = parsed.leagueId || (list.length > 0 ? (list[0].competition_id || list[0].league_id || list[0].leagueId) : null);
     const season = parsed.season || (list.length > 0 ? (list[0].season || new Date(list[0].kickoff_utc).getUTCFullYear()) : null);
@@ -2853,8 +2849,6 @@ async function openModal(type, value){
       <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
     </div>
   `;
-
-    back.style.display = "flex";
 
     // Bind tab toggles (fresh binding for each modal, no global guards)
     const btns = qsa("#modal_body .tab-btn");
@@ -2901,7 +2895,9 @@ async function openModal(type, value){
         } 
       });
     });
+  }
 
+  back.style.display = "flex";
   bindModalClicks();
 }
 
