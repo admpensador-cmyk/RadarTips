@@ -610,10 +610,20 @@ function squareFor(ch){
 }
 async function loadJSON(url, fallback){
   try{
+    const isCompSnapshot = /standings_|compstats_/.test(url);
+    if(isCompSnapshot) console.log("[loadJSON] Fetching from:", url);
     const r = await fetch(url,{cache:"no-store"});
-    if(!r.ok) throw 0;
-    return await r.json();
-  }catch{ return fallback; }
+    if(!r.ok){
+      if(isCompSnapshot) console.log("[loadJSON] Failed, status:", r.status);
+      throw 0;
+    }
+    const data = await r.json();
+    if(isCompSnapshot) console.log("[loadJSON] Success, data keys:", Object.keys(data));
+    return data;
+  }catch(e){ 
+    if(/standings_|compstats_/.test(url)) console.log("[loadJSON] Exception:", e, "url:", url);
+    return fallback; 
+  }
 }
 
 // Prefer Worker API (/api/v1) with automatic fallback to static files (/data/v1).
@@ -2837,9 +2847,9 @@ async function openModal(type, value){
     </div>
 
     <div class="tab-buttons">
-      <button class="tab-btn active" data-tab="games">${escAttr(T.games_tab || "Jogos")}</button>
-      <button class="tab-btn" data-tab="table">${escAttr(T.standings_tab || "Classificação")}</button>
-      <button class="tab-btn" data-tab="stats">${escAttr(T.stats_tab || "Estatísticas")}</button>
+      <button class="tab-btn active" data-tab="games">${escAttr(T.games_tab || "Games")}</button>
+      <button class="tab-btn" data-tab="table">${escAttr(T.standings_tab || "Standings")}</button>
+      <button class="tab-btn" data-tab="stats">${escAttr(T.stats_tab || "Statistics")}</button>
     </div>
 
     <div class="tab-panels">
@@ -2867,10 +2877,14 @@ async function openModal(type, value){
     body.removeEventListener("click", window.__tabClickHandler);
     body.removeEventListener("keydown", window.__tabKeydownHandler);
 
+    console.log("[COMPETITION MODAL] Initializing tabs with leagueId=", leagueId, "season=", season);
+
     // Bind tab events using event delegation (single listener on body)
     window.__tabClickHandler = async (e) => {
       const btn = e.target.closest(".tab-btn");
       if (!btn) return;
+      
+      console.log("[TAB CLICK] Button clicked", { dataTab: btn.getAttribute("data-tab"), leagueId, season });
       
       e.stopPropagation();
       const btns = qsa("#modal_body .tab-btn");
@@ -2885,9 +2899,12 @@ async function openModal(type, value){
       // Lazy-load standings on first click of table tab
       if(tab === "table"){
         const tablePanel = qs("#comp-table");
+        console.log("[TAB CLICK] Table tab clicked, panel exists:", !!tablePanel, "already loaded:", tablePanel?.dataset.loaded);
         if(tablePanel && !tablePanel.dataset.loaded){
           tablePanel.dataset.loaded = "1";
+          console.log("[TAB CLICK] Calling renderCompetitionStandings with leagueId=", leagueId, "season=", season);
           const html = await renderCompetitionStandings(leagueId, season);
+          console.log("[TAB CLICK] Standings HTML received, length:", html?.length);
           tablePanel.innerHTML = html;
         }
       }
@@ -2895,9 +2912,12 @@ async function openModal(type, value){
       // Lazy-load stats on first click of stats tab
       if(tab === "stats"){
         const statsPanel = qs("#comp-stats");
+        console.log("[TAB CLICK] Stats tab clicked, panel exists:", !!statsPanel, "already loaded:", statsPanel?.dataset.loaded);
         if(statsPanel && !statsPanel.dataset.loaded){
           statsPanel.dataset.loaded = "1";
+          console.log("[TAB CLICK] Calling renderCompetitionStats with leagueId=", leagueId, "season=", season);
           const html = await renderCompetitionStats(leagueId, season, list);
+          console.log("[TAB CLICK] Stats HTML received, length:", html?.length);
           statsPanel.innerHTML = html;
         }
       }
