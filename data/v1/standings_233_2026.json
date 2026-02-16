@@ -1,0 +1,133 @@
+{
+  "generated_at_utc": "2026-02-16T12:00:00.000Z",
+  "leagueId": 233,
+  "season": 2026,
+  "league": {
+    "id": 233,
+    "name": "Premier League",
+    "country": "England",
+    "logo": "https://media.api-sports.io/leagues/233.png"
+  },
+  "standings": [
+    {
+      "rank": 1,
+      "team": {
+        "id": 50,
+        "name": "Manchester City",
+        "logo": "https://media.api-sports.io/teams/50.png"
+      },
+      "points": 38,
+      "goalsDiff": 18,
+      "all": {
+        "played": 14,
+        "win": 12,
+        "draw": 2,
+        "lose": 0,
+        "goals": {
+          "for": 35,
+          "against": 17
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "team": {
+        "id": 47,
+        "name": "Liverpool",
+        "logo": "https://media.api-sports.io/teams/47.png"
+      },
+      "points": 36,
+      "goalsDiff": 15,
+      "all": {
+        "played": 14,
+        "win": 11,
+        "draw": 3,
+        "lose": 0,
+        "goals": {
+          "for": 33,
+          "against": 18
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "team": {
+        "id": 42,
+        "name": "Arsenal",
+        "logo": "https://media.api-sports.io/teams/42.png"
+      },
+      "points": 34,
+      "goalsDiff": 12,
+      "all": {
+        "played": 14,
+        "win": 10,
+        "draw": 4,
+        "lose": 0,
+        "goals": {
+          "for": 31,
+          "against": 19
+        }
+      }
+    },
+    {
+      "rank": 4,
+      "team": {
+        "id": 49,
+        "name": "Chelsea",
+        "logo": "https://media.api-sports.io/teams/49.png"
+      },
+      "points": 30,
+      "goalsDiff": 8,
+      "all": {
+        "played": 14,
+        "win": 9,
+        "draw": 3,
+        "lose": 2,
+        "goals": {
+          "for": 26,
+          "against": 18
+        }
+      }
+    },
+    {
+      "rank": 5,
+      "team": {
+        "id": 52,
+        "name": "Brighton",
+        "logo": "https://media.api-sports.io/teams/52.png"
+      },
+      "points": 28,
+      "goalsDiff": 5,
+      "all": {
+        "played": 14,
+        "win": 8,
+        "draw": 4,
+        "lose": 2,
+        "goals": {
+          "for": 24,
+          "against": 19
+        }
+      }
+    },
+    {
+      "rank": 6,
+      "team": {
+        "id": 55,
+        "name": "Tottenham",
+        "logo": "https://media.api-sports.io/teams/55.png"
+      },
+      "points": 26,
+      "goalsDiff": 2,
+      "all": {
+        "played": 14,
+        "win": 7,
+        "draw": 5,
+        "lose": 2,
+        "goals": {
+          "for": 22,
+          "against": 20
+        }
+      }
+    }
+  ]
+}

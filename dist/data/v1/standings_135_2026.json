@@ -1,0 +1,41 @@
+{
+  "generated_at_utc": "2026-02-16T17:16:05.312Z",
+  "leagueId": 135,
+  "season": 2026,
+  "standings": [
+    {
+      "rank": 1,
+      "team": {
+        "name": "Team 1"
+      },
+      "points": 30,
+      "all": {
+        "played": 12,
+        "win": 9,
+        "draw": 3,
+        "lose": 0,
+        "goals": {
+          "for": 25,
+          "against": 15
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "team": {
+        "name": "Team 2"
+      },
+      "points": 27,
+      "all": {
+        "played": 12,
+        "win": 8,
+        "draw": 3,
+        "lose": 1,
+        "goals": {
+          "for": 23,
+          "against": 16
+        }
+      }
+    }
+  ]
+}
