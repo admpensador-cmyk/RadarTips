@@ -2231,6 +2231,333 @@ async function fetchDatasetSmart(source) {
   return null;
 }
 
+function computeCompetitionAggregates(matches){
+  if(!matches || matches.length === 0){
+    return {
+      matchesCount: 0,
+      teamsCount: 0,
+      goalsTotal: 0,
+      goalsAvg: 0,
+      bttsRate: 0,
+      over25Rate: 0,
+      possessionAvg: 0,
+      shotsAvg: 0,
+      shotsOnTargetAvg: 0,
+      cornersAvg: 0,
+      cardsAvg: 0,
+      xgAvg: 0
+    };
+  }
+
+  const agg = {
+    matchesCount: matches.length,
+    teamsCount: 0,
+    goalsTotal: 0,
+    goalsAvg: 0,
+    bttsCount: 0,
+    bttsRate: 0,
+    over25Count: 0,
+    over25Rate: 0,
+    possessionSum: 0,
+    possessionCount: 0,
+    possessionAvg: 0,
+    shotsSum: 0,
+    shotsCount: 0,
+    shotsAvg: 0,
+    shotsOnTargetSum: 0,
+    shotOnTargetCount: 0,
+    shotsOnTargetAvg: 0,
+    cornersSum: 0,
+    cornersCount: 0,
+    cornersAvg: 0,
+    cardsSum: 0,
+    cardsCount: 0,
+    cardsAvg: 0,
+    xgSum: 0,
+    xgCount: 0,
+    xgAvg: 0
+  };
+
+  const teams = new Set();
+  let matchesWithScore = 0;
+
+  matches.forEach(m => {
+    // Teams
+    if(m.home) teams.add(String(m.home).trim().toLowerCase());
+    if(m.away) teams.add(String(m.away).trim().toLowerCase());
+
+    // Goals
+    const goalHome = m.goals_home ?? m.goalsHome ?? null;
+    const goalAway = m.goals_away ?? m.goalsAway ?? null;
+    if(goalHome !== null && goalAway !== null){
+      if(!isNaN(goalHome) && !isNaN(goalAway)){
+        agg.goalsTotal += Number(goalHome) + Number(goalAway);
+        matchesWithScore++;
+        
+        // BTTS
+        if(goalHome > 0 && goalAway > 0) agg.bttsCount++;
+        // Over 2.5
+        if(Number(goalHome) + Number(goalAway) > 2.5) agg.over25Count++;
+      }
+    }
+
+    // Possession
+    const posHome = m.stats?.home?.possession ?? m.possession_home ?? null;
+    const posAway = m.stats?.away?.possession ?? m.possession_away ?? null;
+    if(posHome !== null && !isNaN(posHome)){
+      agg.possessionSum += Number(posHome);
+      agg.possessionCount++;
+    }
+    if(posAway !== null && !isNaN(posAway)){
+      agg.possessionSum += Number(posAway);
+      agg.possessionCount++;
+    }
+
+    // Shots
+    const shotsHome = m.stats?.home?.shots ?? m.shots_home ?? null;
+    const shotsAway = m.stats?.away?.shots ?? m.shots_away ?? null;
+    if(shotsHome !== null && !isNaN(shotsHome)){
+      agg.shotsSum += Number(shotsHome);
+      agg.shotsCount++;
+    }
+    if(shotsAway !== null && !isNaN(shotsAway)){
+      agg.shotsSum += Number(shotsAway);
+      agg.shotsCount++;
+    }
+
+    // Shots on Target
+    const sotHome = m.stats?.home?.shots_on_target ?? m.shots_on_target_home ?? null;
+    const sotAway = m.stats?.away?.shots_on_target ?? m.shots_on_target_away ?? null;
+    if(sotHome !== null && !isNaN(sotHome)){
+      agg.shotsOnTargetSum += Number(sotHome);
+      agg.shotOnTargetCount++;
+    }
+    if(sotAway !== null && !isNaN(sotAway)){
+      agg.shotsOnTargetSum += Number(sotAway);
+      agg.shotOnTargetCount++;
+    }
+
+    // Corners
+    const cornHome = m.stats?.home?.corners ?? m.corners_home ?? null;
+    const cornAway = m.stats?.away?.corners ?? m.corners_away ?? null;
+    if(cornHome !== null && !isNaN(cornHome)){
+      agg.cornersSum += Number(cornHome);
+      agg.cornersCount++;
+    }
+    if(cornAway !== null && !isNaN(cornAway)){
+      agg.cornersSum += Number(cornAway);
+      agg.cornersCount++;
+    }
+
+    // Cards
+    const cardsHome = m.stats?.home?.yellow_cards ?? m.yellow_cards_home ?? null;
+    const cardsAway = m.stats?.away?.yellow_cards ?? m.yellow_cards_away ?? null;
+    if(cardsHome !== null && !isNaN(cardsHome)){
+      agg.cardsSum += Number(cardsHome);
+      agg.cardsCount++;
+    }
+    if(cardsAway !== null && !isNaN(cardsAway)){
+      agg.cardsSum += Number(cardsAway);
+      agg.cardsCount++;
+    }
+
+    // xG
+    const xgHome = m.stats?.home?.xg ?? m.xg_home ?? null;
+    const xgAway = m.stats?.away?.xg ?? m.xg_away ?? null;
+    if(xgHome !== null && !isNaN(xgHome)){
+      agg.xgSum += Number(xgHome);
+      agg.xgCount++;
+    }
+    if(xgAway !== null && !isNaN(xgAway)){
+      agg.xgSum += Number(xgAway);
+      agg.xgCount++;
+    }
+  });
+
+  // Compute averages
+  agg.teamsCount = teams.size;
+  if(matchesWithScore > 0){
+    agg.goalsAvg = agg.goalsTotal / matchesWithScore;
+    agg.bttsRate = Math.round((agg.bttsCount / matchesWithScore) * 100);
+    agg.over25Rate = Math.round((agg.over25Count / matchesWithScore) * 100);
+  }
+
+  if(agg.possessionCount > 0){
+    agg.possessionAvg = agg.possessionSum / agg.possessionCount;
+  }
+  if(agg.shotsCount > 0){
+    agg.shotsAvg = agg.shotsSum / agg.shotsCount;
+  }
+  if(agg.shotOnTargetCount > 0){
+    agg.shotsOnTargetAvg = agg.shotsOnTargetSum / agg.shotOnTargetCount;
+  }
+  if(agg.cornersCount > 0){
+    agg.cornersAvg = agg.cornersSum / agg.cornersCount;
+  }
+  if(agg.cardsCount > 0){
+    agg.cardsAvg = agg.cardsSum / agg.cardsCount;
+  }
+  if(agg.xgCount > 0){
+    agg.xgAvg = agg.xgSum / agg.xgCount;
+  }
+
+  return agg;
+}
+
+async function renderCompetitionStandings(leagueId, season){
+  if(!leagueId){
+    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
+  }
+
+  const season_str = season || "2025";
+  const urls = [
+    `/api/v1/standings_${leagueId}_${season_str}.json`,
+    `/data/v1/standings_${leagueId}_${season_str}.json`
+  ];
+
+  let standings = null;
+  for(const url of urls){
+    try{
+      const r = await fetch(url, {method:"GET", cache:"force-cache"});
+      if(!r.ok) continue;
+      const data = await r.json();
+      standings = data;
+      break;
+    }catch(e){ /* ignore */ }
+  }
+
+  if(!standings){
+    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
+  }
+
+  // Normalize standings data (accept various formats)
+  let table = null;
+  if(Array.isArray(standings.standings)){
+    table = standings.standings;
+  } else if(standings.standings && Array.isArray(standings.standings[0]?.league?.standings)){
+    table = standings.standings[0].league.standings;
+  } else if(standings.table && Array.isArray(standings.table)){
+    table = standings.table;
+  } else if(Array.isArray(standings)){
+    table = standings;
+  }
+
+  if(!table || table.length === 0){
+    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
+  }
+
+  // Render table
+  const rows = table.map((row, idx) => {
+    const rank = row.rank || row.position || (idx + 1);
+    const team = row.team?.name || row.team || row.name || "—";
+    const played = row.played || row.matches_played || row.p || 0;
+    const wins = row.wins || row.w || 0;
+    const draws = row.draws || row.d || 0;
+    const losses = row.losses || row.losses || row.l || 0;
+    const gf = row.goals_for || row.gf || row.gp || 0;
+    const ga = row.goals_against || row.ga || row.gc || 0;
+    const gd = (gf - ga);
+    const points = row.points || row.pts || 0;
+
+    const isTopFour = rank <= 4;
+    const isReligation = rank > table.length - 4;
+    const rowClass = isTopFour ? "standings-row top-four" : isReligation ? "standings-row religation" : "standings-row";
+
+    return `<tr class="${rowClass}">
+      <td class="rank">${escAttr(String(rank))}</td>
+      <td class="team-name">${escAttr(team)}</td>
+      <td class="number">${escAttr(String(played))}</td>
+      <td class="number">${escAttr(String(wins))}</td>
+      <td class="number">${escAttr(String(draws))}</td>
+      <td class="number">${escAttr(String(losses))}</td>
+      <td class="number">${escAttr(String(gf))}</td>
+      <td class="number">${escAttr(String(ga))}</td>
+      <td class="number goal-diff">${escAttr(String(gd > 0 ? '+' : '') + gd)}</td>
+      <td class="number points" style="font-weight:900;"><strong>${escAttr(String(points))}</strong></td>
+    </tr>`;
+  }).join("");
+
+  return `<table class="standings-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>${escAttr(T.team_label || "Time")}</th>
+        <th>${escAttr(T.played_short || "J")}</th>
+        <th>${escAttr(T.wins_short || "V")}</th>
+        <th>${escAttr(T.draws_short || "E")}</th>
+        <th>${escAttr(T.losses_short || "D")}</th>
+        <th>${escAttr(T.goals_for_short || "GP")}</th>
+        <th>${escAttr(T.goals_against_short || "GC")}</th>
+        <th>${escAttr(T.goal_diff_short || "SG")}</th>
+        <th>${escAttr(T.points_short || "PTS")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+    </tbody>
+  </table>`;
+}
+
+function renderCompetitionStats(matches){
+  if(!matches || matches.length === 0){
+    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")}</div>`;
+  }
+
+  const agg = computeCompetitionAggregates(matches);
+  
+  const fmt = (v, decimals = 2) => {
+    if(typeof v !== "number" || isNaN(v)) return "—";
+    return v.toFixed(decimals);
+  };
+
+  const stats = [
+    { label: T.goals_per_game || "Gols por jogo", value: fmt(agg.goalsAvg) },
+    { label: T.shots_per_game || "Chutes por jogo", value: fmt(agg.shotsAvg) },
+    { label: T.sot_per_game || "Chutes ao gol por jogo", value: fmt(agg.shotsOnTargetAvg) },
+    { label: T.corners_per_game || "Escanteios por jogo", value: fmt(agg.cornersAvg) },
+    { label: T.cards_per_game || "Cartões por jogo", value: fmt(agg.cardsAvg) },
+  ];
+
+  const optionalStats = [];
+  if(agg.possessionCount > 0){
+    optionalStats.push({ label: T.possession_avg || "Posse média", value: fmt(agg.possessionAvg) + "%" });
+  }
+  if(agg.xgCount > 0){
+    optionalStats.push({ label: T.xg_per_game || "xG por jogo", value: fmt(agg.xgAvg) });
+  }
+  if(agg.bttsRate > 0){
+    optionalStats.push({ label: T.btts_rate || "BTTS %", value: String(agg.bttsRate) + "%" });
+  }
+  if(agg.over25Rate > 0){
+    optionalStats.push({ label: T.over25_rate || "Over 2.5 %", value: String(agg.over25Rate) + "%" });
+  }
+
+  const allStats = [...stats, ...optionalStats];
+
+  return `
+    <div class="panel" style="margin-bottom:12px;">
+      <div class="panel-title">${escAttr(T.stats_base_label || "Base")}</div>
+      <div style="opacity:.85;font-size:.9em;">
+        <div>${escAttr(T.matches_sample || "Partidas consideradas")}: <b>${escAttr(String(agg.matchesCount))}</b></div>
+        <div>${escAttr(T.teams_sample || "Times na amostra")}: <b>${escAttr(String(agg.teamsCount))}</b></div>
+        <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(T.period_7days || "7 dias")}</b></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">${escAttr(T.statistics_label || "Estatísticas")}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${allStats.map(s => `
+          <div class="stat-card" style="padding:10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
+            <div style="font-size:.9em;opacity:.8;">${escAttr(s.label)}</div>
+            <div style="font-size:1.2em;font-weight:900;margin-top:4px;">${escAttr(s.value)}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 async function openModal(type, value){
   console.log("openModal called:", type, value);
   
@@ -2449,6 +2776,10 @@ async function openModal(type, value){
 
     if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
 
+    // COMPETITION MODAL WITH TABS (Jogos, Classificação, Estatísticas)
+    const leagueId = parsed.leagueId || (list.length > 0 ? (list[0].competition_id || list[0].league_id || list[0].leagueId) : null);
+    const season = parsed.season || (list.length > 0 ? (list[0].season || new Date(list[0].kickoff_utc).getUTCFullYear()) : null);
+
     body.innerHTML = `
     <div class="mhead">
       <div class="mmeta">
@@ -2458,8 +2789,24 @@ async function openModal(type, value){
       <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
     </div>
 
-    <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-      ${rows || `<div class="smallnote">${escAttr(T.empty_list || "Sem jogos encontrados.")}</div>`}
+    <div class="tab-buttons">
+      <button class="tab-btn active" data-tab="games">${escAttr(T.games_tab || "Jogos")}</button>
+      <button class="tab-btn" data-tab="table">${escAttr(T.standings_tab || "Classificação")}</button>
+      <button class="tab-btn" data-tab="stats">${escAttr(T.stats_tab || "Estatísticas")}</button>
+    </div>
+
+    <div class="tab-panels">
+      <div class="tab-panel" id="comp-games">
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+          ${rows || `<div class="smallnote">${escAttr(T.empty_list || "Sem jogos encontrados.")}</div>`}
+        </div>
+      </div>
+      <div class="tab-panel" id="comp-table" style="display:none">
+        <div style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>
+      </div>
+      <div class="tab-panel" id="comp-stats" style="display:none">
+        ${renderCompetitionStats(list)}
+      </div>
     </div>
 
     <div class="mnote">
@@ -2467,7 +2814,43 @@ async function openModal(type, value){
     </div>
   `;
 
-  back.style.display = "flex";
+    back.style.display = "flex";
+
+    // Bind tab toggles (guard against duplicate listeners)
+    if(!window.__COMP_TAB_BOUND__){
+      window.__COMP_TAB_BOUND__ = true;
+
+      const btns = qsa("#modal_body .tab-btn");
+      btns.forEach(b=>{
+        b.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          btns.forEach(x=>x.classList.remove("active"));
+          b.classList.add("active");
+          const tab = b.getAttribute("data-tab");
+          
+          qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
+          qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
+          qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
+
+          // Lazy-load standings on first click
+          if(tab === "table" && !window.__COMP_TABLE_LOADED__){
+            window.__COMP_TABLE_LOADED__ = true;
+            const tablePanel = qs("#comp-table");
+            if(tablePanel){
+              const html = await renderCompetitionStandings(leagueId, season);
+              tablePanel.innerHTML = html;
+            }
+          }
+        });
+        b.addEventListener("keydown", (e)=>{ 
+          if(e.key==="Enter"||e.key===" "){ 
+            e.preventDefault(); 
+            b.click(); 
+          } 
+        });
+      });
+    }
+
   bindModalClicks();
 }
 
@@ -2977,6 +3360,59 @@ function injectPatchStyles(){
   .subgroup.collapsed .chev{ transform: rotate(-90deg); }
   .group.collapsed .subgroups{ display:none; }
   .subgroup.collapsed .matches{ display:none; }
+
+  /* Standings table */
+  .standings-table{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    margin-top: 12px;
+  }
+  .standings-table thead {
+    background: rgba(255,255,255,.06);
+  }
+  .standings-table th {
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 900;
+    opacity: 0.85;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+  }
+  .standings-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .standings-table tbody tr {
+    transition: background 0.15s ease;
+  }
+  .standings-table tbody tr:hover {
+    background: rgba(255,255,255,.04);
+  }
+  .standings-table td.rank {
+    font-weight: 900;
+    opacity: 0.85;
+    width: 2em;
+  }
+  .standings-table td.team-name {
+    font-weight: 800;
+  }
+  .standings-table td.number {
+    text-align: center;
+    opacity: 0.85;
+  }
+  .standings-table td.points {
+    font-weight: 950;
+    color: #4ade80;
+  }
+  .standings-table td.goal-diff {
+    opacity: 0.85;
+  }
+  .standings-row.top-four {
+    background: rgba(59,130,246,.08);
+  }
+  .standings-row.religation {
+    background: rgba(239,68,68,.08);
+  }
   `;
   document.head.appendChild(style);
 }
