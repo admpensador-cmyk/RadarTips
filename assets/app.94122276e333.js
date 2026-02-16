@@ -2423,6 +2423,30 @@ async function openModal(type, value){
     title.textContent = displayValue ? `${T.competition_radar || "Radar da Competição"}: ${displayValue}` : (T.competition_radar || "Radar da Competição");
   }
 
+    const rows = list.map(m=>{
+      const key = matchKey(m);
+      const homeLogo = pickTeamLogo(m, "home");
+      const awayLogo = pickTeamLogo(m, "away");
+      const compDisp = competitionDisplay(m.competition, m.country, LANG);
+      return `
+        <div class="match" role="button" tabindex="0" data-open="match" data-key="${escAttr(key)}">
+          <div class="time" ${tipAttr(T.kickoff_tooltip || "")}>
+            ${fmtTime(m.kickoff_utc)}
+          </div>
+          <div>
+            <div class="teams">
+              <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+              <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+            </div>
+            <div class="meta-chips" style="margin-top:8px">
+              <span class="meta-chip" ${tipAttr(T.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
+              <span class="meta-chip" ${tipAttr(T.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
     if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
 
     body.innerHTML = `

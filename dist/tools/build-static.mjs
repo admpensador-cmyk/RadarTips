@@ -72,6 +72,7 @@ async function updateHtmlFiles(htmlFiles, newName) {
     }
     // Inject a small build badge into every page so humans can visually confirm deployed bundle
     try{
+      html = html.replace(/\s*<!-- build-badge -->[\s\S]*?<!-- \/build-badge -->\s*/g, "\n");
       const d = new Date();
       const pad = (n)=> String(n).padStart(2,'0');
       const badgeDate = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
