@@ -2405,57 +2405,29 @@ function computeCompetitionAggregates(matches){
 }
 
 async function renderCompetitionStandings(leagueId, season){
-  if(!leagueId){
+  if(!leagueId || !season){
     return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
   }
 
-  const season_str = season || "2025";
-  const urls = [
-    `/api/v1/standings_${leagueId}_${season_str}.json`,
-    `/data/v1/standings_${leagueId}_${season_str}.json`
-  ];
-
-  let standings = null;
-  for(const url of urls){
-    try{
-      const r = await fetch(url, {method:"GET", cache:"force-cache"});
-      if(!r.ok) continue;
-      const data = await r.json();
-      standings = data;
-      break;
-    }catch(e){ /* ignore */ }
+  // Load from API/R2/static
+  const standings = await loadV1JSON(`standings_${leagueId}_${season}.json`, null);
+  
+  if(!standings || !standings.standings || standings.standings.length === 0){
+    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (leagueId=${leagueId} season=${season})</div>`;
   }
 
-  if(!standings){
-    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
-  }
-
-  // Normalize standings data (accept various formats)
-  let table = null;
-  if(Array.isArray(standings.standings)){
-    table = standings.standings;
-  } else if(standings.standings && Array.isArray(standings.standings[0]?.league?.standings)){
-    table = standings.standings[0].league.standings;
-  } else if(standings.table && Array.isArray(standings.table)){
-    table = standings.table;
-  } else if(Array.isArray(standings)){
-    table = standings;
-  }
-
-  if(!table || table.length === 0){
-    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div>`;
-  }
+  const table = standings.standings;
 
   // Render table
   const rows = table.map((row, idx) => {
     const rank = row.rank || row.position || (idx + 1);
     const team = row.team?.name || row.team || row.name || "—";
-    const played = row.played || row.matches_played || row.p || 0;
-    const wins = row.wins || row.w || 0;
-    const draws = row.draws || row.d || 0;
-    const losses = row.losses || row.losses || row.l || 0;
-    const gf = row.goals_for || row.gf || row.gp || 0;
-    const ga = row.goals_against || row.ga || row.gc || 0;
+    const played = row.all?.played || row.played || row.matches_played || row.p || 0;
+    const wins = row.all?.win || row.wins || row.w || 0;
+    const draws = row.all?.draw || row.draws || row.d || 0;
+    const losses = row.all?.lose || row.losses || row.l || 0;
+    const gf = row.all?.goals?.for || row.goals_for || row.gf || row.gp || 0;
+    const ga = row.all?.goals?.against || row.goals_against || row.ga || row.gc || 0;
     const gd = (gf - ga);
     const points = row.points || row.pts || 0;
 
@@ -2498,38 +2470,106 @@ async function renderCompetitionStandings(leagueId, season){
   </table>`;
 }
 
-function renderCompetitionStats(matches){
-  if(!matches || matches.length === 0){
-    return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")}</div>`;
+async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
+  // Try to load from snapshot first
+  if(leagueId && season){
+    const compStats = await loadV1JSON(`compstats_${leagueId}_${season}.json`, null);
+    if(compStats && compStats.metrics){
+      return renderCompStatsDisplay(compStats);
+    }
   }
 
-  const agg = computeCompetitionAggregates(matches);
-  
+  // Fallback: calculate from matches in browser (for testing)
+  if(fallbackMatches && fallbackMatches.length > 0){
+    const agg = computeCompetitionAggregates(fallbackMatches);
+    
+    const fmt = (v, decimals = 2) => {
+      if(typeof v !== "number" || isNaN(v)) return "—";
+      return v.toFixed(decimals);
+    };
+
+    const stats = [
+      { label: T.goals_per_game || "Gols por jogo", value: fmt(agg.goalsAvg) },
+      { label: T.shots_per_game || "Chutes por jogo", value: fmt(agg.shotsAvg) },
+      { label: T.sot_per_game || "Chutes ao gol por jogo", value: fmt(agg.shotsOnTargetAvg) },
+      { label: T.corners_per_game || "Escanteios por jogo", value: fmt(agg.cornersAvg) },
+      { label: T.cards_per_game || "Cartões por jogo", value: fmt(agg.cardsAvg) },
+    ];
+
+    const optionalStats = [];
+    if(agg.possessionCount > 0){
+      optionalStats.push({ label: T.possession_avg || "Posse média", value: fmt(agg.possessionAvg) + "%" });
+    }
+    if(agg.xgCount > 0){
+      optionalStats.push({ label: T.xg_per_game || "xG por jogo", value: fmt(agg.xgAvg) });
+    }
+    if(agg.bttsRate > 0){
+      optionalStats.push({ label: T.btts_rate || "BTTS %", value: String(agg.bttsRate) + "%" });
+    }
+    if(agg.over25Rate > 0){
+      optionalStats.push({ label: T.over25_rate || "Over 2.5 %", value: String(agg.over25Rate) + "%" });
+    }
+
+    const allStats = [...stats, ...optionalStats];
+
+    return `
+      <div class="panel" style="margin-bottom:12px;">
+        <div class="panel-title">${escAttr(T.stats_base_label || "Base")}</div>
+        <div style="opacity:.85;font-size:.9em;">
+          <div>${escAttr(T.matches_sample || "Partidas consideradas")}: <b>${escAttr(String(agg.matchesCount))}</b></div>
+          <div>${escAttr(T.teams_sample || "Times na amostra")}: <b>${escAttr(String(agg.teamsCount))}</b></div>
+          <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(T.period_7days || "7 dias")}</b></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">${escAttr(T.statistics_label || "Estatísticas")}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          ${allStats.map(s => `
+            <div class="stat-card" style="padding:10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
+              <div style="font-size:.9em;opacity:.8;">${escAttr(s.label)}</div>
+              <div style="font-size:1.2em;font-weight:900;margin-top:4px;">${escAttr(s.value)}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")}</div>`;
+}
+
+function renderCompStatsDisplay(compStats){
   const fmt = (v, decimals = 2) => {
-    if(typeof v !== "number" || isNaN(v)) return "—";
+    if(v === null || v === undefined) return "—";
+    if(typeof v !== "number") return String(v);
+    if(isNaN(v)) return "—";
     return v.toFixed(decimals);
   };
 
+  const metrics = compStats.metrics || {};
+  const sample = compStats.sample || {};
+
   const stats = [
-    { label: T.goals_per_game || "Gols por jogo", value: fmt(agg.goalsAvg) },
-    { label: T.shots_per_game || "Chutes por jogo", value: fmt(agg.shotsAvg) },
-    { label: T.sot_per_game || "Chutes ao gol por jogo", value: fmt(agg.shotsOnTargetAvg) },
-    { label: T.corners_per_game || "Escanteios por jogo", value: fmt(agg.cornersAvg) },
-    { label: T.cards_per_game || "Cartões por jogo", value: fmt(agg.cardsAvg) },
+    { label: T.goals_per_game || "Gols por jogo", value: fmt(metrics.goals_avg) },
+    { label: T.shots_per_game || "Chutes por jogo", value: fmt(metrics.shots_avg) },
+    { label: T.sot_per_game || "Chutes ao gol por jogo", value: fmt(metrics.sot_avg) },
+    { label: T.corners_per_game || "Escanteios por jogo", value: fmt(metrics.corners_avg) },
+    { label: T.cards_per_game || "Cartões por jogo", value: fmt(metrics.cards_avg) },
   ];
 
   const optionalStats = [];
-  if(agg.possessionCount > 0){
-    optionalStats.push({ label: T.possession_avg || "Posse média", value: fmt(agg.possessionAvg) + "%" });
+  if(metrics.possession_avg !== null && metrics.possession_avg !== undefined){
+    optionalStats.push({ label: T.possession_avg || "Posse média", value: fmt(metrics.possession_avg) + "%" });
   }
-  if(agg.xgCount > 0){
-    optionalStats.push({ label: T.xg_per_game || "xG por jogo", value: fmt(agg.xgAvg) });
+  if(metrics.xg_avg !== null && metrics.xg_avg !== undefined){
+    optionalStats.push({ label: T.xg_per_game || "xG por jogo", value: fmt(metrics.xg_avg) });
   }
-  if(agg.bttsRate > 0){
-    optionalStats.push({ label: T.btts_rate || "BTTS %", value: String(agg.bttsRate) + "%" });
+  if(metrics.btts_pct !== null && metrics.btts_pct !== undefined){
+    optionalStats.push({ label: T.btts_rate || "BTTS %", value: String(metrics.btts_pct) + "%" });
   }
-  if(agg.over25Rate > 0){
-    optionalStats.push({ label: T.over25_rate || "Over 2.5 %", value: String(agg.over25Rate) + "%" });
+  if(metrics.over25_pct !== null && metrics.over25_pct !== undefined){
+    optionalStats.push({ label: T.over25_rate || "Over 2.5 %", value: String(metrics.over25_pct) + "%" });
   }
 
   const allStats = [...stats, ...optionalStats];
@@ -2538,9 +2578,9 @@ function renderCompetitionStats(matches){
     <div class="panel" style="margin-bottom:12px;">
       <div class="panel-title">${escAttr(T.stats_base_label || "Base")}</div>
       <div style="opacity:.85;font-size:.9em;">
-        <div>${escAttr(T.matches_sample || "Partidas consideradas")}: <b>${escAttr(String(agg.matchesCount))}</b></div>
-        <div>${escAttr(T.teams_sample || "Times na amostra")}: <b>${escAttr(String(agg.teamsCount))}</b></div>
-        <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(T.period_7days || "7 dias")}</b></div>
+        <div>${escAttr(T.matches_sample || "Partidas consideradas")}: <b>${escAttr(String(sample.fixtures_used || 0))}</b></div>
+        <div>${escAttr(T.with_stats || "Com estatísticas")}: <b>${escAttr(String(sample.fixtures_with_stats || 0))}</b></div>
+        <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(T.generated_at || compStats.generated_at_utc || "—")}</b></div>
       </div>
     </div>
 
@@ -2805,7 +2845,7 @@ async function openModal(type, value){
         <div style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>
       </div>
       <div class="tab-panel" id="comp-stats" style="display:none">
-        ${renderCompetitionStats(list)}
+        <div style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>
       </div>
     </div>
 
@@ -2816,40 +2856,51 @@ async function openModal(type, value){
 
     back.style.display = "flex";
 
-    // Bind tab toggles (guard against duplicate listeners)
-    if(!window.__COMP_TAB_BOUND__){
-      window.__COMP_TAB_BOUND__ = true;
+    // Bind tab toggles (fresh binding for each modal, no global guards)
+    const btns = qsa("#modal_body .tab-btn");
+    btns.forEach(b=>{
+      // Use dataset.bound to avoid duplicate listeners on same button
+      if(b.dataset.bound === "1") return;
+      b.dataset.bound = "1";
 
-      const btns = qsa("#modal_body .tab-btn");
-      btns.forEach(b=>{
-        b.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          btns.forEach(x=>x.classList.remove("active"));
-          b.classList.add("active");
-          const tab = b.getAttribute("data-tab");
-          
-          qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
-          qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
-          qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        btns.forEach(x=>x.classList.remove("active"));
+        b.classList.add("active");
+        const tab = b.getAttribute("data-tab");
+        
+        qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
+        qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
+        qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
 
-          // Lazy-load standings on first click
-          if(tab === "table" && !window.__COMP_TABLE_LOADED__){
-            window.__COMP_TABLE_LOADED__ = true;
-            const tablePanel = qs("#comp-table");
-            if(tablePanel){
-              const html = await renderCompetitionStandings(leagueId, season);
-              tablePanel.innerHTML = html;
-            }
+        // Lazy-load standings on first click of table tab
+        if(tab === "table"){
+          const tablePanel = qs("#comp-table");
+          if(tablePanel && !tablePanel.dataset.loaded){
+            tablePanel.dataset.loaded = "1";
+            const html = await renderCompetitionStandings(leagueId, season);
+            tablePanel.innerHTML = html;
           }
-        });
-        b.addEventListener("keydown", (e)=>{ 
-          if(e.key==="Enter"||e.key===" "){ 
-            e.preventDefault(); 
-            b.click(); 
-          } 
-        });
+        }
+
+        // Lazy-load stats on first click of stats tab
+        if(tab === "stats"){
+          const statsPanel = qs("#comp-stats");
+          if(statsPanel && !statsPanel.dataset.loaded){
+            statsPanel.dataset.loaded = "1";
+            const html = await renderCompetitionStats(leagueId, season, list);
+            statsPanel.innerHTML = html;
+          }
+        }
       });
-    }
+
+      b.addEventListener("keydown", (e)=>{ 
+        if(e.key==="Enter"||e.key===" "){ 
+          e.preventDefault(); 
+          b.click(); 
+        } 
+      });
+    });
 
   bindModalClicks();
 }
