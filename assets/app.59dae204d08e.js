@@ -2462,6 +2462,17 @@ async function renderCompetitionStandings(leagueId, season){
   }
 
   const table = standings.standings;
+  
+  // Reject dummy data (Team 1, Team 2, etc.) - indicates snapshot not yet populated with real data
+  const isDummy = table.some(row => {
+    const teamName = (row.team?.name || row.team || row.name || "").toLowerCase();
+    return /^team\s*\d+$/.test(teamName);
+  });
+  
+  if(isDummy){
+    console.log("[STANDINGS] Detected dummy data (Team 1/2...), rejecting");
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Aguardando dados reais da API...</div></div>`;
+  }
 
   // Render table
   const rows = table.map((row, idx) => {
@@ -2523,6 +2534,13 @@ async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
   if(compstatsFile){
     const compStats = await loadV1JSON(compstatsFile, null);
     console.log("[STATS] Loaded data:", { compstatsFile, has_metrics: compStats && compStats.metrics, keys: compStats ? Object.keys(compStats) : [] });
+    
+    // Reject dummy data (no real metrics)
+    if(compStats && (!compStats.metrics || Object.keys(compStats.metrics).length === 0)){
+      console.log("[STATS] Detected dummy/empty metrics, rejecting");
+      return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Aguardando dados reais da API...</div></div>`;
+    }
+    
     if(compStats && compStats.metrics){
       return renderCompStatsDisplay(compStats);
     }
