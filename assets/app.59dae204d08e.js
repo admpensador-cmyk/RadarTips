@@ -611,17 +611,17 @@ function squareFor(ch){
 async function loadJSON(url, fallback){
   try{
     const isCompSnapshot = /standings_|compstats_/.test(url);
-    if(isCompSnapshot && RADAR_DEBUG) console.log("[loadJSON] Fetching from:", url);
+    if(isCompSnapshot) console.log("[loadJSON] Fetching from:", url);
     const r = await fetch(url,{cache:"no-store"});
     if(!r.ok){
-      if(isCompSnapshot && RADAR_DEBUG) console.log("[loadJSON] Failed, status:", r.status);
+      if(isCompSnapshot) console.log("[loadJSON] Failed, status:", r.status);
       throw 0;
     }
     const data = await r.json();
-    if(isCompSnapshot && RADAR_DEBUG) console.log("[loadJSON] Success, data keys:", Object.keys(data));
+    if(isCompSnapshot) console.log("[loadJSON] Success, data keys:", Object.keys(data));
     return data;
   }catch(e){ 
-    if(/standings_|compstats_/.test(url) && RADAR_DEBUG) console.log("[loadJSON] Exception:", e, "url:", url);
+    if(/standings_|compstats_/.test(url)) console.log("[loadJSON] Exception:", e, "url:", url);
     return fallback; 
   }
 }
@@ -723,14 +723,8 @@ async function loadV1JSON(file, fallback){
     if (DEBUG_CAL && file === 'calendar_7d.json') {
       console.warn('[CAL] Attempting R2 worker:', `${V1_DATA_BASE}/${file}`);
     }
-    if (RADAR_DEBUG) {
-      console.log('[SNAPSHOT] Trying worker:', `${V1_DATA_BASE}/${file}`);
-    }
     const data = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
     if(data) {
-      if (RADAR_DEBUG) {
-        console.log('[SNAPSHOT] Loaded from worker:', file);
-      }
       if (DEBUG_CAL && file === 'calendar_7d.json') {
         console.warn('[CAL] R2 worker responded:', {
           keys: Object.keys(data),
@@ -744,14 +738,7 @@ async function loadV1JSON(file, fallback){
     if (DEBUG_CAL && file === 'calendar_7d.json') {
       console.warn('[CAL] R2 worker failed, trying static fallback:', `${V1_STATIC_BASE}/${file}`);
     }
-    if (RADAR_DEBUG) {
-      console.log('[SNAPSHOT] Worker failed, trying static:', `${V1_STATIC_BASE}/${file}`);
-    }
-    const staticData = await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
-    if (staticData && RADAR_DEBUG) {
-      console.log('[SNAPSHOT] Loaded from static:', file);
-    }
-    return staticData;
+    return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
   }
 
   // Default: API first (used for live, etc.), then static fallback.
@@ -1484,17 +1471,16 @@ function competitionDisplay(rawComp, country, lang){
 
 function competitionValue(m){
   // Prefer numeric id if available, fallback to name.
-  const id = m && (m.competition_id || m.league_id || m.leagueId || m.league?.id);
+  const id = m && (m.competition_id || m.league_id || m.leagueId);
   if(id !== undefined && id !== null && String(id).trim() !== "") return String(id);
   return String(m?.competition || "");
 }
 
 // Build a competition key to open the competition modal.
-// Prefer structured key with leagueId + season, plus name + country for fallback.
+// Prefer `leagueId|season` when possible, otherwise return leagueName.
 function competitionKey(m){
-  const id = m && (m.competition_id || m.league_id || m.leagueId || m.league?.id);
+  const id = m && (m.competition_id || m.league_id || m.leagueId);
   const compName = String(m?.competition || "").trim();
-  const countryName = String(m?.country || "").trim();
   let season = m?.season || m?.season_id || m?.seasonId;
   if(!season){
     try{
@@ -1503,10 +1489,13 @@ function competitionKey(m){
     }catch(e){ /* ignore */ }
   }
 
-  const leagueId = (id !== undefined && id !== null && String(id).trim() !== "") ? String(id).trim() : "";
-  const seasonVal = (season !== undefined && season !== null && String(season).trim() !== "") ? String(season).trim() : "";
-  const key = `league:${leagueId}|season:${seasonVal}|name:${compName}|country:${countryName}`;
-  return encodeURIComponent(key);
+  if(id !== undefined && id !== null && String(id).trim() !== ""){
+    const key = season ? `${String(id)}|${String(season)}` : `${String(id)}`;
+    return encodeURIComponent(key);
+  }
+
+  // fallback to name
+  return encodeURIComponent(compName || "");
 }
 
 // Parse a decoded radar key into structured object
@@ -1537,14 +1526,8 @@ function parseRadarKey(k){
         obj[k2]=v2;
       }
     });
-    if(obj.league || obj.leagueid || obj.league_id || obj.name || obj.country){
-      return {
-        mode: "competition",
-        leagueId: obj.league || obj.leagueid || obj.league_id,
-        season: obj.season,
-        leagueName: obj.name,
-        countryName: obj.country
-      };
+    if(obj.league || obj.leagueid || obj.league_id){
+      return {mode: "competition", leagueId: obj.league || obj.leagueid || obj.league_id, season: obj.season};
     }
   }
 
@@ -1553,11 +1536,7 @@ function parseRadarKey(k){
     return {mode: "competition", leagueId: parts[0].trim(), season: parts[1].trim()};
   }
 
-  // Fallback: league name, optionally with country suffix
-  const nameParts = str.split("|").map(s => s.trim()).filter(Boolean);
-  if(nameParts.length === 2){
-    return {mode: "competition", leagueName: nameParts[0], countryName: nameParts[1]};
-  }
+  // Fallback: treat entire string as league name
   return {mode: "competition", leagueName: str};
 }
 
@@ -2468,7 +2447,7 @@ function getCompetitionSnapshotNames(leagueId, season) {
 async function renderCompetitionStandings(leagueId, season){
   const { standingsFile } = getCompetitionSnapshotNames(leagueId, season);
   
-  if(RADAR_DEBUG) console.log("[STANDINGS] Loading:", { standingsFile, leagueId, season });
+  console.log("[STANDINGS] Loading:", { standingsFile, leagueId, season });
   
   if(!standingsFile){
     return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (sem leagueId/season)</div>`;
@@ -2476,89 +2455,37 @@ async function renderCompetitionStandings(leagueId, season){
 
   // Load from API/R2/static
   const standings = await loadV1JSON(standingsFile, null);
-  const table = standings?.standings
-    || standings?.response?.[0]?.league?.standings?.[0]
-    || standings?.league?.standings?.[0]
-    || [];
-
-  if(RADAR_DEBUG) {
-    console.log("[STANDINGS] Loaded data:", {
-      standingsFile,
-      has_standings: Array.isArray(table),
-      count: Array.isArray(table) ? table.length : 0
-    });
-  }
-
-  if(!standings || !Array.isArray(table) || table.length === 0){
-    if(RADAR_DEBUG) console.log("[STANDINGS] Snapshot missing or empty", { standingsFile, leagueId, season });
+  console.log("[STANDINGS] Loaded data:", { standingsFile, has_standings: standings && standings.standings, count: standings?.standings?.length || 0 });
+  
+  if(!standings || !standings.standings || standings.standings.length === 0){
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
   }
 
-  const toNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  };
-
-  const normalized = table.map((row, idx) => {
-    const teamNameRaw = row.team?.name || row.team || row.name || "";
-    const teamName = String(teamNameRaw || "").trim();
-    const teamId = row.team?.id || row.team_id || row.teamId || row.id || null;
-    if(!teamName && !teamId) return null;
-    if(/^team\s*\d+$/i.test(teamName)) return null;
-
-    const rank = toNum(row.rank ?? row.position ?? (idx + 1));
-    const played = toNum(row.all?.played ?? row.played ?? row.matches_played ?? row.p);
-    const points = toNum(row.points ?? row.pts);
-    if(rank === null || played === null || points === null) return null;
-
-    const wins = toNum(row.all?.win ?? row.wins ?? row.w) ?? 0;
-    const draws = toNum(row.all?.draw ?? row.draws ?? row.d) ?? 0;
-    const losses = toNum(row.all?.lose ?? row.losses ?? row.l) ?? 0;
-    const gf = toNum(row.all?.goals?.for ?? row.goals_for ?? row.gf ?? row.gp) ?? 0;
-    const ga = toNum(row.all?.goals?.against ?? row.goals_against ?? row.ga ?? row.gc) ?? 0;
-    const gd = gf - ga;
-
-    return {
-      rank,
-      teamName,
-      played,
-      wins,
-      draws,
-      losses,
-      gf,
-      ga,
-      gd,
-      points
-    };
-  }).filter(Boolean);
-
-  if(normalized.length === 0){
-    if(RADAR_DEBUG) console.log("[STANDINGS] All rows filtered as invalid", { standingsFile, leagueId, season });
-    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
+  const table = standings.standings;
+  
+  // Reject dummy data (Team 1, Team 2, etc.) - indicates snapshot not yet populated with real data
+  const isDummy = table.some(row => {
+    const teamName = (row.team?.name || row.team || row.name || "").toLowerCase();
+    return /^team\s*\d+$/.test(teamName);
+  });
+  
+  if(isDummy){
+    console.log("[STANDINGS] Detected dummy data (Team 1/2...), rejecting");
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Aguardando dados reais da API...</div></div>`;
   }
-
-  const incomplete = normalized.length < 8;
-  const generatedAt = standings?.generated_at_utc || standings?.generated_at || standings?.timestamp || "—";
-  if(incomplete && RADAR_DEBUG) {
-    console.log("[STANDINGS] Incomplete table", { standingsFile, count: normalized.length, generatedAt });
-  }
-
-  const warning = incomplete
-    ? `<div class="smallnote" style="padding:10px 12px;margin-bottom:8px;opacity:.8;">${escAttr(T.standings_incomplete || "Standings incompleto")}: ${escAttr(String(normalized.length))} ${escAttr(T.teams_label || "times")}. ${escAttr(T.generated_at || "Gerado em")}: ${escAttr(String(generatedAt))}</div>`
-    : "";
 
   // Render table
-  const rows = normalized.map((row) => {
-    const rank = row.rank;
-    const team = row.teamName || "—";
-    const played = row.played;
-    const wins = row.wins;
-    const draws = row.draws;
-    const losses = row.losses;
-    const gf = row.gf;
-    const ga = row.ga;
-    const gd = row.gd;
-    const points = row.points;
+  const rows = table.map((row, idx) => {
+    const rank = row.rank || row.position || (idx + 1);
+    const team = row.team?.name || row.team || row.name || "—";
+    const played = row.all?.played || row.played || row.matches_played || row.p || 0;
+    const wins = row.all?.win || row.wins || row.w || 0;
+    const draws = row.all?.draw || row.draws || row.d || 0;
+    const losses = row.all?.lose || row.losses || row.l || 0;
+    const gf = row.all?.goals?.for || row.goals_for || row.gf || row.gp || 0;
+    const ga = row.all?.goals?.against || row.goals_against || row.ga || row.gc || 0;
+    const gd = (gf - ga);
+    const points = row.points || row.pts || 0;
 
     const isTopFour = rank <= 4;
     const isReligation = rank > table.length - 4;
@@ -2578,7 +2505,7 @@ async function renderCompetitionStandings(leagueId, season){
     </tr>`;
   }).join("");
 
-  return `${warning}<div class="standings-wrap"><table class="standings-table">
+  return `<div class="standings-wrap"><table class="standings-table">
     <thead>
       <tr>
         <th>#</th>
@@ -2602,15 +2529,15 @@ async function renderCompetitionStandings(leagueId, season){
 async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
   const { compstatsFile } = getCompetitionSnapshotNames(leagueId, season);
   
-  if(RADAR_DEBUG) console.log("[STATS] Loading:", { compstatsFile, leagueId, season });
+  console.log("[STATS] Loading:", { compstatsFile, leagueId, season });
   
   if(compstatsFile){
     const compStats = await loadV1JSON(compstatsFile, null);
-    if(RADAR_DEBUG) console.log("[STATS] Loaded data:", { compstatsFile, has_metrics: compStats && compStats.metrics, keys: compStats ? Object.keys(compStats) : [] });
+    console.log("[STATS] Loaded data:", { compstatsFile, has_metrics: compStats && compStats.metrics, keys: compStats ? Object.keys(compStats) : [] });
     
     // Reject dummy data (no real metrics)
     if(compStats && (!compStats.metrics || Object.keys(compStats.metrics).length === 0)){
-      if(RADAR_DEBUG) console.log("[STATS] Detected dummy/empty metrics, rejecting");
+      console.log("[STATS] Detected dummy/empty metrics, rejecting");
       return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Aguardando dados reais da API...</div></div>`;
     }
     
@@ -2621,35 +2548,10 @@ async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
 
   // Fallback: show unavailable message with expected filename
   if(compstatsFile){
-    if(RADAR_DEBUG) console.log("[STATS] Snapshot missing or empty", { compstatsFile, leagueId, season });
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(compstatsFile)}</div></div>`;
   }
 
   return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")} (sem leagueId/season)</div>`;
-}
-
-function formatSeasonLabel(seasonRaw, country, generatedAtUtc){
-  if(seasonRaw === null || seasonRaw === undefined) return null;
-  const seasonNum = Number(seasonRaw);
-  if(!Number.isFinite(seasonNum)) return String(seasonRaw);
-
-  const annualCountries = new Set(["brazil", "argentina", "mexico"]);
-  const c = String(country || "").trim().toLowerCase();
-  const isAnnual = annualCountries.has(c);
-
-  let month = null;
-  if(generatedAtUtc){
-    const d = new Date(generatedAtUtc);
-    if(!isNaN(d.getTime())) month = d.getUTCMonth() + 1;
-  }
-
-  if(!isAnnual && month !== null){
-    if(month <= 6){
-      return `${seasonNum - 1}/${seasonNum}`;
-    }
-    return `${seasonNum}/${seasonNum + 1}`;
-  }
-  return String(seasonNum);
 }
 
 function renderCompStatsDisplay(compStats){
@@ -2659,12 +2561,6 @@ function renderCompStatsDisplay(compStats){
     if(isNaN(v)) return "—";
     return v.toFixed(decimals);
   };
-
-  const leagueName = compStats?.league?.name || "—";
-  const leagueCountry = compStats?.league?.country || "";
-  const leagueTitle = leagueCountry ? `${leagueName} (${leagueCountry})` : leagueName;
-  const seasonRaw = compStats?.league?.season ?? null;
-  const seasonLabel = formatSeasonLabel(seasonRaw, compStats?.league?.country, compStats?.generated_at_utc);
 
   const metrics = compStats.metrics || {};
   const sample = compStats.sample || {};
@@ -2695,11 +2591,11 @@ function renderCompStatsDisplay(compStats){
 
   return `
     <div class="panel" style="margin-bottom:12px;">
-      <div class="panel-title">${escAttr(leagueTitle)}</div>
+      <div class="panel-title">${escAttr(T.stats_base_label || "Base")}</div>
       <div style="opacity:.85;font-size:.9em;">
         <div>${escAttr(T.matches_sample || "Partidas consideradas")}: <b>${escAttr(String(sample.fixtures_used || 0))}</b></div>
         <div>${escAttr(T.with_stats || "Com estatísticas")}: <b>${escAttr(String(sample.fixtures_with_stats || 0))}</b></div>
-        <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(seasonLabel || "—")}</b></div>
+        <div>${escAttr(T.period_label || "Período")}: <b>${escAttr(T.generated_at || compStats.generated_at_utc || "—")}</b></div>
       </div>
     </div>
 
@@ -2718,7 +2614,7 @@ function renderCompStatsDisplay(compStats){
 }
 
 async function openModal(type, value){
-  if(RADAR_DEBUG) console.log("openModal called:", type, value);
+  console.log("openModal called:", type, value);
   
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");
@@ -2893,54 +2789,20 @@ async function openModal(type, value){
     title.textContent = displayValue ? `${T.country_radar || "Radar do País"}: ${displayValue}` : (T.country_radar || "Radar do País");
   }else{
     // competition mode: use parsed fields (leagueId+season preferred)
-    let ambiguity = null;
     if(parsed.leagueId){
       list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(parsed.leagueId));
       if(parsed.season){
         list = list.filter(m => String(m?.season || new Date(m.kickoff_utc).getUTCFullYear()) === String(parsed.season));
       }
-      if(list.length === 0){
-        ambiguity = "indisponivel";
-      }
       const sample = list[0];
       displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueId;
     }else if(parsed.leagueName){
       list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(parsed.leagueName));
-      if(parsed.countryName){
-        list = list.filter(m => normalize(m.country) === normalize(parsed.countryName));
-      }else{
-        ambiguity = "ambigua";
-      }
-      if(list.length === 0){
-        ambiguity = "indisponivel";
-      }else if(list.length > 1){
-        ambiguity = "ambigua";
-      }
       const sample = list[0];
       displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueName;
-    }else{
-      ambiguity = "ambigua";
     }
 
     title.textContent = displayValue ? `${T.competition_radar || "Radar da Competição"}: ${displayValue}` : (T.competition_radar || "Radar da Competição");
-
-    if(ambiguity){
-      const msgTitle = ambiguity === "ambigua"
-        ? (T.competition_ambiguous || "Competição ambígua")
-        : (T.competition_unavailable || "Competição indisponível");
-      const msgText = ambiguity === "ambigua"
-        ? (T.competition_ambiguous_tip || "Escolha a competição diretamente na lista para evitar colisões entre ligas com o mesmo nome.")
-        : (T.competition_unavailable_tip || "Não foi possível identificar a liga/temporada. Tente novamente mais tarde.");
-      body.innerHTML = `
-        <div class="smallnote" style="padding:20px;text-align:center;">
-          <div style="font-size:1.1em;margin-bottom:10px;">${escAttr(msgTitle)}</div>
-          <div style="opacity:0.7;">${escAttr(msgText)}</div>
-        </div>
-      `;
-      back.style.display = "flex";
-      bindModalClicks();
-      return;
-    }
   }
 
   // Build rows for both country and competition modals
@@ -3034,14 +2896,14 @@ async function openModal(type, value){
     body.removeEventListener("click", window.__tabClickHandler);
     body.removeEventListener("keydown", window.__tabKeydownHandler);
 
-    if(RADAR_DEBUG) console.log("[COMPETITION MODAL] Initializing tabs", { leagueId, season, parsed });
+    console.log("[COMPETITION MODAL] Initializing tabs with leagueId=", leagueId, "season=", season);
 
     // Bind tab events using event delegation (single listener on body)
     window.__tabClickHandler = async (e) => {
       const btn = e.target.closest(".tab-btn");
       if (!btn) return;
       
-      if(RADAR_DEBUG) console.log("[TAB CLICK] Button clicked", { dataTab: btn.getAttribute("data-tab"), leagueId, season });
+      console.log("[TAB CLICK] Button clicked", { dataTab: btn.getAttribute("data-tab"), leagueId, season });
       
       e.stopPropagation();
       const btns = qsa("#modal_body .tab-btn");
@@ -3056,12 +2918,12 @@ async function openModal(type, value){
       // Lazy-load standings on first click of table tab
       if(tab === "table"){
         const tablePanel = qs("#comp-table");
-        if(RADAR_DEBUG) console.log("[TAB CLICK] Table tab clicked, panel exists:", !!tablePanel, "already loaded:", tablePanel?.dataset.loaded);
+        console.log("[TAB CLICK] Table tab clicked, panel exists:", !!tablePanel, "already loaded:", tablePanel?.dataset.loaded);
         if(tablePanel && !tablePanel.dataset.loaded){
           tablePanel.dataset.loaded = "1";
-          if(RADAR_DEBUG) console.log("[TAB CLICK] Calling renderCompetitionStandings", { leagueId, season });
+          console.log("[TAB CLICK] Calling renderCompetitionStandings with leagueId=", leagueId, "season=", season);
           const html = await renderCompetitionStandings(leagueId, season);
-          if(RADAR_DEBUG) console.log("[TAB CLICK] Standings HTML received, length:", html?.length);
+          console.log("[TAB CLICK] Standings HTML received, length:", html?.length);
           tablePanel.innerHTML = html;
         }
       }
@@ -3069,12 +2931,12 @@ async function openModal(type, value){
       // Lazy-load stats on first click of stats tab
       if(tab === "stats"){
         const statsPanel = qs("#comp-stats");
-        if(RADAR_DEBUG) console.log("[TAB CLICK] Stats tab clicked, panel exists:", !!statsPanel, "already loaded:", statsPanel?.dataset.loaded);
+        console.log("[TAB CLICK] Stats tab clicked, panel exists:", !!statsPanel, "already loaded:", statsPanel?.dataset.loaded);
         if(statsPanel && !statsPanel.dataset.loaded){
           statsPanel.dataset.loaded = "1";
-          if(RADAR_DEBUG) console.log("[TAB CLICK] Calling renderCompetitionStats", { leagueId, season });
+          console.log("[TAB CLICK] Calling renderCompetitionStats with leagueId=", leagueId, "season=", season);
           const html = await renderCompetitionStats(leagueId, season, list);
-          if(RADAR_DEBUG) console.log("[TAB CLICK] Stats HTML received, length:", html?.length);
+          console.log("[TAB CLICK] Stats HTML received, length:", html?.length);
           statsPanel.innerHTML = html;
         }
       }
