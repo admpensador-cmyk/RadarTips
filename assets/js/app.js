@@ -632,6 +632,12 @@ window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scr
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
 const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json"]);
 
+// Helper to check if a file is a standings or compstats snapshot (pattern matching)
+function isCompetitionSnapshot(filename){
+  if(!filename) return false;
+  return /^standings_\d+_\d+\.json$/.test(filename) || /^compstats_\d+_\d+\.json$/.test(filename);
+}
+
 // Normalize calendar payload to handle multiple API formats
 function normalizeCalendarPayload(data) {
   if (!data || typeof data !== 'object') {
@@ -703,7 +709,7 @@ function normalizeCalendarPayload(data) {
 
 async function loadV1JSON(file, fallback){
   // For snapshots, prefer R2 data worker first.
-  if(SNAPSHOT_FILES.has(file)){
+  if(SNAPSHOT_FILES.has(file) || isCompetitionSnapshot(file)){
     if (DEBUG_CAL && file === 'calendar_7d.json') {
       console.warn('[CAL] Attempting R2 worker:', `${V1_DATA_BASE}/${file}`);
     }
@@ -2430,15 +2436,18 @@ function getCompetitionSnapshotNames(leagueId, season) {
 async function renderCompetitionStandings(leagueId, season){
   const { standingsFile } = getCompetitionSnapshotNames(leagueId, season);
   
+  console.log("[STANDINGS] Loading:", { standingsFile, leagueId, season });
+  
   if(!standingsFile){
     return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (sem leagueId/season)</div>`;
   }
 
   // Load from API/R2/static
   const standings = await loadV1JSON(standingsFile, null);
+  console.log("[STANDINGS] Loaded data:", { standingsFile, has_standings: standings && standings.standings, count: standings?.standings?.length || 0 });
   
   if(!standings || !standings.standings || standings.standings.length === 0){
-    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo esperado: ${escAttr(standingsFile)}</div></div>`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
   }
 
   const table = standings.standings;
@@ -2498,9 +2507,11 @@ async function renderCompetitionStandings(leagueId, season){
 async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
   const { compstatsFile } = getCompetitionSnapshotNames(leagueId, season);
   
-  // Try to load from snapshot first
+  console.log("[STATS] Loading:", { compstatsFile, leagueId, season });
+  
   if(compstatsFile){
     const compStats = await loadV1JSON(compstatsFile, null);
+    console.log("[STATS] Loaded data:", { compstatsFile, has_metrics: compStats && compStats.metrics, keys: compStats ? Object.keys(compStats) : [] });
     if(compStats && compStats.metrics){
       return renderCompStatsDisplay(compStats);
     }
@@ -2508,7 +2519,7 @@ async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
 
   // Fallback: show unavailable message with expected filename
   if(compstatsFile){
-    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo esperado: ${escAttr(compstatsFile)}</div></div>`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(compstatsFile)}</div></div>`;
   }
 
   return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.no_stats_available || "Sem dados de estatísticas.")} (sem leagueId/season)</div>`;
@@ -2850,51 +2861,53 @@ async function openModal(type, value){
     </div>
   `;
 
-    // Bind tab toggles (fresh binding for each modal, no global guards)
-    const btns = qsa("#modal_body .tab-btn");
-    btns.forEach(b=>{
-      // Use dataset.bound to avoid duplicate listeners on same button
-      if(b.dataset.bound === "1") return;
-      b.dataset.bound = "1";
+    // Bind tab toggles AFTER DOM is ready (delay slightly to ensure DOM update)
+    setTimeout(() => {
+      const btns = qsa("#modal_body .tab-btn");
+      btns.forEach(b=>{
+        // Use dataset.bound to avoid duplicate listeners on same button
+        if(b.dataset.bound === "1") return;
+        b.dataset.bound = "1";
 
-      b.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        btns.forEach(x=>x.classList.remove("active"));
-        b.classList.add("active");
-        const tab = b.getAttribute("data-tab");
-        
-        qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
-        qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
-        qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
+        b.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          btns.forEach(x=>x.classList.remove("active"));
+          b.classList.add("active");
+          const tab = b.getAttribute("data-tab");
+          
+          qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
+          qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
+          qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
 
-        // Lazy-load standings on first click of table tab
-        if(tab === "table"){
-          const tablePanel = qs("#comp-table");
-          if(tablePanel && !tablePanel.dataset.loaded){
-            tablePanel.dataset.loaded = "1";
-            const html = await renderCompetitionStandings(leagueId, season);
-            tablePanel.innerHTML = html;
+          // Lazy-load standings on first click of table tab
+          if(tab === "table"){
+            const tablePanel = qs("#comp-table");
+            if(tablePanel && !tablePanel.dataset.loaded){
+              tablePanel.dataset.loaded = "1";
+              const html = await renderCompetitionStandings(leagueId, season);
+              tablePanel.innerHTML = html;
+            }
           }
-        }
 
-        // Lazy-load stats on first click of stats tab
-        if(tab === "stats"){
-          const statsPanel = qs("#comp-stats");
-          if(statsPanel && !statsPanel.dataset.loaded){
-            statsPanel.dataset.loaded = "1";
-            const html = await renderCompetitionStats(leagueId, season, list);
-            statsPanel.innerHTML = html;
+          // Lazy-load stats on first click of stats tab
+          if(tab === "stats"){
+            const statsPanel = qs("#comp-stats");
+            if(statsPanel && !statsPanel.dataset.loaded){
+              statsPanel.dataset.loaded = "1";
+              const html = await renderCompetitionStats(leagueId, season, list);
+              statsPanel.innerHTML = html;
+            }
           }
-        }
-      });
+        });
 
-      b.addEventListener("keydown", (e)=>{ 
-        if(e.key==="Enter"||e.key===" "){ 
-          e.preventDefault(); 
-          b.click(); 
-        } 
+        b.addEventListener("keydown", (e)=>{ 
+          if(e.key==="Enter"||e.key===" "){ 
+            e.preventDefault(); 
+            b.click(); 
+          } 
+        });
       });
-    });
+    }, 0);
   }
 
   back.style.display = "flex";
