@@ -2861,53 +2861,61 @@ async function openModal(type, value){
     </div>
   `;
 
-    // Bind tab toggles AFTER DOM is ready (delay slightly to ensure DOM update)
-    setTimeout(() => {
+    back.style.display = "flex";
+    
+    // Remove old tab listeners to avoid duplicates
+    body.removeEventListener("click", window.__tabClickHandler);
+    body.removeEventListener("keydown", window.__tabKeydownHandler);
+
+    // Bind tab events using event delegation (single listener on body)
+    window.__tabClickHandler = async (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (!btn) return;
+      
+      e.stopPropagation();
       const btns = qsa("#modal_body .tab-btn");
-      btns.forEach(b=>{
-        // Use dataset.bound to avoid duplicate listeners on same button
-        if(b.dataset.bound === "1") return;
-        b.dataset.bound = "1";
+      btns.forEach(x => x.classList.remove("active"));
+      btn.classList.add("active");
+      
+      const tab = btn.getAttribute("data-tab");
+      qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
+      qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
+      qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
 
-        b.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          btns.forEach(x=>x.classList.remove("active"));
-          b.classList.add("active");
-          const tab = b.getAttribute("data-tab");
-          
-          qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
-          qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
-          qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
+      // Lazy-load standings on first click of table tab
+      if(tab === "table"){
+        const tablePanel = qs("#comp-table");
+        if(tablePanel && !tablePanel.dataset.loaded){
+          tablePanel.dataset.loaded = "1";
+          const html = await renderCompetitionStandings(leagueId, season);
+          tablePanel.innerHTML = html;
+        }
+      }
 
-          // Lazy-load standings on first click of table tab
-          if(tab === "table"){
-            const tablePanel = qs("#comp-table");
-            if(tablePanel && !tablePanel.dataset.loaded){
-              tablePanel.dataset.loaded = "1";
-              const html = await renderCompetitionStandings(leagueId, season);
-              tablePanel.innerHTML = html;
-            }
-          }
+      // Lazy-load stats on first click of stats tab
+      if(tab === "stats"){
+        const statsPanel = qs("#comp-stats");
+        if(statsPanel && !statsPanel.dataset.loaded){
+          statsPanel.dataset.loaded = "1";
+          const html = await renderCompetitionStats(leagueId, season, list);
+          statsPanel.innerHTML = html;
+        }
+      }
+    };
 
-          // Lazy-load stats on first click of stats tab
-          if(tab === "stats"){
-            const statsPanel = qs("#comp-stats");
-            if(statsPanel && !statsPanel.dataset.loaded){
-              statsPanel.dataset.loaded = "1";
-              const html = await renderCompetitionStats(leagueId, season, list);
-              statsPanel.innerHTML = html;
-            }
-          }
-        });
+    window.__tabKeydownHandler = (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (!btn) return;
+      
+      if(e.key==="Enter"||e.key===" "){ 
+        e.preventDefault(); 
+        btn.click(); 
+      } 
+    };
 
-        b.addEventListener("keydown", (e)=>{ 
-          if(e.key==="Enter"||e.key===" "){ 
-            e.preventDefault(); 
-            b.click(); 
-          } 
-        });
-      });
-    }, 0);
+    // Use event delegation on modal_body
+    body.addEventListener("click", window.__tabClickHandler);
+    body.addEventListener("keydown", window.__tabKeydownHandler);
   }
 
   back.style.display = "flex";

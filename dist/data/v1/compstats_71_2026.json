@@ -1,0 +1,25 @@
+{
+  "generated_at_utc": "2026-02-16T12:00:00.000Z",
+  "leagueId": 71,
+  "season": 2026,
+  "league": {
+    "id": 71,
+    "name": "Serie A",
+    "country": "Brazil"
+  },
+  "sample": {
+    "fixtures_used": 45,
+    "fixtures_with_stats": 42
+  },
+  "metrics": {
+    "goals_avg": 2.67,
+    "shots_avg": 12.3,
+    "sot_avg": 5.1,
+    "corners_avg": 6.2,
+    "cards_avg": 3.8,
+    "possession_avg": 52.5,
+    "xg_avg": 2.15,
+    "btts_pct": 58,
+    "over25_pct": 72
+  }
+}
