@@ -103,7 +103,12 @@ jobs:
           echo "Bucket: ${R2_BUCKET_NAME}"
           echo ""
 
-          npm install -g wrangler@4.62.0 > /dev/null 2>&1
+          # Install wrangler with full error reporting
+          echo "Installing wrangler 4.62.0..."
+          if ! npm install -g wrangler@4.62.0; then
+            echo "❌ FATAL: Failed to install wrangler"
+            exit 1
+          fi
           echo "✓ wrangler installed"
           echo ""
 
@@ -167,7 +172,10 @@ jobs:
           echo ""
 
           if [[ ${FAIL_COUNT} -gt 0 ]]; then
-            echo "⚠️  Some files failed to upload"
+            echo "⚠️  Some files failed to upload (${FAIL_COUNT} failures)"
+            exit 1
+          else
+            echo "✅ All files uploaded successfully"
           fi
 
       - name: Commit if changes were made
