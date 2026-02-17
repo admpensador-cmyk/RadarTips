@@ -1,0 +1,17 @@
+﻿{
+  "schemaVersion": 1,
+  "meta": {
+    "leagueId": 40,
+    "season": 2025
+  },
+  "league": {
+    "id": 40,
+    "name": "Championship",
+    "country": "England",
+    "season": 2025,
+    "logo": "https://media.api-sports.io/football/leagues/40.png",
+    "flag": "https://media.api-sports.io/flags/gb-eng.svg"
+  },
+  "generated_at_utc": "2026-02-17T15:00:00Z",
+  "standings": []
+}

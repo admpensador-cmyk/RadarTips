@@ -1,0 +1,666 @@
+{
+  "schemaVersion": 1,
+  "generated_at_utc": "2026-02-17T17:41:29.198Z",
+  "season_rules": {
+    "description": "Regras para determinar season corretamente por país",
+    "default": {
+      "type": "europe_default",
+      "description": "Ligas europeias: julho em diante = season atual"
+    },
+    "overrides": {
+      "Brazil": {
+        "type": "calendar_year",
+        "description": "Brasil usa ano civil"
+      }
+    }
+  },
+  "totals": {
+    "standings": 39,
+    "compstats": 15,
+    "entries": 39
+  },
+  "entries": [
+    {
+      "leagueId": 2,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 2,
+        "season": 2025,
+        "file": "compstats_2_2025.json",
+        "sha1": "0b7ffbaa5feb5ac230ae72ef517c6310230dea9e",
+        "bytes": 700,
+        "generated_at_utc": "2026-02-16T22:56:05.903Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 2,
+        "season": 2025,
+        "file": "standings_2_2025.json",
+        "sha1": "73ba9cc7ee141c1cb42b8808143e447189643275",
+        "bytes": 33901,
+        "generated_at_utc": "2026-02-16T22:56:05.652Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 3,
+      "season": 2025,
+      "standings": {
+        "leagueId": 3,
+        "season": 2025,
+        "file": "standings_3_2025.json",
+        "sha1": "5acc7b59e5cfbba51c993db2306a28ba6d975cae",
+        "bytes": 33634,
+        "generated_at_utc": "2026-02-16T21:59:01.731Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 39,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 39,
+        "season": 2025,
+        "file": "compstats_39_2025.json",
+        "sha1": "5eb29dc0a7b11b3aeb8237dfc15c6a4e54037ff5",
+        "bytes": 809,
+        "generated_at_utc": "2026-02-16T23:18:47.261Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 39,
+        "season": 2025,
+        "file": "standings_39_2025.json",
+        "sha1": "d1b834938729aec62d476645bbe4eafd8c5bf91e",
+        "bytes": 18582,
+        "generated_at_utc": "2026-02-16T23:17:42.421Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 39,
+      "season": 2026,
+      "standings": {
+        "leagueId": 39,
+        "season": 2026,
+        "file": "standings_39_2026.json",
+        "sha1": "ac5cb7e23f902210d0a07ba8337173cac80e0882",
+        "bytes": 18582,
+        "generated_at_utc": "2026-02-16T21:14:22.173Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 40,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 40,
+        "season": 2025,
+        "file": "compstats_40_2025.json",
+        "sha1": "9c4539c243ec0aecf0328184e2b6428003f4a89d",
+        "bytes": 738,
+        "generated_at_utc": "2026-02-16T22:55:51.389Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 40,
+        "season": 2025,
+        "file": "standings_40_2025.json",
+        "sha1": "ff511afa8b892c9a38f0d9c9fc15bb064707f551",
+        "bytes": 383,
+        "generated_at_utc": null,
+        "schemaVersion": null
+      }
+    },
+    {
+      "leagueId": 61,
+      "season": 2025,
+      "standings": {
+        "leagueId": 61,
+        "season": 2025,
+        "file": "standings_61_2025.json",
+        "sha1": "fa3321dcd2465b1e678bca1024fdc98713193998",
+        "bytes": 16507,
+        "generated_at_utc": "2026-02-16T21:59:23.259Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 61,
+      "season": 2026,
+      "standings": {
+        "leagueId": 61,
+        "season": 2026,
+        "file": "standings_61_2026.json",
+        "sha1": "7645527975cf9fbe07b5d1b91a06eb222608c643",
+        "bytes": 16507,
+        "generated_at_utc": "2026-02-16T21:14:46.746Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 62,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 62,
+        "season": 2025,
+        "file": "compstats_62_2025.json",
+        "sha1": "8885d9ae68468070292eafe18bd0ea35c8bb8d11",
+        "bytes": 728,
+        "generated_at_utc": "2026-02-16T22:55:47.656Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 62,
+        "season": 2025,
+        "file": "standings_62_2025.json",
+        "sha1": "bfec00216a67553b890004dca3b9282d66e67e4f",
+        "bytes": 16490,
+        "generated_at_utc": "2026-02-16T22:55:47.405Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 71,
+      "season": 2025,
+      "standings": {
+        "leagueId": 71,
+        "season": 2025,
+        "file": "standings_71_2025.json",
+        "sha1": "7b1f88e3c44d8da9930b91c5ce16ddafba5f46e4",
+        "bytes": 18890,
+        "generated_at_utc": "2026-02-16T21:59:08.813Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 71,
+      "season": 2026,
+      "standings": {
+        "leagueId": 71,
+        "season": 2026,
+        "file": "standings_71_2026.json",
+        "sha1": "e98948c685a52607773b05ef84fb4fc623ff3095",
+        "bytes": 18489,
+        "generated_at_utc": "2026-02-16T21:59:07.064Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 78,
+      "season": 2025,
+      "standings": {
+        "leagueId": 78,
+        "season": 2025,
+        "file": "standings_78_2025.json",
+        "sha1": "5a1f739741191bced341ba79fbb7c5eefb1ad639",
+        "bytes": 16702,
+        "generated_at_utc": "2026-02-16T21:59:19.640Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 78,
+      "season": 2026,
+      "standings": {
+        "leagueId": 78,
+        "season": 2026,
+        "file": "standings_78_2026.json",
+        "sha1": "2b40772f2595f44b43c665579b3fae9786519d0d",
+        "bytes": 16702,
+        "generated_at_utc": "2026-02-16T21:14:43.874Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 79,
+      "season": 2025,
+      "standings": {
+        "leagueId": 79,
+        "season": 2025,
+        "file": "standings_79_2025.json",
+        "sha1": "d8dacccceed653a8d3c8d125d259dc3c105f7c67",
+        "bytes": 16751,
+        "generated_at_utc": "2026-02-16T21:59:12.464Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 98,
+      "season": 2025,
+      "standings": {
+        "leagueId": 98,
+        "season": 2025,
+        "file": "standings_98_2025.json",
+        "sha1": "c21e3f4f2afb4c0d61192cdea644b329a6e95e4c",
+        "bytes": 18510,
+        "generated_at_utc": "2026-02-16T21:59:30.294Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 98,
+      "season": 2026,
+      "standings": {
+        "leagueId": 98,
+        "season": 2026,
+        "file": "standings_98_2026.json",
+        "sha1": "ada2e448cb806f41395e7f89cba9fb529802c8ea",
+        "bytes": 18996,
+        "generated_at_utc": "2026-02-16T21:59:28.555Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 135,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 135,
+        "season": 2025,
+        "file": "compstats_135_2025.json",
+        "sha1": "16b7e63f7b8f03ed8eda6910a60a9e145c7b3a0b",
+        "bytes": 800,
+        "generated_at_utc": "2026-02-16T23:54:24.819Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 135,
+        "season": 2025,
+        "file": "standings_135_2025.json",
+        "sha1": "e684b8d06043db60efb5493c7fa2300075cc4290",
+        "bytes": 18432,
+        "generated_at_utc": "2026-02-16T23:53:22.336Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 135,
+      "season": 2026,
+      "standings": {
+        "leagueId": 135,
+        "season": 2026,
+        "file": "standings_135_2026.json",
+        "sha1": "3293d5fa8227a487d91d0aab4815bc0ba98f4982",
+        "bytes": 18432,
+        "generated_at_utc": "2026-02-16T21:14:34.865Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 136,
+      "season": 2025,
+      "standings": {
+        "leagueId": 136,
+        "season": 2025,
+        "file": "standings_136_2025.json",
+        "sha1": "20f35bf431d896c3e655bc6e598eb44c854f79bc",
+        "bytes": 18518,
+        "generated_at_utc": "2026-02-16T21:59:16.063Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 140,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 140,
+        "season": 2025,
+        "file": "compstats_140_2025.json",
+        "sha1": "67782a31eed842861fe100ef5e2c7cd271afec80",
+        "bytes": 730,
+        "generated_at_utc": "2026-02-16T22:55:55.006Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 140,
+        "season": 2025,
+        "file": "standings_140_2025.json",
+        "sha1": "a507c2087827b5a2b508793fc2291de8310d7ea6",
+        "bytes": 18681,
+        "generated_at_utc": "2026-02-16T22:55:54.757Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 140,
+      "season": 2026,
+      "standings": {
+        "leagueId": 140,
+        "season": 2026,
+        "file": "standings_140_2026.json",
+        "sha1": "91ec5dcbf9c2ac3144716fbbe28f6712016bdf7b",
+        "bytes": 18681,
+        "generated_at_utc": "2026-02-16T21:14:31.957Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 141,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 141,
+        "season": 2025,
+        "file": "compstats_141_2025.json",
+        "sha1": "af971f6086ee3a70ce826ff07845df0af13edf4f",
+        "bytes": 740,
+        "generated_at_utc": "2026-02-16T22:55:40.198Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 141,
+        "season": 2025,
+        "file": "standings_141_2025.json",
+        "sha1": "5a355a4dfacbd298655e74055a8dc6b1276e165a",
+        "bytes": 20158,
+        "generated_at_utc": "2026-02-16T22:55:39.943Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 179,
+      "season": 2025,
+      "standings": {
+        "leagueId": 179,
+        "season": 2025,
+        "file": "standings_179_2025.json",
+        "sha1": "dfc5753e8a7647ca08069b414f5b2411036e988a",
+        "bytes": 11319,
+        "generated_at_utc": "2026-02-16T21:59:33.911Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 188,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 188,
+        "season": 2025,
+        "file": "compstats_188_2025.json",
+        "sha1": "43a1c95a477aba7317baf4a0caa384fb52c06b43",
+        "bytes": 806,
+        "generated_at_utc": "2026-02-17T13:43:01.348Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 188,
+        "season": 2025,
+        "file": "standings_188_2025.json",
+        "sha1": "1b48c70a8730ec5a46434b4a976b7b8392e263f6",
+        "bytes": 11372,
+        "generated_at_utc": "2026-02-17T13:42:36.536Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 233,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 233,
+        "season": 2025,
+        "file": "compstats_233_2025.json",
+        "sha1": "22d617df6c1e40e7456e928397b13fe0cfc109b5",
+        "bytes": 806,
+        "generated_at_utc": "2026-02-17T03:34:39.890Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 233,
+        "season": 2025,
+        "file": "standings_233_2025.json",
+        "sha1": "79c123db35e2e22c308ff77d0974d533a8efc675",
+        "bytes": 19948,
+        "generated_at_utc": "2026-02-17T03:33:59.627Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 233,
+      "season": 2026,
+      "standings": {
+        "leagueId": 233,
+        "season": 2026,
+        "file": "standings_233_2026.json",
+        "sha1": "5e6bedd191eb6b52f87e2ce5e380edf0aec84fde",
+        "bytes": 19948,
+        "generated_at_utc": "2026-02-16T21:39:08.509Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 239,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 239,
+        "season": 2025,
+        "file": "compstats_239_2025.json",
+        "sha1": "1ffa37c323923d91f56710dbab4054269aeb5d88",
+        "bytes": 735,
+        "generated_at_utc": "2026-02-16T22:56:09.435Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 239,
+        "season": 2025,
+        "file": "standings_239_2025.json",
+        "sha1": "313089824c0e83b9decef9071c16d21972617bf6",
+        "bytes": 18699,
+        "generated_at_utc": "2026-02-16T22:56:09.184Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 239,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 239,
+        "season": 2026,
+        "file": "compstats_239_2026.json",
+        "sha1": "a7f057064ce14e73fdc5e7fd2333eb96538ba3a7",
+        "bytes": 735,
+        "generated_at_utc": "2026-02-16T22:56:07.658Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 239,
+        "season": 2026,
+        "file": "standings_239_2026.json",
+        "sha1": "2d582012acf60fb62c0439de0be76d0074f22b85",
+        "bytes": 18812,
+        "generated_at_utc": "2026-02-16T22:56:07.409Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 253,
+      "season": 2025,
+      "standings": {
+        "leagueId": 253,
+        "season": 2025,
+        "file": "standings_253_2025.json",
+        "sha1": "a109f168fbaa053ed78230c436b617dcc97acd17",
+        "bytes": 14393,
+        "generated_at_utc": "2026-02-16T21:59:41.241Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 262,
+      "season": 2025,
+      "standings": {
+        "leagueId": 262,
+        "season": 2025,
+        "file": "standings_262_2025.json",
+        "sha1": "35893ac8c674fe1cf881ea79fa900fa951529bdb",
+        "bytes": 16594,
+        "generated_at_utc": "2026-02-16T21:59:26.833Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 268,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 268,
+        "season": 2025,
+        "file": "compstats_268_2025.json",
+        "sha1": "633846bf6c1807466a7efa84b2b03081164fb135",
+        "bytes": 753,
+        "generated_at_utc": "2026-02-16T22:55:58.617Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 268,
+        "season": 2025,
+        "file": "standings_268_2025.json",
+        "sha1": "02cc3084931277c9a491fe615f6eabaae93d08a1",
+        "bytes": 7820,
+        "generated_at_utc": "2026-02-16T22:55:58.352Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 268,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 268,
+        "season": 2026,
+        "file": "compstats_268_2026.json",
+        "sha1": "11d1de88aca0b1be875bfc913e2aa7707e87bf34",
+        "bytes": 756,
+        "generated_at_utc": "2026-02-16T23:55:30.330Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 268,
+        "season": 2026,
+        "file": "standings_268_2026.json",
+        "sha1": "0bfae1d266f9e06c0189ba9b202b5deefe96300b",
+        "bytes": 14688,
+        "generated_at_utc": "2026-02-16T23:55:26.313Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 299,
+      "season": 2025,
+      "standings": {
+        "leagueId": 299,
+        "season": 2025,
+        "file": "standings_299_2025.json",
+        "sha1": "b2800e8f378f4923d7d915f877cf7e0c66f26224",
+        "bytes": 13273,
+        "generated_at_utc": "2026-02-16T21:59:44.725Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 299,
+      "season": 2026,
+      "standings": {
+        "leagueId": 299,
+        "season": 2026,
+        "file": "standings_299_2026.json",
+        "sha1": "97b9ff13561c1e6da241fa9c62d07eac5dec5183",
+        "bytes": 13402,
+        "generated_at_utc": "2026-02-16T21:59:42.994Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 475,
+      "season": 2026,
+      "standings": {
+        "leagueId": 475,
+        "season": 2026,
+        "file": "standings_475_2026.json",
+        "sha1": "45cedb04fe03dbb148690948bc856e8a2082924b",
+        "bytes": 15010,
+        "generated_at_utc": "2026-02-16T21:13:21.055Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 477,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 477,
+        "season": 2025,
+        "file": "compstats_477_2025.json",
+        "sha1": "c1ffe3cf0e7e59b0c59c07d9224d41a4b9cf2f8d",
+        "bytes": 735,
+        "generated_at_utc": "2026-02-16T22:55:32.842Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 477,
+        "season": 2025,
+        "file": "standings_477_2025.json",
+        "sha1": "f44e7f1c6fe2d1e61afbfa9bc08730c1ce0c4ad4",
+        "bytes": 4010,
+        "generated_at_utc": "2026-02-16T22:55:32.592Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 477,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 477,
+        "season": 2026,
+        "file": "compstats_477_2026.json",
+        "sha1": "c184d3beae1f9076f09fc79282ef122488e8e26c",
+        "bytes": 735,
+        "generated_at_utc": "2026-02-16T22:55:31.091Z",
+        "schemaVersion": 1
+      },
+      "standings": {
+        "leagueId": 477,
+        "season": 2026,
+        "file": "standings_477_2026.json",
+        "sha1": "4b9877e81f9fc98fc32c2912b40b4026b23eebc9",
+        "bytes": 5865,
+        "generated_at_utc": "2026-02-16T22:55:30.837Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 622,
+      "season": 2025,
+      "standings": {
+        "leagueId": 622,
+        "season": 2025,
+        "file": "standings_622_2025.json",
+        "sha1": "f6173eb6fad2c4988ab00955664d042723440bee",
+        "bytes": 9469,
+        "generated_at_utc": "2026-02-16T21:59:37.578Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 622,
+      "season": 2026,
+      "standings": {
+        "leagueId": 622,
+        "season": 2026,
+        "file": "standings_622_2026.json",
+        "sha1": "c245332072bdb1481b098b73fb9d018f32d65de9",
+        "bytes": 7952,
+        "generated_at_utc": "2026-02-16T21:59:35.836Z",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "leagueId": 848,
+      "season": 2025,
+      "standings": {
+        "leagueId": 848,
+        "season": 2025,
+        "file": "standings_848_2025.json",
+        "sha1": "3cb1e272b46034478ae291d1c89ce282988453ee",
+        "bytes": 33936,
+        "generated_at_utc": "2026-02-16T21:59:05.324Z",
+        "schemaVersion": 1
+      }
+    }
+  ]
+}
