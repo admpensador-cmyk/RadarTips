@@ -13,6 +13,7 @@ const CONFIG_PATH = path.join(ROOT, 'tools', 'snapshots-config.json');
 
 const STANDINGS_RE = /^standings_(\d+)_(\d+)\.json$/;
 const COMPSTATS_RE = /^compstats_(\d+)_(\d+)\.json$/;
+const CUP_RE = /^cup_(\d+)_(\d+)\.json$/;
 
 function sha1(buffer) {
   return crypto.createHash('sha1').update(buffer).digest('hex');
@@ -39,16 +40,20 @@ function loadSeasonRules() {
 function buildEntryFromFile(fileName) {
   const standingsMatch = fileName.match(STANDINGS_RE);
   const compstatsMatch = fileName.match(COMPSTATS_RE);
-  if (!standingsMatch && !compstatsMatch) return null;
+  const cupMatch = fileName.match(CUP_RE);
+  
+  if (!standingsMatch && !compstatsMatch && !cupMatch) return null;
 
-  const leagueId = Number((standingsMatch || compstatsMatch)[1]);
-  const season = Number((standingsMatch || compstatsMatch)[2]);
+  const leagueId = Number((standingsMatch || compstatsMatch || cupMatch)[1]);
+  const season = Number((standingsMatch || compstatsMatch || cupMatch)[2]);
 
   const filePath = path.join(DATA_DIR, fileName);
   const originalBuffer = fs.readFileSync(filePath);
   const parsed = safeReadJSON(filePath, originalBuffer);
 
   let buffer = originalBuffer;
+  let type = 'league'; // default
+  
   if (parsed && typeof parsed === 'object') {
     let updated = false;
     if (Number(parsed.schemaVersion) !== 1) {
@@ -65,10 +70,21 @@ function buildEntryFromFile(fileName) {
       }
     }
 
+    // Detect type from meta or file name
+    if (parsed.meta?.type === 'cup' || cupMatch) {
+      type = 'cup';
+    }
+
     if (updated) {
       buffer = Buffer.from(JSON.stringify(parsed, null, 2), 'utf8');
       fs.writeFileSync(filePath, buffer);
     }
+  }
+
+  // Determine data status
+  let dataStatus = 'ok';
+  if (parsed && parsed.standings && Array.isArray(parsed.standings) && parsed.standings.length === 0) {
+    dataStatus = 'empty';
   }
 
   return {
@@ -79,6 +95,9 @@ function buildEntryFromFile(fileName) {
     bytes: buffer.length,
     generated_at_utc: parsed?.generated_at_utc || null,
     schemaVersion: parsed?.schemaVersion ?? null,
+    type,
+    seasonSource: parsed?.meta?.seasonSource || null,
+    dataStatus
   };
 }
 
@@ -92,9 +111,10 @@ function main() {
   const entriesMap = new Map();
   let standingsCount = 0;
   let compstatsCount = 0;
+  let cupCount = 0;
 
   for (const fileName of files) {
-    const match = fileName.match(STANDINGS_RE) || fileName.match(COMPSTATS_RE);
+    const match = fileName.match(STANDINGS_RE) || fileName.match(COMPSTATS_RE) || fileName.match(CUP_RE);
     if (!match) continue;
 
     const info = buildEntryFromFile(fileName);
@@ -115,6 +135,9 @@ function main() {
     } else if (fileName.startsWith('compstats_')) {
       entry.compstats = info;
       compstatsCount++;
+    } else if (fileName.startsWith('cup_')) {
+      entry.cup = info;
+      cupCount++;
     }
   }
 
@@ -128,6 +151,7 @@ function main() {
     totals: {
       standings: standingsCount,
       compstats: compstatsCount,
+      cups: cupCount,
       entries: entries.length,
     },
     entries,
@@ -135,7 +159,8 @@ function main() {
 
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf8');
   console.log(`✅ Manifest generated: ${MANIFEST_PATH}`);
-  console.log(`   Entries: ${entries.length} | Standings: ${standingsCount} | Compstats: ${compstatsCount}`);
+  console.log(`   Entries: ${entries.length} | Standings: ${standingsCount} | Compstats: ${compstatsCount} | Cups: ${cupCount}`);
 }
 
 main();
+

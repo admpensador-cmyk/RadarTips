@@ -71,8 +71,8 @@ function runUpdate(leagueId, season) {
       path.join(__dirname, 'update-competition-extras.mjs'),
       '--leagueId', String(leagueId),
       '--season', String(season),
+      '--tryNeighbors', 'true',
       '--outDir', path.join(ROOT, 'data', 'v1'),
-      '--limitFixtures', '120',
       '--concurrency', '5',
     ], {
       cwd: ROOT,

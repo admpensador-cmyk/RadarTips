@@ -33,6 +33,7 @@ function parseArgs() {
     season: null,
     outDir: path.join(ROOT, 'data', 'v1'),
     concurrency: 5,
+    tryNeighbors: false,
   };
 
   for (let i = 0; i < args.length; i += 2) {
@@ -43,6 +44,7 @@ function parseArgs() {
     else if (key === '--season') config.season = val;
     else if (key === '--outDir') config.outDir = val;
     else if (key === '--concurrency') config.concurrency = parseInt(val, 10);
+    else if (key === '--tryNeighbors') config.tryNeighbors = val === 'true' || val === '1';
   }
 
   return config;
@@ -386,12 +388,36 @@ function saveJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
+// Count teams in standings (0 if empty/null)
+function countTeamsInStandings(standings) {
+  if (!standings || !standings.standings__list) return 0;
+  return standings.standings__list.length;
+}
+
+// Try single season fetch
+async function tryFetchSeason(leagueId, season, config) {
+  try {
+    console.log(`  📊 Trying season ${season}...`);
+    const standings = await fetchStandings(leagueId, season);
+    if (!standings) {
+      console.log(`    ⚠️  No data for season ${season}`);
+      return null;
+    }
+    const teamCount = countTeamsInStandings(standings);
+    console.log(`    ✓ Found ${teamCount} teams`);
+    return { standings, season, teamCount };
+  } catch (e) {
+    console.log(`    ⚠️  Error: ${e.message}`);
+    return null;
+  }
+}
+
 // Main
 async function main() {
   const config = parseArgs();
 
   if (!config.leagueId || !config.season) {
-    console.error('❌ Usage: node update-competition-extras.mjs --leagueId <id> --season <year>');
+    console.error('❌ Usage: node update-competition-extras.mjs --leagueId <id> --season <year> [--tryNeighbors true]');
     process.exit(1);
   }
 
@@ -407,25 +433,47 @@ async function main() {
   console.log(`⚙️  Config:`);
   console.log(`  leagueId: ${config.leagueId}`);
   console.log(`  season: ${config.season}`);
+  console.log(`  tryNeighbors: ${config.tryNeighbors}`);
   console.log(`  outDir: ${config.outDir}`);
-
   console.log(`  concurrency: ${config.concurrency}\n`);
 
   try {
-    // Fetch standings
-    const standings = await fetchStandings(config.leagueId, config.season);
-    if (!standings) {
-      console.error('❌ Failed to fetch standings');
+    // Determine seasons to try
+    const seasonNum = parseInt(config.season, 10);
+    const seasonsToTry = config.tryNeighbors
+      ? [seasonNum, seasonNum - 1, seasonNum + 1]
+      : [seasonNum];
+
+    let result = null;
+
+    // Try each season in order
+    if (config.tryNeighbors && seasonsToTry.length > 1) {
+      console.log(`🔄 Trying seasons in order: ${seasonsToTry.join(', ')}\n`);
+    }
+
+    for (const trySeasonNum of seasonsToTry) {
+      result = await tryFetchSeason(config.leagueId, trySeasonNum, config);
+      if (result && result.teamCount > 0) {
+        console.log(`✅ Winner season: ${trySeasonNum}\n`);
+        break;
+      }
+    }
+
+    if (!result) {
+      console.error('❌ Failed to fetch standings from any season');
       process.exit(1);
     }
 
+    const standings = result.standings;
+    const winnerSeason = result.season;
+
     // Save standings
-    const standingsFile = path.join(config.outDir, `standings_${config.leagueId}_${config.season}.json`);
+    const standingsFile = path.join(config.outDir, `standings_${config.leagueId}_${winnerSeason}.json`);
     saveJSON(standingsFile, standings);
     console.log(`✅ Standings saved: ${standingsFile}\n`);
 
     // Fetch fixtures
-    const fixtures = await fetchFixtures(config.leagueId, config.season);
+    const fixtures = await fetchFixtures(config.leagueId, winnerSeason);
     if (fixtures.length === 0) {
       console.warn('⚠️  No fixtures found; saving empty stats.');
     }
@@ -440,7 +488,7 @@ async function main() {
       schemaVersion: 1,
       meta: {
         leagueId: Number(config.leagueId),
-        season: Number(config.season),
+        season: Number(winnerSeason),
       },
       league: leagueInfo,
       generated_at_utc: new Date().toISOString(),
@@ -448,7 +496,7 @@ async function main() {
     };
 
     // Save compstats
-    const compStatsFile = path.join(config.outDir, `compstats_${config.leagueId}_${config.season}.json`);
+    const compStatsFile = path.join(config.outDir, `compstats_${config.leagueId}_${winnerSeason}.json`);
     saveJSON(compStatsFile, compStats);
     console.log(`✅ Competition stats saved: ${compStatsFile}\n`);
 

@@ -1,17 +1,246 @@
-﻿{
-  "schemaVersion": 1,
-  "meta": {
-    "leagueId": 40,
-    "season": 2025
-  },
+{
   "league": {
     "id": 40,
     "name": "Championship",
     "country": "England",
     "season": 2025,
     "logo": "https://media.api-sports.io/football/leagues/40.png",
-    "flag": "https://media.api-sports.io/flags/gb-eng.svg"
+    "flag": "https://media.flagcdn.com/gb.svg"
   },
-  "generated_at_utc": "2026-02-17T15:00:00Z",
-  "standings": []
+  "generated_at_utc": "2026-02-17T19:30:00.000Z",
+  "schemaVersion": 1,
+  "meta": {
+    "leagueId": 40,
+    "season": 2025,
+    "type": "league",
+    "seasonSource": "mock-test",
+    "dataStatus": "ok"
+  },
+  "standings": [
+    {
+      "rank": 1,
+      "team": {
+        "id": 39,
+        "name": "Southampton",
+        "logo": "https://media.api-sports.io/football/teams/39.png"
+      },
+      "points": 78,
+      "goalsDiff": 28,
+      "group": null,
+      "form": "WWDWW",
+      "status": "same",
+      "description": "Promotion - Premier League (Automatic)",
+      "all": {
+        "played": 38,
+        "win": 24,
+        "draw": 6,
+        "lose": 8,
+        "goals": {
+          "for": 72,
+          "against": 44
+        }
+      },
+      "home": {
+        "played": 19,
+        "win": 12,
+        "draw": 4,
+        "lose": 3,
+        "goals": {
+          "for": 36,
+          "against": 18
+        }
+      },
+      "away": {
+        "played": 19,
+        "win": 12,
+        "draw": 2,
+        "lose": 5,
+        "goals": {
+          "for": 36,
+          "against": 26
+        }
+      },
+      "update": "2026-02-17T00:00:00+00:00"
+    },
+    {
+      "rank": 2,
+      "team": {
+        "id": 62,
+        "name": "West Bromwich Albion",
+        "logo": "https://media.api-sports.io/football/teams/62.png"
+      },
+      "points": 76,
+      "goalsDiff": 26,
+      "group": null,
+      "form": "WWWDW",
+      "status": "same",
+      "description": "Promotion - Premier League (Automatic)",
+      "all": {
+        "played": 38,
+        "win": 23,
+        "draw": 7,
+        "lose": 8,
+        "goals": {
+          "for": 70,
+          "against": 44
+        }
+      },
+      "home": {
+        "played": 19,
+        "win": 12,
+        "draw": 3,
+        "lose": 4,
+        "goals": {
+          "for": 35,
+          "against": 19
+        }
+      },
+      "away": {
+        "played": 19,
+        "win": 11,
+        "draw": 4,
+        "lose": 4,
+        "goals": {
+          "for": 35,
+          "against": 25
+        }
+      },
+      "update": "2026-02-17T00:00:00+00:00"
+    },
+    {
+      "rank": 3,
+      "team": {
+        "id": 348,
+        "name": "Watford",
+        "logo": "https://media.api-sports.io/football/teams/348.png"
+      },
+      "points": 74,
+      "goalsDiff": 24,
+      "group": null,
+      "form": "WWWWL",
+      "status": "same",
+      "description": "Promotion - Premier League (Automatic)",
+      "all": {
+        "played": 38,
+        "win": 23,
+        "draw": 5,
+        "lose": 10,
+        "goals": {
+          "for": 68,
+          "against": 44
+        }
+      },
+      "home": {
+        "played": 19,
+        "win": 12,
+        "draw": 2,
+        "lose": 5,
+        "goals": {
+          "for": 34,
+          "against": 20
+        }
+      },
+      "away": {
+        "played": 19,
+        "win": 11,
+        "draw": 3,
+        "lose": 5,
+        "goals": {
+          "for": 34,
+          "against": 24
+        }
+      },
+      "update": "2026-02-17T00:00:00+00:00"
+    },
+    {
+      "rank": 4,
+      "team": {
+        "id": 348,
+        "name": "Norwich City",
+        "logo": "https://media.api-sports.io/football/teams/348.png"
+      },
+      "points": 68,
+      "goalsDiff": 18,
+      "group": null,
+      "form": "WDWDW",
+      "status": "same",
+      "description": "Promotion - Play Offs",
+      "all": {
+        "played": 38,
+        "win": 21,
+        "draw": 5,
+        "lose": 12,
+        "goals": {
+          "for": 62,
+          "against": 44
+        }
+      },
+      "home": {
+        "played": 19,
+        "win": 11,
+        "draw": 3,
+        "lose": 5,
+        "goals": {
+          "for": 31,
+          "against": 19
+        }
+      },
+      "away": {
+        "played": 19,
+        "win": 10,
+        "draw": 2,
+        "lose": 7,
+        "goals": {
+          "for": 31,
+          "against": 25
+        }
+      },
+      "update": "2026-02-17T00:00:00+00:00"
+    },
+    {
+      "rank": 5,
+      "team": {
+        "id": 384,
+        "name": "Coventry City",
+        "logo": "https://media.api-sports.io/football/teams/384.png"
+      },
+      "points": 66,
+      "goalsDiff": 16,
+      "group": null,
+      "form": "DLWWW",
+      "status": "same",
+      "description": "Promotion - Play Offs",
+      "all": {
+        "played": 38,
+        "win": 20,
+        "draw": 6,
+        "lose": 12,
+        "goals": {
+          "for": 60,
+          "against": 44
+        }
+      },
+      "home": {
+        "played": 19,
+        "win": 10,
+        "draw": 4,
+        "lose": 5,
+        "goals": {
+          "for": 30,
+          "against": 20
+        }
+      },
+      "away": {
+        "played": 19,
+        "win": 10,
+        "draw": 2,
+        "lose": 7,
+        "goals": {
+          "for": 30,
+          "against": 24
+        }
+      },
+      "update": "2026-02-17T00:00:00+00:00"
+    }
+  ]
 }
