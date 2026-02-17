@@ -18,23 +18,33 @@ async function main() {
     throw new Error("Invalid manifest structure");
   }
 
-  const firstStandings = manifest.entries.find(e => e.standings?.file);
-  const firstCompstats = manifest.entries.find(e => e.compstats?.file);
-
-  if (!firstStandings) {
+  const standingsEntries = manifest.entries.filter(e => e.standings?.file);
+  if (!standingsEntries.length) {
     throw new Error("No standings entry found in manifest");
   }
 
+  const shuffled = standingsEntries.slice();
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = tmp;
+  }
+
+  const sample = shuffled.slice(0, Math.min(3, shuffled.length));
   console.log(`[quick-check] manifest: ${manifestUrl}`);
-  console.log(`[quick-check] standings: ${firstStandings.standings.file}`);
+  console.log(`[quick-check] sampling ${sample.length} leagues`);
 
-  await fetchJSON(`${BASE_URL}/${firstStandings.standings.file}`);
+  for (const entry of sample) {
+    console.log(`[quick-check] standings: ${entry.standings.file}`);
+    await fetchJSON(`${BASE_URL}/${entry.standings.file}`);
 
-  if (firstCompstats) {
-    console.log(`[quick-check] compstats: ${firstCompstats.compstats.file}`);
-    await fetchJSON(`${BASE_URL}/${firstCompstats.compstats.file}`);
-  } else {
-    console.log("[quick-check] compstats: none found in manifest");
+    if (entry.compstats?.file) {
+      console.log(`[quick-check] compstats: ${entry.compstats.file}`);
+      await fetchJSON(`${BASE_URL}/${entry.compstats.file}`);
+    } else {
+      console.log("[quick-check] compstats: none for this league");
+    }
   }
 
   console.log("✅ quick-check passed");

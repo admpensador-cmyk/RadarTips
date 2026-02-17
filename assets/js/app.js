@@ -772,6 +772,44 @@ function findManifestEntry(manifest, leagueId, season){
   return manifest.entries.find(e => Number(e.leagueId) === lid && Number(e.season) === sn) || null;
 }
 
+function listManifestSeasons(manifest, leagueId){
+  if(!manifest || !Array.isArray(manifest.entries)) return [];
+  const lid = Number(leagueId);
+  if(!Number.isFinite(lid)) return [];
+  return manifest.entries
+    .filter(e => Number(e.leagueId) === lid)
+    .map(e => Number(e.season))
+    .filter(s => Number.isFinite(s));
+}
+
+async function resolveLeagueSeasonFromManifest({ leagueId, kickoffUTC, computedSeason }){
+  const lid = Number(leagueId);
+  if(!Number.isFinite(lid)) return null;
+
+  const manifest = await loadV1Manifest();
+  if(!manifest || !Array.isArray(manifest.entries)) return null;
+
+  const seasons = listManifestSeasons(manifest, lid);
+  if(seasons.length === 0) return null;
+
+  const computed = Number(computedSeason);
+  if(Number.isFinite(computed) && seasons.includes(computed)) return computed;
+
+  if(kickoffUTC){
+    const d = new Date(kickoffUTC);
+    if(!isNaN(d.getTime())){
+      const year = d.getUTCFullYear();
+      const candidates = [year, year - 1, year + 1];
+      for(const candidate of candidates){
+        if(seasons.includes(candidate)) return candidate;
+      }
+    }
+  }
+
+  const maxSeason = seasons.reduce((max, value) => (value > max ? value : max), -Infinity);
+  return Number.isFinite(maxSeason) ? maxSeason : null;
+}
+
 function _norm(str){ return String(str||"").trim().toLowerCase(); }
 
 function computeOutcomeFromSuggestion(sugg, gh, ga, statusShort){
@@ -2494,17 +2532,46 @@ function getCompetitionSnapshotNames(leagueId, season) {
   };
 }
 
-async function renderCompetitionStandings(leagueId, season){
-  const { standingsFile } = getCompetitionSnapshotNames(leagueId, season);
-  
-  console.log("[STANDINGS] Loading:", { standingsFile, leagueId, season });
-  
+async function renderCompetitionStandings(leagueId, season, fallbackMatches = []){
+  const lid = Number(leagueId);
+  const computedSeason = Number(season);
+  const sample = Array.isArray(fallbackMatches) ? fallbackMatches[0] : null;
+  const kickoffUTC = sample?.kickoff_utc || null;
+  const country = sample?.country || null;
+  const competitionName = sample?.competition || null;
+
+  const manifest = await loadV1Manifest();
+  const manifestSeasons = listManifestSeasons(manifest, lid);
+  const seasonResolved = await resolveLeagueSeasonFromManifest({
+    leagueId: lid,
+    kickoffUTC,
+    computedSeason
+  });
+  const entry = findManifestEntry(manifest, lid, seasonResolved);
+  const { standingsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
+
+  console.log("[STANDINGS] Resolve:", {
+    leagueId: { value: leagueId, type: typeof leagueId },
+    leagueIdNumber: lid,
+    season: { value: season, type: typeof season },
+    computedSeason,
+    kickoff_utc: kickoffUTC,
+    country,
+    competitionName,
+    manifestSeasonsCount: manifestSeasons.length,
+    seasonResolved,
+    hasExactEntry: !!entry
+  });
+
+  if(seasonResolved === null){
+    const debug = `leagueId=${String(leagueId)} kickoff=${String(kickoffUTC || "")}`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">${escAttr(debug)}</div></div>`;
+  }
+
   if(!standingsFile){
     return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (sem leagueId/season)</div>`;
   }
 
-  const manifest = await loadV1Manifest();
-  const entry = findManifestEntry(manifest, leagueId, season);
   if(!entry || !entry.standings){
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
   }
@@ -2609,15 +2676,47 @@ async function renderCompetitionStandings(leagueId, season){
 }
 
 async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
-  const { compstatsFile } = getCompetitionSnapshotNames(leagueId, season);
-  
-  console.log("[STATS] Loading:", { compstatsFile, leagueId, season });
+  const lid = Number(leagueId);
+  const computedSeason = Number(season);
+  const sample = Array.isArray(fallbackMatches) ? fallbackMatches[0] : null;
+  const kickoffUTC = sample?.kickoff_utc || null;
+  const country = sample?.country || null;
+  const competitionName = sample?.competition || null;
+
+  const manifest = await loadV1Manifest();
+  const manifestSeasons = listManifestSeasons(manifest, lid);
+  const seasonResolved = await resolveLeagueSeasonFromManifest({
+    leagueId: lid,
+    kickoffUTC,
+    computedSeason
+  });
+  const entry = findManifestEntry(manifest, lid, seasonResolved);
+  const { compstatsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
+
+  console.log("[STATS] Resolve:", {
+    leagueId: { value: leagueId, type: typeof leagueId },
+    leagueIdNumber: lid,
+    season: { value: season, type: typeof season },
+    computedSeason,
+    kickoff_utc: kickoffUTC,
+    country,
+    competitionName,
+    manifestSeasonsCount: manifestSeasons.length,
+    seasonResolved,
+    hasExactEntry: !!entry
+  });
+
+  if(seasonResolved === null){
+    const debug = `leagueId=${String(leagueId)} kickoff=${String(kickoffUTC || "")}`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">${escAttr(debug)}</div></div>`;
+  }
 
   if(compstatsFile){
-    const manifest = await loadV1Manifest();
-    const entry = findManifestEntry(manifest, leagueId, season);
-    if(!entry || !entry.compstats){
+    if(!entry){
       return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(compstatsFile)}</div></div>`;
+    }
+    if(!entry.compstats){
+      return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr("Estatísticas ainda não disponíveis para esta competição/temporada.")}</div>`;
     }
 
     const compStats = await loadV1JSON(compstatsFile, null);
@@ -2955,6 +3054,22 @@ async function openModal(type, value){
     const leagueId = parsed.leagueId || (list.length > 0 ? (list[0].competition_id || list[0].league_id || list[0].leagueId) : null);
     const derivedSeason = list.length > 0 ? (list[0].season || getSeasonFromKickoffFront(list[0].kickoff_utc, list[0].country, list[0].competition)) : null;
     const season = parsed.season || derivedSeason;
+    const kickoffUTC = list.length > 0 ? list[0].kickoff_utc : null;
+    const country = list.length > 0 ? list[0].country : null;
+    const competitionName = list.length > 0 ? list[0].competition : null;
+    const manifest = await loadV1Manifest();
+    const manifestSeasons = listManifestSeasons(manifest, leagueId);
+    const exactEntry = findManifestEntry(manifest, leagueId, season);
+
+    console.log("[COMPETITION MODAL] Context:", {
+      leagueId: { value: leagueId, type: typeof leagueId },
+      season: { value: season, type: typeof season },
+      kickoff_utc: kickoffUTC,
+      country,
+      competitionName,
+      manifestSeasonsCount: manifestSeasons.length,
+      hasExactEntry: !!exactEntry
+    });
 
     body.innerHTML = `
     <div class="mhead">
@@ -3022,7 +3137,7 @@ async function openModal(type, value){
         if(tablePanel && !tablePanel.dataset.loaded){
           tablePanel.dataset.loaded = "1";
           console.log("[TAB CLICK] Calling renderCompetitionStandings with leagueId=", leagueId, "season=", season);
-          const html = await renderCompetitionStandings(leagueId, season);
+          const html = await renderCompetitionStandings(leagueId, season, list);
           console.log("[TAB CLICK] Standings HTML received, length:", html?.length);
           tablePanel.innerHTML = html;
         }
