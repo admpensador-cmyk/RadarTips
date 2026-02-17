@@ -81,10 +81,14 @@ function buildEntryFromFile(fileName) {
     }
   }
 
-  // Determine data status
-  let dataStatus = 'ok';
-  if (parsed && parsed.standings && Array.isArray(parsed.standings) && parsed.standings.length === 0) {
-    dataStatus = 'empty';
+  // Determine data status from meta or infer from data
+  let dataStatus = 'unknown';
+  if (parsed?.meta?.dataStatus) {
+    dataStatus = parsed.meta.dataStatus;
+  } else if (parsed && parsed.standings && Array.isArray(parsed.standings)) {
+    dataStatus = parsed.standings.length === 0 ? 'empty' : 'ok';
+  } else if (parsed && parsed.rounds) {
+    dataStatus = 'not-supported'; // cup structure
   }
 
   return {
@@ -97,7 +101,8 @@ function buildEntryFromFile(fileName) {
     schemaVersion: parsed?.schemaVersion ?? null,
     type,
     seasonSource: parsed?.meta?.seasonSource || null,
-    dataStatus
+    dataStatus,
+    coverage: parsed?.meta?.coverage || null,
   };
 }
 

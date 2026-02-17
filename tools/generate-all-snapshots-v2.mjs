@@ -194,7 +194,7 @@ function generateSnapshotForLeague(leagueId, season, seasonSource, options = {})
       console.log(`📊 League ${leagueId}, Season ${season} (source: ${seasonSource})${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
 
       const proc = spawn('node', [
-        path.join(__dirname, 'update-competition-extras.mjs'),
+        path.join(__dirname, 'update-competition-extras-v2.mjs'),
         '--leagueId', String(leagueId),
         '--season', String(season),
         '--outDir', SNAPSHOTS_DIR,
