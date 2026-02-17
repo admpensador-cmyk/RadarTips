@@ -19,6 +19,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
+const API_BASE = 'https://v3.football.api-sports.io';
+const API_KEY = process.env.APIFOOTBALL_KEY;
+
 const colors = {
   reset: '\x1b[0m',
   green: '\x1b[32m',
@@ -26,6 +29,45 @@ const colors = {
   cyan: '\x1b[36m',
   dim: '\x1b[2m',
 };
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const config = {
+    concurrency: 5,
+    limitFixtures: null,
+    smoke: false,
+  };
+
+  for (let i = 0; i < args.length; i += 1) {
+    const key = args[i];
+
+    if (key === '--smoke') {
+      config.smoke = true;
+      continue;
+    }
+
+    const val = args[i + 1];
+    if (key === '--concurrency') {
+      config.concurrency = Number.parseInt(val, 10);
+      i += 1;
+      continue;
+    }
+    if (key === '--limitFixtures') {
+      config.limitFixtures = Number.parseInt(val, 10);
+      i += 1;
+      continue;
+    }
+  }
+
+  return config;
+}
+
+function assertApiKey() {
+  if (!API_KEY) {
+    console.error('❌ Error: APIFOOTBALL_KEY env var not set');
+    process.exit(1);
+  }
+}
 
 // Load calendar_7d.json
 function loadCalendar() {
@@ -49,32 +91,100 @@ function extractLeaguePairs(calendar) {
 
   calendar.matches.forEach(m => {
     const leagueId = m.competition_id || m.league_id || m.leagueId;
-    const season = m.season || (m.kickoff_utc ? new Date(m.kickoff_utc).getUTCFullYear() : null);
-
-    if (leagueId && season) {
-      const key = `${leagueId}|${season}`;
-      if (!pairs.has(key)) {
-        pairs.set(key, { leagueId, season });
-      }
+    if (leagueId && !pairs.has(String(leagueId))) {
+      pairs.set(String(leagueId), { leagueId });
     }
   });
 
   return Array.from(pairs.values());
 }
 
+function getSeasonCandidates() {
+  const nowYear = new Date().getUTCFullYear();
+  // Keep seasons within a sane window (current/prev/next).
+  return [nowYear, nowYear - 1, nowYear + 1].filter((year, idx, arr) => (
+    Number.isFinite(year) && year >= nowYear - 1 && year <= nowYear + 1 && arr.indexOf(year) === idx
+  ));
+}
+
+function explainApiIssues(status, errors) {
+  if (status === 401 || status === 403) {
+    return 'Auth/plan restriction: check APIFOOTBALL_KEY and plan access.';
+  }
+  if (status === 429) {
+    return 'Rate limit hit: slow down or wait for quota reset.';
+  }
+
+  const errorValues = (errors && typeof errors === 'object')
+    ? Object.values(errors).filter(Boolean).map(String)
+    : [];
+  const errorText = errorValues.join(' ').toLowerCase();
+
+  if (errorText.includes('subscription') || errorText.includes('plan') || errorText.includes('access')) {
+    return 'Plan restriction: standings endpoint not allowed for this subscription.';
+  }
+
+  return '';
+}
+
+async function smokeTest(leagueId, season) {
+  const endpoint = `${API_BASE}/standings?league=${leagueId}&season=${season}`;
+  console.log(`
+🧪 Smoke test standings: league=${leagueId}, season=${season}`);
+
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      'x-apisports-key': API_KEY,
+      'Accept': 'application/json',
+    },
+  });
+
+  const status = response.status;
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch (e) {
+    console.warn(`  ⚠️  Failed to parse JSON: ${e.message}`);
+  }
+
+  const errors = data?.errors || null;
+  const responseLen = Array.isArray(data?.response) ? data.response.length : 0;
+
+  console.log(`  status: ${status}`);
+  console.log(`  errors: ${errors ? JSON.stringify(errors) : 'none'}`);
+  console.log(`  response.length: ${responseLen}`);
+
+  const hint = explainApiIssues(status, errors);
+  if (hint) {
+    console.log(`  hint: ${hint}`);
+  }
+
+  if (!response.ok) {
+    process.exit(1);
+  }
+}
+
 // Run update command for a single league
-function runUpdate(leagueId, season) {
+function runUpdate(leagueId, season, config) {
   return new Promise((resolve, reject) => {
     console.log(`\n${colors.cyan}→ Updating league=${leagueId}, season=${season}${colors.reset}`);
 
-    const proc = spawn('node', [
+    const args = [
       path.join(__dirname, 'update-competition-extras.mjs'),
       '--leagueId', String(leagueId),
       '--season', String(season),
       '--tryNeighbors', 'true',
       '--outDir', path.join(ROOT, 'data', 'v1'),
-      '--concurrency', '5',
-    ], {
+      '--concurrency', String(config.concurrency),
+    ];
+
+    if (Number.isFinite(config.limitFixtures)) {
+      args.push('--limitFixtures', String(config.limitFixtures));
+    }
+
+    const proc = spawn('node', args, {
       cwd: ROOT,
       stdio: 'inherit',
     });
@@ -82,26 +192,30 @@ function runUpdate(leagueId, season) {
     proc.on('close', (code) => {
       if (code === 0) {
         console.log(`${colors.green}✅ Success: league=${leagueId}, season=${season}${colors.reset}`);
-        resolve();
+        resolve(true);
       } else {
         console.log(`${colors.yellow}⚠️  Failed: league=${leagueId}, season=${season} (exit code ${code})${colors.reset}`);
         // Don't reject, continue with next
-        resolve();
+        resolve(false);
       }
     });
 
     proc.on('error', (err) => {
       console.error(`${colors.yellow}⚠️  Error: league=${leagueId}, season=${season}: ${err.message}${colors.reset}`);
-      resolve();
+      resolve(false);
     });
   });
 }
 
 // Main
 async function main() {
+  const config = parseArgs();
+
   console.log(`\n╔════════════════════════════════════════════════╗`);
   console.log(`║ 📊 Competition Extras Batch Generator         ║`);
   console.log(`╚════════════════════════════════════════════════╝\n`);
+
+  assertApiKey();
 
   const calendar = loadCalendar();
   if (!calendar) {
@@ -114,16 +228,34 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`${colors.cyan}Found ${pairs.length} unique league/season pairs:${colors.reset}`);
+  console.log(`${colors.cyan}Found ${pairs.length} unique leagues:${colors.reset}`);
   pairs.forEach(p => {
-    console.log(`  ${colors.dim}• leagueId=${p.leagueId}, season=${p.season}${colors.reset}`);
+    console.log(`  ${colors.dim}• leagueId=${p.leagueId}${colors.reset}`);
   });
+
+  const seasonsToTry = getSeasonCandidates();
+  const baseSeason = seasonsToTry[0];
+
+  console.log(`\n⚙️  Config:`);
+  console.log(`  concurrency: ${config.concurrency}`);
+  console.log(`  limitFixtures: ${Number.isFinite(config.limitFixtures) ? config.limitFixtures : 'none'}`);
+  console.log(`  seasonCandidates: ${seasonsToTry.join(', ')}\n`);
+
+  if (config.smoke) {
+    await smokeTest(pairs[0].leagueId, baseSeason);
+    return;
+  }
 
   // Run sequentially (1 per 1) to avoid rate limiting
   console.log(`\n${colors.cyan}Running updates sequentially...${colors.reset}`);
 
+  let successCount = 0;
+  let failureCount = 0;
+
   for (const pair of pairs) {
-    await runUpdate(pair.leagueId, pair.season);
+    const ok = await runUpdate(pair.leagueId, baseSeason, config);
+    if (ok) successCount += 1;
+    else failureCount += 1;
     // Small delay between requests
     await new Promise(r => setTimeout(r, 500));
   }
@@ -131,6 +263,10 @@ async function main() {
   console.log(`\n${colors.green}╔════════════════════════════════════════════════╗${colors.reset}`);
   console.log(`${colors.green}║ ✅ Batch Complete!                            ║${colors.reset}`);
   console.log(`${colors.green}╚════════════════════════════════════════════════╝${colors.reset}\n`);
+
+  if (successCount === 0 && failureCount > 0) {
+    process.exit(1);
+  }
 }
 
 main().catch(err => {

@@ -34,6 +34,7 @@ function parseArgs() {
     outDir: path.join(ROOT, 'data', 'v1'),
     concurrency: 5,
     tryNeighbors: false,
+    limitFixtures: null,
   };
 
   for (let i = 0; i < args.length; i += 2) {
@@ -45,6 +46,7 @@ function parseArgs() {
     else if (key === '--outDir') config.outDir = val;
     else if (key === '--concurrency') config.concurrency = parseInt(val, 10);
     else if (key === '--tryNeighbors') config.tryNeighbors = val === 'true' || val === '1';
+    else if (key === '--limitFixtures') config.limitFixtures = parseInt(val, 10);
   }
 
   return config;
@@ -128,7 +130,9 @@ async function fetchStandings(leagueId, season) {
   const data = await fetchWithRetry(url);
 
   if (!data || !data.response || data.response.length === 0) {
+    const errors = data?.errors ? JSON.stringify(data.errors) : 'none';
     console.warn('  ⚠️  No standings data found');
+    console.warn(`    league=${leagueId} season=${season} endpoint=${url} errors=${errors}`);
     return null;
   }
 
@@ -176,7 +180,7 @@ async function fetchStandings(leagueId, season) {
 }
 
 // Fetch fixtures for a league
-async function fetchFixtures(leagueId, season) {
+async function fetchFixtures(leagueId, season, limitFixtures) {
   console.log(`📋 Fetching ALL fixtures for league=${leagueId}, season=${season}...`);
   const url = `${APIFOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
   let allFixtures = [];
@@ -193,6 +197,10 @@ async function fetchFixtures(leagueId, season) {
   // Sort by date descending (most recent first)
   allFixtures = allFixtures
     .sort((a, b) => new Date(b.fixture.date) - new Date(a.fixture.date));
+
+  if (Number.isFinite(limitFixtures) && limitFixtures > 0) {
+    allFixtures = allFixtures.slice(0, limitFixtures);
+  }
 
   console.log(`  ✓ Got ${allFixtures.length} fixtures for entire season`);
   return allFixtures;
@@ -435,23 +443,31 @@ async function main() {
   console.log(`  season: ${config.season}`);
   console.log(`  tryNeighbors: ${config.tryNeighbors}`);
   console.log(`  outDir: ${config.outDir}`);
-  console.log(`  concurrency: ${config.concurrency}\n`);
+  console.log(`  concurrency: ${config.concurrency}`);
+  console.log(`  limitFixtures: ${Number.isFinite(config.limitFixtures) ? config.limitFixtures : 'none'}\n`);
 
   try {
     // Determine seasons to try
     const seasonNum = parseInt(config.season, 10);
+    const nowYear = new Date().getUTCFullYear();
     const seasonsToTry = config.tryNeighbors
-      ? [seasonNum, seasonNum - 1, seasonNum + 1]
+      ? [nowYear, nowYear - 1, nowYear + 1]
       : [seasonNum];
+
+    // Keep candidates in a sane window around current year.
+    const filteredSeasons = seasonsToTry.filter((year, idx, arr) => (
+      Number.isFinite(year) && year >= nowYear - 1 && year <= nowYear + 1 && arr.indexOf(year) === idx
+    ));
+    const finalSeasons = filteredSeasons.length > 0 ? filteredSeasons : [seasonNum];
 
     let result = null;
 
     // Try each season in order
-    if (config.tryNeighbors && seasonsToTry.length > 1) {
-      console.log(`🔄 Trying seasons in order: ${seasonsToTry.join(', ')}\n`);
+    if (config.tryNeighbors && finalSeasons.length > 1) {
+      console.log(`🔄 Trying seasons in order: ${finalSeasons.join(', ')}\n`);
     }
 
-    for (const trySeasonNum of seasonsToTry) {
+    for (const trySeasonNum of finalSeasons) {
       result = await tryFetchSeason(config.leagueId, trySeasonNum, config);
       if (result && result.teamCount > 0) {
         console.log(`✅ Winner season: ${trySeasonNum}\n`);
@@ -460,8 +476,8 @@ async function main() {
     }
 
     if (!result) {
-      console.error('❌ Failed to fetch standings from any season');
-      process.exit(1);
+      console.warn('⚠️  No standings found in any season; skipping this league');
+      process.exit(0);
     }
 
     const standings = result.standings;
@@ -473,7 +489,7 @@ async function main() {
     console.log(`✅ Standings saved: ${standingsFile}\n`);
 
     // Fetch fixtures
-    const fixtures = await fetchFixtures(config.leagueId, winnerSeason);
+    const fixtures = await fetchFixtures(config.leagueId, winnerSeason, config.limitFixtures);
     if (fixtures.length === 0) {
       console.warn('⚠️  No fixtures found; saving empty stats.');
     }
