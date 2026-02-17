@@ -89,94 +89,114 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
-          set -euo pipefail
-
-          echo "════════════════════════════════════════════"
-          echo "R2 UPLOAD"
-          echo "════════════════════════════════════════════"
-
-          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
-            echo "⚠️  Skipping R2 upload (missing Cloudflare secrets)"
-            exit 0
-          fi
-
-          echo "Bucket: ${R2_BUCKET_NAME}"
-          echo ""
-
-          # Install wrangler with full error reporting
-          echo "Installing wrangler 4.62.0..."
-          if ! npm install -g wrangler@4.62.0; then
-            echo "❌ FATAL: Failed to install wrangler"
-            exit 1
-          fi
-          echo "✓ wrangler installed"
-          echo ""
-
-          UPLOAD_COUNT=0
-          FAIL_COUNT=0
-
-          # Upload all standings files
-          echo "Uploading standings files..."
-          for file in data/v1/standings_*.json; do
-            if [[ -f "$file" ]]; then
-              basename=$(basename "$file")
-              if wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/${basename}" \
-                --file "$file" \
-                --content-type "application/json" 2>/dev/null; then
-                echo "  ✅ ${basename}"
-                ((UPLOAD_COUNT++))
-              else
-                echo "  ❌ ${basename}"
-                ((FAIL_COUNT++))
-              fi
-            fi
-          done
-
-          # Upload all compstats files
-          echo ""
-          echo "Uploading compstats files..."
-          for file in data/v1/compstats_*.json; do
-            if [[ -f "$file" ]]; then
-              basename=$(basename "$file")
-              if wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/${basename}" \
-                --file "$file" \
-                --content-type "application/json" 2>/dev/null; then
-                echo "  ✅ ${basename}"
-                ((UPLOAD_COUNT++))
-              else
-                echo "  ❌ ${basename}"
-                ((FAIL_COUNT++))
-              fi
-            fi
-          done
-
-          # Upload manifest (source of truth for frontend)
-          echo ""
-          echo "Uploading manifest..."
-          if [[ -f "data/v1/manifest.json" ]]; then
-            if wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/manifest.json" \
-              --file "data/v1/manifest.json" \
-              --content-type "application/json" 2>/dev/null; then
-              echo "  ✅ manifest.json"
-              ((UPLOAD_COUNT++))
-            else
-              echo "  ❌ manifest.json"
-              ((FAIL_COUNT++))
-            fi
-          fi
-
-          echo ""
-          echo "════════════════════════════════════════════"
-          echo "Upload Summary: ${UPLOAD_COUNT} OK, ${FAIL_COUNT} FAILED"
-          echo "════════════════════════════════════════════"
-          echo ""
-
-          if [[ ${FAIL_COUNT} -gt 0 ]]; then
-            echo "⚠️  Some files failed to upload (${FAIL_COUNT} failures)"
-            exit 1
-          else
-            echo "✅ All files uploaded successfully"
-          fi
+          # Create a Node.js script to upload to R2 using Cloudflare API directly
+          cat > /tmp/upload-r2.mjs << 'UPLOAD_SCRIPT'
+          import fs from 'fs';
+          import path from 'path';
+          import { fileURLToPath } from 'url';
+          
+          const __dirname = path.dirname(fileURLToPath(import.meta.url));
+          
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const bucketName = process.env.R2_BUCKET_NAME;
+          
+          if (!token || !accountId || !bucketName) {
+            console.log('⚠️  Skipping R2 upload (missing Cloudflare secrets)');
+            process.exit(0);
+          }
+          
+          console.log('════════════════════════════════════════════');
+          console.log('R2 UPLOAD');
+          console.log('════════════════════════════════════════════');
+          console.log(`Bucket: ${bucketName}`);
+          console.log('');
+          
+          const uploadFile = async (filePath, remoteKey) => {
+            try {
+              const fileContent = fs.readFileSync(filePath);
+              const response = await fetch(
+                `https://${accountId}.r2.cloudflarestorage.com/${bucketName}/${remoteKey}`,
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: fileContent,
+                }
+              );
+              
+              if (!response.ok) {
+                const text = await response.text();
+                console.log(`  ❌ ${path.basename(filePath)} (${response.status})`);
+                console.log(`     Error: ${text.substring(0, 100)}`);
+                return false;
+              }
+              console.log(`  ✅ ${path.basename(filePath)}`);
+              return true;
+            } catch (err) {
+              console.log(`  ❌ ${path.basename(filePath)} (${err.message})`);
+              return false;
+            }
+          };
+          
+          (async () => {
+            let uploadCount = 0;
+            let failCount = 0;
+            
+            // Upload standings files
+            console.log('Uploading standings files...');
+            const standingsFiles = fs.readdirSync('.').filter(f => f.startsWith('standings_') && f.endsWith('.json'));
+            for (const file of standingsFiles) {
+              if (await uploadFile(file, `v1/${file}`)) {
+                uploadCount++;
+              } else {
+                failCount++;
+              }
+            }
+            
+            // Upload compstats files
+            console.log('');
+            console.log('Uploading compstats files...');
+            const compstatsFiles = fs.readdirSync('.').filter(f => f.startsWith('compstats_') && f.endsWith('.json'));
+            for (const file of compstatsFiles) {
+              if (await uploadFile(file, `v1/${file}`)) {
+                uploadCount++;
+              } else {
+                failCount++;
+              }
+            }
+            
+            // Upload manifest
+            console.log('');
+            console.log('Uploading manifest...');
+            if (fs.existsSync('manifest.json')) {
+              if (await uploadFile('manifest.json', 'v1/manifest.json')) {
+                uploadCount++;
+              } else {
+                failCount++;
+              }
+            }
+            
+            console.log('');
+            console.log('════════════════════════════════════════════');
+            console.log(`Upload Summary: ${uploadCount} OK, ${failCount} FAILED`);
+            console.log('════════════════════════════════════════════');
+            console.log('');
+            
+            if (failCount > 0) {
+              console.log(`⚠️  ${failCount} file(s) failed to upload`);
+              process.exit(1);
+            } else {
+              console.log('✅ All files uploaded successfully');
+            }
+          })();
+          UPLOAD_SCRIPT
+          
+          # Run from data/v1 directory where files are
+          cd data/v1
+          node /tmp/upload-r2.mjs
 
       - name: Commit if changes were made
         run: |
