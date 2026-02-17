@@ -2582,31 +2582,21 @@ async function renderCompetitionStandings(leagueId, season, fallbackMatches = []
 
   // Load from API/R2/static
   const standings = await loadV1JSON(standingsFile, null);
-  if(standings && Number(standings.schemaVersion) !== 1){
-    console.error("[STANDINGS] Snapshot schemaVersion mismatch", {
-      standingsFile,
-      schemaVersion: standings.schemaVersion
+  
+  // Validate schema: must be v1 format with standings array
+  if (!standings || standings.schemaVersion !== 1 || !Array.isArray(standings.standings)) {
+    console.warn("[COMPETITION-MANIFEST][STANDINGS-SCHEMA-FAIL]", {
+      schemaVersion: standings?.schemaVersion,
+      hasStandings: Array.isArray(standings?.standings)
     });
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Snapshot incompatível</div></div>`;
   }
-  const keys = standings && typeof standings === "object" ? Object.keys(standings) : [];
-  const responseStandings = standings?.response?.[0]?.league?.standings?.[0];
-  console.log("[STANDINGS] Loaded data:", {
-    standingsFile,
-    keys,
-    has_direct_standings: Array.isArray(standings?.standings),
-    direct_count: standings?.standings?.length || 0,
-    has_response_standings: Array.isArray(responseStandings),
-    response_count: Array.isArray(responseStandings) ? responseStandings.length : 0
+
+  console.log("[COMPETITION-MANIFEST][STANDINGS-DATA]", {
+    teams: standings.standings?.length
   });
   
-  if(!standings || !standings.standings || standings.standings.length === 0){
-    console.log("[STANDINGS] Missing direct standings array", {
-      standingsFile,
-      keys,
-      has_response_standings: Array.isArray(responseStandings),
-      response_count: Array.isArray(responseStandings) ? responseStandings.length : 0
-    });
+  if(standings.standings.length === 0){
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
   }
 
