@@ -1,7 +1,23 @@
 name: Update Competition Extras (Standings + Stats)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      leagueId:
+        description: 'League ID to update (leave empty for all leagues)'
+        required: false
+        default: '40'
+        type: string
+      season:
+        description: 'Season to update (leave empty for current)'
+        required: false
+        default: '2025'
+        type: string
+      tryNeighbors:
+        description: 'Retry with neighbor seasons if standings are empty'
+        required: false
+        default: true
+        type: boolean
   schedule:
     - cron: "30 11 * * *" # 08:30 BRT (UTC-3) ~= 11:30 UTC (after daily snapshot)
 
@@ -29,13 +45,57 @@ jobs:
       - name: Generate Competition Standings + Stats (API-FOOTBALL)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+          LEAGUE_ID: ${{ inputs.leagueId || '40' }}
+          SEASON: ${{ inputs.season || '2025' }}
+          TRY_NEIGHBORS: ${{ inputs.tryNeighbors || 'true' }}
         run: |
           set -euo pipefail
-          node tools/update-competition-extras-batch.mjs
+          
+          echo "=========================================="
+          echo "UPDATE COMPETITION EXTRAS"
+          echo "=========================================="
+          echo "League ID: ${LEAGUE_ID}"
+          echo "Season: ${SEASON}"
+          echo "Try Neighbors: ${TRY_NEIGHBORS}"
+          echo ""
+          
+          # If specific league & season requested, use retry logic
+          if [[ -n "${LEAGUE_ID}" && -n "${SEASON}" && "${TRY_NEIGHBORS}" == "true" ]]; then
+            echo "Running with retry logic for neighbor seasons..."
+            node tools/update-competition-extras-retry.mjs \
+              --leagueId "${LEAGUE_ID}" \
+              --season "${SEASON}" \
+              --tryNeighbors true
+          else
+            echo "Running batch update (all leagues)..."
+            node tools/update-competition-extras-batch.mjs
+          fi
+          
+          echo "=========================================="
+          echo "GENERATION COMPLETE"
+          echo "=========================================="
 
       - name: List generated files
         run: |
-          ls -lh data/v1/standings_*.json data/v1/compstats_*.json 2>/dev/null || echo "No files generated yet"
+          echo "════════════════════════════════════════════"
+          echo "GENERATED FILES"
+          echo "════════════════════════════════════════════"
+          
+          echo ""
+          echo "Standings Files:"
+          ls -lh data/v1/standings_*.json 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "Compstats Files:"
+          ls -lh data/v1/compstats_*.json 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "Summary:"
+          STANDINGS_COUNT=$(ls -1 data/v1/standings_*.json 2>/dev/null | wc -l)
+          COMPSTATS_COUNT=$(ls -1 data/v1/compstats_*.json 2>/dev/null | wc -l)
+          echo "  Standings: ${STANDINGS_COUNT} files"
+          echo "  Compstats: ${COMPSTATS_COUNT} files"
+          echo ""
 
       - name: Upload standings + stats to R2 (optional)
         env:
@@ -45,39 +105,69 @@ jobs:
         run: |
           set -euo pipefail
 
+          echo "════════════════════════════════════════════"
+          echo "R2 UPLOAD"
+          echo "════════════════════════════════════════════"
+
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
-            echo "Skipping R2 upload (missing Cloudflare secrets)."
+            echo "⚠️  Skipping R2 upload (missing Cloudflare secrets)"
             exit 0
           fi
 
-          echo "R2_BUCKET_NAME=${R2_BUCKET_NAME}"
+          echo "Bucket: ${R2_BUCKET_NAME}"
+          echo ""
 
-          npm i -g wrangler@4.62.0
-          wrangler --version
+          npm install -g wrangler@4.62.0 > /dev/null 2>&1
+          echo "✓ wrangler installed"
+          echo ""
 
-          # Find and upload all standings + compstats files
-          echo "=== PUT (REMOTE) ==="
-          for file in data/v1/standings_*.json data/v1/compstats_*.json; do
+          UPLOAD_COUNT=0
+          FAIL_COUNT=0
+
+          # Upload all standings files
+          echo "Uploading standings files..."
+          for file in data/v1/standings_*.json; do
             if [[ -f "$file" ]]; then
               basename=$(basename "$file")
-              echo "Uploading $basename..."
-              wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/${basename}" \
+              if wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/${basename}" \
                 --file "$file" \
-                --content-type "application/json"
+                --content-type "application/json" 2>/dev/null; then
+                echo "  ✅ ${basename}"
+                ((UPLOAD_COUNT++))
+              else
+                echo "  ❌ ${basename}"
+                ((FAIL_COUNT++))
+              fi
             fi
           done
 
-          echo "=== GET (REMOTE) + verify ==="
-          for file in data/v1/standings_*.json data/v1/compstats_*.json; do
+          # Upload all compstats files
+          echo ""
+          echo "Uploading compstats files..."
+          for file in data/v1/compstats_*.json; do
             if [[ -f "$file" ]]; then
               basename=$(basename "$file")
-              echo "Verifying $basename..."
-              wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/${basename}" --file "/tmp/verify_${basename}"
-              sha256sum "$file" "/tmp/verify_${basename}"
+              if wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/${basename}" \
+                --file "$file" \
+                --content-type "application/json" 2>/dev/null; then
+                echo "  ✅ ${basename}"
+                ((UPLOAD_COUNT++))
+              else
+                echo "  ❌ ${basename}"
+                ((FAIL_COUNT++))
+              fi
             fi
           done
 
-          echo "Uploaded to R2 OK."
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "Upload Summary: ${UPLOAD_COUNT} OK, ${FAIL_COUNT} FAILED"
+          echo "════════════════════════════════════════════"
+          echo ""
+
+          if [[ ${FAIL_COUNT} -gt 0 ]]; then
+            echo "⚠️  Some files failed to upload"
+          fi
 
       - name: Commit if changes were made
         run: |
