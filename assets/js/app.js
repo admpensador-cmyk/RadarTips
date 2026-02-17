@@ -735,6 +735,13 @@ async function loadV1JSON(file, fallback){
       }
       return data;
     }
+    // IMPORTANT: For standings_/compstats_ (competitive data), do NOT fallback to /data/v1
+    // If R2 returns 404, it likely means the snapshot doesn't exist in production.
+    // Attempting /data/v1 may return HTML error page, breaking JSON parsing.
+    if(isCompetitionSnapshot(file)) {
+      console.log(`[COMPETITION-MANIFEST] Snapshot not found on CDN: ${file} (will not try local fallback)`);
+      return fallback;
+    }
     if (DEBUG_CAL && file === 'calendar_7d.json') {
       console.warn('[CAL] R2 worker failed, trying static fallback:', `${V1_STATIC_BASE}/${file}`);
     }

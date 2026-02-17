@@ -69,6 +69,20 @@ jobs:
           echo "  Compstats: ${COMPSTATS_COUNT} files"
           echo ""
 
+      - name: Build manifest (reference only existing files)
+        run: node tools/build-manifest.mjs
+
+      - name: Audit manifest (verify no orphaned references)
+        run: |
+          echo "Auditing manifest for orphaned file references..."
+          node tools/audit-manifest-v1.mjs
+          if [[ $? -ne 0 ]]; then
+            echo ""
+            echo "❌ AUDIT FAILED: Manifest references non-existent files"
+            echo "   This must be fixed before upload."
+            exit 1
+          fi
+
       - name: Upload standings + stats to R2 (optional)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -131,6 +145,21 @@ jobs:
             fi
           done
 
+          # Upload manifest (source of truth for frontend)
+          echo ""
+          echo "Uploading manifest..."
+          if [[ -f "data/v1/manifest.json" ]]; then
+            if wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/manifest.json" \
+              --file "data/v1/manifest.json" \
+              --content-type "application/json" 2>/dev/null; then
+              echo "  ✅ manifest.json"
+              ((UPLOAD_COUNT++))
+            else
+              echo "  ❌ manifest.json"
+              ((FAIL_COUNT++))
+            fi
+          fi
+
           echo ""
           echo "════════════════════════════════════════════"
           echo "Upload Summary: ${UPLOAD_COUNT} OK, ${FAIL_COUNT} FAILED"
@@ -146,14 +175,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if git diff --quiet data/v1/standings_*.json data/v1/compstats_*.json 2>/dev/null; then
+          # Check for changes in standings, compstats, and manifest
+          if git diff --quiet data/v1/standings_*.json data/v1/compstats_*.json data/v1/manifest.json 2>/dev/null; then
             echo "No changes to commit."
             exit 0
           fi
 
-          git add data/v1/standings_*.json data/v1/compstats_*.json 2>/dev/null || true
+          # Add all generated snapshots and manifest
+          git add data/v1/standings_*.json 2>/dev/null || true
+          git add data/v1/compstats_*.json 2>/dev/null || true
+          git add data/v1/manifest.json 2>/dev/null || true
+          
+          # Only commit if there are staged changes
           git diff --cached --quiet || {
-            git commit -m "chore: update competition standings + stats snapshots"
+            git commit -m "chore: update competition standings + stats snapshots & manifest"
             git push origin main
           }
 
