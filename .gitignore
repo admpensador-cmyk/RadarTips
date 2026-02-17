@@ -5,3 +5,9 @@
 # block zip artifacts
 dist/*.zip
 **/*.zip
+
+# Local snapshot artifacts
+data/v1/*.json
+
+# Wrangler local config
+.wrangler/

@@ -32,7 +32,6 @@ function parseArgs() {
     leagueId: null,
     season: null,
     outDir: path.join(ROOT, 'data', 'v1'),
-    limitFixtures: 120,
     concurrency: 5,
   };
 
@@ -43,7 +42,6 @@ function parseArgs() {
     if (key === '--leagueId') config.leagueId = val;
     else if (key === '--season') config.season = val;
     else if (key === '--outDir') config.outDir = val;
-    else if (key === '--limitFixtures') config.limitFixtures = parseInt(val, 10);
     else if (key === '--concurrency') config.concurrency = parseInt(val, 10);
   }
 
@@ -78,14 +76,21 @@ class PromisePool {
 async function fetchWithRetry(url, options = {}, retries = 2) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Add timeout of 10 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       const res = await fetch(url, {
         ...options,
+        signal: controller.signal,
         headers: {
           'x-apisports-key': APIFOOTBALL_KEY,
           'Accept': 'application/json',
           ...options.headers,
         },
       });
+
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         return await res.json();
@@ -102,6 +107,10 @@ async function fetchWithRetry(url, options = {}, retries = 2) {
 
       throw new Error(`HTTP ${res.status}`);
     } catch (e) {
+      if (e.name === 'AbortError') {
+        console.warn(`  ⚠️  Request timeout (10s)`);
+        throw new Error('Request timeout');
+      }
       if (attempt === retries) throw e;
       const delay = (attempt + 1) * 800;
       console.warn(`  ⚠️  Fetch failed: ${e.message}, retry in ${delay}ms...`);
@@ -124,9 +133,33 @@ async function fetchStandings(leagueId, season) {
   // Normalize: API returns response[0].league.standings as nested array
   const leagueData = data.response[0];
   const league = leagueData?.league || {};
-  const standings = (leagueData?.league?.standings || [])[0] || [];
+  const allStandings = leagueData?.league?.standings || [];
+  
+  // Choose the most consistent group (where all teams have similar number of games)
+  let bestGroup = allStandings[0] || [];
+  if (allStandings.length > 1) {
+    // Calculate consistency score for each group (lower variance = more consistent)
+    const groupScores = allStandings.map(group => {
+      if (!Array.isArray(group) || group.length === 0) return { group, variance: Infinity };
+      const games = group.map(t => t.all?.played || 0);
+      const avg = games.reduce((a, b) => a + b, 0) / games.length;
+      const variance = games.reduce((sum, g) => sum + Math.pow(g - avg, 2), 0) / games.length;
+      return { group, variance, avg };
+    });
+    // Sort by variance (ascending) then by avg games (descending)
+    groupScores.sort((a, b) => (a.variance - b.variance) || (b.avg - a.avg));
+    bestGroup = groupScores[0].group;
+    console.log(`  ℹ️  Found ${allStandings.length} groups, using most consistent (variance: ${groupScores[0].variance.toFixed(2)}, avg games: ${groupScores[0].avg.toFixed(1)})`);
+  }
+  
+  const standings = bestGroup;
 
   return {
+    schemaVersion: 1,
+    meta: {
+      leagueId: Number(leagueId),
+      season: Number(season),
+    },
     league: {
       id: league.id,
       name: league.name,
@@ -141,33 +174,25 @@ async function fetchStandings(leagueId, season) {
 }
 
 // Fetch fixtures for a league
-async function fetchFixtures(leagueId, season, limit = 120) {
-  console.log(`📋 Fetching fixtures for league=${leagueId}, season=${season} (limit=${limit})...`);
-  const url = `${APIFOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}&status=FT`;
+async function fetchFixtures(leagueId, season) {
+  console.log(`📋 Fetching ALL fixtures for league=${leagueId}, season=${season}...`);
+  const url = `${APIFOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
   let allFixtures = [];
-  let page = 1;
-  const pageSize = 100;
 
-  while (allFixtures.length < limit) {
-    try {
-      const data = await fetchWithRetry(`${url}&page=${page}`);
-      if (!data || !data.response) break;
-
-      allFixtures.push(...data.response);
-      if (data.response.length < pageSize) break;
-      page++;
-    } catch (e) {
-      console.warn(`  ⚠️  Error fetching page ${page}:`, e.message);
-      break;
+  try {
+    const data = await fetchWithRetry(url);
+    if (data && Array.isArray(data.response)) {
+      allFixtures = data.response;
     }
+  } catch (e) {
+    console.warn(`  ⚠️  Error fetching fixtures:`, e.message);
   }
 
-  // Sort by date descending (most recent first) and limit
+  // Sort by date descending (most recent first)
   allFixtures = allFixtures
-    .sort((a, b) => new Date(b.fixture.date) - new Date(a.fixture.date))
-    .slice(0, limit);
+    .sort((a, b) => new Date(b.fixture.date) - new Date(a.fixture.date));
 
-  console.log(`  ✓ Got ${allFixtures.length} fixtures`);
+  console.log(`  ✓ Got ${allFixtures.length} fixtures for entire season`);
   return allFixtures;
 }
 
@@ -202,8 +227,11 @@ async function aggregateStats(fixtures, pool) {
   console.log(`📈 Aggregating stats from ${fixtures.length} fixtures...`);
 
   const fixtures_total = fixtures.length;
+  let fixtures_finished = 0;
   let fixtures_with_stats = 0;
   let finals_used = 0;
+
+  const finishedStatuses = new Set(['FT', 'AET', 'PEN']);
 
   const metrics = {
     goals: [],
@@ -221,8 +249,29 @@ async function aggregateStats(fixtures, pool) {
   let processed = 0;
   for (const fixture of fixtures) {
     await pool.run(async () => {
-      const stats = await fetchFixtureStats(fixture.fixture.id);
-      if (!stats || stats.length === 0) return;
+      const status = fixture?.fixture?.status?.short;
+      const fixtureId = fixture?.fixture?.id;
+      
+      if (!finishedStatuses.has(status)) {
+        processed++;
+        return;
+      }
+
+      fixtures_finished++;
+      console.log(`  → Fetching stats for fixture ${fixtureId} (${processed}/${fixtures.length})...`);
+      
+      let stats = null;
+      try {
+        stats = await fetchFixtureStats(fixtureId);
+      } catch (e) {
+        console.warn(`  ⚠️  Stats fetch failed for fixture ${fixtureId}:`, e.message);
+        processed++;
+        return;
+      }
+      if (!stats || stats.length === 0) {
+        processed++;
+        return;
+      }
 
       try {
         const homeStats = stats[0];
@@ -309,6 +358,7 @@ async function aggregateStats(fixtures, pool) {
   return {
     sample: {
       fixtures_total,
+      fixtures_finished,
       fixtures_used: fixtures.length,
       fixtures_with_stats,
       finals_used,
@@ -358,7 +408,7 @@ async function main() {
   console.log(`  leagueId: ${config.leagueId}`);
   console.log(`  season: ${config.season}`);
   console.log(`  outDir: ${config.outDir}`);
-  console.log(`  limitFixtures: ${config.limitFixtures}`);
+
   console.log(`  concurrency: ${config.concurrency}\n`);
 
   try {
@@ -375,10 +425,9 @@ async function main() {
     console.log(`✅ Standings saved: ${standingsFile}\n`);
 
     // Fetch fixtures
-    const fixtures = await fetchFixtures(config.leagueId, config.season, config.limitFixtures);
+    const fixtures = await fetchFixtures(config.leagueId, config.season);
     if (fixtures.length === 0) {
-      console.error('❌ No fixtures found');
-      process.exit(1);
+      console.warn('⚠️  No fixtures found; saving empty stats.');
     }
 
     // Aggregate stats
@@ -388,6 +437,11 @@ async function main() {
     // Prepare compstats output
     const leagueInfo = standings.league;
     const compStats = {
+      schemaVersion: 1,
+      meta: {
+        leagueId: Number(config.leagueId),
+        season: Number(config.season),
+      },
       league: leagueInfo,
       generated_at_utc: new Date().toISOString(),
       ...aggStats,

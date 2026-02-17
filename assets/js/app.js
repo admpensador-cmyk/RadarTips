@@ -640,7 +640,7 @@ window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scr
 
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
-const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json"]);
+const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json","manifest.json"]);
 
 // Helper to check if a file is a standings or compstats snapshot (pattern matching)
 function isCompetitionSnapshot(filename){
@@ -745,6 +745,31 @@ async function loadV1JSON(file, fallback){
   const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
   if(api) return api;
   return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
+}
+
+let _manifestPromise = null;
+let _manifestSeasonRules = null;
+async function loadV1Manifest(){
+  if(_manifestPromise) return _manifestPromise;
+  _manifestPromise = (async () => {
+    const manifest = await loadV1JSON("manifest.json", null);
+    if(!manifest || !Array.isArray(manifest.entries)){
+      console.warn("[MANIFEST] Missing or invalid manifest.json");
+      return null;
+    }
+    if(manifest.season_rules && typeof manifest.season_rules === "object"){
+      _manifestSeasonRules = manifest.season_rules;
+    }
+    return manifest;
+  })();
+  return _manifestPromise;
+}
+
+function findManifestEntry(manifest, leagueId, season){
+  if(!manifest || !Array.isArray(manifest.entries)) return null;
+  const lid = Number(leagueId);
+  const sn = Number(season);
+  return manifest.entries.find(e => Number(e.leagueId) === lid && Number(e.season) === sn) || null;
 }
 
 function _norm(str){ return String(str||"").trim().toLowerCase(); }
@@ -1483,10 +1508,8 @@ function competitionKey(m){
   const compName = String(m?.competition || "").trim();
   let season = m?.season || m?.season_id || m?.seasonId;
   if(!season){
-    try{
-      const d = new Date(m?.kickoff_utc);
-      if(!isNaN(d.getTime())) season = String(d.getUTCFullYear());
-    }catch(e){ /* ignore */ }
+    const derived = getSeasonFromKickoffFront(m?.kickoff_utc, m?.country, m?.competition);
+    if(Number.isFinite(derived)) season = String(derived);
   }
 
   if(id !== undefined && id !== null && String(id).trim() !== ""){
@@ -2421,17 +2444,44 @@ function computeCompetitionAggregates(matches){
 }
 
 // Helper functions for competition snapshots
+// Keep in sync with tools/snapshots-config.json (single source of truth for season rules).
+const SEASON_RULES = {
+  default: { type: "europe_default" },
+  overrides: {
+    Brazil: { type: "calendar_year" }
+  }
+};
+
+function normalizeCountryFront(country, competitionName){
+  const direct = String(country || "").trim();
+  if(direct) return direct;
+  const comp = String(competitionName || "").toLowerCase();
+  if(comp.includes("brazil") || comp.includes("brasil")) return "Brazil";
+  return "";
+}
+
+function getSeasonFromKickoffFront(kickoffUTC, country, competitionName, rulesOverride){
+  if(!kickoffUTC) return null;
+  const d = new Date(kickoffUTC);
+  if(isNaN(d.getTime())) return null;
+
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth();
+
+  const rules = rulesOverride || _manifestSeasonRules || SEASON_RULES;
+  const overrides = rules?.overrides || {};
+  const normalizedCountry = normalizeCountryFront(country, competitionName);
+  const overrideRule = normalizedCountry ? overrides[normalizedCountry] : null;
+  const ruleType = (overrideRule && overrideRule.type) || (rules?.default && rules.default.type) || "europe_default";
+
+  if(ruleType === "calendar_year") return year;
+  return month >= 7 ? year : year - 1;
+}
+
 function inferSeasonFromMatches(list) {
   if (!list || list.length === 0) return null;
   const first = list[0];
-  if (!first.kickoff_utc) return null;
-  try {
-    const d = new Date(first.kickoff_utc);
-    if (isNaN(d.getTime())) return null;
-    return String(d.getUTCFullYear());
-  } catch (e) {
-    return null;
-  }
+  return getSeasonFromKickoffFront(first.kickoff_utc, first.country, first.competition);
 }
 
 function getCompetitionSnapshotNames(leagueId, season) {
@@ -2453,8 +2503,21 @@ async function renderCompetitionStandings(leagueId, season){
     return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (sem leagueId/season)</div>`;
   }
 
+  const manifest = await loadV1Manifest();
+  const entry = findManifestEntry(manifest, leagueId, season);
+  if(!entry || !entry.standings){
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
+  }
+
   // Load from API/R2/static
   const standings = await loadV1JSON(standingsFile, null);
+  if(standings && Number(standings.schemaVersion) !== 1){
+    console.error("[STANDINGS] Snapshot schemaVersion mismatch", {
+      standingsFile,
+      schemaVersion: standings.schemaVersion
+    });
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Snapshot incompatível</div></div>`;
+  }
   const keys = standings && typeof standings === "object" ? Object.keys(standings) : [];
   const responseStandings = standings?.response?.[0]?.league?.standings?.[0];
   console.log("[STANDINGS] Loaded data:", {
@@ -2549,17 +2612,31 @@ async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
   const { compstatsFile } = getCompetitionSnapshotNames(leagueId, season);
   
   console.log("[STATS] Loading:", { compstatsFile, leagueId, season });
-  
+
   if(compstatsFile){
+    const manifest = await loadV1Manifest();
+    const entry = findManifestEntry(manifest, leagueId, season);
+    if(!entry || !entry.compstats){
+      return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(compstatsFile)}</div></div>`;
+    }
+
     const compStats = await loadV1JSON(compstatsFile, null);
     console.log("[STATS] Loaded data:", { compstatsFile, has_metrics: compStats && compStats.metrics, keys: compStats ? Object.keys(compStats) : [] });
-    
+
+    if(compStats && Number(compStats.schemaVersion) !== 1){
+      console.error("[STATS] Snapshot schemaVersion mismatch", {
+        compstatsFile,
+        schemaVersion: compStats.schemaVersion
+      });
+      return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Snapshot incompatível</div></div>`;
+    }
+
     // Reject dummy data (no real metrics)
     if(compStats && (!compStats.metrics || Object.keys(compStats.metrics).length === 0)){
       console.log("[STATS] Detected dummy/empty metrics, rejecting");
       return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Aguardando dados reais da API...</div></div>`;
     }
-    
+
     if(compStats && compStats.metrics){
       return renderCompStatsDisplay(compStats);
     }
@@ -2811,7 +2888,10 @@ async function openModal(type, value){
     if(parsed.leagueId){
       list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(parsed.leagueId));
       if(parsed.season){
-        list = list.filter(m => String(m?.season || new Date(m.kickoff_utc).getUTCFullYear()) === String(parsed.season));
+        list = list.filter(m => {
+          const derived = m?.season || getSeasonFromKickoffFront(m?.kickoff_utc, m?.country, m?.competition);
+          return String(derived || "") === String(parsed.season);
+        });
       }
       const sample = list[0];
       displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueId;
@@ -2873,7 +2953,8 @@ async function openModal(type, value){
   }else{
     // COMPETITION MODAL WITH TABS (Jogos, Classificação, Estatísticas)
     const leagueId = parsed.leagueId || (list.length > 0 ? (list[0].competition_id || list[0].league_id || list[0].leagueId) : null);
-    const season = parsed.season || (list.length > 0 ? (list[0].season || new Date(list[0].kickoff_utc).getUTCFullYear()) : null);
+    const derivedSeason = list.length > 0 ? (list[0].season || getSeasonFromKickoffFront(list[0].kickoff_utc, list[0].country, list[0].competition)) : null;
+    const season = parsed.season || derivedSeason;
 
     body.innerHTML = `
     <div class="mhead">
