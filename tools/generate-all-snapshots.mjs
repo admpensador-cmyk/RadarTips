@@ -10,7 +10,7 @@
  * 5. Upload AUTOMÁTICO para R2 production
  * 
  * Uso:
- *   node tools/generate-all-snapshots.mjs
+ *   node tools/generate-all-snapshots.mjs [--maxLeagues 27] [--concurrency 2]
  * 
  * Env:
  *   APIFOOTBALL_KEY (obrigatório)
@@ -30,6 +30,98 @@ const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1');
 
 const PRODUCTION_CALENDAR_URL = 'https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json';
 const R2_BUCKET = 'radartips-data';
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const config = {
+    maxLeagues: null,
+    concurrency: 2,
+  };
+
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i];
+    const val = args[i + 1];
+    if (!key || !val) continue;
+
+    if (key === '--maxLeagues') {
+      const n = Number(val);
+      if (Number.isFinite(n) && n > 0) config.maxLeagues = n;
+    } else if (key === '--concurrency') {
+      const n = Number(val);
+      if (Number.isFinite(n) && n > 0) config.concurrency = n;
+    }
+  }
+
+  return config;
+}
+
+function resolveWranglerBin() {
+  const binDir = path.join(ROOT, 'node_modules', '.bin');
+  const candidates = [
+    path.join(binDir, 'wrangler'),
+    path.join(binDir, 'wrangler.cmd'),
+    path.join(binDir, 'wrangler.exe'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  return null;
+}
+
+function getWranglerInvocation(args) {
+  const localBin = resolveWranglerBin();
+  const baseArgs = args.map(String);
+  if (localBin) {
+    return { command: localBin, args: baseArgs, shell: false };
+  }
+
+  return { command: 'npx', args: ['-y', 'wrangler', ...baseArgs], shell: true };
+}
+
+async function runWrangler(args, opts = {}) {
+  const invocation = getWranglerInvocation(args);
+  const cwd = opts.cwd || ROOT;
+  const env = { ...process.env, ...(opts.env || {}) };
+
+  if (!invocation.command) {
+    throw new Error('Wrangler command resolution failed: empty command');
+  }
+
+  return await new Promise((resolve, reject) => {
+    const proc = spawn(invocation.command, invocation.args, {
+      cwd,
+      env,
+      shell: invocation.shell,
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout?.on('data', (d) => { stdout += String(d); });
+    proc.stderr?.on('data', (d) => { stderr += String(d); });
+
+    proc.on('close', (code) => {
+      const result = { code, stdout, stderr };
+      if (code === 0) {
+        resolve(result);
+      } else {
+        const err = new Error(
+          `Wrangler failed (code ${code}).\n` +
+          (stdout ? `stdout:\n${stdout}\n` : '') +
+          (stderr ? `stderr:\n${stderr}\n` : '')
+        );
+        err.result = result;
+        reject(err);
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`Wrangler spawn failed: ${err.message}`));
+    });
+  });
+}
 
 // ============================================================================
 // PASSO 1: Baixar calendario de produção
@@ -100,7 +192,7 @@ function extractLeaguePairs(calendar) {
 // PASSO 3: Gerar standings + stats com RETRY automático
 // ============================================================================
 function generateSnapshotForLeague(leagueId, season, options = {}) {
-  const { maxRetries = 2, timeout = 180000 } = options;
+  const { maxRetries = 2, timeout = 180000, concurrency = 2 } = options;
   let attempt = 0;
 
   return new Promise((resolve) => {
@@ -113,7 +205,7 @@ function generateSnapshotForLeague(leagueId, season, options = {}) {
         '--leagueId', String(leagueId),
         '--season', String(season),
         '--outDir', SNAPSHOTS_DIR,
-        '--concurrency', '2',
+        '--concurrency', String(concurrency),
       ], {
         cwd: ROOT,
         stdio: 'pipe', // Captura output
@@ -165,34 +257,28 @@ function generateSnapshotForLeague(leagueId, season, options = {}) {
 // PASSO 4: Fazer upload para R2 (com verificação)
 // ============================================================================
 async function uploadToR2(filePath, remoteKey) {
-  return new Promise((resolve) => {
-    const fileName = path.basename(filePath);
-    
-    const proc = spawn('npx.cmd', [
-      'wrangler', 'r2', 'object', 'put',
-      `${R2_BUCKET}/${remoteKey}`,
-      '--file', filePath,
-      '--remote'
-    ], {
-      cwd: ROOT,
-      stdio: 'pipe'
-    });
+  const fileName = path.basename(filePath);
+  const args = [
+    'r2', 'object', 'put',
+    `${R2_BUCKET}/${remoteKey}`,
+    '--file', filePath,
+    '--remote'
+  ];
+  const invocation = getWranglerInvocation(args);
 
-    proc.on('close', (code) => {
-      if (code === 0) {
-        console.log(`   ✅ R2: ${fileName}`);
-        resolve(true);
-      } else {
-        console.warn(`   ⚠️  R2 upload failed: ${fileName}`);
-        resolve(false);
-      }
-    });
+  console.log(`   📤 Uploading: ${fileName}`);
+  console.log(`      Remote key: ${remoteKey}`);
+  console.log(`      Command: ${invocation.command} ${invocation.args.join(' ')}`);
 
-    proc.on('error', (err) => {
-      console.warn(`   ⚠️  Upload error: ${err.message}`);
-      resolve(false);
-    });
-  });
+  try {
+    await runWrangler(args, { cwd: ROOT });
+    console.log(`   ✅ R2: ${fileName}`);
+    return true;
+  } catch (err) {
+    console.warn(`   ⚠️  R2 upload failed: ${fileName}`);
+    console.warn(`      ${err.message}`);
+    return false;
+  }
 }
 
 // ============================================================================
@@ -245,15 +331,21 @@ async function main() {
 `);
 
   try {
+    const cli = parseArgs();
     // PASSO 1: Baixar calendario
     const calendar = await downloadProductionCalendar();
     console.log(`📅 Encontrados ${calendar.matches?.length || 0} matches\n`);
 
     // PASSO 2: Extrair pairs
-    const leaguePairs = extractLeaguePairs(calendar);
+    let leaguePairs = extractLeaguePairs(calendar);
     if (leaguePairs.length === 0) {
       console.warn('❌ Nenhuma liga encontrada. Abortando.\n');
       process.exit(1);
+    }
+
+    if (cli.maxLeagues && leaguePairs.length > cli.maxLeagues) {
+      leaguePairs = leaguePairs.slice(0, cli.maxLeagues);
+      console.log(`🔎 Limitando execução para ${leaguePairs.length} ligas (maxLeagues=${cli.maxLeagues})\n`);
     }
 
     // PASSO 3: Gerar snapshots com retry
@@ -263,7 +355,9 @@ async function main() {
     let uploadCount = 0;
     
     for (const pair of leaguePairs) {
-      const result = await generateSnapshotForLeague(pair.leagueId, pair.season);
+      const result = await generateSnapshotForLeague(pair.leagueId, pair.season, {
+        concurrency: cli.concurrency,
+      });
       
       if (result.success) {
         successCount++;
