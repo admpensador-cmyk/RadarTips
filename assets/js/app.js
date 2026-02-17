@@ -784,16 +784,16 @@ function listManifestSeasons(manifest, leagueId){
 
 async function resolveLeagueSeasonFromManifest({ leagueId, kickoffUTC, computedSeason }){
   const lid = Number(leagueId);
-  if(!Number.isFinite(lid)) return null;
+  if(!Number.isFinite(lid)) return { season: null, foundExact: false, pickedFallback: false };
 
   const manifest = await loadV1Manifest();
-  if(!manifest || !Array.isArray(manifest.entries)) return null;
+  if(!manifest || !Array.isArray(manifest.entries)) return { season: null, foundExact: false, pickedFallback: false };
 
   const seasons = listManifestSeasons(manifest, lid);
-  if(seasons.length === 0) return null;
+  if(seasons.length === 0) return { season: null, foundExact: false, pickedFallback: false };
 
   const computed = Number(computedSeason);
-  if(Number.isFinite(computed) && seasons.includes(computed)) return computed;
+  if(Number.isFinite(computed) && seasons.includes(computed)) return { season: computed, foundExact: true, pickedFallback: false };
 
   if(kickoffUTC){
     const d = new Date(kickoffUTC);
@@ -801,13 +801,14 @@ async function resolveLeagueSeasonFromManifest({ leagueId, kickoffUTC, computedS
       const year = d.getUTCFullYear();
       const candidates = [year, year - 1, year + 1];
       for(const candidate of candidates){
-        if(seasons.includes(candidate)) return candidate;
+        if(seasons.includes(candidate)) return { season: candidate, foundExact: false, pickedFallback: false };
       }
     }
   }
 
   const maxSeason = seasons.reduce((max, value) => (value > max ? value : max), -Infinity);
-  return Number.isFinite(maxSeason) ? maxSeason : null;
+  if(Number.isFinite(maxSeason)) return { season: maxSeason, foundExact: false, pickedFallback: true };
+  return { season: null, foundExact: false, pickedFallback: false };
 }
 
 function _norm(str){ return String(str||"").trim().toLowerCase(); }
@@ -2542,26 +2543,29 @@ async function renderCompetitionStandings(leagueId, season, fallbackMatches = []
 
   const manifest = await loadV1Manifest();
   const manifestSeasons = listManifestSeasons(manifest, lid);
-  const seasonResolved = await resolveLeagueSeasonFromManifest({
+  const resolutionResult = await resolveLeagueSeasonFromManifest({
     leagueId: lid,
     kickoffUTC,
     computedSeason
   });
+  const seasonResolved = resolutionResult.season;
+  const foundExact = resolutionResult.foundExact;
+  const pickedFallback = resolutionResult.pickedFallback;
+  
   const entry = findManifestEntry(manifest, lid, seasonResolved);
-  const { standingsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
+  const { standingsFile, compstatsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
 
-  console.log("[STANDINGS] Resolve:", {
-    leagueId: { value: leagueId, type: typeof leagueId },
-    leagueIdNumber: lid,
-    season: { value: season, type: typeof season },
+  console.log("[COMPETITION-MANIFEST]", JSON.stringify({
+    leagueId: lid,
     computedSeason,
-    kickoff_utc: kickoffUTC,
-    country,
-    competitionName,
-    manifestSeasonsCount: manifestSeasons.length,
-    seasonResolved,
-    hasExactEntry: !!entry
-  });
+    resolvedSeason: seasonResolved,
+    kickoffUTC,
+    seasonsAvailableCount: manifestSeasons.length,
+    foundExact,
+    pickedFallback,
+    standingsFile,
+    compstatsFile
+  }));
 
   if(seasonResolved === null){
     const debug = `leagueId=${String(leagueId)} kickoff=${String(kickoffUTC || "")}`;
@@ -2685,26 +2689,29 @@ async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
 
   const manifest = await loadV1Manifest();
   const manifestSeasons = listManifestSeasons(manifest, lid);
-  const seasonResolved = await resolveLeagueSeasonFromManifest({
+  const resolutionResult = await resolveLeagueSeasonFromManifest({
     leagueId: lid,
     kickoffUTC,
     computedSeason
   });
+  const seasonResolved = resolutionResult.season;
+  const foundExact = resolutionResult.foundExact;
+  const pickedFallback = resolutionResult.pickedFallback;
+  
   const entry = findManifestEntry(manifest, lid, seasonResolved);
-  const { compstatsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
+  const { standingsFile, compstatsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
 
-  console.log("[STATS] Resolve:", {
-    leagueId: { value: leagueId, type: typeof leagueId },
-    leagueIdNumber: lid,
-    season: { value: season, type: typeof season },
+  console.log("[COMPETITION-MANIFEST]", JSON.stringify({
+    leagueId: lid,
     computedSeason,
-    kickoff_utc: kickoffUTC,
-    country,
-    competitionName,
-    manifestSeasonsCount: manifestSeasons.length,
-    seasonResolved,
-    hasExactEntry: !!entry
-  });
+    resolvedSeason: seasonResolved,
+    kickoffUTC,
+    seasonsAvailableCount: manifestSeasons.length,
+    foundExact,
+    pickedFallback,
+    standingsFile,
+    compstatsFile
+  }));
 
   if(seasonResolved === null){
     const debug = `leagueId=${String(leagueId)} kickoff=${String(kickoffUTC || "")}`;
