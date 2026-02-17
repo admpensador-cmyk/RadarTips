@@ -37,10 +37,10 @@ jobs:
           echo "========================================"
           echo ""
           echo "Batch updating all leagues from calendar_7d.json..."
-          echo "Each league will try neighbor seasons if initial data is empty."
+          echo "Using deterministic season resolution via /leagues API..."
           echo ""
           
-          node tools/update-competition-extras-batch.mjs
+          node tools/update-competition-extras-batch-v2.mjs
           
           echo ""
           echo "========================================"

@@ -27,7 +27,7 @@ jobs:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
 
       - name: Generate snapshots
-        run: node tools/generate-all-snapshots.mjs
+        run: node tools/generate-all-snapshots-v2.mjs
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
