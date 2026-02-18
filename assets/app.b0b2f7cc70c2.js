@@ -755,15 +755,23 @@ async function loadV1JSON(file, fallback){
 }
 
 let _manifestPromise = null;
+let _manifestCacheTime = null;
 let _manifestSeasonRules = null;
 async function loadV1Manifest(){
-  if(_manifestPromise) return _manifestPromise;
+  const now = Date.now();
+  // Invalidate cache every 5 minutes to get fresh manifest
+  if(_manifestPromise && (!_manifestCacheTime || (now - _manifestCacheTime) < 300000)) return _manifestPromise;
+  
+  console.log("[MANIFEST] Loading manifest.json" + (_manifestCacheTime ? " (cache expired)" : " (first load)"));
+  _manifestCacheTime = now;
+  
   _manifestPromise = (async () => {
     const manifest = await loadV1JSON("manifest.json", null);
     if(!manifest || !Array.isArray(manifest.entries)){
       console.warn("[MANIFEST] Missing or invalid manifest.json");
       return null;
     }
+    console.log("[MANIFEST] Loaded", manifest.entries.length, "entries, generated:", manifest.generated_at_utc);
     if(manifest.season_rules && typeof manifest.season_rules === "object"){
       _manifestSeasonRules = manifest.season_rules;
     }
@@ -2584,7 +2592,9 @@ async function renderCompetitionStandings(leagueId, season, fallbackMatches = []
   }
 
   if(!entry || !entry.standings){
-    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
+    const debugInfo = `Liga ${lid} / Season ${seasonResolved} / Arquivo: ${standingsFile} / Entry: ${entry ? 'existe' : 'NÃO EXISTE'} / Standings: ${entry?.standings ? 'existe' : 'NÃO EXISTE'}`;
+    console.warn("[STANDINGS] Entry check failed:", debugInfo);
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.75em;margin-top:8px;opacity:0.6;font-family:monospace;word-break:break-all;">${escAttr(debugInfo)}</div></div>`;
   }
 
   // Load from API/R2/static
