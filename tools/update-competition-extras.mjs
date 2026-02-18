@@ -398,8 +398,11 @@ function saveJSON(filePath, data) {
 
 // Count teams in standings (0 if empty/null)
 function countTeamsInStandings(standings) {
-  if (!standings || !standings.standings__list) return 0;
-  return standings.standings__list.length;
+  if (!standings) return 0;
+  // standings object has property 'standings' which is an array, OR
+  // standings itself could be an array (legacy format)
+  const teams = standings.standings || standings;
+  return Array.isArray(teams) ? teams.length : 0;
 }
 
 // Try single season fetch
@@ -448,22 +451,28 @@ async function main() {
 
   try {
     // Determine seasons to try
-    const seasonNum = parseInt(config.season, 10);
-    const nowYear = new Date().getUTCFullYear();
-    const seasonsToTry = config.tryNeighbors
-      ? [nowYear, nowYear - 1, nowYear + 1]
-      : [seasonNum];
-
-    // Keep candidates in a sane window around current year.
-    const filteredSeasons = seasonsToTry.filter((year, idx, arr) => (
-      Number.isFinite(year) && year >= nowYear - 1 && year <= nowYear + 1 && arr.indexOf(year) === idx
-    ));
-    const finalSeasons = filteredSeasons.length > 0 ? filteredSeasons : [seasonNum];
+    let finalSeasons = [];
+    
+    if (config.season) {
+      // Season was explicitly provided via CLI
+      finalSeasons = [parseInt(config.season, 10)];
+    } else {
+      // Auto-detect based on current date
+      // European seasons: Aug-May (e.g., "2025-2026" season = year 2025)
+      // In Feb 2026, we're in 2025-2026 season (started Aug 2025)
+      // In Aug 2026, we're in 2026-2027 season (starts now)
+      const now = new Date();
+      const year = now.getUTCFullYear();
+      const month = now.getUTCMonth() + 1; // 1-based month
+      const season = (month >= 8) ? year : (year - 1);
+      finalSeasons = [season];
+      console.log(`  ℹ️  Season auto-detected: month=${month}, year=${year}, using season=${season}\n`);
+    }
 
     let result = null;
 
     // Try each season in order
-    if (config.tryNeighbors && finalSeasons.length > 1) {
+    if (config.tryNeighbors) {
       console.log(`🔄 Trying seasons in order: ${finalSeasons.join(', ')}\n`);
     }
 

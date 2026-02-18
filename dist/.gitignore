@@ -5,3 +5,19 @@
 # block zip artifacts
 dist/*.zip
 **/*.zip
+
+# Local snapshot artifacts
+data/v1/*.json
+
+# Wrangler local config
+.wrangler/
+
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Wrangler cache artifacts
+wrangler-account.json
+cf.json

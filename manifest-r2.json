@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "generated_at_utc": "2026-02-18T12:00:52.787Z",
+  "season_rules": {
+    "description": "Regras para determinar season corretamente por país",
+    "default": {
+      "type": "europe_default",
+      "description": "Ligas europeias: julho em diante = season atual"
+    },
+    "overrides": {
+      "Brazil": {
+        "type": "calendar_year",
+        "description": "Brasil usa ano civil"
+      }
+    }
+  },
+  "totals": {
+    "standings": 7,
+    "compstats": 6,
+    "cups": 0,
+    "entries": 7
+  },
+  "entries": [
+    {
+      "leagueId": 40,
+      "season": 2025,
+      "standings": {
+        "leagueId": 40,
+        "season": 2025,
+        "file": "standings_40_2025.json",
+        "sha1": "4577ae675e934ee44ad8e4d9f1c82e095e952348",
+        "bytes": 5050,
+        "generated_at_utc": "2026-02-17T19:30:00.000Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "mock-test",
+        "dataStatus": "ok",
+        "coverage": null
+      }
+    },
+    {
+      "leagueId": 71,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 71,
+        "season": 2026,
+        "file": "compstats_71_2026.json",
+        "sha1": "9e022bc5d5d3a30368b171007ee82639532fd3db",
+        "bytes": 952,
+        "generated_at_utc": "2026-02-18T11:59:23.066Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      },
+      "standings": {
+        "leagueId": 71,
+        "season": 2026,
+        "file": "standings_71_2026.json",
+        "sha1": "22851491858ff3ef87f3e3cfd992ade889dc860c",
+        "bytes": 555,
+        "generated_at_utc": "2026-02-18T11:59:19.915Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      }
+    },
+    {
+      "leagueId": 78,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 78,
+        "season": 2025,
+        "file": "compstats_78_2025.json",
+        "sha1": "e5089bf1ab469013708b664ba6ad4c37c2f3ad26",
+        "bytes": 973,
+        "generated_at_utc": "2026-02-18T11:59:57.427Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      },
+      "standings": {
+        "leagueId": 78,
+        "season": 2025,
+        "file": "standings_78_2025.json",
+        "sha1": "182668b61361902ecf26bd72d66bd4c71ce0583b",
+        "bytes": 556,
+        "generated_at_utc": "2026-02-18T11:59:37.392Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      }
+    },
+    {
+      "leagueId": 140,
+      "season": 2025,
+      "compstats": {
+        "leagueId": 140,
+        "season": 2025,
+        "file": "compstats_140_2025.json",
+        "sha1": "1a80b6ea8fe8854a11a0c5f8ca6056b783a452a9",
+        "bytes": 966,
+        "generated_at_utc": "2026-02-18T12:00:52.201Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      },
+      "standings": {
+        "leagueId": 140,
+        "season": 2025,
+        "file": "standings_140_2025.json",
+        "sha1": "a7fa74cccb01ecec6a5219331d3310da811ad128",
+        "bytes": 556,
+        "generated_at_utc": "2026-02-18T12:00:01.760Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      }
+    },
+    {
+      "leagueId": 475,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 475,
+        "season": 2026,
+        "file": "compstats_475_2026.json",
+        "sha1": "04c54254ad7f6460f3fdd10fd065a1dbafe60fa3",
+        "bytes": 927,
+        "generated_at_utc": "2026-02-18T11:59:36.554Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      },
+      "standings": {
+        "leagueId": 475,
+        "season": 2026,
+        "file": "standings_475_2026.json",
+        "sha1": "1d65c52b2c2e6d37a761560c8bec9ebb2d02b1b4",
+        "bytes": 557,
+        "generated_at_utc": "2026-02-18T11:59:29.883Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      }
+    },
+    {
+      "leagueId": 477,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 477,
+        "season": 2026,
+        "file": "compstats_477_2026.json",
+        "sha1": "b88b23dddaa96e66b87c02c2dc53d8622ec4665a",
+        "bytes": 894,
+        "generated_at_utc": "2026-02-18T11:59:29.047Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      },
+      "standings": {
+        "leagueId": 477,
+        "season": 2026,
+        "file": "standings_477_2026.json",
+        "sha1": "db1d075fe126cccb892b0f3f986aa8ed778b5175",
+        "bytes": 557,
+        "generated_at_utc": "2026-02-18T11:59:23.895Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      }
+    },
+    {
+      "leagueId": 622,
+      "season": 2026,
+      "compstats": {
+        "leagueId": 622,
+        "season": 2026,
+        "file": "compstats_622_2026.json",
+        "sha1": "992a19a63d1ebc0403085b1ca1520da76b291827",
+        "bytes": 894,
+        "generated_at_utc": "2026-02-18T11:59:19.075Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      },
+      "standings": {
+        "leagueId": 622,
+        "season": 2026,
+        "file": "standings_622_2026.json",
+        "sha1": "763be4618d040e67f279e1f9a900f924c6da72ac",
+        "bytes": 557,
+        "generated_at_utc": "2026-02-18T11:59:15.449Z",
+        "schemaVersion": 1,
+        "type": "league",
+        "seasonSource": "current",
+        "dataStatus": "empty",
+        "coverage": {
+          "standings": true,
+          "fixtures": false,
+          "events": false,
+          "statistics": false
+        }
+      }
+    }
+  ]
+}

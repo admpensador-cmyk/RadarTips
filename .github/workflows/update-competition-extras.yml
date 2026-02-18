@@ -126,51 +126,36 @@ jobs:
           BASE="https://radartips-data.m2otta-music.workers.dev/v1"
 
           echo "Checking: $BASE/manifest.json"
-          curl -sS -D - "$BASE/manifest.json" -o /tmp/manifest.json | head -n 20
-          echo
-
-          echo "Checking: $BASE/standings_40_2025.json"
-          curl -sS -D - "$BASE/standings_40_2025.json" -o /tmp/s40.json | head -n 20
-          echo
-
-          echo "Checking: $BASE/compstats_40_2025.json"
-          set +e
-          curl -sS -D - "$BASE/compstats_40_2025.json" -o /tmp/c40.json | head -n 20
-          curl_exit=$?
-          set -e
-          if [[ $curl_exit -ne 0 ]]; then
-            echo "compstats_40_2025 request failed with exit code $curl_exit"
+          MANIFEST_STATUS=$(curl -sS -o /tmp/manifest.json -w "%{http_code}" "$BASE/manifest.json")
+          if [[ "$MANIFEST_STATUS" != "200" ]]; then
+            echo "❌ Manifest returned HTTP $MANIFEST_STATUS"
+            exit 1
           fi
+          echo "✅ Manifest OK (HTTP 200)"
+          echo "First entries:"
+          node -e "const m=require('/tmp/manifest.json');console.log(JSON.stringify(m.entries.slice(0,3),null,2))"
           echo
 
-          echo "First bytes of compstats_40_2025:"
-          head -c 120 /tmp/c40.json 2>/dev/null || true
-          echo
-
-          COMP40_STATUS=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}' /tmp/c40.headers 2>/dev/null)
-          if [[ -z "${COMP40_STATUS:-}" ]]; then
-            # capture headers robustly if direct pipeline didn't save them
-            curl -sS -D /tmp/c40.headers "$BASE/compstats_40_2025.json" -o /tmp/c40.json >/dev/null 2>&1 || true
-            COMP40_STATUS=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}' /tmp/c40.headers 2>/dev/null || true)
+          # Get first entry from manifest to test
+          FIRST_LEAGUE=$(node -e "const m=require('/tmp/manifest.json');if(m.entries[0])console.log(m.entries[0].leagueId)")
+          FIRST_SEASON=$(node -e "const m=require('/tmp/manifest.json');if(m.entries[0])console.log(m.entries[0].season)")
+          
+          if [[ -z "$FIRST_LEAGUE" || -z "$FIRST_SEASON" ]]; then
+            echo "❌ Manifest has no entries"
+            exit 1
           fi
 
-          if [[ "${COMP40_STATUS:-}" != "200" ]]; then
-            echo
-            echo "compstats_40_2025 not 200; probing manifest for any compstats file..."
-            FIRST_COMPSTATS=$(node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('/tmp/manifest.json','utf8'));const e=(m.entries||[]).find(x=>x.compstats&&x.compstats.file);if(e)process.stdout.write(e.compstats.file);")
-            if [[ -n "${FIRST_COMPSTATS:-}" ]]; then
-              echo "Checking fallback compstats from manifest: $FIRST_COMPSTATS"
-              curl -sS -D - "$BASE/$FIRST_COMPSTATS" -o /tmp/c_any.json | head -n 20
-              echo "First bytes of $FIRST_COMPSTATS:"
-              head -c 120 /tmp/c_any.json 2>/dev/null || true
-              echo
-            else
-              echo "No compstats entry found in manifest."
-            fi
+          echo "Testing standings for league ${FIRST_LEAGUE}, season ${FIRST_SEASON}..."
+          STANDINGS_FILE="standings_${FIRST_LEAGUE}_${FIRST_SEASON}.json"
+          STANDINGS_STATUS=$(curl -sS -o /tmp/test_standings.json -w "%{http_code}" "$BASE/$STANDINGS_FILE")
+          if [[ "$STANDINGS_STATUS" != "200" ]]; then
+            echo "❌ Standings returned HTTP $STANDINGS_STATUS"
+            exit 1
           fi
+          echo "✅ Standings OK (HTTP 200)"
+          echo
 
-          echo "Manifest league 40 lines:"
-          grep -n '"leagueId"[[:space:]]*:[[:space:]]*40' /tmp/manifest.json | head || true
+          echo "✅ Verify OK"
 
       - name: Commit if changes were made
         if: ${{ inputs.do_commit == 'true' }}

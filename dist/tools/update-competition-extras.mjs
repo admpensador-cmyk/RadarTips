@@ -32,8 +32,9 @@ function parseArgs() {
     leagueId: null,
     season: null,
     outDir: path.join(ROOT, 'data', 'v1'),
-    limitFixtures: 120,
     concurrency: 5,
+    tryNeighbors: false,
+    limitFixtures: null,
   };
 
   for (let i = 0; i < args.length; i += 2) {
@@ -43,8 +44,9 @@ function parseArgs() {
     if (key === '--leagueId') config.leagueId = val;
     else if (key === '--season') config.season = val;
     else if (key === '--outDir') config.outDir = val;
-    else if (key === '--limitFixtures') config.limitFixtures = parseInt(val, 10);
     else if (key === '--concurrency') config.concurrency = parseInt(val, 10);
+    else if (key === '--tryNeighbors') config.tryNeighbors = val === 'true' || val === '1';
+    else if (key === '--limitFixtures') config.limitFixtures = parseInt(val, 10);
   }
 
   return config;
@@ -78,14 +80,21 @@ class PromisePool {
 async function fetchWithRetry(url, options = {}, retries = 2) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Add timeout of 10 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       const res = await fetch(url, {
         ...options,
+        signal: controller.signal,
         headers: {
           'x-apisports-key': APIFOOTBALL_KEY,
           'Accept': 'application/json',
           ...options.headers,
         },
       });
+
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         return await res.json();
@@ -102,6 +111,10 @@ async function fetchWithRetry(url, options = {}, retries = 2) {
 
       throw new Error(`HTTP ${res.status}`);
     } catch (e) {
+      if (e.name === 'AbortError') {
+        console.warn(`  ⚠️  Request timeout (10s)`);
+        throw new Error('Request timeout');
+      }
       if (attempt === retries) throw e;
       const delay = (attempt + 1) * 800;
       console.warn(`  ⚠️  Fetch failed: ${e.message}, retry in ${delay}ms...`);
@@ -117,16 +130,42 @@ async function fetchStandings(leagueId, season) {
   const data = await fetchWithRetry(url);
 
   if (!data || !data.response || data.response.length === 0) {
+    const errors = data?.errors ? JSON.stringify(data.errors) : 'none';
     console.warn('  ⚠️  No standings data found');
+    console.warn(`    league=${leagueId} season=${season} endpoint=${url} errors=${errors}`);
     return null;
   }
 
   // Normalize: API returns response[0].league.standings as nested array
   const leagueData = data.response[0];
   const league = leagueData?.league || {};
-  const standings = (leagueData?.league?.standings || [])[0] || [];
+  const allStandings = leagueData?.league?.standings || [];
+  
+  // Choose the most consistent group (where all teams have similar number of games)
+  let bestGroup = allStandings[0] || [];
+  if (allStandings.length > 1) {
+    // Calculate consistency score for each group (lower variance = more consistent)
+    const groupScores = allStandings.map(group => {
+      if (!Array.isArray(group) || group.length === 0) return { group, variance: Infinity };
+      const games = group.map(t => t.all?.played || 0);
+      const avg = games.reduce((a, b) => a + b, 0) / games.length;
+      const variance = games.reduce((sum, g) => sum + Math.pow(g - avg, 2), 0) / games.length;
+      return { group, variance, avg };
+    });
+    // Sort by variance (ascending) then by avg games (descending)
+    groupScores.sort((a, b) => (a.variance - b.variance) || (b.avg - a.avg));
+    bestGroup = groupScores[0].group;
+    console.log(`  ℹ️  Found ${allStandings.length} groups, using most consistent (variance: ${groupScores[0].variance.toFixed(2)}, avg games: ${groupScores[0].avg.toFixed(1)})`);
+  }
+  
+  const standings = bestGroup;
 
   return {
+    schemaVersion: 1,
+    meta: {
+      leagueId: Number(leagueId),
+      season: Number(season),
+    },
     league: {
       id: league.id,
       name: league.name,
@@ -141,33 +180,29 @@ async function fetchStandings(leagueId, season) {
 }
 
 // Fetch fixtures for a league
-async function fetchFixtures(leagueId, season, limit = 120) {
-  console.log(`📋 Fetching fixtures for league=${leagueId}, season=${season} (limit=${limit})...`);
-  const url = `${APIFOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}&status=FT`;
+async function fetchFixtures(leagueId, season, limitFixtures) {
+  console.log(`📋 Fetching ALL fixtures for league=${leagueId}, season=${season}...`);
+  const url = `${APIFOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
   let allFixtures = [];
-  let page = 1;
-  const pageSize = 100;
 
-  while (allFixtures.length < limit) {
-    try {
-      const data = await fetchWithRetry(`${url}&page=${page}`);
-      if (!data || !data.response) break;
-
-      allFixtures.push(...data.response);
-      if (data.response.length < pageSize) break;
-      page++;
-    } catch (e) {
-      console.warn(`  ⚠️  Error fetching page ${page}:`, e.message);
-      break;
+  try {
+    const data = await fetchWithRetry(url);
+    if (data && Array.isArray(data.response)) {
+      allFixtures = data.response;
     }
+  } catch (e) {
+    console.warn(`  ⚠️  Error fetching fixtures:`, e.message);
   }
 
-  // Sort by date descending (most recent first) and limit
+  // Sort by date descending (most recent first)
   allFixtures = allFixtures
-    .sort((a, b) => new Date(b.fixture.date) - new Date(a.fixture.date))
-    .slice(0, limit);
+    .sort((a, b) => new Date(b.fixture.date) - new Date(a.fixture.date));
 
-  console.log(`  ✓ Got ${allFixtures.length} fixtures`);
+  if (Number.isFinite(limitFixtures) && limitFixtures > 0) {
+    allFixtures = allFixtures.slice(0, limitFixtures);
+  }
+
+  console.log(`  ✓ Got ${allFixtures.length} fixtures for entire season`);
   return allFixtures;
 }
 
@@ -202,8 +237,11 @@ async function aggregateStats(fixtures, pool) {
   console.log(`📈 Aggregating stats from ${fixtures.length} fixtures...`);
 
   const fixtures_total = fixtures.length;
+  let fixtures_finished = 0;
   let fixtures_with_stats = 0;
   let finals_used = 0;
+
+  const finishedStatuses = new Set(['FT', 'AET', 'PEN']);
 
   const metrics = {
     goals: [],
@@ -221,8 +259,29 @@ async function aggregateStats(fixtures, pool) {
   let processed = 0;
   for (const fixture of fixtures) {
     await pool.run(async () => {
-      const stats = await fetchFixtureStats(fixture.fixture.id);
-      if (!stats || stats.length === 0) return;
+      const status = fixture?.fixture?.status?.short;
+      const fixtureId = fixture?.fixture?.id;
+      
+      if (!finishedStatuses.has(status)) {
+        processed++;
+        return;
+      }
+
+      fixtures_finished++;
+      console.log(`  → Fetching stats for fixture ${fixtureId} (${processed}/${fixtures.length})...`);
+      
+      let stats = null;
+      try {
+        stats = await fetchFixtureStats(fixtureId);
+      } catch (e) {
+        console.warn(`  ⚠️  Stats fetch failed for fixture ${fixtureId}:`, e.message);
+        processed++;
+        return;
+      }
+      if (!stats || stats.length === 0) {
+        processed++;
+        return;
+      }
 
       try {
         const homeStats = stats[0];
@@ -309,6 +368,7 @@ async function aggregateStats(fixtures, pool) {
   return {
     sample: {
       fixtures_total,
+      fixtures_finished,
       fixtures_used: fixtures.length,
       fixtures_with_stats,
       finals_used,
@@ -336,12 +396,39 @@ function saveJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
+// Count teams in standings (0 if empty/null)
+function countTeamsInStandings(standings) {
+  if (!standings) return 0;
+  // standings object has property 'standings' which is an array, OR
+  // standings itself could be an array (legacy format)
+  const teams = standings.standings || standings;
+  return Array.isArray(teams) ? teams.length : 0;
+}
+
+// Try single season fetch
+async function tryFetchSeason(leagueId, season, config) {
+  try {
+    console.log(`  📊 Trying season ${season}...`);
+    const standings = await fetchStandings(leagueId, season);
+    if (!standings) {
+      console.log(`    ⚠️  No data for season ${season}`);
+      return null;
+    }
+    const teamCount = countTeamsInStandings(standings);
+    console.log(`    ✓ Found ${teamCount} teams`);
+    return { standings, season, teamCount };
+  } catch (e) {
+    console.log(`    ⚠️  Error: ${e.message}`);
+    return null;
+  }
+}
+
 // Main
 async function main() {
   const config = parseArgs();
 
   if (!config.leagueId || !config.season) {
-    console.error('❌ Usage: node update-competition-extras.mjs --leagueId <id> --season <year>');
+    console.error('❌ Usage: node update-competition-extras.mjs --leagueId <id> --season <year> [--tryNeighbors true]');
     process.exit(1);
   }
 
@@ -357,28 +444,63 @@ async function main() {
   console.log(`⚙️  Config:`);
   console.log(`  leagueId: ${config.leagueId}`);
   console.log(`  season: ${config.season}`);
+  console.log(`  tryNeighbors: ${config.tryNeighbors}`);
   console.log(`  outDir: ${config.outDir}`);
-  console.log(`  limitFixtures: ${config.limitFixtures}`);
-  console.log(`  concurrency: ${config.concurrency}\n`);
+  console.log(`  concurrency: ${config.concurrency}`);
+  console.log(`  limitFixtures: ${Number.isFinite(config.limitFixtures) ? config.limitFixtures : 'none'}\n`);
 
   try {
-    // Fetch standings
-    const standings = await fetchStandings(config.leagueId, config.season);
-    if (!standings) {
-      console.error('❌ Failed to fetch standings');
-      process.exit(1);
+    // Determine seasons to try
+    let finalSeasons = [];
+    
+    if (config.season) {
+      // Season was explicitly provided via CLI
+      finalSeasons = [parseInt(config.season, 10)];
+    } else {
+      // Auto-detect based on current date
+      // European seasons: Aug-May (e.g., "2025-2026" season = year 2025)
+      // In Feb 2026, we're in 2025-2026 season (started Aug 2025)
+      // In Aug 2026, we're in 2026-2027 season (starts now)
+      const now = new Date();
+      const year = now.getUTCFullYear();
+      const month = now.getUTCMonth() + 1; // 1-based month
+      const season = (month >= 8) ? year : (year - 1);
+      finalSeasons = [season];
+      console.log(`  ℹ️  Season auto-detected: month=${month}, year=${year}, using season=${season}\n`);
     }
 
+    let result = null;
+
+    // Try each season in order
+    if (config.tryNeighbors) {
+      console.log(`🔄 Trying seasons in order: ${finalSeasons.join(', ')}\n`);
+    }
+
+    for (const trySeasonNum of finalSeasons) {
+      result = await tryFetchSeason(config.leagueId, trySeasonNum, config);
+      if (result && result.teamCount > 0) {
+        console.log(`✅ Winner season: ${trySeasonNum}\n`);
+        break;
+      }
+    }
+
+    if (!result) {
+      console.warn('⚠️  No standings found in any season; skipping this league');
+      process.exit(0);
+    }
+
+    const standings = result.standings;
+    const winnerSeason = result.season;
+
     // Save standings
-    const standingsFile = path.join(config.outDir, `standings_${config.leagueId}_${config.season}.json`);
+    const standingsFile = path.join(config.outDir, `standings_${config.leagueId}_${winnerSeason}.json`);
     saveJSON(standingsFile, standings);
     console.log(`✅ Standings saved: ${standingsFile}\n`);
 
     // Fetch fixtures
-    const fixtures = await fetchFixtures(config.leagueId, config.season, config.limitFixtures);
+    const fixtures = await fetchFixtures(config.leagueId, winnerSeason, config.limitFixtures);
     if (fixtures.length === 0) {
-      console.error('❌ No fixtures found');
-      process.exit(1);
+      console.warn('⚠️  No fixtures found; saving empty stats.');
     }
 
     // Aggregate stats
@@ -388,13 +510,18 @@ async function main() {
     // Prepare compstats output
     const leagueInfo = standings.league;
     const compStats = {
+      schemaVersion: 1,
+      meta: {
+        leagueId: Number(config.leagueId),
+        season: Number(winnerSeason),
+      },
       league: leagueInfo,
       generated_at_utc: new Date().toISOString(),
       ...aggStats,
     };
 
     // Save compstats
-    const compStatsFile = path.join(config.outDir, `compstats_${config.leagueId}_${config.season}.json`);
+    const compStatsFile = path.join(config.outDir, `compstats_${config.leagueId}_${winnerSeason}.json`);
     saveJSON(compStatsFile, compStats);
     console.log(`✅ Competition stats saved: ${compStatsFile}\n`);
 

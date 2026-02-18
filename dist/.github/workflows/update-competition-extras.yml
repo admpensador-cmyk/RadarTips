@@ -1,7 +1,12 @@
 name: Update Competition Extras (Standings + Stats)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      do_commit:
+        description: "Commit and push generated files"
+        required: false
+        default: "false"
   schedule:
     - cron: "30 11 * * *" # 08:30 BRT (UTC-3) ~= 11:30 UTC (after daily snapshot)
 
@@ -31,13 +36,54 @@ jobs:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -euo pipefail
-          node tools/update-competition-extras-batch.mjs
+          
+          echo "========================================"
+          echo "UPDATE COMPETITION EXTRAS (ALL LEAGUES)"
+          echo "========================================"
+          echo ""
+          echo "Batch updating all leagues from calendar_7d.json..."
+          echo "Using deterministic season resolution via /leagues API..."
+          echo ""
+          
+          node tools/update-competition-extras-batch-v2.mjs
+          
+          echo ""
+          echo "========================================"
+          echo "GENERATION COMPLETE"
+          echo "========================================"
 
       - name: List generated files
         run: |
-          ls -lh data/v1/standings_*.json data/v1/compstats_*.json 2>/dev/null || echo "No files generated yet"
+          echo "════════════════════════════════════════════"
+          echo "GENERATED FILES"
+          echo "════════════════════════════════════════════"
+          
+          echo ""
+          echo "Standings Files:"
+          ls -lh data/v1/standings_*.json 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "Compstats Files:"
+          ls -lh data/v1/compstats_*.json 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "Summary:"
+          STANDINGS_COUNT=$(ls -1 data/v1/standings_*.json 2>/dev/null | wc -l)
+          COMPSTATS_COUNT=$(ls -1 data/v1/compstats_*.json 2>/dev/null | wc -l)
+          echo "  Standings: ${STANDINGS_COUNT} files"
+          echo "  Compstats: ${COMPSTATS_COUNT} files"
+          echo ""
 
-      - name: Upload standings + stats to R2 (optional)
+      - name: Build manifest (reference only existing files)
+        run: node tools/build-manifest.mjs
+
+      - name: Validate manifest vs filesystem
+        run: node tools/validate-manifest-files.mjs
+
+      - name: Smoke test snapshots (local)
+        run: node tools/smoke-test-snapshots.mjs
+
+      - name: Upload standings + stats + manifest to R2 (optional)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -50,48 +96,102 @@ jobs:
             exit 0
           fi
 
-          echo "R2_BUCKET_NAME=${R2_BUCKET_NAME}"
+          npx -y wrangler@4.62.0 --version
 
-          npm i -g wrangler@4.62.0
-          wrangler --version
+          test -f "data/v1/manifest.json"
 
-          # Find and upload all standings + compstats files
-          echo "=== PUT (REMOTE) ==="
-          for file in data/v1/standings_*.json data/v1/compstats_*.json; do
-            if [[ -f "$file" ]]; then
-              basename=$(basename "$file")
-              echo "Uploading $basename..."
-              wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/${basename}" \
-                --file "$file" \
-                --content-type "application/json"
-            fi
+          shopt -s nullglob
+          files=(data/v1/standings_*.json data/v1/compstats_*.json)
+
+          echo "Uploading manifest.json..."
+          npx -y wrangler@4.62.0 r2 object put --remote "${R2_BUCKET_NAME}/v1/manifest.json" \
+            --file "data/v1/manifest.json" \
+            --content-type "application/json"
+
+          uploaded=1
+          for file in "${files[@]}"; do
+            filename="$(basename "${file}")"
+            echo "Uploading ${filename}..."
+            npx -y wrangler@4.62.0 r2 object put --remote "${R2_BUCKET_NAME}/v1/${filename}" \
+              --file "${file}" \
+              --content-type "application/json"
+            uploaded=$((uploaded + 1))
           done
 
-          echo "=== GET (REMOTE) + verify ==="
-          for file in data/v1/standings_*.json data/v1/compstats_*.json; do
-            if [[ -f "$file" ]]; then
-              basename=$(basename "$file")
-              echo "Verifying $basename..."
-              wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/${basename}" --file "/tmp/verify_${basename}"
-              sha256sum "$file" "/tmp/verify_${basename}"
-            fi
-          done
+          echo "✅ Uploaded ${uploaded} file(s) to R2 via Wrangler"
 
-          echo "Uploaded to R2 OK."
+      - name: Verify R2 objects (HTTP)
+        run: |
+          set -euo pipefail
+          BASE="https://radartips-data.m2otta-music.workers.dev/v1"
+
+          echo "Checking: $BASE/manifest.json"
+          curl -sS -D - "$BASE/manifest.json" -o /tmp/manifest.json | head -n 20
+          echo
+
+          echo "Checking: $BASE/standings_40_2025.json"
+          curl -sS -D - "$BASE/standings_40_2025.json" -o /tmp/s40.json | head -n 20
+          echo
+
+          echo "Checking: $BASE/compstats_40_2025.json"
+          set +e
+          curl -sS -D - "$BASE/compstats_40_2025.json" -o /tmp/c40.json | head -n 20
+          curl_exit=$?
+          set -e
+          if [[ $curl_exit -ne 0 ]]; then
+            echo "compstats_40_2025 request failed with exit code $curl_exit"
+          fi
+          echo
+
+          echo "First bytes of compstats_40_2025:"
+          head -c 120 /tmp/c40.json 2>/dev/null || true
+          echo
+
+          COMP40_STATUS=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}' /tmp/c40.headers 2>/dev/null)
+          if [[ -z "${COMP40_STATUS:-}" ]]; then
+            # capture headers robustly if direct pipeline didn't save them
+            curl -sS -D /tmp/c40.headers "$BASE/compstats_40_2025.json" -o /tmp/c40.json >/dev/null 2>&1 || true
+            COMP40_STATUS=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}' /tmp/c40.headers 2>/dev/null || true)
+          fi
+
+          if [[ "${COMP40_STATUS:-}" != "200" ]]; then
+            echo
+            echo "compstats_40_2025 not 200; probing manifest for any compstats file..."
+            FIRST_COMPSTATS=$(node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('/tmp/manifest.json','utf8'));const e=(m.entries||[]).find(x=>x.compstats&&x.compstats.file);if(e)process.stdout.write(e.compstats.file);")
+            if [[ -n "${FIRST_COMPSTATS:-}" ]]; then
+              echo "Checking fallback compstats from manifest: $FIRST_COMPSTATS"
+              curl -sS -D - "$BASE/$FIRST_COMPSTATS" -o /tmp/c_any.json | head -n 20
+              echo "First bytes of $FIRST_COMPSTATS:"
+              head -c 120 /tmp/c_any.json 2>/dev/null || true
+              echo
+            else
+              echo "No compstats entry found in manifest."
+            fi
+          fi
+
+          echo "Manifest league 40 lines:"
+          grep -n '"leagueId"[[:space:]]*:[[:space:]]*40' /tmp/manifest.json | head || true
 
       - name: Commit if changes were made
+        if: ${{ inputs.do_commit == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if git diff --quiet data/v1/standings_*.json data/v1/compstats_*.json 2>/dev/null; then
+          # Check for changes in standings, compstats, and manifest
+          if git diff --quiet data/v1/standings_*.json data/v1/compstats_*.json data/v1/manifest.json 2>/dev/null; then
             echo "No changes to commit."
             exit 0
           fi
 
-          git add data/v1/standings_*.json data/v1/compstats_*.json 2>/dev/null || true
+          # Add all generated snapshots and manifest
+          git add data/v1/standings_*.json 2>/dev/null || true
+          git add data/v1/compstats_*.json 2>/dev/null || true
+          git add data/v1/manifest.json 2>/dev/null || true
+          
+          # Only commit if there are staged changes
           git diff --cached --quiet || {
-            git commit -m "chore: update competition standings + stats snapshots"
+            git commit -m "chore: update competition standings + stats snapshots & manifest"
             git push origin main
           }
 

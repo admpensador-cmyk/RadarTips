@@ -640,7 +640,7 @@ window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scr
 
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
-const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json"]);
+const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json","manifest.json"]);
 
 // Helper to check if a file is a standings or compstats snapshot (pattern matching)
 function isCompetitionSnapshot(filename){
@@ -735,6 +735,13 @@ async function loadV1JSON(file, fallback){
       }
       return data;
     }
+    // IMPORTANT: For standings_/compstats_ (competitive data), do NOT fallback to /data/v1
+    // If R2 returns 404, it likely means the snapshot doesn't exist in production.
+    // Attempting /data/v1 may return HTML error page, breaking JSON parsing.
+    if(isCompetitionSnapshot(file)) {
+      console.log(`[COMPETITION-MANIFEST] Snapshot not found on CDN: ${file} (will not try local fallback)`);
+      return fallback;
+    }
     if (DEBUG_CAL && file === 'calendar_7d.json') {
       console.warn('[CAL] R2 worker failed, trying static fallback:', `${V1_STATIC_BASE}/${file}`);
     }
@@ -745,6 +752,70 @@ async function loadV1JSON(file, fallback){
   const api = await loadJSON(`${V1_API_BASE}/${file}`, null);
   if(api) return api;
   return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
+}
+
+let _manifestPromise = null;
+let _manifestSeasonRules = null;
+async function loadV1Manifest(){
+  if(_manifestPromise) return _manifestPromise;
+  _manifestPromise = (async () => {
+    const manifest = await loadV1JSON("manifest.json", null);
+    if(!manifest || !Array.isArray(manifest.entries)){
+      console.warn("[MANIFEST] Missing or invalid manifest.json");
+      return null;
+    }
+    if(manifest.season_rules && typeof manifest.season_rules === "object"){
+      _manifestSeasonRules = manifest.season_rules;
+    }
+    return manifest;
+  })();
+  return _manifestPromise;
+}
+
+function findManifestEntry(manifest, leagueId, season){
+  if(!manifest || !Array.isArray(manifest.entries)) return null;
+  const lid = Number(leagueId);
+  const sn = Number(season);
+  return manifest.entries.find(e => Number(e.leagueId) === lid && Number(e.season) === sn) || null;
+}
+
+function listManifestSeasons(manifest, leagueId){
+  if(!manifest || !Array.isArray(manifest.entries)) return [];
+  const lid = Number(leagueId);
+  if(!Number.isFinite(lid)) return [];
+  return manifest.entries
+    .filter(e => Number(e.leagueId) === lid)
+    .map(e => Number(e.season))
+    .filter(s => Number.isFinite(s));
+}
+
+async function resolveLeagueSeasonFromManifest({ leagueId, kickoffUTC, computedSeason }){
+  const lid = Number(leagueId);
+  if(!Number.isFinite(lid)) return { season: null, foundExact: false, pickedFallback: false };
+
+  const manifest = await loadV1Manifest();
+  if(!manifest || !Array.isArray(manifest.entries)) return { season: null, foundExact: false, pickedFallback: false };
+
+  const seasons = listManifestSeasons(manifest, lid);
+  if(seasons.length === 0) return { season: null, foundExact: false, pickedFallback: false };
+
+  const computed = Number(computedSeason);
+  if(Number.isFinite(computed) && seasons.includes(computed)) return { season: computed, foundExact: true, pickedFallback: false };
+
+  if(kickoffUTC){
+    const d = new Date(kickoffUTC);
+    if(!isNaN(d.getTime())){
+      const year = d.getUTCFullYear();
+      const candidates = [year, year - 1, year + 1];
+      for(const candidate of candidates){
+        if(seasons.includes(candidate)) return { season: candidate, foundExact: false, pickedFallback: false };
+      }
+    }
+  }
+
+  const maxSeason = seasons.reduce((max, value) => (value > max ? value : max), -Infinity);
+  if(Number.isFinite(maxSeason)) return { season: maxSeason, foundExact: false, pickedFallback: true };
+  return { season: null, foundExact: false, pickedFallback: false };
 }
 
 function _norm(str){ return String(str||"").trim().toLowerCase(); }
@@ -1483,10 +1554,8 @@ function competitionKey(m){
   const compName = String(m?.competition || "").trim();
   let season = m?.season || m?.season_id || m?.seasonId;
   if(!season){
-    try{
-      const d = new Date(m?.kickoff_utc);
-      if(!isNaN(d.getTime())) season = String(d.getUTCFullYear());
-    }catch(e){ /* ignore */ }
+    const derived = getSeasonFromKickoffFront(m?.kickoff_utc, m?.country, m?.competition);
+    if(Number.isFinite(derived)) season = String(derived);
   }
 
   if(id !== undefined && id !== null && String(id).trim() !== ""){
@@ -2421,17 +2490,44 @@ function computeCompetitionAggregates(matches){
 }
 
 // Helper functions for competition snapshots
+// Keep in sync with tools/snapshots-config.json (single source of truth for season rules).
+const SEASON_RULES = {
+  default: { type: "europe_default" },
+  overrides: {
+    Brazil: { type: "calendar_year" }
+  }
+};
+
+function normalizeCountryFront(country, competitionName){
+  const direct = String(country || "").trim();
+  if(direct) return direct;
+  const comp = String(competitionName || "").toLowerCase();
+  if(comp.includes("brazil") || comp.includes("brasil")) return "Brazil";
+  return "";
+}
+
+function getSeasonFromKickoffFront(kickoffUTC, country, competitionName, rulesOverride){
+  if(!kickoffUTC) return null;
+  const d = new Date(kickoffUTC);
+  if(isNaN(d.getTime())) return null;
+
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth();
+
+  const rules = rulesOverride || _manifestSeasonRules || SEASON_RULES;
+  const overrides = rules?.overrides || {};
+  const normalizedCountry = normalizeCountryFront(country, competitionName);
+  const overrideRule = normalizedCountry ? overrides[normalizedCountry] : null;
+  const ruleType = (overrideRule && overrideRule.type) || (rules?.default && rules.default.type) || "europe_default";
+
+  if(ruleType === "calendar_year") return year;
+  return month >= 7 ? year : year - 1;
+}
+
 function inferSeasonFromMatches(list) {
   if (!list || list.length === 0) return null;
   const first = list[0];
-  if (!first.kickoff_utc) return null;
-  try {
-    const d = new Date(first.kickoff_utc);
-    if (isNaN(d.getTime())) return null;
-    return String(d.getUTCFullYear());
-  } catch (e) {
-    return null;
-  }
+  return getSeasonFromKickoffFront(first.kickoff_utc, first.country, first.competition);
 }
 
 function getCompetitionSnapshotNames(leagueId, season) {
@@ -2444,35 +2540,70 @@ function getCompetitionSnapshotNames(leagueId, season) {
   };
 }
 
-async function renderCompetitionStandings(leagueId, season){
-  const { standingsFile } = getCompetitionSnapshotNames(leagueId, season);
+async function renderCompetitionStandings(leagueId, season, fallbackMatches = []){
+  const lid = Number(leagueId);
+  const computedSeason = Number(season);
+  const sample = Array.isArray(fallbackMatches) ? fallbackMatches[0] : null;
+  const kickoffUTC = sample?.kickoff_utc || null;
+  const country = sample?.country || null;
+  const competitionName = sample?.competition || null;
+
+  const manifest = await loadV1Manifest();
+  const manifestSeasons = listManifestSeasons(manifest, lid);
+  const resolutionResult = await resolveLeagueSeasonFromManifest({
+    leagueId: lid,
+    kickoffUTC,
+    computedSeason
+  });
+  const seasonResolved = resolutionResult.season;
+  const foundExact = resolutionResult.foundExact;
+  const pickedFallback = resolutionResult.pickedFallback;
   
-  console.log("[STANDINGS] Loading:", { standingsFile, leagueId, season });
-  
+  const entry = findManifestEntry(manifest, lid, seasonResolved);
+  const { standingsFile, compstatsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
+
+  console.log("[COMPETITION-MANIFEST]", JSON.stringify({
+    leagueId: lid,
+    computedSeason,
+    resolvedSeason: seasonResolved,
+    kickoffUTC,
+    seasonsAvailableCount: manifestSeasons.length,
+    foundExact,
+    pickedFallback,
+    standingsFile,
+    compstatsFile
+  }));
+
+  if(seasonResolved === null){
+    const debug = `leagueId=${String(leagueId)} kickoff=${String(kickoffUTC || "")}`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">${escAttr(debug)}</div></div>`;
+  }
+
   if(!standingsFile){
     return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")} (sem leagueId/season)</div>`;
   }
 
+  if(!entry || !entry.standings){
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
+  }
+
   // Load from API/R2/static
   const standings = await loadV1JSON(standingsFile, null);
-  const keys = standings && typeof standings === "object" ? Object.keys(standings) : [];
-  const responseStandings = standings?.response?.[0]?.league?.standings?.[0];
-  console.log("[STANDINGS] Loaded data:", {
-    standingsFile,
-    keys,
-    has_direct_standings: Array.isArray(standings?.standings),
-    direct_count: standings?.standings?.length || 0,
-    has_response_standings: Array.isArray(responseStandings),
-    response_count: Array.isArray(responseStandings) ? responseStandings.length : 0
+  
+  // Validate schema: must be v1 format with standings array
+  if (!standings || standings.schemaVersion !== 1 || !Array.isArray(standings.standings)) {
+    console.warn("[COMPETITION-MANIFEST][STANDINGS-SCHEMA-FAIL]", {
+      schemaVersion: standings?.schemaVersion,
+      hasStandings: Array.isArray(standings?.standings)
+    });
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Snapshot incompatível</div></div>`;
+  }
+
+  console.log("[COMPETITION-MANIFEST][STANDINGS-DATA]", {
+    teams: standings.standings?.length
   });
   
-  if(!standings || !standings.standings || standings.standings.length === 0){
-    console.log("[STANDINGS] Missing direct standings array", {
-      standingsFile,
-      keys,
-      has_response_standings: Array.isArray(responseStandings),
-      response_count: Array.isArray(responseStandings) ? responseStandings.length : 0
-    });
+  if(standings.standings.length === 0){
     return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.standings_unavailable || "Classificação indisponível no momento.")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(standingsFile)}</div></div>`;
   }
 
@@ -2546,20 +2677,69 @@ async function renderCompetitionStandings(leagueId, season){
 }
 
 async function renderCompetitionStats(leagueId, season, fallbackMatches = []){
-  const { compstatsFile } = getCompetitionSnapshotNames(leagueId, season);
+  const lid = Number(leagueId);
+  const computedSeason = Number(season);
+  const sample = Array.isArray(fallbackMatches) ? fallbackMatches[0] : null;
+  const kickoffUTC = sample?.kickoff_utc || null;
+  const country = sample?.country || null;
+  const competitionName = sample?.competition || null;
+
+  const manifest = await loadV1Manifest();
+  const manifestSeasons = listManifestSeasons(manifest, lid);
+  const resolutionResult = await resolveLeagueSeasonFromManifest({
+    leagueId: lid,
+    kickoffUTC,
+    computedSeason
+  });
+  const seasonResolved = resolutionResult.season;
+  const foundExact = resolutionResult.foundExact;
+  const pickedFallback = resolutionResult.pickedFallback;
   
-  console.log("[STATS] Loading:", { compstatsFile, leagueId, season });
-  
+  const entry = findManifestEntry(manifest, lid, seasonResolved);
+  const { standingsFile, compstatsFile } = getCompetitionSnapshotNames(lid, seasonResolved);
+
+  console.log("[COMPETITION-MANIFEST]", JSON.stringify({
+    leagueId: lid,
+    computedSeason,
+    resolvedSeason: seasonResolved,
+    kickoffUTC,
+    seasonsAvailableCount: manifestSeasons.length,
+    foundExact,
+    pickedFallback,
+    standingsFile,
+    compstatsFile
+  }));
+
+  if(seasonResolved === null){
+    const debug = `leagueId=${String(leagueId)} kickoff=${String(kickoffUTC || "")}`;
+    return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">${escAttr(debug)}</div></div>`;
+  }
+
   if(compstatsFile){
+    if(!entry){
+      return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Arquivo: ${escAttr(compstatsFile)}</div></div>`;
+    }
+    if(!entry.compstats){
+      return `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr("Estatísticas ainda não disponíveis para esta competição/temporada.")}</div>`;
+    }
+
     const compStats = await loadV1JSON(compstatsFile, null);
     console.log("[STATS] Loaded data:", { compstatsFile, has_metrics: compStats && compStats.metrics, keys: compStats ? Object.keys(compStats) : [] });
-    
+
+    if(compStats && Number(compStats.schemaVersion) !== 1){
+      console.error("[STATS] Snapshot schemaVersion mismatch", {
+        compstatsFile,
+        schemaVersion: compStats.schemaVersion
+      });
+      return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Snapshot incompatível</div></div>`;
+    }
+
     // Reject dummy data (no real metrics)
     if(compStats && (!compStats.metrics || Object.keys(compStats.metrics).length === 0)){
       console.log("[STATS] Detected dummy/empty metrics, rejecting");
       return `<div class="smallnote" style="padding:20px;text-align:center;"><div>${escAttr(T.no_stats_available || "Estatísticas indisponíveis")}</div><div style="font-size:0.85em;margin-top:6px;opacity:0.7;">Aguardando dados reais da API...</div></div>`;
     }
-    
+
     if(compStats && compStats.metrics){
       return renderCompStatsDisplay(compStats);
     }
@@ -2811,7 +2991,10 @@ async function openModal(type, value){
     if(parsed.leagueId){
       list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(parsed.leagueId));
       if(parsed.season){
-        list = list.filter(m => String(m?.season || new Date(m.kickoff_utc).getUTCFullYear()) === String(parsed.season));
+        list = list.filter(m => {
+          const derived = m?.season || getSeasonFromKickoffFront(m?.kickoff_utc, m?.country, m?.competition);
+          return String(derived || "") === String(parsed.season);
+        });
       }
       const sample = list[0];
       displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueId;
@@ -2873,7 +3056,24 @@ async function openModal(type, value){
   }else{
     // COMPETITION MODAL WITH TABS (Jogos, Classificação, Estatísticas)
     const leagueId = parsed.leagueId || (list.length > 0 ? (list[0].competition_id || list[0].league_id || list[0].leagueId) : null);
-    const season = parsed.season || (list.length > 0 ? (list[0].season || new Date(list[0].kickoff_utc).getUTCFullYear()) : null);
+    const derivedSeason = list.length > 0 ? (list[0].season || getSeasonFromKickoffFront(list[0].kickoff_utc, list[0].country, list[0].competition)) : null;
+    const season = parsed.season || derivedSeason;
+    const kickoffUTC = list.length > 0 ? list[0].kickoff_utc : null;
+    const country = list.length > 0 ? list[0].country : null;
+    const competitionName = list.length > 0 ? list[0].competition : null;
+    const manifest = await loadV1Manifest();
+    const manifestSeasons = listManifestSeasons(manifest, leagueId);
+    const exactEntry = findManifestEntry(manifest, leagueId, season);
+
+    console.log("[COMPETITION MODAL] Context:", {
+      leagueId: { value: leagueId, type: typeof leagueId },
+      season: { value: season, type: typeof season },
+      kickoff_utc: kickoffUTC,
+      country,
+      competitionName,
+      manifestSeasonsCount: manifestSeasons.length,
+      hasExactEntry: !!exactEntry
+    });
 
     body.innerHTML = `
     <div class="mhead">
@@ -2941,7 +3141,7 @@ async function openModal(type, value){
         if(tablePanel && !tablePanel.dataset.loaded){
           tablePanel.dataset.loaded = "1";
           console.log("[TAB CLICK] Calling renderCompetitionStandings with leagueId=", leagueId, "season=", season);
-          const html = await renderCompetitionStandings(leagueId, season);
+          const html = await renderCompetitionStandings(leagueId, season, list);
           console.log("[TAB CLICK] Standings HTML received, length:", html?.length);
           tablePanel.innerHTML = html;
         }

@@ -135,11 +135,17 @@ function main() {
 
     const entry = entriesMap.get(key);
     if (fileName.startsWith('standings_')) {
-      entry.standings = info;
-      standingsCount++;
+      const standingsPath = path.join(DATA_DIR, fileName);
+      if (fs.existsSync(standingsPath)) {
+        entry.standings = info;
+        standingsCount++;
+      }
     } else if (fileName.startsWith('compstats_')) {
-      entry.compstats = info;
-      compstatsCount++;
+      const compstatsPath = path.join(DATA_DIR, fileName);
+      if (fs.existsSync(compstatsPath)) {
+        entry.compstats = info;
+        compstatsCount++;
+      }
     } else if (fileName.startsWith('cup_')) {
       entry.cup = info;
       cupCount++;

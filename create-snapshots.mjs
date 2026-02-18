@@ -2,15 +2,23 @@ import fs from 'fs';
 
 const leagueIds = [39, 61, 78, 135, 140, 475, 477, 622];
 
+// Determine correct season: in Feb 2026, active season is 2025 (started Aug 2025)
+const now = new Date();
+const year = now.getUTCFullYear();
+const month = now.getUTCMonth() + 1;
+const season = (month >= 8) ? year : (year - 1);
+
+console.log(`Creating snapshots for season ${season} (current date: ${now.toISOString()})\n`);
+
 leagueIds.forEach(lid => {
-  const standingsPath = `data/v1/standings_${lid}_2026.json`;
-  const statsPath = `data/v1/compstats_${lid}_2026.json`;
+  const standingsPath = `data/v1/standings_${lid}_${season}.json`;
+  const statsPath = `data/v1/compstats_${lid}_${season}.json`;
   
   if (!fs.existsSync(standingsPath)) {
     const standings = {
       generated_at_utc: new Date().toISOString(),
       leagueId: lid,
-      season: 2026,
+      season: season,
       standings: [
         { rank: 1, team: { name: 'Team 1' }, points: 30, all: { played: 12, win: 9, draw: 3, lose: 0, goals: { for: 25, against: 15 } } },
         { rank: 2, team: { name: 'Team 2' }, points: 27, all: { played: 12, win: 8, draw: 3, lose: 1, goals: { for: 23, against: 16 } } }
@@ -24,7 +32,7 @@ leagueIds.forEach(lid => {
     const stats = {
       generated_at_utc: new Date().toISOString(),
       leagueId: lid,
-      season: 2026,
+      season: season,
       sample: { fixtures_used: 40, fixtures_with_stats: 38 },
       metrics: { goals_avg: 2.5, shots_avg: 12, sot_avg: 5, corners_avg: 6, cards_avg: 4 }
     };
