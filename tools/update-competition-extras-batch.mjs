@@ -100,11 +100,23 @@ function extractLeaguePairs(calendar) {
 }
 
 function getSeasonCandidates() {
-  const nowYear = new Date().getUTCFullYear();
-  // Keep seasons within a sane window (current/prev/next).
-  return [nowYear, nowYear - 1, nowYear + 1].filter((year, idx, arr) => (
-    Number.isFinite(year) && year >= nowYear - 1 && year <= nowYear + 1 && arr.indexOf(year) === idx
-  ));
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1; // 1-based month
+  
+  // European seasons: Aug-May (e.g., "2025-2026" season = year 2025)
+  // In Feb 2026, we're in 2025-2026 season (started Aug 2025)
+  // In Aug 2026, we're in 2026-2027 season (starts now)
+  const europeanSeason = (month >= 8) ? year : (year - 1);
+  
+  // Some leagues (Brazil, etc.) use calendar year, so also try current year
+  const candidates = [europeanSeason];
+  if (europeanSeason !== year) {
+    candidates.push(year);
+  }
+  
+  console.log(`  ℹ️  Season resolution: month=${month}, year=${year}, candidates=[${candidates.join(', ')}]`);
+  return candidates;
 }
 
 function explainApiIssues(status, errors) {
