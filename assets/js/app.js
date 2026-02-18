@@ -791,8 +791,15 @@ function listManifestSeasons(manifest, leagueId){
   if(!manifest || !Array.isArray(manifest.entries)) return [];
   const lid = Number(leagueId);
   if(!Number.isFinite(lid)) return [];
-  return manifest.entries
-    .filter(e => Number(e.leagueId) === lid)
+  
+  // DEBUG: Log type mismatch issues
+  const allLeagues = manifest.entries.map(e => ({id: e.leagueId, type: typeof e.leagueId, season: e.season}));
+  console.log("[listManifestSeasons] Searching for leagueId:", lid, "(type:", typeof lid, "), manifest has:", allLeagues);
+  
+  const matches = manifest.entries.filter(e => Number(e.leagueId) === lid);
+  console.log("[listManifestSeasons] Found", matches.length, "matches for league", lid);
+  
+  return matches
     .map(e => Number(e.season))
     .filter(s => Number.isFinite(s));
 }
