@@ -90,15 +90,22 @@ async function fetchStandings(leagueId, season) {
   try {
     const response = await apiGetJson(`/standings?league=${leagueId}&season=${season}`);
 
+    console.log(`  🔍 API response type: ${Array.isArray(response) ? 'array' : typeof response}, length: ${response?.length || 0}`);
+    if (response && response.length > 0) {
+      const first = response[0];
+      console.log(`  🔍 First item keys: ${Object.keys(first || {}).join(', ')}`);
+      console.log(`  🔍 league.standings type: ${Array.isArray(first?.league?.standings) ? 'array' : typeof first?.league?.standings}, length: ${first?.league?.standings?.length || 0}`);
+    }
+
     if (!Array.isArray(response) || response.length === 0) {
-      console.warn('  ⚠️  No standings data found');
+      console.warn('  ⚠️  No standings data found (empty response array)');
       return null;
     }
 
     // Normalize: API returns response[0].league.standings as nested array
     const leagueData = response[0];
-    const league = leagueData || {};
-    const allStandings = leagueData?.standings || [];
+    const league = leagueData?.league || {};
+    const allStandings = leagueData?.league?.standings || [];
     
     // Choose the most consistent group (where all teams have similar number of games)
     let bestGroup = allStandings[0] || [];
