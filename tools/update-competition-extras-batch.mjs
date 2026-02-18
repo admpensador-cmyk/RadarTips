@@ -268,8 +268,8 @@ async function main() {
     const ok = await runUpdate(pair.leagueId, baseSeason, config);
     if (ok) successCount += 1;
     else failureCount += 1;
-    // Small delay between requests
-    await new Promise(r => setTimeout(r, 500));
+    // Delay between requests to avoid API rate limiting (300 req/min = ~5 req/sec)
+    await new Promise(r => setTimeout(r, 5000));
   }
 
   console.log(`\n${colors.green}╔════════════════════════════════════════════════╗${colors.reset}`);
