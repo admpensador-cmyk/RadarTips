@@ -42,10 +42,10 @@ jobs:
           echo "========================================"
           echo ""
           echo "Batch updating all leagues from calendar_7d.json..."
-          echo "Using deterministic season resolution via /leagues API..."
+          echo "Using WORKING batch processor (update-competition-extras-batch.mjs)..."
           echo ""
           
-          node tools/update-competition-extras-batch-v2.mjs
+          node tools/update-competition-extras-batch.mjs
           
           echo ""
           echo "========================================"
