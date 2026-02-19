@@ -89,8 +89,8 @@
       if(found) return normalizeMatch(found, window.CAL_SNAPSHOT_META);
     }catch(e){/*ignore*/}
 
-    // 2) fetch calendar snapshot
-    const data = await fetchWithFallback('/api/v1/calendar_7d.json','/data/v1/calendar_7d.json');
+    // 2) fetch radar_day snapshot only (Free mode)
+    const data = await loadJSON('/api/v1/radar_day.json', null);
     if(!data || !Array.isArray(data.matches)) return null;
     const snapshotMeta = { goals_window: data.goals_window, form_window: data.form_window };
     const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
@@ -540,12 +540,10 @@ function detectLang(){
   return "en";
 }
 function pageType(){
-  // /{lang}/radar/day/ | /{lang}/radar/week/ | /{lang}/calendar/
+  // /{lang}/radar/day/
   const parts = location.pathname.split("/").filter(Boolean);
   const p = parts.slice(1).join("/");
   if(p.startsWith("radar/day")) return "day";
-  if(p.startsWith("radar/week")) return "week";
-  if(p.startsWith("calendar")) return "calendar";
   return "day";
 }
 function fmtTime(isoUtc){
@@ -640,7 +638,7 @@ window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scr
 
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
-const SNAPSHOT_FILES = new Set(["calendar_7d.json","radar_day.json","radar_week.json","manifest.json"]);
+const SNAPSHOT_FILES = new Set(["radar_day.json","manifest.json"]);
 
 // Helper to check if a file is a standings or compstats snapshot (pattern matching)
 function isCompetitionSnapshot(filename){
@@ -648,85 +646,17 @@ function isCompetitionSnapshot(filename){
   return /^standings_\d+_\d+\.json$/.test(filename) || /^compstats_\d+_\d+\.json$/.test(filename);
 }
 
-// Normalize calendar payload to handle multiple API formats
-function normalizeCalendarPayload(data) {
-  if (!data || typeof data !== 'object') {
-    if (DEBUG_CAL) console.warn('[CAL] Invalid data received:', typeof data);
-    return { matches: [], meta: {} };
-  }
-
-  let matches = [];
-  let meta = {};
-
-  // Format 1: Standard format with matches array
-  if (Array.isArray(data.matches)) {
-    matches = data.matches;
-    meta = {
-      form_window: data.form_window || 5,
-      goals_window: data.goals_window || 5,
-      generated_at_utc: data.generated_at_utc
-    };
-  }
-  // Format 2: Alternative array fields
-  else if (Array.isArray(data.items)) {
-    matches = data.items;
-  }
-  else if (Array.isArray(data.fixtures)) {
-    matches = data.fixtures;
-  }
-  else if (Array.isArray(data.games)) {
-    matches = data.games;
-  }
-  // Format 3: Nested data.matches (some APIs wrap in data)
-  else if (data.data && Array.isArray(data.data.matches)) {
-    matches = data.data.matches;
-    meta = data.data.meta || {};
-  }
-  // Format 4: API-sports style response array
-  else if (Array.isArray(data.response)) {
-    matches = data.response.map(item => {
-      // Map API-sports format to internal format
-      const fixture = item.fixture || {};
-      const teams = item.teams || {};
-      const league = item.league || {};
-      
-      return {
-        fixture_id: fixture.id,
-        kickoff_utc: fixture.date,
-        home: teams.home?.name || '',
-        away: teams.away?.name || '',
-        country: league.country || '',
-        competition: league.name || '',
-        league_id: league.id
-      };
-    });
-  }
-  // Format 5: Direct array (legacy)
-  else if (Array.isArray(data)) {
-    matches = data;
-  }
-
-  if (DEBUG_CAL) {
-    console.warn('[CAL] Normalized payload:', {
-      input_keys: Object.keys(data),
-      matches_count: matches.length,
-      meta
-    });
-  }
-
-  return { matches, meta };
-}
 
 async function loadV1JSON(file, fallback){
   // For snapshots, prefer R2 data worker first.
   if(SNAPSHOT_FILES.has(file) || isCompetitionSnapshot(file)){
-    if (DEBUG_CAL && file === 'calendar_7d.json') {
-      console.warn('[CAL] Attempting R2 worker:', `${V1_DATA_BASE}/${file}`);
+    if (DEBUG_CAL && file === 'radar_day.json') {
+      console.warn('[RADAR] Attempting R2 worker:', `${V1_DATA_BASE}/${file}`);
     }
     const data = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
     if(data) {
-      if (DEBUG_CAL && file === 'calendar_7d.json') {
-        console.warn('[CAL] R2 worker responded:', {
+      if (DEBUG_CAL && file === 'radar_day.json') {
+        console.warn('[RADAR] R2 worker responded:', {
           keys: Object.keys(data),
           has_matches: Array.isArray(data.matches),
           matches_count: Array.isArray(data.matches) ? data.matches.length : 'N/A',
@@ -742,8 +672,8 @@ async function loadV1JSON(file, fallback){
       console.log(`[COMPETITION-MANIFEST] Snapshot not found on CDN: ${file} (will not try local fallback)`);
       return fallback;
     }
-    if (DEBUG_CAL && file === 'calendar_7d.json') {
-      console.warn('[CAL] R2 worker failed, trying static fallback:', `${V1_STATIC_BASE}/${file}`);
+    if (DEBUG_CAL && file === 'radar_day.json') {
+      console.warn('[RADAR] R2 worker failed, trying static fallback:', `${V1_STATIC_BASE}/${file}`);
     }
     return await loadJSON(`${V1_STATIC_BASE}/${file}`, fallback);
   }
@@ -1323,21 +1253,16 @@ function initTooltips(){
 
 function setNav(lang, t){
   const map = {
-    day: `/${lang}/radar/day/`,
-    week: `/${lang}/radar/week/`,
-    calendar: `/${lang}/calendar/`
+    day: `/${lang}/radar/day/`
   };
   qsa("[data-nav]").forEach(a=>{
     const k=a.getAttribute("data-nav");
-
-    // Calendar is a fixed section on Day/Week pages, so we don't need a separate Calendar tab in the topbar.
-    if(k==="calendar" && pageType()!=="calendar"){
+    if(k !== "day"){
       a.style.display = "none";
       return;
     }
-
     a.href = map[k];
-    a.textContent = (k==="day") ? t.nav_day : (k==="week") ? t.nav_week : t.nav_calendar;
+    a.textContent = t.nav_day;
     a.classList.toggle("active", location.pathname.startsWith(map[k]));
     a.setAttribute("data-tip", a.textContent);
     a.title = a.textContent;
@@ -1438,10 +1363,6 @@ function renderTop3(t, data){
         <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
         <span class="score" data-score>0 - 0</span>
         <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
-      </div>
-      <div class="meta-actions">
-        <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(competitionKey(item) || item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
-        <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
       </div>
     `;
 
@@ -1875,7 +1796,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     if (!hasAnyMatches) {
       // No matches loaded at all - data issue
       title = t.calendar_no_data || "Calendar data unavailable";
-      subtitle = t.calendar_no_data_hint || "calendar_7d.json is empty or invalid. Check data source.";
+      subtitle = t.calendar_no_data_hint || "Dados do dia indisponíveis.";
     } else if (isFiltered) {
       // Matches exist but filter returned zero
       title = t.empty_list || "Sem jogos encontrados.";
@@ -1986,86 +1907,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     return row;
   }
 
-  if(viewMode === "country"){
-    // Country -> Competition (the expected "Por país - competição")
-    const countries = groupByCountry(filtered);
-
-    for(const cg of countries){
-      const countryName = cg.name || "—";
-      const cFirst = (cg.matches && cg.matches[0]) ? cg.matches[0] : null;
-      const flagUrl = pickCountryFlag(cFirst);
-      const flagHTML = flagUrl ? tinyImgHTML(flagUrl, countryName, "flag-img") : icoSpan("globe");
-      const box = document.createElement("div");
-      box.className = "group";
-
-      box.innerHTML = `
-        <div class="group-head collapsible" data-collapse="country" data-key="${escAttr(countryName)}" role="button" tabindex="0" aria-expanded="true">
-          <div class="group-title"><span class="chev" aria-hidden="true"></span>${flagHTML}<span>${escAttr(countryName)}</span></div>
-          <div class="group-actions">
-            <span class="chip" data-open="country" data-value="${escAttr(countryName)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</span>
-          </div>
-        </div>
-        <div class="subgroups"></div>
-      `;
-
-
-      // Apply persisted collapse state (country)
-      const _cCollapsed = isCountryCollapsed(countryName);
-      box.classList.toggle("collapsed", _cCollapsed);
-      const _cHead = box.querySelector(".group-head");
-      if(_cHead) _cHead.setAttribute("aria-expanded", _cCollapsed ? "false" : "true");
-
-      const host = box.querySelector(".subgroups");
-
-      // Competition subgroups inside the country
-      const map = new Map();
-      const sorted = [...cg.matches].sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
-      for(const m of sorted){
-        const key = String(m.competition || "—");
-        if(!map.has(key)) map.set(key, []);
-        map.get(key).push(m);
-      }
-
-      for(const [compRaw, ms] of map.entries()){
-        const compDisp = competitionDisplay(compRaw, countryName, LANG);
-        const compValRaw = competitionValue(ms[0] || {competition:compRaw});
-        const compKey = competitionKey(ms[0] || {competition:compRaw});
-        const compLogoUrl = pickCompetitionLogo(ms[0] || null);
-        const compIcon = compLogoUrl ? tinyImgHTML(compLogoUrl, compDisp, "comp-logo") : icoSpan("trophy");
-
-        const sub = document.createElement("div");
-        sub.className = "subgroup";
-        sub.innerHTML = `
-          <div class="subhead collapsible" data-collapse="competition" data-country="${escAttr(countryName)}" data-key="${escAttr(compValRaw || compRaw)}" role="button" tabindex="0" aria-expanded="true">
-            <div class="subtitle"><span class="chev" aria-hidden="true"></span>${compIcon}<span>${escAttr(compDisp)}</span></div>
-            <div class="group-actions">
-              <span class="chip" data-open="competition" data-value="${escAttr(compKey || compValRaw || compRaw)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
-            </div>
-          </div>
-          <div class="matches"></div>
-        `;
-
-
-        // Apply persisted collapse state (competition)
-        const _compKeyVal = String(compValRaw || compRaw);
-        const _sCollapsed = isCompetitionCollapsed(countryName, _compKeyVal);
-        sub.classList.toggle("collapsed", _sCollapsed);
-        const _sHead = sub.querySelector(".subhead");
-        if(_sHead) _sHead.setAttribute("aria-expanded", _sCollapsed ? "false" : "true");
-
-        const list = sub.querySelector(".matches");
-        ms.forEach(m => list.appendChild(renderMatchRow(m, false)));
-
-        host.appendChild(sub);
-      }
-
-      root.appendChild(box);
-    }
-
-    return;
-  }
-
-  // Time view (always within the selected day)
+  // Time view only (Free mode)
   const groups = groupByTime(filtered);
   for(const g of groups){
     const box = document.createElement("div");
@@ -2090,96 +1932,28 @@ let LANG = null;
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
 let RADAR_DAY_DATA = null;
-let RADAR_WEEK_DATA = null;
 
 // Caches para single-source-of-truth architecture
-window.__CAL7D_CACHE = { data: null, loadedAt: 0 };
 window.__RADAR_DAY_CACHE = { data: null, loadedAt: 0 };
-window.__RADAR_WEEK_CACHE = { data: null, loadedAt: 0 };
-
-// Funções fetch com fallback URLs
-async function getCalendar7d() {
-  const cache = window.__CAL7D_CACHE;
-  const now = Date.now();
-  if (cache.data && (now - cache.loadedAt) < 300000) {
-    console.log('[getCalendar7d] Using cached data');
-    return cache.data;
-  }
-  
-  const urls = ["/data/v1/calendar_7d.json", "/calendar_7d.json", "../data/v1/calendar_7d.json", "../../data/v1/calendar_7d.json"];
-  for (const url of urls) {
-    try {
-      console.log('[getCalendar7d] Trying URL:', url);
-      const r = await fetch(url, { cache: "no-store" });
-      console.log('[getCalendar7d]', url, 'status:', r.status);
-      
-      if (!r.ok) continue;
-      
-      const ct = r.headers.get("content-type") || "";
-      if (!ct.includes("json")) {
-        console.warn('[getCalendar7d]', url, 'has wrong content-type:', ct);
-        continue;
-      }
-      
-      const data = await r.json();
-      if (data && Array.isArray(data.matches)) {
-        console.log('[getCalendar7d] SUCCESS from', url, '- loaded', data.matches.length, 'matches');
-        cache.data = data;
-        cache.loadedAt = now;
-        return data;
-      } else {
-        console.warn('[getCalendar7d]', url, 'missing matches array or invalid structure');
-      }
-    } catch (e) {
-      console.warn('[getCalendar7d]', url, 'error:', e.message);
-    }
-  }
-  
-  console.warn('[getCalendar7d] No valid URL found, returning stale cache or null');
-  return cache.data;
-}
 
 async function getRadarDay() {
   const cache = window.__RADAR_DAY_CACHE;
   const now = Date.now();
   if (cache.data && (now - cache.loadedAt) < 300000) return cache.data;
-  
-  const urls = ["/data/radar/day.json", "../data/radar/day.json"];
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { cache: "no-store" });
-      if (r.ok && r.headers.get("content-type").includes("json")) {
-        const data = await r.json();
-        cache.data = data;
-        cache.loadedAt = now;
-        return data;
-      }
-    } catch (e) {}
-  }
+
+  try {
+    const r = await fetch("/api/v1/radar_day.json", { cache: "no-store" });
+    if (r.ok && r.headers.get("content-type").includes("json")) {
+      const data = await r.json();
+      cache.data = data;
+      cache.loadedAt = now;
+      return data;
+    }
+  } catch (e) {}
   return cache.data;
 }
 
-async function getRadarWeek() {
-  const cache = window.__RADAR_WEEK_CACHE;
-  const now = Date.now();
-  if (cache.data && (now - cache.loadedAt) < 300000) return cache.data;
-  
-  const urls = ["/data/v1/radar_week.json", "../data/v1/radar_week.json"];
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { cache: "no-store" });
-      if (r.ok && r.headers.get("content-type").includes("json")) {
-        const data = await r.json();
-        cache.data = data;
-        cache.loadedAt = now;
-        return data;
-      }
-    } catch (e) {}
-  }
-  return cache.data;
-}
-
-// Resolver match APENAS do calendar_7d
+// Resolver match APENAS do radar_day
 async function resolveMatchByFixtureId(fixtureId) {
   if (!fixtureId) return null;
   const fid = Number(fixtureId);
@@ -2187,50 +1961,13 @@ async function resolveMatchByFixtureId(fixtureId) {
   
   console.log('[FixtureResolve] Looking for fixture:', fid);
   
-  // 1) Try cache first
-  if (Array.isArray(CAL_MATCHES) && CAL_MATCHES.length > 0) {
-    const found = CAL_MATCHES.find(m => {
-      const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
-      return candidates.some(c => c != null && Number(c) === fid);
-    });
-    if (found) {
-      console.log('[FixtureResolve] Found in CAL_MATCHES cache');
-      return found;
-    }
-  }
-  
-  // 2) Fetch calendar_7d if not found in cache
-  console.log('[FixtureResolve] Not in cache, fetching calendar_7d...');
-  const cal = await getCalendar7d();
-  
-  if (!cal) {
-    console.warn('[FixtureResolve] calendar_7d returned null');
-    return null;
-  }
-  
-  if (!Array.isArray(cal.matches)) {
-    console.warn('[FixtureResolve] calendar_7d has no matches array');
-    return null;
-  }
-  
-  console.log('[FixtureResolve] calendar_7d loaded with', cal.matches.length, 'matches');
-  
-  // Update CAL_MATCHES with fetched data
-  CAL_MATCHES = cal.matches;
-  window.CAL_MATCHES = CAL_MATCHES;
-  window.CAL_SNAPSHOT_META = { goals_window: cal.goals_window, form_window: cal.form_window };
-  
-  const found = cal.matches.find(m => {
+  const found = CAL_MATCHES.find(m => {
     const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
     return candidates.some(c => c != null && Number(c) === fid);
   });
-  
-  if (found) {
-    console.log('[FixtureResolve] Found in fetched calendar_7d');
-    return found;
-  }
-  
-  console.warn('[FixtureResolve] Fixture', fid, 'not found in calendar_7d');
+  if (found) return found;
+
+  console.warn('[FixtureResolve] Fixture', fid, 'not found in radar_day');
   return null;
 }
 
@@ -2271,7 +2008,7 @@ function findMatchByFixtureId(fixtureId){
     return candidates.some(c => c != null && Number(c) === fid);
   };
   
-  // 1) Search in Calendar data (CAL_MATCHES)
+  // 1) Search in Radar Day data (CAL_MATCHES)
   if(Array.isArray(window.CAL_MATCHES)){
     const found = window.CAL_MATCHES.find(matchesId);
     if(found) return found;
@@ -2289,40 +2026,6 @@ function findMatchByFixtureId(fixtureId){
     if(found) return found;
   }
   
-  // 4) Search in Radar Week items
-  if(RADAR_WEEK_DATA && Array.isArray(RADAR_WEEK_DATA.items)){
-    const found = RADAR_WEEK_DATA.items.find(matchesId);
-    if(found) return found;
-  }
-  
-  return null;
-}
-
-// Smart fetch with multiple sources for fixture resolution
-async function fetchDatasetSmart(source) {
-  const paths = {
-    radar_day: ["/data/v1/radar_day.json", "../data/v1/radar_day.json", "../../data/v1/radar_day.json"],
-    radar_week: ["/data/v1/radar_week.json", "../data/v1/radar_week.json", "../../data/v1/radar_week.json"],
-    calendar_7d: ["/data/v1/calendar_7d.json", "/calendar_7d.json", "../data/v1/calendar_7d.json", "../../data/v1/calendar_7d.json", "../../../data/v1/calendar_7d.json"]
-  };
-  
-  const candidates = paths[source] || [];
-  
-  for (const url of candidates) {
-    try {
-      const r = await fetch(url, { cache: "no-store" });
-      if (!r.ok) continue;
-      
-      const ct = (r.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("json") && !ct.includes("application/")) continue;
-      
-      const data = await r.json();
-      console.info(`[${source}] loaded from:`, url);
-      return data;
-    } catch (e) {}
-  }
-  
-  console.warn(`[${source}] not found in any candidate URL`);
   return null;
 }
 
@@ -2858,6 +2561,14 @@ async function openModal(type, value){
     return;
   }
 
+  if(type === "competition" || type === "country"){
+    title.textContent = T.unavailable_title || "Indisponível";
+    body.innerHTML = `<div class="smallnote" style="padding:20px;text-align:center;">${escAttr(T.unavailable_text || "Conteúdo não disponível no modo Free.")}</div>`;
+    back.style.display = "flex";
+    bindModalClicks();
+    return;
+  }
+
   // ABOUT / HOW IT WORKS
   if(type === "about"){
     title.textContent = T.about_title || "About";
@@ -2883,14 +2594,8 @@ async function openModal(type, value){
         </div>
       </div>
 
-      <div class="mfooter">
-        <span class="chip" data-open="competition" data-value="${escAttr(competitionKey(m || {competition:mCompRaw}) || mCompRaw)}" ${tipAttr(T.competition_radar_tip || "")}>${escAttr(T.competition_radar || "Radar da Competição")}</span>
-        <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${escAttr(T.country_radar || "Radar do País")}</span>
-      </div>
-
       <div class="mnote">
-        ${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}<br/>
-        <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
+        ${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}
       </div>
     `;
 
@@ -2974,9 +2679,6 @@ async function openModal(type, value){
         <div class="tab-panel" id="stats-panel" style="display:none">${renderStats(m)}</div>
       </div>
 
-      <div class="mnote">
-        <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
-      </div>
     `;
 
     // Bind internal tab toggles
@@ -2995,201 +2697,6 @@ async function openModal(type, value){
     back.style.display = "flex";
     bindModalClicks();
     return;
-  }
-
-  if(type==="country"){
-    list = CAL_MATCHES.filter(m => normalize(m.country) === normalize(decodedValue));
-    const sample = list[0];
-    if(sample) displayValue = competitionDisplay(sample.competition, sample.country, LANG);
-    title.textContent = displayValue ? `${T.country_radar || "Radar do País"}: ${displayValue}` : (T.country_radar || "Radar do País");
-  }else{
-    // competition mode: use parsed fields (leagueId+season preferred)
-    if(parsed.leagueId){
-      list = CAL_MATCHES.filter(m => String(competitionValue(m)) === String(parsed.leagueId));
-      if(parsed.season){
-        list = list.filter(m => {
-          const derived = m?.season || getSeasonFromKickoffFront(m?.kickoff_utc, m?.country, m?.competition);
-          return String(derived || "") === String(parsed.season);
-        });
-      }
-      const sample = list[0];
-      displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueId;
-    }else if(parsed.leagueName){
-      list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(parsed.leagueName));
-      const sample = list[0];
-      displayValue = sample ? competitionDisplay(sample.competition, sample.country, LANG) : parsed.leagueName;
-    }
-
-    title.textContent = displayValue ? `${T.competition_radar || "Radar da Competição"}: ${displayValue}` : (T.competition_radar || "Radar da Competição");
-  }
-
-  // Build rows for both country and competition modals
-  const rows = list.map(m=>{
-    const key = matchKey(m);
-    const homeLogo = pickTeamLogo(m, "home");
-    const awayLogo = pickTeamLogo(m, "away");
-    const compDisp = competitionDisplay(m.competition, m.country, LANG);
-    return `
-      <div class="match" role="button" tabindex="0" data-open="match" data-key="${escAttr(key)}">
-        <div class="time" ${tipAttr(T.kickoff_tooltip || "")}>
-          ${fmtTime(m.kickoff_utc)}
-        </div>
-        <div>
-          <div class="teams">
-            <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-            <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
-          </div>
-          <div class="meta-chips" style="margin-top:8px">
-            <span class="meta-chip" ${tipAttr(T.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
-            <span class="meta-chip" ${tipAttr(T.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if(RADAR_DEBUG) console.log("RADAR DEBUG: mode=", parsed.mode || type, "display=", displayValue, "foundCount=", list.length);
-
-  if(type === "country"){
-    // COUNTRY MODAL: Simple game list, NO tabs
-    body.innerHTML = `
-    <div class="mhead">
-      <div class="mmeta">
-        <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
-        <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
-      </div>
-      <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
-    </div>
-
-    <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-      ${rows || `<div class="smallnote">${escAttr(T.empty_list || "Sem jogos encontrados.")}</div>`}
-    </div>
-
-    <div class="mnote">
-      <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
-    </div>
-  `;
-  }else{
-    // COMPETITION MODAL WITH TABS (Jogos, Classificação, Estatísticas)
-    const leagueId = parsed.leagueId || (list.length > 0 ? (list[0].competition_id || list[0].league_id || list[0].leagueId) : null);
-    const derivedSeason = list.length > 0 ? (list[0].season || getSeasonFromKickoffFront(list[0].kickoff_utc, list[0].country, list[0].competition)) : null;
-    const season = parsed.season || derivedSeason;
-    const kickoffUTC = list.length > 0 ? list[0].kickoff_utc : null;
-    const country = list.length > 0 ? list[0].country : null;
-    const competitionName = list.length > 0 ? list[0].competition : null;
-    const manifest = await loadV1Manifest();
-    const manifestSeasons = listManifestSeasons(manifest, leagueId);
-    const exactEntry = findManifestEntry(manifest, leagueId, season);
-
-    console.log("[COMPETITION MODAL] Context:", {
-      leagueId: { value: leagueId, type: typeof leagueId },
-      season: { value: season, type: typeof season },
-      kickoff_utc: kickoffUTC,
-      country,
-      competitionName,
-      manifestSeasonsCount: manifestSeasons.length,
-      hasExactEntry: !!exactEntry
-    });
-
-    body.innerHTML = `
-    <div class="mhead">
-      <div class="mmeta">
-        <div class="mcomp">${escAttr(T.upcoming_matches || "Próximos jogos")}</div>
-        <div class="smallnote">${escAttr(T.free_includes || "FREE: sugestão + risco + forma + gols.")}</div>
-      </div>
-      <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${escAttr(T.cta_pro || "Assinar PRO")}</button>
-    </div>
-
-    <div class="tab-buttons">
-      <button class="tab-btn active" data-tab="games">${escAttr(T.games_tab || "Games")}</button>
-      <button class="tab-btn" data-tab="table">${escAttr(T.standings_tab || "Standings")}</button>
-      <button class="tab-btn" data-tab="stats">${escAttr(T.stats_tab || "Statistics")}</button>
-    </div>
-
-    <div class="tab-panels">
-      <div class="tab-panel" id="comp-games">
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-          ${rows || `<div class="smallnote">${escAttr(T.empty_list || "Sem jogos encontrados.")}</div>`}
-        </div>
-      </div>
-      <div class="tab-panel" id="comp-table" style="display:none">
-        <div style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>
-      </div>
-      <div class="tab-panel" id="comp-stats" style="display:none">
-        <div style="padding:20px;text-align:center;opacity:.7;">${escAttr(T.loading || "Carregando...")}</div>
-      </div>
-    </div>
-
-    <div class="mnote">
-      <span style="opacity:.85">${escAttr(T.pro_includes || "PRO: probabilidades, EV, odds e estatísticas avançadas.")}</span>
-    </div>
-  `;
-
-    back.style.display = "flex";
-    
-    // Remove old tab listeners to avoid duplicates
-    body.removeEventListener("click", window.__tabClickHandler);
-    body.removeEventListener("keydown", window.__tabKeydownHandler);
-
-    console.log("[COMPETITION MODAL] Initializing tabs with leagueId=", leagueId, "season=", season);
-
-    // Bind tab events using event delegation (single listener on body)
-    window.__tabClickHandler = async (e) => {
-      const btn = e.target.closest(".tab-btn");
-      if (!btn) return;
-      
-      console.log("[TAB CLICK] Button clicked", { dataTab: btn.getAttribute("data-tab"), leagueId, season });
-      
-      e.stopPropagation();
-      const btns = qsa("#modal_body .tab-btn");
-      btns.forEach(x => x.classList.remove("active"));
-      btn.classList.add("active");
-      
-      const tab = btn.getAttribute("data-tab");
-      qs("#comp-games").style.display = (tab==="games") ? "block" : "none";
-      qs("#comp-table").style.display = (tab==="table") ? "block" : "none";
-      qs("#comp-stats").style.display = (tab==="stats") ? "block" : "none";
-
-      // Lazy-load standings on first click of table tab
-      if(tab === "table"){
-        const tablePanel = qs("#comp-table");
-        console.log("[TAB CLICK] Table tab clicked, panel exists:", !!tablePanel, "already loaded:", tablePanel?.dataset.loaded);
-        if(tablePanel && !tablePanel.dataset.loaded){
-          tablePanel.dataset.loaded = "1";
-          console.log("[TAB CLICK] Calling renderCompetitionStandings with leagueId=", leagueId, "season=", season);
-          const html = await renderCompetitionStandings(leagueId, season, list);
-          console.log("[TAB CLICK] Standings HTML received, length:", html?.length);
-          tablePanel.innerHTML = html;
-        }
-      }
-
-      // Lazy-load stats on first click of stats tab
-      if(tab === "stats"){
-        const statsPanel = qs("#comp-stats");
-        console.log("[TAB CLICK] Stats tab clicked, panel exists:", !!statsPanel, "already loaded:", statsPanel?.dataset.loaded);
-        if(statsPanel && !statsPanel.dataset.loaded){
-          statsPanel.dataset.loaded = "1";
-          console.log("[TAB CLICK] Calling renderCompetitionStats with leagueId=", leagueId, "season=", season);
-          const html = await renderCompetitionStats(leagueId, season, list);
-          console.log("[TAB CLICK] Stats HTML received, length:", html?.length);
-          statsPanel.innerHTML = html;
-        }
-      }
-    };
-
-    window.__tabKeydownHandler = (e) => {
-      const btn = e.target.closest(".tab-btn");
-      if (!btn) return;
-      
-      if(e.key==="Enter"||e.key===" "){ 
-        e.preventDefault(); 
-        btn.click(); 
-      } 
-    };
-
-    // Use event delegation on modal_body
-    body.addEventListener("click", window.__tabClickHandler);
-    body.addEventListener("keydown", window.__tabKeydownHandler);
   }
 
   back.style.display = "flex";
@@ -3322,9 +2829,7 @@ function ensureSidebar(t, lang){
 
   const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
   const nav = {
-    day: `/${lang}/radar/day/`,
-    week: `/${lang}/radar/week/`,
-    calendar: `/${lang}/calendar/`
+    day: `/${lang}/radar/day/`
   };
 
   const here = pageType();
@@ -3342,8 +2847,6 @@ function ensureSidebar(t, lang){
 
     <nav class="side-nav" aria-label="Navigation">
       <a class="side-item ${here==="day"?"active":""}" href="${nav.day}"><span class="i">⚡</span><span>${escAttr(t.nav_day || "Daily Radar")}</span></a>
-      <a class="side-item ${here==="week"?"active":""}" href="${nav.week}"><span class="i">📅</span><span>${escAttr(t.nav_week || "Weekly Radar")}</span></a>
-      <a class="side-item ${here==="calendar"?"active":""}" href="${nav.calendar}"><span class="i">🗓️</span><span>${escAttr(t.nav_calendar || "Calendar")}</span></a>
     </nav>
 
     <div class="side-divider"></div>
@@ -3792,163 +3295,31 @@ async function init(){
   initTooltips();
   injectPatchStyles();
 
-  // Dashboard layout helpers (sidebar + top search + top date strip)
+  // Dashboard layout helpers (sidebar only)
   ensureSidebar(T, LANG);
-  ensureTopSearch(T);
 
   const p = pageType();
-  if(p==="day"){
-    setText("hero_title", T.hero_title_day);
-    setText("hero_sub", T.hero_sub_day);
-    renderPitch();
-    const radar = await loadV1JSON("radar_day.json", {highlights:[]});
-    RADAR_DAY_DATA = radar; // Store globally for Match Radar lookup
+  setText("hero_title", T.hero_title_day || "Radar do Dia");
+  setText("hero_sub", T.hero_sub_day || "Jogos de hoje");
+  const radar = await loadJSON("/api/v1/radar_day.json", {highlights:[]});
+  RADAR_DAY_DATA = radar;
+
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
     showUpdatingMessage(top);
     return;
   }
 
-    renderTop3(T, radar);
-  } else if(p==="week"){
-    setText("hero_title", T.hero_title_week);
-    setText("hero_sub", T.hero_sub_week);
-    renderPitch();
-    const week = await loadV1JSON("radar_week.json", {items:[]});
-    RADAR_WEEK_DATA = week; // Store globally for Match Radar lookup
-    const items = Array.isArray(week?.items) ? week.items : [];
-    if(!week || isMockDataset(week) || items.length===0){
-      renderTop3(T, {highlights:[]});
-    } else {
-      // Weekly data uses "items"; map first 3 into the existing Top3 renderer.
-      const highlights = items.slice(0,3).map(x => ({
-        ...x,
-        pro_locked: true
-      }));
-      renderTop3(T, {highlights});
-    }
-  } else {
-    setText("hero_title", T.hero_title_cal);
-    setText("hero_sub", T.hero_sub_cal);
-    renderPitch();
-    renderTop3(T, {highlights:[]});
-  }
+  renderTop3(T, radar);
 
-  // Calendar controls always available
-  setText("calendar_title", T.calendar_title);
-  setText("calendar_sub", T.calendar_sub);
-  qs("#search").setAttribute("placeholder", T.search_placeholder);
-  qs("#btn_time").textContent = T.view_by_time;
-  qs("#btn_country").textContent = T.view_by_country;
+  setText("calendar_title", T.day_matches_title || "Jogos do dia");
+  setText("calendar_sub", "");
 
-  // UI preference: keep calendar grouped "por país / competição" (no need for extra buttons)
-  const _tog = qs(".controls .toggle");
-  if(_tog) _tog.style.display = "none";
-
-
-  let viewMode = "country";
-  let q = "";
-  const rawData = await loadV1JSON("calendar_7d.json", {matches:[], form_window:5, goals_window:5});
-  
-  if (DEBUG_CAL) {
-    console.warn('[CAL] Raw data received:', {
-      exists: !!rawData,
-      type: typeof rawData,
-      keys: rawData ? Object.keys(rawData) : [],
-      is_array: Array.isArray(rawData),
-      has_matches_key: rawData ? 'matches' in rawData : false
-    });
-  }
-  
-  // Normalize the payload to handle multiple formats
-  const normalized = normalizeCalendarPayload(rawData);
-  const data = {
-    matches: normalized.matches,
-    form_window: normalized.meta.form_window || rawData?.form_window || 5,
-    goals_window: normalized.meta.goals_window || rawData?.goals_window || 5
-  };
-  
-  if (DEBUG_CAL) {
-    console.warn('[CAL] After normalization:', {
-      matches_count: data.matches.length,
-      first_match: data.matches[0] ? {
-        home: data.matches[0].home,
-        away: data.matches[0].away,
-        kickoff_utc: data.matches[0].kickoff_utc,
-        country: data.matches[0].country
-      } : null,
-      second_match: data.matches[1] ? {
-        home: data.matches[1].home,
-        away: data.matches[1].away,
-        kickoff_utc: data.matches[1].kickoff_utc,
-        country: data.matches[1].country
-      } : null
-    });
-  }
-  
-  if (!data || isMockDataset(data) || (Array.isArray(data.matches) && data.matches.length===0)) {
-    // Calendar can stay empty; UI will show no matches.
-  }
-
-  CAL_MATCHES = data.matches || [];
-  CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
-  
-  // Extract available dates from calendar data
-  let availableDateKeys = [];
-  if(CAL_MATCHES.length){
-    availableDateKeys = [...new Set(CAL_MATCHES.map(m=> localDateKey(m.kickoff_utc)).filter(Boolean))].sort();
-    
-    if (DEBUG_CAL) {
-      console.warn('[CAL] Available dates in data:', availableDateKeys);
-    }
-  }
-  
-  // Date strip - generate days from calendar data if available
-  const strip = ensureDateStrip(T);
-  const days = build7Days(availableDateKeys.length > 0 ? availableDateKeys : null);
-  let activeDate = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(days[0]); // default: first available day
-  
-  if (DEBUG_CAL) {
-    console.warn('[CAL] Date strip initialized:', {
-      days_count: days.length,
-      first_day: days[0].toISOString().substring(0, 10),
-      activeDate
-    });
-  }
-
-  function renderStrip(){
-    if(!strip) return;
-
-    const chips = days.map((d, idx)=>{
-      const key = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
-
-      // Labels: Hoje / Amanhã / dd-mm
-      let label = fmtDateShortDDMM(d);
-      let extra = "";
-
-      if(idx === 0){
-        label = (LANG === "pt") ? "Hoje" : (LANG === "es") ? "Hoy" : (LANG === "fr") ? "Aujourd'hui" : (LANG === "de") ? "Heute" : "Today";
-        extra = "today";
-      }else if(idx === 1){
-        label = (LANG === "pt") ? "Amanhã" : (LANG === "es") ? "Mañana" : (LANG === "fr") ? "Demain" : (LANG === "de") ? "Morgen" : "Tomorrow";
-        extra = "tomorrow";
-      }
-
-      return { key, label, tip: fmtDateLong(d, LANG), extra };
-    });
-
-    strip.innerHTML = chips.map(c=>{
-      const cls = (c.key === activeDate) ? `date-chip active ${c.extra}` : `date-chip ${c.extra}`;
-      return `<button class="${cls}" type="button" data-date="${c.key}" ${tipAttr(c.tip)}>${escAttr(c.label)}</button>`;
-    }).join("");
-  }
+  CAL_MATCHES = Array.isArray(radar.matches) ? radar.matches : [];
+  CAL_META = { form_window: Number(radar.form_window||5), goals_window: Number(radar.goals_window||5) };
 
   function rerender(){
-    qs("#btn_time").classList.toggle("active", viewMode==="time");
-    qs("#btn_country").classList.toggle("active", viewMode==="country");
-    renderCalendar(T, CAL_MATCHES, viewMode, q, activeDate);
-
-    // bind handlers after each render
+    renderCalendar(T, CAL_MATCHES, "time", "", null);
     bindOpenHandlers();
   }
 
@@ -3970,10 +3341,10 @@ async function init(){
         e.preventDefault();
         e.stopPropagation();
 
-        // 1) Sempre resolve do calendar_7d (single source of truth)
+        // 1) Sempre resolve do radar_day (single source of truth)
         const match = await resolveMatchByFixtureId(fixtureId);
         if(!match) {
-          console.error('[MatchRadar] fixture not found in calendar_7d:', fixtureId);
+          console.error('[MatchRadar] fixture not found in radar_day:', fixtureId);
           openModal('match', `fixture:${fixtureId}`);
           return;
         }
@@ -3995,26 +3366,7 @@ async function init(){
       }, true);
     }
 
-    // Handle all other [data-open] elements (competition, country radars, etc.)
-    qsa("[data-open]:not([data-fixture-id])").forEach(el=>{
-      if(el.dataset.boundOpen === "1") return;
-      el.dataset.boundOpen = "1";
-      el.addEventListener("click", (e)=>{
-        // Prevent nested [data-open] from triggering multiple modals
-        if(e && e.target && e.target.closest && e.target.closest("[data-open]") && e.target.closest("[data-open]") !== el) return;
-
-        e.stopPropagation();
-        const type = el.getAttribute("data-open");
-        // Strict routing: only "match" reads data-key (matchKey). Others must use data-value.
-        let val = "";
-        if(type === "match"){
-          val = el.getAttribute("data-key") || el.getAttribute("data-value") || "";
-        }else{
-          val = el.getAttribute("data-value") || "";
-        }
-        openModal(type, val);
-      });
-    });
+    // No competition/country modal bindings in Free mode
 
     // keyboard on match rows
     qsa(".match[role='button']").forEach(el=>{
@@ -4023,20 +3375,6 @@ async function init(){
       el.addEventListener("keydown", (e)=>{
         if(e.key==="Enter" || e.key===" "){ e.preventDefault(); el.click(); }
       });
-    });
-  }
-
-  qs("#btn_time").addEventListener("click", ()=>{ viewMode="time"; rerender(); });
-  qs("#btn_country").addEventListener("click", ()=>{ viewMode="country"; rerender(); });
-  qs("#search").addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
-
-  if(strip){
-    strip.addEventListener("click", (e)=>{
-      const btn = e.target.closest("button[data-date]");
-      if(!btn) return;
-      activeDate = btn.getAttribute("data-date");
-      renderStrip();
-      rerender();
     });
   }
 
@@ -4058,7 +3396,6 @@ async function init(){
   // year
   setText("year", String(new Date().getFullYear()));
 
-  renderStrip();
   rerender();
   bindOpenHandlers();
   startLivePolling(T);
