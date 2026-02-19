@@ -99,37 +99,70 @@ export async function apiGet(path, options = {}) {
  * @throws {Error} - structured error with context
  */
 export async function apiGetJson(path) {
-  try {
-    const response = await apiGet(path, { timeout: 10000, retries: 2 });
+  const maxRateLimitRetries = 3;
 
-    // Check HTTP status
-    if (response.status !== 200) {
-      throw new Error(`HTTP ${response.status}`);
+  for (let attempt = 1; attempt <= maxRateLimitRetries + 1; attempt++) {
+    try {
+      const response = await apiGet(path, { timeout: 10000, retries: 2 });
+
+      if (response.status !== 200) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      if (
+        response.data.errors &&
+        typeof response.data.errors === 'object' &&
+        Object.keys(response.data.errors).length > 0
+      ) {
+        const errorMsg = Object.values(response.data.errors)
+          .filter(e => e)
+          .join('; ');
+        const lower = String(errorMsg).toLowerCase();
+
+        const isDailyLimit = lower.includes('request limit for the day');
+        const isMinuteLimit = lower.includes('too many requests') || lower.includes('requests per minute');
+
+        if (isDailyLimit) {
+          throw new Error(`API daily limit reached: ${errorMsg}`);
+        }
+
+        if (isMinuteLimit && attempt <= maxRateLimitRetries) {
+          const waitMs = attempt * 5000;
+          console.warn(
+            `⚠️  API minute rate limit on ${path} (attempt ${attempt}/${maxRateLimitRetries + 1}), retrying in ${waitMs}ms...`
+          );
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+          continue;
+        }
+
+        throw new Error(`API error: ${errorMsg}`);
+      }
+
+      return response.data.response;
+    } catch (error) {
+      if (error.message.includes('ENOTFOUND')) {
+        throw new Error(
+          `Failed to connect to API-Football: ${error.message}. ` +
+          `Check API_BASE URL and network connectivity.`
+        );
+      }
+
+      if (attempt <= maxRateLimitRetries) {
+        const lower = String(error.message || '').toLowerCase();
+        const isTransientRate = lower.includes('too many requests') || lower.includes('requests per minute');
+        if (isTransientRate) {
+          const waitMs = attempt * 5000;
+          console.warn(
+            `⚠️  Transient API rate issue on ${path} (attempt ${attempt}/${maxRateLimitRetries + 1}), retrying in ${waitMs}ms...`
+          );
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+          continue;
+        }
+      }
+
+      throw new Error(`apiGetJson(${path}): ${error.message}`);
     }
-
-    // Check API errors
-    if (
-      response.data.errors &&
-      typeof response.data.errors === 'object' &&
-      Object.keys(response.data.errors).length > 0
-    ) {
-      const errorMsg = Object.values(response.data.errors)
-        .filter(e => e)
-        .join('; ');
-      throw new Error(`API error: ${errorMsg}`);
-    }
-
-    // Return response data
-    return response.data.response;
-  } catch (error) {
-    // Enhance error with context
-    if (error.message.includes('ENOTFOUND')) {
-      throw new Error(
-        `Failed to connect to API-Football: ${error.message}. ` +
-        `Check API_BASE URL and network connectivity.`
-      );
-    }
-
-    throw new Error(`apiGetJson(${path}): ${error.message}`);
   }
+
+  throw new Error(`apiGetJson(${path}): rate-limit retries exhausted`);
 }

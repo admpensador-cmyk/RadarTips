@@ -31,6 +31,35 @@ const colors = {
   dim: '\x1b[2m',
 };
 
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const config = {
+    concurrency: 2,
+    delayMs: 3000,
+  };
+
+  for (let i = 0; i < args.length; i += 1) {
+    const key = args[i];
+    const val = args[i + 1];
+
+    if (key === '--concurrency') {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isFinite(parsed) && parsed > 0) config.concurrency = parsed;
+      i += 1;
+      continue;
+    }
+
+    if (key === '--delayMs') {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isFinite(parsed) && parsed >= 0) config.delayMs = parsed;
+      i += 1;
+      continue;
+    }
+  }
+
+  return config;
+}
+
 // Load calendar_7d.json
 function loadCalendar() {
   const calendarPath = path.join(ROOT, 'data', 'v1', 'calendar_7d.json');
@@ -70,7 +99,7 @@ function extractLeaguePairs(calendar) {
 }
 
 // Run update command for a single league
-function runUpdate(leagueId, kickoffUTC) {
+function runUpdate(leagueId, kickoffUTC, config) {
   return new Promise((resolve, reject) => {
     console.log(`\n${colors.cyan}→ Updating league=${leagueId}${colors.reset}`);
 
@@ -79,7 +108,7 @@ function runUpdate(leagueId, kickoffUTC) {
       '--leagueId', String(leagueId),
       '--kickoffUTC', kickoffUTC,
       '--outDir', path.join(ROOT, 'data', 'v1'),
-      '--concurrency', '5',
+      '--concurrency', String(config.concurrency),
     ], {
       cwd: ROOT,
       stdio: 'inherit',
@@ -105,6 +134,8 @@ function runUpdate(leagueId, kickoffUTC) {
 
 // Main
 async function main() {
+  const config = parseArgs();
+
   console.log(`\n╔════════════════════════════════════════════════╗`);
   console.log(`║ 📊 Competition Extras Batch Generator V2      ║`);
   console.log(`║    Season Resolution via /leagues API         ║`);
@@ -126,13 +157,17 @@ async function main() {
     console.log(`  ${colors.dim}• leagueId=${p.leagueId}${colors.reset}`);
   });
 
+  console.log(`\n⚙️  Config:`);
+  console.log(`  concurrency: ${config.concurrency}`);
+  console.log(`  delayMs: ${config.delayMs}`);
+
   // Run sequentially (1 per 1) to avoid rate limiting
   console.log(`\n${colors.cyan}Running updates sequentially...${colors.reset}`);
 
   for (const pair of pairs) {
-    await runUpdate(pair.leagueId, pair.kickoffUTC);
+    await runUpdate(pair.leagueId, pair.kickoffUTC, config);
     // Small delay between requests
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, config.delayMs));
   }
 
   console.log(`\n${colors.green}╔════════════════════════════════════════════════╗${colors.reset}`);
