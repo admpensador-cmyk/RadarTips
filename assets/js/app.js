@@ -90,7 +90,7 @@
     }catch(e){/*ignore*/}
 
     // 2) fetch radar_day snapshot only (Free mode)
-    const data = await loadJSON('/api/v1/radar_day.json', null);
+    const data = await loadV1JSON('radar_day.json', null);
     if(!data || !Array.isArray(data.matches)) return null;
     const snapshotMeta = { goals_window: data.goals_window, form_window: data.form_window };
     const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
@@ -1796,15 +1796,15 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     if (!hasAnyMatches) {
       // No matches loaded at all - data issue
       title = t.calendar_no_data || "Calendar data unavailable";
-      subtitle = t.calendar_no_data_hint || "Dados do dia indisponíveis.";
+      subtitle = t.calendar_no_data_hint || "Daily data unavailable.";
     } else if (isFiltered) {
       // Matches exist but filter returned zero
-      title = t.empty_list || "Sem jogos encontrados.";
-      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
+      title = t.empty_list || "No matches found.";
+      subtitle = t.calendar_empty_hint || "Try another day or adjust the search.";
     } else {
       // Edge case: shouldn't happen
-      title = t.empty_list || "Sem jogos encontrados.";
-      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
+      title = t.empty_list || "No matches found.";
+      subtitle = t.calendar_empty_hint || "Try another day or adjust the search.";
     }
     
     root.innerHTML = `
@@ -1942,9 +1942,8 @@ async function getRadarDay() {
   if (cache.data && (now - cache.loadedAt) < 300000) return cache.data;
 
   try {
-    const r = await fetch("/api/v1/radar_day.json", { cache: "no-store" });
-    if (r.ok && r.headers.get("content-type").includes("json")) {
-      const data = await r.json();
+    const data = await loadV1JSON('radar_day.json', null);
+    if (data) {
       cache.data = data;
       cache.loadedAt = now;
       return data;
@@ -3301,7 +3300,7 @@ async function init(){
   const p = pageType();
   setText("hero_title", T.hero_title_day || "Radar do Dia");
   setText("hero_sub", T.hero_sub_day || "Jogos de hoje");
-  const radar = await loadJSON("/api/v1/radar_day.json", {highlights:[]});
+  const radar = await loadV1JSON("radar_day.json", {highlights:[]});
   RADAR_DAY_DATA = radar;
 
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
