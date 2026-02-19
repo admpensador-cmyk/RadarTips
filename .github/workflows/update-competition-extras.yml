@@ -31,6 +31,18 @@ jobs:
         with:
           node-version: 20
 
+      - name: Fetch latest calendar_7d snapshot
+        run: |
+          set -euo pipefail
+          BASE="https://radartips-data.m2otta-music.workers.dev/v1"
+          mkdir -p data/v1
+          status=$(curl -sS -o data/v1/calendar_7d.json -w "%{http_code}" "$BASE/calendar_7d.json")
+          if [[ "$status" != "200" ]]; then
+            echo "❌ calendar_7d.json returned HTTP $status"
+            exit 1
+          fi
+          node -e "const c=require('./data/v1/calendar_7d.json');const ids=[...new Set((c.matches||[]).map(m=>m.competition_id||m.league_id||m.leagueId))].filter(Boolean);console.log('calendar_7d competitions:', ids.length);"
+
       - name: Generate Competition Standings + Stats (API-FOOTBALL)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
