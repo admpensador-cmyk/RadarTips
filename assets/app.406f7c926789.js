@@ -1314,29 +1314,28 @@ function renderTop3(t, data){
     const h3 = card.querySelector("h3");
     const meta = card.querySelector(".meta");
     const lock = card.querySelector(".lock");
+    const suggestionEl = card.querySelector(".suggestion-highlight");
 
     top.className = "badge top rank";
     top.textContent = `#${idx+1}`;
     top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
     top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
 
-    if(!item){
-      badge.className = "badge risk high";
-      badge.textContent = t.risk_high;
-      badge.setAttribute("title", t.risk_tooltip || "");
-      badge.setAttribute("data-tip", t.risk_tooltip || "");
-
-      h3.textContent = t.empty_slot;
-      meta.innerHTML = "";
-      lock.innerHTML = "";
-      return;
+    if (badge) {
+      badge.style.display = "none";
+      badge.textContent = "";
+      badge.removeAttribute("title");
+      badge.removeAttribute("data-tip");
     }
 
-    // Risk chip
-    badge.className = `badge risk ${riskClass(item.risk)}`;
-    badge.textContent = (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med;
-    badge.setAttribute("title", t.risk_tooltip || "");
-    badge.setAttribute("data-tip", t.risk_tooltip || "");
+    if(!item){
+      h3.textContent = t.empty_slot;
+      meta.innerHTML = "";
+      if(suggestionEl) suggestionEl.textContent = "—";
+      lock.innerHTML = "";
+      lock.style.display = "none";
+      return;
+    }
 
     // Title (football-first: crest + team name)
     const homeLogo = pickTeamLogo(item, "home");
@@ -1349,17 +1348,12 @@ function renderTop3(t, data){
       </div>
     `;
 
-    // Meta (chips + icons; avoids awkward wraps)
+    // Meta (simple text only: competition + kickoff)
     meta.innerHTML = `
-      <div class="meta-chips">
-        <span class="meta-chip" ${tipAttr(t.kickoff_tooltip || "")}>${icoSpan("clock")}<span>${fmtTime(item.kickoff_utc)}</span></span>
-        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(competitionDisplay(item.competition, item.country, LANG))}</span></span>
-        <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(item.country)}</span></span>
-      </div>
-      <div class="scoreline">
-        <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
-        <span class="score" data-score>0 - 0</span>
-        <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
+      <div class="meta-simple">
+        <span class="meta-competition" ${tipAttr(t.competition_tooltip || "")}>${escAttr(competitionDisplay(item.competition, item.country, LANG))}</span>
+        <span class="meta-sep">•</span>
+        <span class="meta-kickoff" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(item.kickoff_utc)}</span>
       </div>
     `;
 
@@ -1377,18 +1371,9 @@ function renderTop3(t, data){
     card.setAttribute("data-sugg", String(item.suggestion_free || ""));
 
     const suggestion = localizeMarket(item.suggestion_free, t) || "—";
-    lock.innerHTML = `
-      <div class="callout">
-        <div class="callout-top">
-          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugestão do Radar")}</span></span>
-          <span class="callout-value" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)}</span>
-        </div>
-        <div class="callout-sub">
-          <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
-          <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
-        </div>
-      </div>
-    `;
+    if(suggestionEl) suggestionEl.textContent = suggestion;
+    lock.innerHTML = "";
+    lock.style.display = "none";
   });
 }
 
@@ -1554,26 +1539,47 @@ function findMatchByFixture(kickoffISO, homeName, awayName){
 }
 
 
-function groupByTime(matches){
+function groupByCountryCompetition(matches){
   const sorted = [...matches].sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
-  const map = new Map();
-  for(const m of sorted){
-    const key = m.competition;
-    if(!map.has(key)) map.set(key, []);
-    map.get(key).push(m);
-  }
-  return [...map.entries()].map(([name, ms])=>({name, matches: ms}));
-}
+  const byCountry = new Map();
 
-function groupByCountry(matches){
-  const sorted = [...matches].sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
-  const map = new Map();
-  for(const m of sorted){
-    const key = m.country;
-    if(!map.has(key)) map.set(key, []);
-    map.get(key).push(m);
+  function localMinuteOfDay(isoUtc){
+    try{
+      const d = new Date(isoUtc);
+      return (d.getHours() * 60) + d.getMinutes();
+    }catch(e){
+      return Number.MAX_SAFE_INTEGER;
+    }
   }
-  return [...map.entries()].map(([name, ms])=>({name, matches: ms}));
+
+  for (const m of sorted) {
+    const country = String(m.country || "—").trim() || "—";
+    const comp = String(competitionDisplay(m.competition, m.country, LANG) || "—").trim() || "—";
+
+    if (!byCountry.has(country)) byCountry.set(country, new Map());
+    const byComp = byCountry.get(country);
+    if (!byComp.has(comp)) byComp.set(comp, []);
+    byComp.get(comp).push(m);
+  }
+
+  return [...byCountry.entries()]
+    .sort((a,b)=> String(a[0]).localeCompare(String(b[0]), undefined, {sensitivity:"base"}))
+    .map(([country, compMap])=>({
+      country,
+      competitions: [...compMap.entries()]
+        .sort((a,b)=> String(a[0]).localeCompare(String(b[0]), undefined, {sensitivity:"base"}))
+        .map(([competition, ms])=>(
+          {
+            competition,
+            matches: [...ms].sort((a,b)=>{
+              const am = localMinuteOfDay(a.kickoff_utc);
+              const bm = localMinuteOfDay(b.kickoff_utc);
+              if(am !== bm) return am - bm;
+              return new Date(a.kickoff_utc)-new Date(b.kickoff_utc);
+            })
+          }
+        ))
+    }));
 }
 
 function resultLabel(ch, t){
@@ -1878,7 +1884,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     return;
   }
 
-  function renderMatchRow(m, showMeta){
+  function renderMatchRow(m){
     const row = document.createElement("div");
     row.className = "match";
     row.setAttribute("role","button");
@@ -1894,98 +1900,101 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     }
     row.setAttribute("data-sugg", String(m.suggestion_free || ""));
 
-    const formHome = buildFormSquares(t, m.form_home_details || m.form_home_last || m.home_last || null, CAL_META.form_window);
-    const formAway = buildFormSquares(t, m.form_away_details || m.form_away_last || m.away_last || null, CAL_META.form_window);
-
-    const goalsTip = t.goals_tooltip || "Goals for/goals against (last 5 matches).";
-    const ghf = (m.gf_home ?? m.goals_for_home ?? 0), gha = (m.ga_home ?? m.goals_against_home ?? 0);
-    const gaf = (m.gf_away ?? m.goals_for_away ?? 0), gaa = (m.ga_away ?? m.goals_against_away ?? 0);
-
-    const goalsHTML = `
-      <div class="goals" ${tipAttr(goalsTip)}>
-        <span class="goal-pill" ${tipAttr(`${goalsTip} • ${t.home_label || "CASA"}`)}>
-          <span class="tag">${t.goals_label} ${t.home_label || "CASA"}</span>
-          <span class="gf">${escAttr(ghf)}</span>/<span class="ga">${escAttr(gha)}</span>
-        </span>
-        <span class="goal-pill" ${tipAttr(`${goalsTip} • ${t.away_label || "FORA"}`)}>
-          <span class="tag">${t.goals_label} ${t.away_label || "FORA"}</span>
-          <span class="gf">${escAttr(gaf)}</span>/<span class="ga">${escAttr(gaa)}</span>
-        </span>
-      </div>
-    `;
-
-    const formTip = t.form_tooltip || (t.form_label || "Últimos 5");
-
     const homeLogo = pickTeamLogo(m, "home");
     const awayLogo = pickTeamLogo(m, "away");
 
-    const compDisp = competitionDisplay(m.competition, m.country, LANG);
-    const compVal  = competitionValue(m);
-
-    const metaChips = showMeta ? `
-      <div class="meta-chips" style="margin-top:8px">
-        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(compDisp)}</span></span>
-        <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(m.country || "—")}</span></span>
-      </div>
-    ` : "";
-
-    // ensure row has positioning context for absolute overlay
-    if(!row.style.position || row.style.position === "static") row.style.position = "relative";
+    const market = localizeMarket(m.suggestion_free, t) || "—";
 
     row.innerHTML = `
       <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-      <div>
-        <div class="teams">
-          <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-          <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
-        </div>
-        ${metaChips}
-        <div class="scoreline">
-          <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
-        <span class="score" data-score>0 - 0</span>
-          <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
-        </div>
-        <div class="subline">
-          <div>
-            <div class="form" ${tipAttr(formTip)}>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <span style="font-weight:950;opacity:.8">${t.home_short || "C"}</span>
-                ${formHome}
-              </div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
-                <span style="font-weight:950;opacity:.8">${t.away_short || "F"}</span>
-                ${formAway}
-              </div>
-            </div>
-          </div>
-          <div>
-            ${goalsHTML}
-          </div>
-        </div>
+      <div class="teams">
+        <div class="teamline">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+        <div class="teamline">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
       </div>
-      <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
+      <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(market)}</div>
     `;
 
     return row;
   }
 
-  // Time view only (Free mode)
-  const groups = groupByTime(filtered);
-  for(const g of groups){
-    const box = document.createElement("div");
-    box.className = "group";
+  const countryGroups = groupByCountryCompetition(filtered);
+  const currentCollapsed = _loadCollapse();
+  const collapsedSet = new Set(Array.isArray(currentCollapsed.country) ? currentCollapsed.country : []);
+  const hasStoredState = collapsedSet.size > 0;
 
-    box.innerHTML = `
+  if(!hasStoredState && countryGroups.length > 1){
+    for(let i = 1; i < countryGroups.length; i++){
+      collapsedSet.add(String(countryGroups[i].country || ""));
+    }
+    _saveCollapse({
+      ...currentCollapsed,
+      country: [...collapsedSet]
+    });
+  }
+
+  for (const cg of countryGroups) {
+    const countryBox = document.createElement("div");
+    countryBox.className = "group";
+    const countryName = String(cg.country || "—");
+    const totalMatches = cg.competitions.reduce((acc, comp)=> acc + (Array.isArray(comp.matches) ? comp.matches.length : 0), 0);
+    const isCollapsed = collapsedSet.has(countryName);
+    countryBox.classList.toggle("is-collapsed", isCollapsed);
+
+    const countryFlag = pickCountryFlag({ country: cg.country }) || "";
+    const countryFlagHtml = countryFlag
+      ? `<img class="flag-img" src="${escAttr(countryFlag)}" alt="${escAttr(cg.country)}" loading="lazy" />`
+      : "";
+
+    countryBox.innerHTML = `
       <div class="group-head">
-        <div class="group-title">${icoSpan("clock")}<span>${escAttr(g.name)}</span></div>
+        <button class="country-toggle" type="button" aria-expanded="${isCollapsed ? "false" : "true"}" aria-label="${escAttr(countryName)}">
+          <div class="group-title">${countryFlagHtml}<span>${escAttr(countryName)} (${totalMatches})</span></div>
+          <span class="chevron" aria-hidden="true">▾</span>
+        </button>
       </div>
-      <div class="matches"></div>
+      <div class="subgroups" ${isCollapsed ? "hidden" : ""}></div>
     `;
 
-    const list = box.querySelector(".matches");
-    g.matches.forEach(m => list.appendChild(renderMatchRow(m, true)));
+    const subgroups = countryBox.querySelector(".subgroups");
 
-    root.appendChild(box);
+    cg.competitions.forEach((compGroup) => {
+      const compBox = document.createElement("div");
+      compBox.className = "subgroup";
+      compBox.innerHTML = `
+        <div class="subhead">
+          <div class="subtitle"><span>${escAttr(compGroup.competition)}</span></div>
+        </div>
+        <div class="matches"></div>
+      `;
+
+      const list = compBox.querySelector(".matches");
+      compGroup.matches.forEach((m) => list.appendChild(renderMatchRow(m)));
+
+      subgroups.appendChild(compBox);
+    });
+
+    const countryToggle = countryBox.querySelector(".country-toggle");
+    if(countryToggle){
+      const updateCountryExpanded = (collapsed)=>{
+        countryBox.classList.toggle("is-collapsed", collapsed);
+        if(subgroups) subgroups.hidden = collapsed;
+        countryToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        setCountryCollapsed(countryName, collapsed);
+      };
+
+      countryToggle.addEventListener("click", ()=>{
+        updateCountryExpanded(!countryBox.classList.contains("is-collapsed"));
+      });
+
+      countryToggle.addEventListener("keydown", (ev)=>{
+        if(ev.key === "Enter" || ev.key === " "){
+          ev.preventDefault();
+          updateCountryExpanded(!countryBox.classList.contains("is-collapsed"));
+        }
+      });
+    }
+
+    root.appendChild(countryBox);
   }
 }
 
