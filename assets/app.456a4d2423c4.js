@@ -848,8 +848,12 @@ function applyLiveStates(states, t){
           scoreEl.textContent = `${gh} - ${ga}`;
         }else{
           // fallback placeholder for games without live data
-          scoreEl.textContent = "0 - 0";
+          scoreEl.textContent = "—";
         }
+        scoreEl.classList.remove("is-live","is-not-started");
+        const isLive = ["1H","2H","HT","ET","BT","P"].includes(st);
+        if(isLive) scoreEl.classList.add("is-live");
+        else if(["NS","TBD",""].includes(st)) scoreEl.classList.add("is-not-started");
         scoreEl.hidden = false;
       }
 
@@ -1797,11 +1801,6 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
         if(countryName) setCountryCollapsed(countryName, nextCollapsed);
         return;
       }
-
-      const moreBtn = e.target.closest(".rt-match-more-btn");
-      if(moreBtn && root.contains(moreBtn)){
-        e.stopPropagation();
-      }
     });
   }
 
@@ -1899,13 +1898,18 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   }
 
   function renderMatchRow(m){
+    const homeName = String(m?.home?.name || m?.home_team || m?.home_team_name || m?.home || "");
+    const awayName = String(m?.away?.name || m?.away_team || m?.away_team_name || m?.away || "");
+
     const row = document.createElement("div");
     row.className = "rt-match-card";
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
-    row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
-    row.setAttribute("title", `${t.match_radar}: ${m.home} vs ${m.away}`);
-    row.setAttribute("data-tip", `${t.match_radar}: ${m.home} vs ${m.away}`);
+    const radarLabel = t.match_radar || "Match Radar";
+    const matchLabel = `${radarLabel}: ${homeName} vs ${awayName}`;
+    row.setAttribute("aria-label", matchLabel);
+    row.setAttribute("title", matchLabel);
+    row.setAttribute("data-tip", matchLabel);
 
     // Live bindings
     const _fxId = m.fixture_id ?? m.fixtureId ?? m.id ?? m.fixture ?? null;
@@ -1918,22 +1922,42 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const homeLogo = pickTeamLogo(m, "home");
     const awayLogo = pickTeamLogo(m, "away");
 
+    const goalHomeRaw = m?.goals?.home ?? m?.goals_home ?? m?.goalsHome ?? m?.home?.score ?? null;
+    const goalAwayRaw = m?.goals?.away ?? m?.goals_away ?? m?.goalsAway ?? m?.away?.score ?? null;
+    const hasScore = goalHomeRaw !== null && goalHomeRaw !== undefined && goalAwayRaw !== null && goalAwayRaw !== undefined;
+    const scoreText = hasScore ? `${goalHomeRaw} - ${goalAwayRaw}` : "—";
+    const statusShort = String(m?.status_short || m?.status?.short || "").toUpperCase();
+    const isNotStarted = !statusShort || ["NS","TBD"].includes(statusShort);
+    const isLive = ["1H","2H","HT","ET","BT","P"].includes(statusShort);
+    const scoreClass = `rt-match-score${isNotStarted ? " is-not-started" : ""}${isLive ? " is-live" : ""}`;
+
     const market = localizeMarket(m.suggestion_free, t) || "—";
-    const moreTitle = t.match_radar || "Match Radar";
+    const moreTitle = `Match Radar: ${homeName} vs ${awayName}`;
     const moreAttrs = fixtureId
       ? `data-fixture-id="${escAttr(fixtureId)}" data-sugg="${escAttr(String(m.suggestion_free || ""))}"`
       : `disabled aria-disabled="true"`;
 
     row.innerHTML = `
       <div class="rt-match-time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-      <div class="rt-match-center">
-        <div class="rt-match-home">${crestHTML(m.home, homeLogo)}<span class="rt-match-team-label">${escAttr(m.home)}</span></div>
-        <div class="rt-match-vs">×</div>
-        <div class="rt-match-away">${crestHTML(m.away, awayLogo)}<span class="rt-match-team-label">${escAttr(m.away)}</span></div>
-      </div>
-      <div class="rt-match-suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(market)}</div>
+      <div class="rt-team-home">${crestHTML(homeName, homeLogo)}<span class="name">${escAttr(homeName)}</span></div>
+      <div class="${scoreClass}" data-score>${escAttr(scoreText)}</div>
+      <div class="rt-team-away"><span class="name">${escAttr(awayName)}</span>${crestHTML(awayName, awayLogo)}</div>
+      <div class="rt-match-market" ${tipAttr(t.suggestion_tooltip || "")}><span class="rt-match-suggestion">${escAttr(market)}</span></div>
       <button class="rt-match-more-btn" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>＋</button>
     `;
+
+    if(fixtureId){
+      row.setAttribute("data-fixture-id", fixtureId);
+      row.setAttribute("data-sugg", String(m.suggestion_free || ""));
+      row.querySelector(".rt-match-market")?.setAttribute("data-fixture-id", fixtureId);
+      row.querySelector(".rt-match-market")?.setAttribute("data-sugg", String(m.suggestion_free || ""));
+      row.querySelector(".rt-match-score")?.setAttribute("data-fixture-id", fixtureId);
+      row.querySelector(".rt-match-score")?.setAttribute("data-sugg", String(m.suggestion_free || ""));
+      row.querySelector(".rt-team-home")?.setAttribute("data-fixture-id", fixtureId);
+      row.querySelector(".rt-team-home")?.setAttribute("data-sugg", String(m.suggestion_free || ""));
+      row.querySelector(".rt-team-away")?.setAttribute("data-fixture-id", fixtureId);
+      row.querySelector(".rt-team-away")?.setAttribute("data-sugg", String(m.suggestion_free || ""));
+    }
 
     return row;
   }
