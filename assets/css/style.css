@@ -401,11 +401,18 @@ a{color:inherit; text-decoration:none}
 .input::placeholder{color:rgba(74,88,110,.85)}
 .smallnote{color:rgba(74,88,110,.9);font-weight:650;font-size:12px}
 
-.cal{margin-top:14px;display:flex;flex-direction:column;gap:12px}
+#calendar{
+  margin-top:16px;
+  padding:16px;
+  background:rgba(0,0,0,.15);
+  border-radius:12px;
+}
+
+.cal{margin-top:0;display:flex;flex-direction:column;gap:12px}
 .group{
-  border:1px solid rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
   border-radius:16px;
-  background:rgba(255,255,255,.03);
+  background:rgba(0,0,0,.20);
   overflow:hidden;
 }
 .group-head{
@@ -419,14 +426,14 @@ a{color:inherit; text-decoration:none}
   gap:10px;
   padding:12px 14px;
   border:none;
-  background:rgba(255,255,255,.02);
+  background:rgba(0,0,0,.25);
   cursor:pointer;
   color:rgba(255,255,255,.92);
   text-align:left;
   transition:background .15s ease, color .15s ease;
 }
 .country-toggle:hover{
-  background:rgba(255,255,255,.06);
+  background:rgba(255,255,255,.12);
 }
 .country-toggle:focus-visible{
   outline:2px solid rgba(60,130,246,.45);
@@ -460,15 +467,15 @@ a{color:inherit; text-decoration:none}
 }
 
 .subgroup{
-  border:1px solid rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
   border-radius:12px;
-  background:rgba(255,255,255,.02);
+  background:rgba(0,0,0,.15);
 }
 
 .subhead{
   padding:10px 12px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  background:rgba(255,255,255,.015);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.25);
 }
 
 .subtitle{
@@ -487,8 +494,8 @@ a{color:inherit; text-decoration:none}
   padding:12px 14px;
   border-radius:0;
   border:0;
-  border-top:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.04);
+  border-top:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.05);
   cursor:pointer;
   transition:background .15s ease, transform .15s ease;
 }
@@ -496,11 +503,11 @@ a{color:inherit; text-decoration:none}
   border-top:none;
 }
 .match:hover{
-  background:rgba(255,255,255,.08);
+  background:rgba(255,255,255,.12);
   transform:translateY(-1px);
 }
 .match:focus-visible{
-  outline:2px solid rgba(60,130,246,.50);
+  outline:2px solid rgba(60,130,246,.60);
   outline-offset:-2px;
 }
 .match > .time{
@@ -543,12 +550,12 @@ a{color:inherit; text-decoration:none}
 }
 
 .suggestion{
-  font-weight:800;
+  font-weight:900;
   color:#ffffff;
   padding:10px 12px;
   border-radius:8px;
-  border:1.5px solid rgba(100,180,255,.45);
-  background:linear-gradient(135deg, rgba(70,150,255,.25), rgba(50,120,255,.20));
+  border:1.5px solid rgba(100,180,255,.55);
+  background:linear-gradient(135deg, rgba(80,160,255,.35), rgba(60,130,255,.30));
   text-align:center;
   min-width:130px;
   font-size:13px;
