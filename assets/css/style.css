@@ -578,17 +578,6 @@ a{color:inherit; text-decoration:none}
   padding:0;
   display:block;
 }
-.team-home .crest,
-.team-away .crest,
-.team-home .crest.crest--img,
-.team-away .crest.crest--img{
-  width:24px;
-  height:24px;
-  min-width:24px;
-  min-height:24px;
-  font-size:10px;
-  flex-shrink:0;
-}
 .vs-symbol{
   font-weight:900;
   color:rgba(255,255,255,.7);
