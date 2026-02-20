@@ -8,6 +8,7 @@ var JSON_HEADERS = {
 };
 
 var BASE_FILES = [
+  "calendar_day.json",
   "calendar_7d.json",
   "radar_day.json",
   "radar_week.json"
@@ -42,6 +43,27 @@ function ok(data) {
   return jsonResponse({ ok: true, ...data });
 }
 __name(ok, "ok");
+
+function dateKeyUtc(date) {
+  return date.toISOString().slice(0, 10);
+}
+__name(dateKeyUtc, "dateKeyUtc");
+
+function buildDailyCalendar(calendar) {
+  if (!calendar || !Array.isArray(calendar.matches)) return null;
+  const todayKey = dateKeyUtc(new Date());
+  const matches = calendar.matches.filter((m) => {
+    const ko = String(m?.kickoff_utc || "");
+    return ko.startsWith(todayKey);
+  });
+  return {
+    generated_at_utc: calendar.generated_at_utc || nowIso(),
+    form_window: calendar.form_window || 5,
+    goals_window: calendar.goals_window || 5,
+    matches
+  };
+}
+__name(buildDailyCalendar, "buildDailyCalendar");
 
 async function requireBindings(env) {
   if (!env?.RADARTIPS_LIVE) {
@@ -111,7 +133,17 @@ async function handleApiV1(env, pathname) {
     return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
   }
 
-  // Serve snapshot files (calendar_7d, radar_day, radar_week) from R2
+  // Serve snapshot files (calendar_7d, calendar_day, radar_day, radar_week) from R2
+  if (pathname === "/v1/calendar_day") {
+    let data = await r2GetJson(env, "snapshots/calendar_day.json");
+    if (!data) {
+      const cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+      data = buildDailyCalendar(cal7d);
+    }
+    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+    return jsonResponse(data);
+  }
+
   if (pathname === "/v1/calendar_7d") {
     const data = await r2GetJson(env, "snapshots/calendar_7d.json");
     if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);

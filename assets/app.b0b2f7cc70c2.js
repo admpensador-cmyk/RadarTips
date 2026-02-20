@@ -89,12 +89,7 @@
       if(found) return normalizeMatch(found, window.CAL_SNAPSHOT_META);
     }catch(e){/*ignore*/}
 
-    // 2) fetch radar_day snapshot only (Free mode)
-    const data = await loadV1JSON('radar_day.json', null);
-    if(!data || !Array.isArray(data.matches)) return null;
-    const snapshotMeta = { goals_window: data.goals_window, form_window: data.form_window };
-    const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
-    return found ? normalizeMatch(found, snapshotMeta) : null;
+    return null;
   }
 
   function normalizeMatch(m, snapshotMeta){
@@ -639,7 +634,7 @@ window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scr
 
 // If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
 const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
-const SNAPSHOT_FILES = new Set(["radar_day.json","manifest.json"]);
+const SNAPSHOT_FILES = new Set(["radar_day.json","calendar_day.json","manifest.json"]);
 
 // Helper to check if a file is a standings or compstats snapshot (pattern matching)
 function isCompetitionSnapshot(filename){
@@ -1774,8 +1769,6 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
   const root = qs("#calendar");
   if(!root) return;
   root.innerHTML = "";
-  const section = qs("#calendar_section");
-  if(section) section.style.display = "";
 
   const q = normalize(query);
 
@@ -1797,9 +1790,9 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     
     let title, subtitle;
     if (!hasAnyMatches) {
-      // No matches loaded at all - hide the section instead of showing empty state
-      if(section) section.style.display = "none";
-      return;
+      // No matches loaded at all - data issue
+      title = t.calendar_no_data || "Calendar data unavailable";
+      subtitle = t.calendar_no_data_hint || "Daily data unavailable.";
     } else if (isFiltered) {
       // Matches exist but filter returned zero
       title = t.empty_list || "No matches found.";
@@ -1938,6 +1931,25 @@ let RADAR_DAY_DATA = null;
 
 // Caches para single-source-of-truth architecture
 window.__RADAR_DAY_CACHE = { data: null, loadedAt: 0 };
+window.__DAILY_MATCHES_CACHE = { data: null, loadedAt: 0 };
+
+async function loadRadarDay() {
+  const radar = await loadV1JSON('radar_day.json', { highlights: [] });
+  RADAR_DAY_DATA = radar;
+  return radar;
+}
+
+async function loadDailyMatches() {
+  const cache = window.__DAILY_MATCHES_CACHE;
+  const now = Date.now();
+  if (cache.data && (now - cache.loadedAt) < 300000) return cache.data;
+
+  const daily = await loadV1JSON('calendar_day.json', { matches: [] });
+  const matches = Array.isArray(daily?.matches) ? daily.matches : [];
+  cache.data = { matches, meta: daily };
+  cache.loadedAt = now;
+  return cache.data;
+}
 
 async function getRadarDay() {
   const cache = window.__RADAR_DAY_CACHE;
@@ -1961,15 +1973,11 @@ async function resolveMatchByFixtureId(fixtureId) {
   const fid = Number(fixtureId);
   if (isNaN(fid)) return null;
   
-  console.log('[FixtureResolve] Looking for fixture:', fid);
-  
   const found = CAL_MATCHES.find(m => {
     const candidates = [m?.fixture_id, m?.fixtureId, m?.id, m?.fixture?.id];
     return candidates.some(c => c != null && Number(c) === fid);
   });
   if (found) return found;
-
-  console.warn('[FixtureResolve] Fixture', fid, 'not found in radar_day');
   return null;
 }
 
@@ -3303,8 +3311,9 @@ async function init(){
   const p = pageType();
   setText("hero_title", T.hero_title_day || "Radar do Dia");
   setText("hero_sub", T.hero_sub_day || "Jogos de hoje");
-  const radar = await loadV1JSON("radar_day.json", {highlights:[]});
-  RADAR_DAY_DATA = radar;
+
+  const radar = await loadRadarDay();
+  const daily = await loadDailyMatches();
 
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
@@ -3317,10 +3326,13 @@ async function init(){
   setText("calendar_title", T.day_matches_title || "Jogos do dia");
   setText("calendar_sub", "");
 
-  const dayMatches = Array.isArray(radar.matches) ? radar.matches : [];
-  const highlightMatches = Array.isArray(radar.highlights) ? radar.highlights : [];
-  CAL_MATCHES = dayMatches.length ? dayMatches : highlightMatches;
-  CAL_META = { form_window: Number(radar.form_window||5), goals_window: Number(radar.goals_window||5) };
+  CAL_MATCHES = Array.isArray(daily?.matches) ? daily.matches : [];
+  CAL_META = {
+    form_window: Number(daily?.meta?.form_window || 5),
+    goals_window: Number(daily?.meta?.goals_window || 5)
+  };
+  window.CAL_MATCHES = CAL_MATCHES;
+  window.CAL_SNAPSHOT_META = { goals_window: CAL_META.goals_window, form_window: CAL_META.form_window };
 
   function rerender(){
     renderCalendar(T, CAL_MATCHES, "time", "", null);
@@ -3348,7 +3360,6 @@ async function init(){
         // 1) Sempre resolve do radar_day (single source of truth)
         const match = await resolveMatchByFixtureId(fixtureId);
         if(!match) {
-          console.error('[MatchRadar] fixture not found in radar_day:', fixtureId);
           openModal('match', `fixture:${fixtureId}`);
           return;
         }

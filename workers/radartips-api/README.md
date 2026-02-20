@@ -4,6 +4,7 @@ Este Worker serve **os snapshots (radar/calendário)** a partir do **R2** e adic
 
 ## O que ele entrega
 
+- `/api/v1/calendar_day.json` (R2)
 - `/api/v1/calendar_7d.json` (R2)
 - `/api/v1/radar_day.json` (R2)
 - `/api/v1/radar_week.json` (R2)
@@ -37,6 +38,7 @@ Os snapshots devem ficar em:
 
 ```
 R2:  v1/calendar_7d.json
+   v1/calendar_day.json
      v1/radar_day.json
      v1/radar_week.json
 ```
