@@ -1,0 +1,11 @@
+{
+  "meta": {
+    "tz": "America/Sao_Paulo",
+    "source": "static_fallback",
+    "generated_at_utc": "2026-02-20T00:00:00Z",
+    "today": "2026-02-20",
+    "is_empty": true
+  },
+  "today": [],
+  "tomorrow": []
+}
