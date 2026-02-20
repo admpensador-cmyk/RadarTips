@@ -555,6 +555,28 @@ function localDateKey(isoUtc){
     return new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
   }catch{ return ""; }
 }
+
+// Classify match as "today" or "tomorrow" based on local user timezone
+function classifyMatchByLocalDate(isoUtc){
+  try{
+    const d = new Date(isoUtc);
+    const today = new Date();
+    
+    // Get local date in user's timezone (using Intl for accurate conversion)
+    const formatter = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"});
+    const matchLocalDate = formatter.format(d);
+    const todayLocalDate = formatter.format(today);
+    
+    // Calculate tomorrow
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowLocalDate = formatter.format(tomorrow);
+    
+    if(matchLocalDate === todayLocalDate) return "today";
+    if(matchLocalDate === tomorrowLocalDate) return "tomorrow";
+    return null;
+  }catch(e){ return null; }
+}
 function fmtDateShortDDMM(date){
   try{
     return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(date);
@@ -1765,48 +1787,115 @@ function renderStats(match){
 }
 
 
-function renderCalendar(t, matches, viewMode, query, activeDateKey){
+function renderCalendar(t, matches, viewMode, query, activeDateKey, activeTabType){
   const root = qs("#calendar");
   if(!root) return;
   root.innerHTML = "";
 
   const q = normalize(query);
 
-  const filtered = (matches || []).filter(m=>{
-    // Date filter (local timezone)
-    if(activeDateKey && activeDateKey !== "7d"){
-      if(localDateKey(m.kickoff_utc) !== activeDateKey) return false;
-    }
+  // Separate matches by local date classification
+  const todayMatches = [];
+  const tomorrowMatches = [];
+  const otherMatches = [];
+  
+  (matches || []).forEach(m => {
+    const dateType = classifyMatchByLocalDate(m.kickoff_utc);
+    if(dateType === "today") todayMatches.push(m);
+    else if(dateType === "tomorrow") tomorrowMatches.push(m);
+    else otherMatches.push(m);
+  });
 
+  // Determine active tab (default to "today" if both have matches, else to whichever has matches)
+  let active = activeTabType || "today";
+  if(todayMatches.length === 0 && tomorrowMatches.length > 0) active = "tomorrow";
+  if(tomorrowMatches.length === 0 && todayMatches.length > 0) active = "today";
+
+  // Get matches for the active tab
+  const matchesForTab = active === "today" ? todayMatches : tomorrowMatches;
+
+  const filtered = (matchesForTab || []).filter(m=>{
     if(!q) return true;
     const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
     return blob.includes(q);
   });
 
+  // Format date labels (DD/MM)
+  function formatTabDate(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+  }
+
+  const todayLabel = t.tab_today || "Hoje";
+  const tomorrowLabel = t.tab_tomorrow || "Amanhã";
+  const todayDate = formatTabDate(0);
+  const tomorrowDate = formatTabDate(1);
+
+  // Create tab header
+  const header = document.createElement("div");
+  header.className = "calendar-tabs-header";
+  header.style.cssText = "display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px";
+
+  // Tab styling
+  const makeTabButton = (label, date, type, isActive, count) => {
+    const btn = document.createElement("button");
+    btn.className = "calendar-tab";
+    btn.setAttribute("data-tab", type);
+    btn.style.cssText = `
+      flex:1;
+      padding:10px 12px;
+      background:${isActive ? "rgba(56,189,248,.1)" : "transparent"};
+      border:${isActive ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,.1)"};
+      border-radius:6px;
+      color:${isActive ? "#38bdf8" : "#9fb0c9"};
+      cursor:pointer;
+      font-size:14px;
+      font-weight:${isActive ? "600" : "500"};
+      transition:all 0.2s ease;
+      white-space:nowrap;
+    `;
+    btn.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span>${escAttr(label)}</span>
+        <span style="font-size:12px;opacity:0.7">${escAttr(date)}</span>
+        <span style="font-size:11px;opacity:0.6">${count} ${count === 1 ? (t.match_singular || "jogo") : (t.match_plural || "jogos")}</span>
+      </div>
+    `;
+    
+    btn.addEventListener("click", () => {
+      renderCalendar(t, matches, viewMode, query, activeDateKey, type);
+    });
+    
+    return btn;
+  };
+
+  header.appendChild(makeTabButton(todayLabel, todayDate, "today", active === "today", todayMatches.length));
+  header.appendChild(makeTabButton(tomorrowLabel, tomorrowDate, "tomorrow", active === "tomorrow", tomorrowMatches.length));
+
+  root.appendChild(header);
+
+  // Render content based on selected tab
   if(!filtered.length){
-    // Distinguish between "no data at all" vs "filtered to zero"
-    const hasAnyMatches = (matches || []).length > 0;
-    const isFiltered = (activeDateKey && activeDateKey !== "7d") || q;
+    const hasAnyMatches = matchesForTab.length > 0;
     
     let title, subtitle;
     if (!hasAnyMatches) {
-      // No matches loaded at all - data issue
-      title = t.calendar_no_data || "Calendar data unavailable";
-      subtitle = t.calendar_no_data_hint || "Daily data unavailable.";
-    } else if (isFiltered) {
-      // Matches exist but filter returned zero
-      title = t.empty_list || "No matches found.";
-      subtitle = t.calendar_empty_hint || "Try another day or adjust the search.";
+      // No matches for this tab
+      title = active === "today" 
+        ? (t.no_matches_today || "Sem jogos para hoje")
+        : (t.no_matches_tomorrow || "Sem jogos para amanhã");
+      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
     } else {
-      // Edge case: shouldn't happen
-      title = t.empty_list || "No matches found.";
-      subtitle = t.calendar_empty_hint || "Try another day or adjust the search.";
+      // Matches exist but search filtered to zero
+      title = t.empty_list || "Nenhum jogo encontrado.";
+      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
     }
     
-    root.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-title">${escAttr(title)}</div>
-        <div class="empty-sub">${escAttr(subtitle)}</div>
+    root.innerHTML += `
+      <div class="empty-state" style="text-align:center;padding:32px 16px;color:#9fb0c9">
+        <div class="empty-title" style="font-size:16px;margin-bottom:8px">${escAttr(title)}</div>
+        <div class="empty-sub" style="font-size:14px">${escAttr(subtitle)}</div>
       </div>
     `;
     return;
