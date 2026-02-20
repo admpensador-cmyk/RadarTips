@@ -247,23 +247,41 @@ a{color:inherit; text-decoration:none}
 }
 .crest,
 .crest.crest--img{
-  width:56px;
-  height:56px;
-  min-width:56px;
+  width:24px;
+  height:24px;
+  min-width:24px;
+  min-height:24px;
   border-radius:50%;
-  display:inline-flex;
+  display:flex;
   align-items:center;
   justify-content:center;
   border:1px solid rgba(150,174,215,.34);
   background:rgba(20,32,52,.78);
   box-shadow:0 8px 20px rgba(0,0,0,.26);
   overflow:hidden;
+  flex-shrink:0;
+  margin:0;
+  padding:0;
+}
+
+/* Larger crests for card hero sections */
+.card .crest,
+.card .crest.crest--img,
+.match-title .crest,
+.match-title .crest.crest--img,
+.teamline .crest,
+.teamline .crest.crest--img{
+  width:56px;
+  height:56px;
+  min-width:56px;
+  min-height:56px;
 }
 .crest.crest--img img{
   width:100%;
   height:100%;
   object-fit:contain;
-  padding:7px;
+  padding:2px;
+  margin:0;
 }
 
 .meta-simple{
@@ -491,7 +509,7 @@ a{color:inherit; text-decoration:none}
   grid-template-columns:auto 1fr auto;
   gap:0 12px;
   align-items:center;
-  padding:12px 14px;
+  padding:10px 14px;
   border-radius:0;
   border:0;
   border-top:1px solid rgba(255,255,255,.10);
@@ -499,7 +517,8 @@ a{color:inherit; text-decoration:none}
   cursor:pointer;
   transition:background .15s ease, transform .15s ease;
   line-height:1;
-  height:48px;
+  height:auto;
+  min-height:24px;
 }
 .matches .match:first-child{
   border-top:none;
@@ -519,18 +538,18 @@ a{color:inherit; text-decoration:none}
   font-size:15px;
   white-space:nowrap;
   line-height:1;
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
+  margin:0;
+  padding:0;
 }
 .match > .match-center{
   grid-column:2;
   display:flex;
   flex-direction:row;
-  gap:8px;
+  gap:6px;
   align-items:center;
   justify-content:center;
-  height:28px;
+  margin:0;
+  padding:0;
 }
 .match > .suggestion{
   grid-column:3;
@@ -546,7 +565,9 @@ a{color:inherit; text-decoration:none}
   color:#ffffff;
   white-space:nowrap;
   line-height:1;
-  height:24px;
+  margin:0;
+  padding:0;
+  height:auto;
 }
 .team-home span,
 .team-away span{
@@ -555,6 +576,7 @@ a{color:inherit; text-decoration:none}
   line-height:1;
   margin:0;
   padding:0;
+  display:block;
 }
 .team-home .crest,
 .team-away .crest,
@@ -574,16 +596,17 @@ a{color:inherit; text-decoration:none}
   margin:0 2px;
   line-height:1;
   text-align:center;
+  padding:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  height:24px;
+  height:auto;
 }
 
 .suggestion{
   font-weight:900;
   color:#ffffff;
-  padding:10px 12px;
+  padding:8px 12px;
   border-radius:8px;
   border:1.5px solid rgba(100,180,255,.55);
   background:linear-gradient(135deg, rgba(80,160,255,.35), rgba(60,130,255,.30));
@@ -591,6 +614,9 @@ a{color:inherit; text-decoration:none}
   min-width:130px;
   font-size:13px;
   white-space:nowrap;
+  line-height:1;
+  margin:0;
+  height:auto;
 }
 
 @media (max-width:768px){
