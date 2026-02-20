@@ -117,38 +117,38 @@ a{color:inherit; text-decoration:none}
   margin:24px;
   display:grid;
   grid-template-columns:repeat(3, 1fr);
-    background:linear-gradient(180deg, rgba(16,24,40,.72), rgba(11,18,32,.84));
-    border:1.5px solid rgba(130,154,196,.26);
+  gap:20px;
+}
 
 /* ===== CARD REDESIGN ===== */
-      0 16px 42px rgba(0,0,0,.30),
-      inset 0 1px 0 rgba(255,255,255,.05);
-  background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82));
-  border:1.5px solid var(--stroke);
+.card{
+  padding:24px;
+  background:linear-gradient(180deg, rgba(16,24,40,.72), rgba(11,18,32,.84));
+  border:1.5px solid rgba(130,154,196,.26);
   border-radius:18px;
   box-shadow:
-    0 10px 40px rgba(8,24,56,.10),
-    inset 0 1px 1px rgba(255,255,255,.95);
+    0 16px 42px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.05);
   backdrop-filter:blur(12px);
   position:relative;
   overflow:hidden;
   transition:all .24s cubic-bezier(.4,.0,.2,1);
-      0 24px 70px rgba(32,72,155,.34),
-      inset 0 1px 0 rgba(255,255,255,.08);
-    background:linear-gradient(180deg, rgba(18,28,48,.78), rgba(12,20,34,.88));
+  cursor:pointer;
+}
+.card:hover{
   transform:translateY(-6px);
-  border-color:rgba(43,111,242,.45);
+  border-color:rgba(86,134,226,.55);
   box-shadow:
-    0 20px 60px rgba(43,111,242,.16),
-    inset 0 1px 1px rgba(255,255,255,.95);
-  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90));
-      radial-gradient(circle at 100% 0%, rgba(43,111,242,.14), transparent 56%);
+    0 24px 70px rgba(32,72,155,.34),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  background:linear-gradient(180deg, rgba(18,28,48,.78), rgba(12,20,34,.88));
+}
 .card::before{
   content:"";
   position:absolute;
   inset:0;
   background:
-    radial-gradient(circle at 100% 0%, rgba(43,111,242,.05), transparent 50%);
+    radial-gradient(circle at 100% 0%, rgba(43,111,242,.14), transparent 56%);
   pointer-events:none;
   z-index:0;
 }
