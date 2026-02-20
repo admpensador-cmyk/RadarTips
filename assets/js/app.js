@@ -1314,6 +1314,7 @@ function renderTop3(t, data){
     const h3 = card.querySelector("h3");
     const meta = card.querySelector(".meta");
     const lock = card.querySelector(".lock");
+    const suggestionEl = card.querySelector(".suggestion-highlight");
 
     top.className = "badge top rank";
     top.textContent = `#${idx+1}`;
@@ -1328,6 +1329,7 @@ function renderTop3(t, data){
 
       h3.textContent = t.empty_slot;
       meta.innerHTML = "";
+      if(suggestionEl) suggestionEl.textContent = "—";
       lock.innerHTML = "";
       return;
     }
@@ -1349,17 +1351,12 @@ function renderTop3(t, data){
       </div>
     `;
 
-    // Meta (chips + icons; avoids awkward wraps)
+    // Meta (simple text only: competition + kickoff)
     meta.innerHTML = `
-      <div class="meta-chips">
-        <span class="meta-chip" ${tipAttr(t.kickoff_tooltip || "")}>${icoSpan("clock")}<span>${fmtTime(item.kickoff_utc)}</span></span>
-        <span class="meta-chip" ${tipAttr(t.competition_tooltip || "")}>${icoSpan("trophy")}<span>${escAttr(competitionDisplay(item.competition, item.country, LANG))}</span></span>
-        <span class="meta-chip" ${tipAttr(t.country_tooltip || "")}>${icoSpan("globe")}<span>${escAttr(item.country)}</span></span>
-      </div>
-      <div class="scoreline">
-        <span class="live-pill pending" data-live-pill hidden><span class="dot"></span><span class="txt">—</span></span>
-        <span class="score" data-score>0 - 0</span>
-        <span class="outcome-pill pending" data-outcome-pill hidden>${escAttr(t.outcome_pending || "PENDING")}</span>
+      <div class="meta-simple">
+        <span class="meta-competition" ${tipAttr(t.competition_tooltip || "")}>${escAttr(competitionDisplay(item.competition, item.country, LANG))}</span>
+        <span class="meta-sep">•</span>
+        <span class="meta-kickoff" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(item.kickoff_utc)}</span>
       </div>
     `;
 
@@ -1377,17 +1374,11 @@ function renderTop3(t, data){
     card.setAttribute("data-sugg", String(item.suggestion_free || ""));
 
     const suggestion = localizeMarket(item.suggestion_free, t) || "—";
+    if(suggestionEl) suggestionEl.textContent = suggestion;
+
+    const riskText = (item.risk==="low") ? t.risk_low : (item.risk==="high") ? t.risk_high : t.risk_med;
     lock.innerHTML = `
-      <div class="callout">
-        <div class="callout-top">
-          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugestão do Radar")}</span></span>
-          <span class="callout-value" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)}</span>
-        </div>
-        <div class="callout-sub">
-          <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
-          <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
-        </div>
-      </div>
+      <div class="risk-discreet" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: ${escAttr(riskText || "—")}</div>
     `;
   });
 }

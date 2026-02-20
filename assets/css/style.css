@@ -65,18 +65,20 @@ a{color:inherit; text-decoration:none}
   position:relative;
   margin-top:24px;
   padding:0;
-  border:none;
+  border:1px solid rgba(130,154,196,.24);
   border-radius:var(--radius);
   overflow:hidden;
+  background:linear-gradient(180deg, rgba(9,14,24,.92), rgba(12,18,32,.86));
+  backdrop-filter:blur(8px);
 }
 .hero::before{
   content:"";
   position:absolute;
   inset:0;
   background:
-    linear-gradient(135deg, rgba(43,111,242,.08) 0%, transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.85) 100%);
-  border:1px solid var(--stroke);
+    linear-gradient(135deg, rgba(43,111,242,.16) 0%, transparent 36%),
+    linear-gradient(180deg, rgba(10,16,28,.82), rgba(8,13,24,.92) 100%);
+  border:1px solid rgba(130,154,196,.16);
   border-radius:var(--radius);
   z-index:0;
 }
@@ -99,11 +101,11 @@ a{color:inherit; text-decoration:none}
   font-size:42px;
   font-weight:999;
   letter-spacing:-.2px;
-  color:var(--ink);
+  color:#f3f7ff;
 }
 .hero p{
   margin:14px 0 0;
-  color:var(--muted);
+  color:#b7c3d9;
   font-weight:700;
   font-size:15px;
   letter-spacing:.3px;
@@ -115,12 +117,12 @@ a{color:inherit; text-decoration:none}
   margin:24px;
   display:grid;
   grid-template-columns:repeat(3, 1fr);
-  gap:20px;
-}
+    background:linear-gradient(180deg, rgba(16,24,40,.72), rgba(11,18,32,.84));
+    border:1.5px solid rgba(130,154,196,.26);
 
 /* ===== CARD REDESIGN ===== */
-.card{
-  padding:24px;
+      0 16px 42px rgba(0,0,0,.30),
+      inset 0 1px 0 rgba(255,255,255,.05);
   background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82));
   border:1.5px solid var(--stroke);
   border-radius:18px;
@@ -131,16 +133,16 @@ a{color:inherit; text-decoration:none}
   position:relative;
   overflow:hidden;
   transition:all .24s cubic-bezier(.4,.0,.2,1);
-  cursor:pointer;
-}
-.card:hover{
+      0 24px 70px rgba(32,72,155,.34),
+      inset 0 1px 0 rgba(255,255,255,.08);
+    background:linear-gradient(180deg, rgba(18,28,48,.78), rgba(12,20,34,.88));
   transform:translateY(-6px);
   border-color:rgba(43,111,242,.45);
   box-shadow:
     0 20px 60px rgba(43,111,242,.16),
     inset 0 1px 1px rgba(255,255,255,.95);
   background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90));
-}
+      radial-gradient(circle at 100% 0%, rgba(43,111,242,.14), transparent 56%);
 .card::before{
   content:"";
   position:absolute;
@@ -166,9 +168,9 @@ a{color:inherit; text-decoration:none}
   border-radius:999px;
   font-weight:900;
   font-size:12px;
-  border:1px solid rgba(43,111,242,.25);
-  background:rgba(43,111,242,.08);
-  color:#15305b;
+  border:1px solid rgba(120,151,212,.30);
+  background:rgba(31,58,103,.28);
+  color:#d7e6ff;
   text-transform:uppercase;
   letter-spacing:.5px;
 }
@@ -190,11 +192,11 @@ a{color:inherit; text-decoration:none}
 .badge.top{
   background:transparent;
   border:none;
-  color:var(--muted);
+  color:#96a8c7;
   font-size:11px;
   font-weight:800;
   letter-spacing:.4px;
-  opacity:.65;
+  opacity:.85;
   text-transform:uppercase;
 }
 
@@ -203,11 +205,11 @@ a{color:inherit; text-decoration:none}
   position:relative;
   z-index:1;
   margin:0;
-  font-size:18px;
+  font-size:17px;
   font-weight:950;
   letter-spacing:-.3px;
   text-align:center;
-  color:var(--ink);
+  color:#f4f8ff;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -217,16 +219,76 @@ a{color:inherit; text-decoration:none}
 .card h3 .vs{
   font-size:12px;
   font-weight:800;
-  color:var(--muted);
+  color:#9eb1ce;
   opacity:.7;
   letter-spacing:.2px;
+}
+
+.match-title{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:center;
+}
+.teamline{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  width:100%;
+  color:#f2f6ff;
+}
+.teamline span{
+  text-align:center;
+  font-size:16px;
+  font-weight:900;
+}
+.crest,
+.crest.crest--img{
+  width:64px;
+  height:64px;
+  min-width:64px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(150,174,215,.34);
+  background:rgba(20,32,52,.78);
+  box-shadow:0 8px 20px rgba(0,0,0,.26);
+  overflow:hidden;
+}
+.crest.crest--img img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  padding:7px;
+}
+
+.meta-simple{
+  margin-top:2px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:#aebdd5;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.3;
+  text-align:center;
+}
+.meta-competition,
+.meta-kickoff{
+  color:#c7d4ea;
+}
+.meta-sep{
+  color:#7f96bb;
 }
 
 .meta{
   position:relative;
   z-index:1;
   margin-top:12px;
-  color:var(--muted);
+  color:#a8b7ce;
   font-weight:700;
   font-size:12px;
   display:flex;
@@ -254,30 +316,34 @@ a{color:inherit; text-decoration:none}
   z-index:1;
   margin-top:18px;
   padding:14px 12px;
-  background:linear-gradient(135deg, rgba(43,111,242,.12), rgba(43,111,242,.05));
-  border:1.5px solid rgba(43,111,242,.30);
+  background:linear-gradient(135deg, rgba(43,111,242,.24), rgba(43,111,242,.12));
+  border:1.5px solid rgba(93,142,236,.54);
   border-radius:14px;
   text-align:center;
-  font-size:16px;
+  font-size:18px;
   font-weight:999;
   letter-spacing:.4px;
   text-transform:uppercase;
-  color:var(--accent);
+  color:#e8f2ff;
   line-height:1.4;
+  box-shadow:0 10px 24px rgba(24,62,143,.36);
 }
 
 .lock{
   position:relative;
   z-index:1;
-  margin-top:14px;
-  padding:10px 12px;
-  border:1px dashed rgba(43,111,242,.35);
-  border-radius:12px;
-  background:rgba(43,111,242,.05);
-  color:#163261;
-  font-weight:750;
+  margin-top:10px;
+  padding:0;
+  border:none;
+  background:transparent;
+  color:#9db2d4;
+  font-weight:700;
   font-size:12px;
   text-align:center;
+}
+.risk-discreet{
+  opacity:.9;
+  color:#9fb4d7;
 }
 .lock .pro{
   font-weight:950;
@@ -443,6 +509,15 @@ a{color:inherit; text-decoration:none}
   .card h3{
     font-size:16px;
   }
+  .crest,
+  .crest.crest--img{
+    width:58px;
+    height:58px;
+    min-width:58px;
+  }
+  .teamline span{
+    font-size:15px;
+  }
   .suggestion-highlight{
     font-size:14px;
     margin-top:16px;
@@ -483,6 +558,15 @@ a{color:inherit; text-decoration:none}
   .card h3{
     font-size:15px;
     gap:10px;
+  }
+  .crest,
+  .crest.crest--img{
+    width:52px;
+    height:52px;
+    min-width:52px;
+  }
+  .teamline span{
+    font-size:14px;
   }
   .meta{
     font-size:11px;
