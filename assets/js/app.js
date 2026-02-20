@@ -1907,9 +1907,11 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
     row.innerHTML = `
       <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-      <div class="team-home">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-      <div class="vs-symbol">×</div>
-      <div class="team-away">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+      <div class="match-center">
+        <div class="team-home">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
+        <div class="vs-symbol">×</div>
+        <div class="team-away">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+      </div>
       <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(market)}</div>
     `;
 
