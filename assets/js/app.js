@@ -492,6 +492,7 @@ const LEGAL_PATHS = {
   fr: { how:"/fr/comment-ca-marche/", about:"/fr/a-propos/", contact:"/fr/contact/", terms:"/fr/conditions/", privacy:"/fr/confidentialite/", aff:"/fr/affiliation/", rg:"/fr/jeu-responsable/" },
   de: { how:"/de/so-funktioniert-es/", about:"/de/uber-uns/", contact:"/de/kontakt/", terms:"/de/bedingungen/", privacy:"/de/datenschutz/", aff:"/de/partnerhinweis/", rg:"/de/verantwortungsvolles-spielen/" }
 };
+const I18N_VERSION = "b0b2f7cc";
 
 function renderComplianceFooter(lang){
   const foot = qs(".footer");
@@ -1773,6 +1774,8 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
   const root = qs("#calendar");
   if(!root) return;
   root.innerHTML = "";
+  const section = qs("#calendar_section");
+  if(section) section.style.display = "";
 
   const q = normalize(query);
 
@@ -1794,9 +1797,9 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
     
     let title, subtitle;
     if (!hasAnyMatches) {
-      // No matches loaded at all - data issue
-      title = t.calendar_no_data || "Calendar data unavailable";
-      subtitle = t.calendar_no_data_hint || "Daily data unavailable.";
+      // No matches loaded at all - hide the section instead of showing empty state
+      if(section) section.style.display = "none";
+      return;
     } else if (isFiltered) {
       // Matches exist but filter returned zero
       title = t.empty_list || "No matches found.";
@@ -3264,7 +3267,7 @@ function injectPatchStyles(){
 
 async function init(){
   LANG = pathLang() || detectLang();
-  const dict = await loadJSON("/i18n/strings.json", {});
+  const dict = await loadJSON(`/i18n/strings.json?v=${I18N_VERSION}`, {});
   T = dict[LANG] || dict.en;
 
   // Global translation helper for Match Radar V2 and other modules
@@ -3314,7 +3317,9 @@ async function init(){
   setText("calendar_title", T.day_matches_title || "Jogos do dia");
   setText("calendar_sub", "");
 
-  CAL_MATCHES = Array.isArray(radar.matches) ? radar.matches : [];
+  const dayMatches = Array.isArray(radar.matches) ? radar.matches : [];
+  const highlightMatches = Array.isArray(radar.highlights) ? radar.highlights : [];
+  CAL_MATCHES = dayMatches.length ? dayMatches : highlightMatches;
   CAL_META = { form_window: Number(radar.form_window||5), goals_window: Number(radar.goals_window||5) };
 
   function rerender(){
