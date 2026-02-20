@@ -517,8 +517,6 @@ a{color:inherit; text-decoration:none}
   cursor:pointer;
   transition:background .15s ease, transform .15s ease;
   line-height:1;
-  height:auto;
-  min-height:24px;
 }
 .matches .match:first-child{
   border-top:none;
@@ -554,6 +552,7 @@ a{color:inherit; text-decoration:none}
 .match > .suggestion{
   grid-column:3;
   justify-self:end;
+  align-self:center;
 }
 .team-home,
 .team-away{
@@ -567,7 +566,6 @@ a{color:inherit; text-decoration:none}
   line-height:1;
   margin:0;
   padding:0;
-  height:auto;
 }
 .team-home span,
 .team-away span{
