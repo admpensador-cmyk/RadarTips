@@ -1321,24 +1321,21 @@ function renderTop3(t, data){
     top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
     top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
 
-    if(!item){
-      badge.className = "badge risk high";
-      badge.textContent = t.risk_high;
-      badge.setAttribute("title", t.risk_tooltip || "");
-      badge.setAttribute("data-tip", t.risk_tooltip || "");
+    if (badge) {
+      badge.style.display = "none";
+      badge.textContent = "";
+      badge.removeAttribute("title");
+      badge.removeAttribute("data-tip");
+    }
 
+    if(!item){
       h3.textContent = t.empty_slot;
       meta.innerHTML = "";
       if(suggestionEl) suggestionEl.textContent = "—";
       lock.innerHTML = "";
+      lock.style.display = "none";
       return;
     }
-
-    // Risk chip
-    badge.className = `badge risk ${riskClass(item.risk)}`;
-    badge.textContent = (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med;
-    badge.setAttribute("title", t.risk_tooltip || "");
-    badge.setAttribute("data-tip", t.risk_tooltip || "");
 
     // Title (football-first: crest + team name)
     const homeLogo = pickTeamLogo(item, "home");
@@ -1375,11 +1372,8 @@ function renderTop3(t, data){
 
     const suggestion = localizeMarket(item.suggestion_free, t) || "—";
     if(suggestionEl) suggestionEl.textContent = suggestion;
-
-    const riskText = (item.risk==="low") ? t.risk_low : (item.risk==="high") ? t.risk_high : t.risk_med;
-    lock.innerHTML = `
-      <div class="risk-discreet" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: ${escAttr(riskText || "—")}</div>
-    `;
+    lock.innerHTML = "";
+    lock.style.display = "none";
   });
 }
 

@@ -158,9 +158,9 @@ a{color:inherit; text-decoration:none}
   z-index:1;
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-end;
   gap:12px;
-  margin-bottom:16px;
+  margin-bottom:10px;
 }
 
 .badge{
@@ -314,19 +314,20 @@ a{color:inherit; text-decoration:none}
 .suggestion-highlight{
   position:relative;
   z-index:1;
-  margin-top:18px;
-  padding:14px 12px;
-  background:linear-gradient(135deg, rgba(43,111,242,.24), rgba(43,111,242,.12));
-  border:1.5px solid rgba(93,142,236,.54);
+  margin-top:16px;
+  margin-bottom:4px;
+  padding:16px 14px;
+  background:linear-gradient(145deg, rgba(58,118,236,.30), rgba(43,111,242,.16));
+  border:1px solid rgba(120,167,255,.58);
   border-radius:14px;
   text-align:center;
-  font-size:18px;
+  font-size:20px;
   font-weight:999;
-  letter-spacing:.4px;
+  letter-spacing:.6px;
   text-transform:uppercase;
-  color:#e8f2ff;
+  color:#f4f8ff;
   line-height:1.4;
-  box-shadow:0 10px 24px rgba(24,62,143,.36);
+  box-shadow:0 12px 28px rgba(24,62,143,.30);
 }
 
 .lock{
@@ -341,6 +342,7 @@ a{color:inherit; text-decoration:none}
   font-size:12px;
   text-align:center;
 }
+.card .lock:empty{display:none}
 .risk-discreet{
   opacity:.9;
   color:#9fb4d7;
