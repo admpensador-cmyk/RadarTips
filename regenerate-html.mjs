@@ -166,7 +166,7 @@ function generateHtml(lang, page, strings) {
   <script>
     window.RT_LOCALE = "${lang}";
   </script>
-  <script src="/assets/radar.js"></script>
+  <script src="/assets/js/app.js"></script>
   <link rel="stylesheet" href="/assets/match-radar-v2.66f5a85a02d7.css" />
 </body>
 </html>
