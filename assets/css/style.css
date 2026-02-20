@@ -399,9 +399,9 @@ a{color:inherit; text-decoration:none}
 
 .cal{margin-top:14px;display:flex;flex-direction:column;gap:12px}
 .group{
-  border:1px solid var(--stroke);
+  border:1px solid rgba(255,255,255,.06);
   border-radius:16px;
-  background:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.03);
   overflow:hidden;
 }
 .group-head{
@@ -415,17 +415,17 @@ a{color:inherit; text-decoration:none}
   gap:10px;
   padding:12px 14px;
   border:none;
-  background:transparent;
+  background:rgba(255,255,255,.02);
   cursor:pointer;
-  color:#13213a;
+  color:rgba(255,255,255,.92);
   text-align:left;
-  transition:background .15s ease;
+  transition:background .15s ease, color .15s ease;
 }
 .country-toggle:hover{
-  background:rgba(43,111,242,.06);
+  background:rgba(255,255,255,.06);
 }
 .country-toggle:focus-visible{
-  outline:2px solid rgba(43,111,242,.35);
+  outline:2px solid rgba(60,130,246,.45);
   outline-offset:-2px;
 }
 .group-title{display:flex;align-items:center;gap:10px;font-weight:950}
@@ -441,7 +441,7 @@ a{color:inherit; text-decoration:none}
 .chevron{
   font-size:14px;
   font-weight:900;
-  color:#37527e;
+  color:rgba(255,255,255,.78);
   transition:transform .15s ease;
 }
 .group.is-collapsed .chevron{
@@ -456,19 +456,20 @@ a{color:inherit; text-decoration:none}
 }
 
 .subgroup{
-  border:1px solid rgba(215,227,246,.9);
+  border:1px solid rgba(255,255,255,.06);
   border-radius:12px;
-  background:rgba(255,255,255,.58);
+  background:rgba(255,255,255,.02);
 }
 
 .subhead{
   padding:10px 12px;
-  border-bottom:1px solid rgba(215,227,246,.9);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.015);
 }
 
 .subtitle{
   font-weight:900;
-  color:#19335e;
+  color:rgba(255,255,255,.70);
   font-size:13px;
 }
 
@@ -480,20 +481,26 @@ a{color:inherit; text-decoration:none}
   padding:10px 12px;
   border-radius:0;
   border:0;
-  border-top:1px solid rgba(215,227,246,.65);
-  background:rgba(255,255,255,.55);
+  border-top:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.03);
   cursor:pointer;
-  transition:background .15s ease;
+  transition:background .15s ease, transform .15s ease;
 }
 .matches .match:first-child{
   border-top:none;
 }
 .match:hover{
-  background:rgba(246,250,255,.95);
+  background:rgba(255,255,255,.06);
+  transform:translateY(-1px);
 }
-.time{font-weight:950;color:#11244b}
+.match:focus-visible{
+  outline:2px solid rgba(60,130,246,.45);
+  outline-offset:-2px;
+}
+.time{font-weight:700;color:rgba(255,255,255,.85)}
 .teams{display:flex;flex-direction:column;gap:2px;font-weight:900}
 .teamline{display:flex;align-items:center;gap:8px}
+.teamline span{color:rgba(255,255,255,.92)}
 .teamline .crest,
 .teamline .crest.crest--img{
   width:24px;
@@ -504,10 +511,11 @@ a{color:inherit; text-decoration:none}
 
 .suggestion{
   justify-self:end;
-  font-weight:950;color:#13213a;
+  font-weight:800;
+  color:rgba(255,255,255,.96);
   padding:8px 10px;border-radius:999px;
-  border:1px solid rgba(43,111,242,.28);
-  background:rgba(43,111,242,.06);
+  border:1px solid rgba(60,130,246,.30);
+  background:rgba(60,130,246,.18);
   text-align:center;
   min-width:140px;
 }
