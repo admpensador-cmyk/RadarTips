@@ -65,6 +65,19 @@ function buildDailyCalendar(calendar) {
 }
 __name(buildDailyCalendar, "buildDailyCalendar");
 
+async function fetchCalendar7dFallback() {
+  try {
+    const res = await fetch("https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json", {
+      cf: { cacheTtl: 60, cacheEverything: true }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+__name(fetchCalendar7dFallback, "fetchCalendar7dFallback");
+
 async function requireBindings(env) {
   if (!env?.RADARTIPS_LIVE) {
     throw new Error("KV binding missing: RADARTIPS_LIVE");
@@ -137,7 +150,10 @@ async function handleApiV1(env, pathname) {
   if (pathname === "/v1/calendar_day") {
     let data = await r2GetJson(env, "snapshots/calendar_day.json");
     if (!data) {
-      const cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+      let cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+      if (!cal7d) {
+        cal7d = await fetchCalendar7dFallback();
+      }
       data = buildDailyCalendar(cal7d);
     }
     if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
