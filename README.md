@@ -18,6 +18,19 @@ Cloudflare Pages recommended settings for this repo (ensure Pages runs the stati
 
 Note: `npm run build` runs `node tools/build-static.mjs` which generates the `dist/` folder and produces a hashed bundle under `dist/assets/` (e.g. `app.cba3bb4ebed9.js`). Pages must publish the `dist/` directory for the site to reflect the built assets.
 
+## Pre-commit smoke (required)
+
+Before any `git commit` / `git push`, run:
+
+```bash
+npm run smoke
+```
+
+This validates:
+- `assets/js/app.js` syntax
+- `workers/radartips-api/src/index.js` syntax
+- `i18n/strings.json` integrity
+
 ## Data
 The UI prefers live data from the Worker API:
 - /api/v1/radar_day.json
@@ -61,6 +74,7 @@ If you ever want the fallback, set `COMMIT_FALLBACK=1` in the workflow env.
 After a workflow run:
 - Open Cloudflare R2 bucket and confirm `v1/` contains the JSON files.
 - Hit the API routes in the browser:
+  - `/api/v1/calendar_2d.json?tz=America/Sao_Paulo` (**must return HTTP 200**)
   - `/api/v1/calendar_7d.json`
   - `/api/v1/radar_day.json`
   - `/api/v1/radar_week.json`

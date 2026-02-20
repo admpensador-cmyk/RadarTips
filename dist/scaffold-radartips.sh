@@ -278,62 +278,243 @@ a{color:inherit; text-decoration:none}
 }
 .lang.active{border-color:rgba(43,111,242,.40);background:rgba(43,111,242,.08)}
 
+/* ===== RADAR DO DIA - HERO SECTION ===== */
 .hero{
-  margin-top:18px;
-  padding:22px;
-  border:1px solid var(--stroke);
-  background:linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.55));
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
   position:relative;
+  margin-top:24px;
+  padding:0;
+  border:none;
+  border-radius:var(--radius);
   overflow:hidden;
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(135deg, rgba(43,111,242,.08) 0%, transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.85) 100%);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  z-index:0;
 }
 .hero::after{
   content:"";
   position:absolute;
-  inset:-140px -120px auto auto;
-  width:320px;height:320px;border-radius:50%;
-  background: radial-gradient(circle at 35% 35%, rgba(43,111,242,.35), transparent 60%);
+  inset:-200px -150px auto auto;
+  width:500px;height:500px;border-radius:50%;
+  background: radial-gradient(circle, rgba(43,111,242,.15), transparent 65%);
+  z-index:1;
 }
-.hero h1{margin:0;font-size:34px;letter-spacing:-.6px}
-.hero p{margin:10px 0 0;color:var(--muted);font-weight:650;max-width:900px}
+.hero-header{
+  position:relative;
+  z-index:2;
+  padding:36px 32px 12px;
+  text-align:center;
+}
+.hero h1{
+  margin:0;
+  font-size:42px;
+  font-weight:999;
+  letter-spacing:-.2px;
+  color:var(--ink);
+}
+.hero p{
+  margin:14px 0 0;
+  color:var(--muted);
+  font-weight:700;
+  font-size:15px;
+  letter-spacing:.3px;
+}
 
-.grid{margin-top:16px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.grid{
+  position:relative;
+  z-index:2;
+  margin:24px;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:20px;
+}
+
+/* ===== CARD REDESIGN ===== */
 .card{
-  grid-column:span 4;
-  padding:14px;
-  background:var(--card);
-  border:1px solid var(--stroke);
-  border-radius:16px;
-  box-shadow:0 10px 30px rgba(8,24,56,.08);
-  backdrop-filter: blur(10px);
+  padding:24px;
+  background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82));
+  border:1.5px solid var(--stroke);
+  border-radius:18px;
+  box-shadow:
+    0 10px 40px rgba(8,24,56,.10),
+    inset 0 1px 1px rgba(255,255,255,.95);
+  backdrop-filter:blur(12px);
+  position:relative;
+  overflow:hidden;
+  transition:all .24s cubic-bezier(.4,.0,.2,1);
+  cursor:pointer;
 }
-.card .row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(43,111,242,.45);
+  box-shadow:
+    0 20px 60px rgba(43,111,242,.16),
+    inset 0 1px 1px rgba(255,255,255,.95);
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90));
+}
+.card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(43,111,242,.05), transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.card .row{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+
 .badge{
-  padding:6px 10px;border-radius:999px;font-weight:950;font-size:11px;
-  border:1px solid var(--stroke);color:#15305b;background:rgba(255,255,255,.6);
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:900;
+  font-size:12px;
+  border:1px solid rgba(43,111,242,.25);
+  background:rgba(43,111,242,.08);
+  color:#15305b;
+  text-transform:uppercase;
+  letter-spacing:.5px;
 }
-.badge.low{border-color:rgba(24,169,87,.35)}
-.badge.med{border-color:rgba(224,179,0,.35)}
-.badge.high{border-color:rgba(224,69,69,.35)}
-h3{margin:10px 0 0;font-size:16px;letter-spacing:-.2px}
-.meta{margin-top:6px;color:var(--muted);font-weight:650;font-size:12px;display:flex;gap:10px;flex-wrap:wrap}
+.badge.low{
+  border-color:rgba(24,169,87,.30);
+  background:rgba(24,169,87,.08);
+  color:var(--green);
+}
+.badge.med{
+  border-color:rgba(224,179,0,.30);
+  background:rgba(224,179,0,.08);
+  color:var(--yellow);
+}
+.badge.high{
+  border-color:rgba(224,69,69,.30);
+  background:rgba(224,69,69,.08);
+  color:var(--red);
+}
+.badge.top{
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.4px;
+  opacity:.65;
+  text-transform:uppercase;
+}
+
+/* Team vs layout */
+.card h3{
+  position:relative;
+  z-index:1;
+  margin:0;
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:-.3px;
+  text-align:center;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+.card h3 span{flex:1;line-height:1.2}
+.card h3 .vs{
+  font-size:12px;
+  font-weight:800;
+  color:var(--muted);
+  opacity:.7;
+  letter-spacing:.2px;
+}
+
+.meta{
+  position:relative;
+  z-index:1;
+  margin-top:12px;
+  color:var(--muted);
+  font-weight:700;
+  font-size:12px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+  text-align:center;
+  line-height:1.5;
+}
 .meta a{
+  color:var(--accent);
   text-decoration:underline;
   text-decoration-color:rgba(43,111,242,.25);
-  text-underline-offset:3px;
+  text-underline-offset:4px;
+  transition:color .12s ease;
 }
+.meta a:hover{
+  color:#1e3a8a;
+  text-decoration-color:rgba(43,111,242,.5);
+}
+
+/* ===== SUGGESTION - VISUAL DOMINANCE ===== */
+.suggestion-highlight{
+  position:relative;
+  z-index:1;
+  margin-top:18px;
+  padding:14px 12px;
+  background:linear-gradient(135deg, rgba(43,111,242,.12), rgba(43,111,242,.05));
+  border:1.5px solid rgba(43,111,242,.30);
+  border-radius:14px;
+  text-align:center;
+  font-size:16px;
+  font-weight:999;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  color:var(--accent);
+  line-height:1.4;
+}
+
 .lock{
-  margin-top:10px;padding:10px 12px;
+  position:relative;
+  z-index:1;
+  margin-top:14px;
+  padding:10px 12px;
   border:1px dashed rgba(43,111,242,.35);
-  border-radius:14px;background:rgba(43,111,242,.06);
-  color:#163261;font-weight:750;font-size:12px;
+  border-radius:12px;
+  background:rgba(43,111,242,.05);
+  color:#163261;
+  font-weight:750;
+  font-size:12px;
+  text-align:center;
 }
-.lock .pro{font-weight:950;color:var(--accent)}
+.lock .pro{
+  font-weight:950;
+  color:var(--accent);
+}
 .lock .btn{
-  float:right;
-  padding:8px 10px;border-radius:999px;border:1px solid rgba(43,111,242,.28);
-  background:rgba(255,255,255,.65);font-weight:950;font-size:12px;
+  margin-left:6px;
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid rgba(43,111,242,.28);
+  background:rgba(255,255,255,.7);
+  font-weight:850;
+  font-size:11px;
+  cursor:pointer;
+  transition:all .12s ease;
+}
+.lock .btn:hover{
+  background:rgba(43,111,242,.08);
+  border-color:rgba(43,111,242,.40);
 }
 
 .section{
@@ -450,8 +631,95 @@ h3{margin:10px 0 0;font-size:16px;letter-spacing:-.2px}
 .btn.primary{
   background:rgba(43,111,242,.10);
 }
+/* ===== MOBILE/TABLET RESPONSIVE ===== */
+@media (max-width:1024px){
+  .grid{
+    grid-template-columns:repeat(2, 1fr);
+    gap:16px;
+    margin:18px;
+  }
+}
+
+@media (max-width:768px){
+  .hero-header{
+    padding:28px 20px 10px;
+  }
+  .hero h1{
+    font-size:32px;
+  }
+  .hero p{
+    font-size:14px;
+  }
+  .grid{
+    grid-template-columns:1fr;
+    gap:14px;
+    margin:14px;
+  }
+  .card{
+    padding:18px;
+  }
+  .card h3{
+    font-size:16px;
+  }
+  .suggestion-highlight{
+    font-size:14px;
+    margin-top:16px;
+    padding:12px 10px;
+  }
+}
+
+@media (max-width:640px){
+  .hero-header{
+    padding:20px 16px 8px;
+  }
+  .hero h1{
+    font-size:28px;
+  }
+  .hero p{
+    font-size:13px;
+    margin-top:10px;
+  }
+  .grid{
+    grid-template-columns:1fr;
+    gap:12px;
+    margin:12px;
+  }
+  .card{
+    padding:14px;
+  }
+  .card .row{
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .badge{
+    padding:6px 10px;
+    font-size:11px;
+  }
+  .badge.top{
+    font-size:10px;
+  }
+  .card h3{
+    font-size:15px;
+    gap:10px;
+  }
+  .meta{
+    font-size:11px;
+    gap:6px;
+    margin-top:10px;
+  }
+  .suggestion-highlight{
+    font-size:13px;
+    margin-top:12px;
+    padding:10px 8px;
+  }
+  .lock{
+    font-size:11px;
+    margin-top:10px;
+    padding:8px 10px;
+  }
+}
+
 @media (max-width:900px){
-  .card{grid-column:span 12}
   .match{grid-template-columns:64px 1fr;grid-template-rows:auto auto}
   .suggestion{justify-self:start;grid-column:1/-1;min-width:auto;width:100%}
   .subline{grid-template-columns:1fr}
@@ -694,14 +962,16 @@ function renderTop3(t, data){
     const top = card.querySelector(".badge.top");
     const h3 = card.querySelector("h3");
     const meta = card.querySelector(".meta");
+    const suggestion = card.querySelector(".suggestion-highlight");
     const lock = card.querySelector(".lock");
     top.textContent = `${t.top_slot} ${idx+1}`;
 
     if(!item){
       badge.className = "badge risk high";
       badge.textContent = t.risk_high;
-      h3.textContent = t.empty_slot;
+      h3.innerHTML = `<span>${t.empty_slot}</span>`;
       meta.innerHTML = "";
+      suggestion.textContent = "—";
       lock.innerHTML = `<span class="pro">${t.pro_badge}</span> · ${t.pro_locked_text} <button class="btn primary" type="button">${t.cta_pro}</button>`;
       return;
     }
@@ -709,7 +979,9 @@ function renderTop3(t, data){
     badge.className = `badge risk ${riskClass(item.risk)}`;
     badge.textContent = (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med;
 
-    h3.textContent = `${item.home} vs ${item.away}`;
+    // Home vs Away with spans
+    h3.innerHTML = `<span>${item.home}</span><span class="vs">vs</span><span>${item.away}</span>`;
+    
     meta.innerHTML = `
       <span>${item.competition}</span>
       <span>•</span>
@@ -719,6 +991,10 @@ function renderTop3(t, data){
       <span>•</span>
       <span>${fmtTime(item.kickoff_utc)}</span>
     `;
+    
+    // Suggestion in bold uppercase
+    suggestion.textContent = (item.suggestion_free || "—").toUpperCase();
+    
     lock.innerHTML = `<span class="pro">${t.pro_badge}</span> · ${t.pro_locked_text} <button class="btn primary" type="button">${t.cta_pro}</button>`;
   });
 }
@@ -963,8 +1239,10 @@ page() {
     </div>
 
     <div class="hero">
-      <h1 id="hero_title">Radar</h1>
-      <p id="hero_sub">—</p>
+      <div class="hero-header">
+        <h1 id="hero_title">Radar</h1>
+        <p id="hero_sub">—</p>
+      </div>
 
       <div class="grid">
         <div class="card" data-slot="1">
@@ -972,8 +1250,9 @@ page() {
             <span class="badge risk low">$lang</span>
             <span class="badge top" style="opacity:.75">TOP 1</span>
           </div>
-          <h3>—</h3>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
           <div class="meta"></div>
+          <div class="suggestion-highlight">—</div>
           <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
         </div>
 
@@ -982,8 +1261,9 @@ page() {
             <span class="badge risk med">$lang</span>
             <span class="badge top" style="opacity:.75">TOP 2</span>
           </div>
-          <h3>—</h3>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
           <div class="meta"></div>
+          <div class="suggestion-highlight">—</div>
           <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
         </div>
 
@@ -992,8 +1272,9 @@ page() {
             <span class="badge risk high">$lang</span>
             <span class="badge top" style="opacity:.75">TOP 3</span>
           </div>
-          <h3>—</h3>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
           <div class="meta"></div>
+          <div class="suggestion-highlight">—</div>
           <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
         </div>
       </div>

@@ -1,10 +1,13 @@
 {
   "meta": {
     "tz": "America/Sao_Paulo",
-    "source": "static_fallback",
-    "generated_at_utc": "2026-02-20T00:00:00Z",
     "today": "2026-02-20",
-    "is_empty": true
+    "tomorrow": "2026-02-21",
+    "generated_at_utc": "2026-02-20T00:00:00Z",
+    "form_window": 5,
+    "goals_window": 5,
+    "source": "static_fallback",
+    "note": "Worker API returned 500 error - static fallback has no data for this date range. Check Worker logs."
   },
   "today": [],
   "tomorrow": []

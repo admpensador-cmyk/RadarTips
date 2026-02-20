@@ -6,7 +6,7 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips • Radar</title>
+  <title>RadarTips • Radar do Dia</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/assets/css/style.css?v=11" />
@@ -26,8 +26,6 @@
 
       <div class="nav">
         <a class="pill" data-nav="day" href="#">—</a>
-        <a class="pill" data-nav="week" href="#">—</a>
-        <a class="pill" data-nav="calendar" href="#">—</a>
 
         <span style="width:10px"></span>
 
@@ -43,23 +41,10 @@
     </div>
 
     <div class="hero">
-      <h1 id="hero_title">Radar</h1>
-      <p id="hero_sub">—</p>
-
-    <div class="pitchbar" id="pitchbar" hidden aria-label="O que é o RadarTips">
-      <div class="pitchbox">
-        <div class="pitch-kicker" id="pitch_kicker">—</div>
-        <div class="pitch-actions">
-          <button class="btn" type="button" data-open="about" id="btn_about">—</button>
-          <a class="btn ghost" id="btn_browse" href="#">—</a>
-        </div>
-        <div class="pitch-freepro" id="pitch_free_pro">—</div>
+      <div class="hero-header">
+        <h1 id="hero_title">Radar</h1>
+        <p id="hero_sub">—</p>
       </div>
-      <div class="pitchbox pitchbox-right">
-        <div id="pitch_markets"></div>
-      </div>
-    </div>
-
 
       <div class="grid">
         <div class="card" data-slot="1">
@@ -67,9 +52,10 @@
             <span class="badge risk low">pt</span>
             <span class="badge top" style="opacity:.75">TOP 1</span>
           </div>
-          <h3>—</h3>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
           <div class="meta"></div>
-          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+          <div class="suggestion-highlight">—</div>
+          <div class="lock"></div>
         </div>
 
         <div class="card" data-slot="2">
@@ -77,9 +63,10 @@
             <span class="badge risk med">pt</span>
             <span class="badge top" style="opacity:.75">TOP 2</span>
           </div>
-          <h3>—</h3>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
           <div class="meta"></div>
-          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+          <div class="suggestion-highlight">—</div>
+          <div class="lock"></div>
         </div>
 
         <div class="card" data-slot="3">
@@ -87,9 +74,10 @@
             <span class="badge risk high">pt</span>
             <span class="badge top" style="opacity:.75">TOP 3</span>
           </div>
-          <h3>—</h3>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
           <div class="meta"></div>
-          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+          <div class="suggestion-highlight">—</div>
+          <div class="lock"></div>
         </div>
       </div>
     </div>
@@ -114,22 +102,14 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="modal_backdrop" role="dialog" aria-modal="true">
-    <div class="modal">
-      <div class="modal-head">
-        <div class="modal-title" id="modal_title">Radar</div>
-        <button class="btn" id="modal_close" type="button">×</button>
-      </div>
-      <div class="modal-body" id="modal_body"></div>
-    </div>
-  </div>
-
-  
+  <script>
+    window.RT_LOCALE = "pt";
+  </script>
+  <script src="/assets/app.89f08e92f228.js?v=89f08e92"></script>
   <link rel="stylesheet" href="/assets/match-radar-v2.66f5a85a02d7.css" />
-  <script type="module" src="/assets/app.b0b2f7cc70c2.js?v=b0b2f7cc"></script>
 
 <!-- build-badge -->
-<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.b0b2f7cc70c2.js | 2026-02-17 21:11</div>
+<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.89f08e92f228.js | 2026-02-20 19:32</div>
 <!-- /build-badge -->
 </body>
 </html>

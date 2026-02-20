@@ -107,10 +107,16 @@ function getSeasonCandidates() {
   // European seasons: Aug-May (e.g., "2025-2026" season = year 2025)
   // In Feb 2026, we're in 2025-2026 season (started Aug 2025)
   // In Aug 2026, we're in 2026-2027 season (starts now)
-  const season = (month >= 8) ? year : (year - 1);
+  const europeanSeason = (month >= 8) ? year : (year - 1);
   
-  console.log(`  ℹ️  Season resolution: month=${month}, year=${year}, using season=${season}`);
-  return [season];
+  // Some leagues (Brazil, etc.) use calendar year, so also try current year
+  const candidates = [europeanSeason];
+  if (europeanSeason !== year) {
+    candidates.push(year);
+  }
+  
+  console.log(`  ℹ️  Season resolution: month=${month}, year=${year}, candidates=[${candidates.join(', ')}]`);
+  return candidates;
 }
 
 function explainApiIssues(status, errors) {
@@ -262,8 +268,8 @@ async function main() {
     const ok = await runUpdate(pair.leagueId, baseSeason, config);
     if (ok) successCount += 1;
     else failureCount += 1;
-    // Small delay between requests
-    await new Promise(r => setTimeout(r, 500));
+    // Delay between requests to avoid API rate limiting (300 req/min = ~5 req/sec)
+    await new Promise(r => setTimeout(r, 5000));
   }
 
   console.log(`\n${colors.green}╔════════════════════════════════════════════════╗${colors.reset}`);

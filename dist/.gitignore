@@ -8,6 +8,8 @@ dist/*.zip
 
 # Local snapshot artifacts
 data/v1/*.json
+# Exception: calendar_2d.json is a static fallback for the calendar feature
+!data/v1/calendar_2d.json
 
 # Wrangler local config
 .wrangler/

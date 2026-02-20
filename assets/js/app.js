@@ -1775,6 +1775,7 @@ function renderStats(match){
 function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, activeTabType){
   const root = qs("#calendar");
   if(!root) return;
+  root.classList.add("rt-cal-root");
   root.innerHTML = "";
 
   const q = normalize(query);
@@ -1817,32 +1818,18 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
   // Create tab header
   const header = document.createElement("div");
-  header.className = "calendar-tabs-header";
-  header.style.cssText = "display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px";
+  header.className = "rt-cal-tabs-header";
 
   // Tab styling
   const makeTabButton = (label, date, type, isActive, count) => {
     const btn = document.createElement("button");
-    btn.className = "calendar-tab";
+    btn.className = `rt-cal-tab ${isActive ? "rt-cal-tab-active" : ""}`;
     btn.setAttribute("data-tab", type);
-    btn.style.cssText = `
-      flex:1;
-      padding:10px 12px;
-      background:${isActive ? "rgba(56,189,248,.1)" : "transparent"};
-      border:${isActive ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,.1)"};
-      border-radius:6px;
-      color:${isActive ? "#38bdf8" : "#9fb0c9"};
-      cursor:pointer;
-      font-size:14px;
-      font-weight:${isActive ? "600" : "500"};
-      transition:all 0.2s ease;
-      white-space:nowrap;
-    `;
     btn.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <span>${escAttr(label)}</span>
-        <span style="font-size:12px;opacity:0.7">${escAttr(date)}</span>
-        <span style="font-size:11px;opacity:0.6">${count} ${count === 1 ? (t.match_singular || "jogo") : (t.match_plural || "jogos")}</span>
+      <div class="rt-cal-tab-inner">
+        <span class="rt-cal-tab-label">${escAttr(label)}</span>
+        <span class="rt-cal-tab-date">${escAttr(date)}</span>
+        <span class="rt-cal-tab-count">${count} ${count === 1 ? (t.match_singular || "jogo") : (t.match_plural || "jogos")}</span>
       </div>
     `;
     
@@ -1876,9 +1863,9 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     }
     
     root.innerHTML += `
-      <div class="empty-state" style="text-align:center;padding:32px 16px;color:#9fb0c9">
-        <div class="empty-title" style="font-size:16px;margin-bottom:8px">${escAttr(title)}</div>
-        <div class="empty-sub" style="font-size:14px">${escAttr(subtitle)}</div>
+      <div class="rt-cal-empty-state">
+        <div class="rt-cal-empty-title">${escAttr(title)}</div>
+        <div class="rt-cal-empty-sub">${escAttr(subtitle)}</div>
       </div>
     `;
     return;
@@ -1886,7 +1873,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
   function renderMatchRow(m){
     const row = document.createElement("div");
-    row.className = "match";
+    row.className = "rt-match-card";
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     row.setAttribute("aria-label", `${t.match_radar}: ${m.home} vs ${m.away}`);
@@ -1906,13 +1893,13 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const market = localizeMarket(m.suggestion_free, t) || "—";
 
     row.innerHTML = `
-      <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-      <div class="match-center">
-        <div class="team-home">${crestHTML(m.home, homeLogo)}<span>${escAttr(m.home)}</span></div>
-        <div class="vs-symbol">×</div>
-        <div class="team-away">${crestHTML(m.away, awayLogo)}<span>${escAttr(m.away)}</span></div>
+      <div class="rt-match-time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
+      <div class="rt-match-center">
+        <div class="rt-match-home">${crestHTML(m.home, homeLogo)}<span class="rt-match-team-label">${escAttr(m.home)}</span></div>
+        <div class="rt-match-vs">×</div>
+        <div class="rt-match-away">${crestHTML(m.away, awayLogo)}<span class="rt-match-team-label">${escAttr(m.away)}</span></div>
       </div>
-      <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(market)}</div>
+      <div class="rt-match-suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(market)}</div>
     `;
 
     return row;
@@ -1935,62 +1922,62 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
   for (const cg of countryGroups) {
     const countryBox = document.createElement("div");
-    countryBox.className = "group";
+    countryBox.className = "rt-cal-country-accordion";
     const countryName = String(cg.country || "—");
     const totalMatches = cg.competitions.reduce((acc, comp)=> acc + (Array.isArray(comp.matches) ? comp.matches.length : 0), 0);
     const isCollapsed = collapsedSet.has(countryName);
-    countryBox.classList.toggle("is-collapsed", isCollapsed);
+    countryBox.classList.toggle("rt-cal-country-collapsed", isCollapsed);
 
     const countryFlag = pickCountryFlag({ country: cg.country }) || "";
     const countryFlagHtml = countryFlag
-      ? `<img class="flag-img" src="${escAttr(countryFlag)}" alt="${escAttr(cg.country)}" loading="lazy" />`
+      ? `<img class="rt-cal-country-flag-img" src="${escAttr(countryFlag)}" alt="${escAttr(cg.country)}" loading="lazy" />`
       : "";
 
     countryBox.innerHTML = `
-      <div class="group-head">
-        <button class="country-toggle" type="button" aria-expanded="${isCollapsed ? "false" : "true"}" aria-label="${escAttr(countryName)}">
-          <div class="group-title">${countryFlagHtml}<span>${escAttr(countryName)} (${totalMatches})</span></div>
-          <span class="chevron" aria-hidden="true">▾</span>
+      <div class="rt-cal-country-head">
+        <button class="rt-cal-country-toggle" type="button" aria-expanded="${isCollapsed ? "false" : "true"}" aria-label="${escAttr(countryName)}">
+          <div class="rt-cal-country-title">${countryFlagHtml}<span class="rt-cal-country-label">${escAttr(countryName)} (${totalMatches})</span></div>
+          <span class="rt-cal-country-chevron" aria-hidden="true">▾</span>
         </button>
       </div>
-      <div class="subgroups" ${isCollapsed ? "hidden" : ""}></div>
+      <div class="rt-cal-competition-groups" ${isCollapsed ? "hidden" : ""}></div>
     `;
 
-    const subgroups = countryBox.querySelector(".subgroups");
+    const subgroups = countryBox.querySelector(".rt-cal-competition-groups");
 
     cg.competitions.forEach((compGroup) => {
       const compBox = document.createElement("div");
-      compBox.className = "subgroup";
+      compBox.className = "rt-cal-competition-group";
       compBox.innerHTML = `
-        <div class="subhead">
-          <div class="subtitle"><span>${escAttr(compGroup.competition)}</span></div>
+        <div class="rt-cal-competition-head">
+          <div class="rt-cal-competition-title"><span class="rt-cal-competition-label">${escAttr(compGroup.competition)}</span></div>
         </div>
-        <div class="matches"></div>
+        <div class="rt-cal-match-list"></div>
       `;
 
-      const list = compBox.querySelector(".matches");
+      const list = compBox.querySelector(".rt-cal-match-list");
       compGroup.matches.forEach((m) => list.appendChild(renderMatchRow(m)));
 
       subgroups.appendChild(compBox);
     });
 
-    const countryToggle = countryBox.querySelector(".country-toggle");
+    const countryToggle = countryBox.querySelector(".rt-cal-country-toggle");
     if(countryToggle){
       const updateCountryExpanded = (collapsed)=>{
-        countryBox.classList.toggle("is-collapsed", collapsed);
+        countryBox.classList.toggle("rt-cal-country-collapsed", collapsed);
         if(subgroups) subgroups.hidden = collapsed;
         countryToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
         setCountryCollapsed(countryName, collapsed);
       };
 
       countryToggle.addEventListener("click", ()=>{
-        updateCountryExpanded(!countryBox.classList.contains("is-collapsed"));
+        updateCountryExpanded(!countryBox.classList.contains("rt-cal-country-collapsed"));
       });
 
       countryToggle.addEventListener("keydown", (ev)=>{
         if(ev.key === "Enter" || ev.key === " "){
           ev.preventDefault();
-          updateCountryExpanded(!countryBox.classList.contains("is-collapsed"));
+          updateCountryExpanded(!countryBox.classList.contains("rt-cal-country-collapsed"));
         }
       });
     }
@@ -3306,65 +3293,11 @@ function injectPatchStyles(){
   .stat-bar-right{ height:100%; background:linear-gradient(90deg,#ffb443,#ffb443); margin-left:auto; }
   .stat-values{ width:88px; text-align:right; font-weight:800; }
 
-  /* Nested calendar (country -> competition) */
-  .group .subgroup{
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,.06);
-  }
-  .group .subhead{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    padding: 6px 2px;
-  }
-  .group .subtitle{
-    font-weight: 950;
-    opacity: .88;
-  }
-
   /* Date chips: make Today/Tomorrow pop a bit */
   .date-strip .date-chip.today,
   .date-strip .date-chip.tomorrow{
     font-weight: 950;
   }
-
-  /* Country + competition logos (flags / league crests) */
-  .flag-img,
-  .comp-logo{
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    border-radius: 4px;
-  }
-  .group-title,
-  .subtitle{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-
-  /* Collapsible groups (country + competition) */
-  .collapsible{
-    cursor: pointer;
-    user-select: none;
-  }
-  .chev{
-    width: 14px;
-    height: 14px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    opacity:.65;
-    transform: rotate(0deg);
-    transition: transform .16s ease;
-  }
-  .chev::before{ content: '▾'; line-height: 1; font-size: 14px; }
-  .group.collapsed .chev,
-  .subgroup.collapsed .chev{ transform: rotate(-90deg); }
-  .group.collapsed .subgroups{ display:none; }
-  .subgroup.collapsed .matches{ display:none; }
 
   /* Standings table */
   .standings-table{
@@ -3449,6 +3382,15 @@ async function init(){
   setText("disclaimer", T.disclaimer);
 
   setText("subtitle", T.subtitle || "");
+
+  const heroContainer = qs(".hero");
+  if(heroContainer) heroContainer.classList.add("rt-hero-radar-day");
+  const heroGrid = qs(".grid");
+  if(heroGrid) heroGrid.classList.add("rt-hero-radar-day-grid");
+  const calendarSection = qs("#calendar_section");
+  if(calendarSection) calendarSection.classList.add("rt-cal-section");
+  const calendarRoot = qs("#calendar");
+  if(calendarRoot) calendarRoot.classList.add("rt-cal-root");
 
   setNav(LANG, T);
   decorateLangPills(LANG);
