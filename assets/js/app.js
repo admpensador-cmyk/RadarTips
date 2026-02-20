@@ -556,27 +556,6 @@ function localDateKey(isoUtc){
   }catch{ return ""; }
 }
 
-// Classify match as "today" or "tomorrow" based on local user timezone
-function classifyMatchByLocalDate(isoUtc){
-  try{
-    const d = new Date(isoUtc);
-    const today = new Date();
-    
-    // Get local date in user's timezone (using Intl for accurate conversion)
-    const formatter = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"});
-    const matchLocalDate = formatter.format(d);
-    const todayLocalDate = formatter.format(today);
-    
-    // Calculate tomorrow
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowLocalDate = formatter.format(tomorrow);
-    
-    if(matchLocalDate === todayLocalDate) return "today";
-    if(matchLocalDate === tomorrowLocalDate) return "tomorrow";
-    return null;
-  }catch(e){ return null; }
-}
 function fmtDateShortDDMM(date){
   try{
     return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(date);
@@ -1787,24 +1766,12 @@ function renderStats(match){
 }
 
 
-function renderCalendar(t, matches, viewMode, query, activeDateKey, activeTabType){
+function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, activeTabType){
   const root = qs("#calendar");
   if(!root) return;
   root.innerHTML = "";
 
   const q = normalize(query);
-
-  // Separate matches by local date classification
-  const todayMatches = [];
-  const tomorrowMatches = [];
-  const otherMatches = [];
-  
-  (matches || []).forEach(m => {
-    const dateType = classifyMatchByLocalDate(m.kickoff_utc);
-    if(dateType === "today") todayMatches.push(m);
-    else if(dateType === "tomorrow") tomorrowMatches.push(m);
-    else otherMatches.push(m);
-  });
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
   let active = activeTabType || "today";
@@ -1821,10 +1788,20 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey, activeTabTyp
   });
 
   // Format date labels (DD/MM)
-  function formatTabDate(offset) {
-    const d = new Date();
-    d.setDate(d.getDate() + offset);
-    return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+  function formatTabDate(offset, baseDate = meta?.today || new Date()) {
+    const parts = typeof baseDate === 'string' ? baseDate.split('-') : [];
+    if (parts.length === 3) {
+      // baseDate is in YYYY-MM-DD format from Worker
+      const [year, month, day] = parts;
+      const d = new Date(year, Number(month) - 1, Number(day));
+      if (offset === 1) d.setDate(d.getDate() + 1);
+      return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+    } else {
+      // Fallback to local calculation
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+    }
   }
 
   const todayLabel = t.tab_today || "Hoje";
@@ -1864,7 +1841,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey, activeTabTyp
     `;
     
     btn.addEventListener("click", () => {
-      renderCalendar(t, matches, viewMode, query, activeDateKey, type);
+      renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, type);
     });
     
     return btn;
@@ -2021,6 +1998,7 @@ let RADAR_DAY_DATA = null;
 // Caches para single-source-of-truth architecture
 window.__RADAR_DAY_CACHE = { data: null, loadedAt: 0 };
 window.__DAILY_MATCHES_CACHE = { data: null, loadedAt: 0 };
+window.__CALENDAR_2D_CACHE = { data: null, loadedAt: 0 };
 
 async function loadRadarDay() {
   const radar = await loadV1JSON('radar_day.json', { highlights: [] });
@@ -2054,6 +2032,36 @@ async function getRadarDay() {
     }
   } catch (e) {}
   return cache.data;
+}
+
+// Load calendar separated by today/tomorrow from Worker (timezone-aware)
+async function loadCalendar2D() {
+  const cache = window.__CALENDAR_2D_CACHE;
+  const now = Date.now();
+  const ttl = 60000; // 60 seconds
+  if (cache.data && (now - cache.loadedAt) < ttl) return cache.data;
+
+  try {
+    // Get user's timezone
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
+    
+    // Fetch from Worker endpoint
+    const url = `/api/v1/calendar_2d.json?tz=${encodeURIComponent(tz)}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.warn('loadCalendar2D failed:', response.status);
+      return { meta: { tz }, today: [], tomorrow: [] };
+    }
+    
+    const data = await response.json();
+    cache.data = data;
+    cache.loadedAt = now;
+    return data;
+  } catch (e) {
+    console.error('loadCalendar2D error:', e.message);
+    return { meta: { tz: 'America/Sao_Paulo' }, today: [], tomorrow: [] };
+  }
 }
 
 // Resolver match APENAS do radar_day
@@ -3402,7 +3410,7 @@ async function init(){
   setText("hero_sub", T.hero_sub_day || "Jogos de hoje");
 
   const radar = await loadRadarDay();
-  const daily = await loadDailyMatches();
+  const cal2d = await loadCalendar2D();
 
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
@@ -3415,16 +3423,22 @@ async function init(){
   setText("calendar_title", T.day_matches_title || "Jogos do dia");
   setText("calendar_sub", "");
 
-  CAL_MATCHES = Array.isArray(daily?.matches) ? daily.matches : [];
+  // Merge all matches for fixture resolution
+  const allMatches = [
+    ...cal2d.today,
+    ...cal2d.tomorrow
+  ];
+  
+  CAL_MATCHES = allMatches;
   CAL_META = {
-    form_window: Number(daily?.meta?.form_window || 5),
-    goals_window: Number(daily?.meta?.goals_window || 5)
+    form_window: Number(cal2d?.meta?.form_window || 5),
+    goals_window: Number(cal2d?.meta?.goals_window || 5)
   };
   window.CAL_MATCHES = CAL_MATCHES;
   window.CAL_SNAPSHOT_META = { goals_window: CAL_META.goals_window, form_window: CAL_META.form_window };
 
   function rerender(){
-    renderCalendar(T, CAL_MATCHES, "time", "", null);
+    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", null);
     bindOpenHandlers();
   }
 

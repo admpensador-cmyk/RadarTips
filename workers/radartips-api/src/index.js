@@ -65,6 +65,53 @@ function buildDailyCalendar(calendar) {
 }
 __name(buildDailyCalendar, "buildDailyCalendar");
 
+// Format date in local timezone to YYYY-MM-DD
+function formatLocalYMD(date, tz = "UTC") {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    return formatter.format(date);
+  } catch {
+    // Fallback to UTC if timezone is invalid
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    return formatter.format(date);
+  }
+}
+__name(formatLocalYMD, "formatLocalYMD");
+
+// Get today and tomorrow in YYYY-MM-DD format for a given timezone
+function getTodayTomorrowYMD(tz = "UTC") {
+  const today = formatLocalYMD(new Date(), tz);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowYMD = formatLocalYMD(tomorrow, tz);
+  return { today, tomorrow: tomorrowYMD };
+}
+__name(getTodayTomorrowYMD, "getTodayTomorrowYMD");
+
+// Classify match by local date (today/tomorrow)
+function classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD) {
+  try {
+    const d = new Date(kickoffUTC);
+    const matchLocalYMD = formatLocalYMD(d, tz);
+    
+    if (matchLocalYMD === todayYMD) return "today";
+    if (matchLocalYMD === tomorrowYMD) return "tomorrow";
+    return null;
+  } catch {
+    return null;
+  }
+}
+__name(classifyMatchByLocalDate, "classifyMatchByLocalDate");
+
 async function fetchCalendar7dFallback() {
   try {
     const res = await fetch("https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json", {
@@ -124,7 +171,7 @@ async function listBaseFiles(env) {
 }
 __name(listBaseFiles, "listBaseFiles");
 
-async function handleApiV1(env, pathname) {
+async function handleApiV1(env, pathname, requestUrl) {
   await requireBindings(env);
 
   if (pathname === "/v1/health") {
@@ -164,6 +211,70 @@ async function handleApiV1(env, pathname) {
     const data = await r2GetJson(env, "snapshots/calendar_7d.json");
     if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
     return jsonResponse(data);
+  }
+
+  // NEW: Calendar separated by today/tomorrow in user's local timezone
+  if (pathname === "/v1/calendar_2d") {
+    const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
+    const tz = url.searchParams.get("tz") || "America/Sao_Paulo";
+    
+    // Cache key: cache by path + tz
+    const cacheKey = `calendar_2d:${tz}`;
+    const cached = await kvGetJson(env, cacheKey);
+    if (cached) {
+      return jsonResponse(cached);
+    }
+    
+    // Fetch calendar data
+    let calendar = await r2GetJson(env, "snapshots/calendar_day.json");
+    if (!calendar || !Array.isArray(calendar.matches) || calendar.matches.length === 0) {
+      const cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+      if (!cal7d) {
+        return jsonResponse({
+          error: "Calendar data not available",
+          ok: false
+        }, 404);
+      }
+      calendar = cal7d;
+    }
+    
+    // Get today/tomorrow in the specified timezone
+    const { today: todayYMD, tomorrow: tomorrowYMD } = getTodayTomorrowYMD(tz);
+    
+    // Classify matches
+    const todayMatches = [];
+    const tomorrowMatches = [];
+    
+    if (Array.isArray(calendar.matches)) {
+      calendar.matches.forEach((m) => {
+        const kickoffUTC = m.kickoff_utc || m.date || "";
+        const classification = classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD);
+        
+        if (classification === "today") {
+          todayMatches.push(m);
+        } else if (classification === "tomorrow") {
+          tomorrowMatches.push(m);
+        }
+      });
+    }
+    
+    const response = {
+      meta: {
+        tz,
+        today: todayYMD,
+        tomorrow: tomorrowYMD,
+        generated_at_utc: calendar.generated_at_utc || nowIso(),
+        form_window: calendar.form_window || 5,
+        goals_window: calendar.goals_window || 5
+      },
+      today: todayMatches,
+      tomorrow: tomorrowMatches
+    };
+    
+    // Cache for 60 seconds
+    await kvPutJson(env, cacheKey, response, 60);
+    
+    return jsonResponse(response);
   }
 
   if (pathname === "/v1/radar_day") {
@@ -351,7 +462,7 @@ var index_default = {
     if (pathname.endsWith(".json")) pathname = pathname.slice(0, -5);
 
     if (pathname.startsWith("/v1/")) {
-      const res = await handleApiV1(env, pathname);
+      const res = await handleApiV1(env, pathname, request.url);
       if (res) return res;
     }
 
