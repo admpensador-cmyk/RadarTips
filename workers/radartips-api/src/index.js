@@ -145,40 +145,70 @@ async function fetchCalendar7dFallback() {
 }
 __name(fetchCalendar7dFallback, "fetchCalendar7dFallback");
 
-async function requireBindings(env) {
-  if (!env?.RADARTIPS_LIVE) {
-    throw new Error("KV binding missing: RADARTIPS_LIVE");
-  }
-  if (!env?.R2) {
-    throw new Error("R2 binding missing: R2");
-  }
+// Check bindings availability without throwing
+function checkBindings(env) {
+  return {
+    kv: !!env?.RADARTIPS_LIVE,
+    r2: !!env?.R2
+  };
 }
-__name(requireBindings, "requireBindings");
+__name(checkBindings, "checkBindings");
 
 async function kvGetJson(env, key) {
-  const raw = await env.RADARTIPS_LIVE.get(key);
-  if (!raw) return null;
-  return safeJsonParse(raw, null);
+  if (!env?.RADARTIPS_LIVE) return null;
+  try {
+    const raw = await env.RADARTIPS_LIVE.get(key);
+    if (!raw) return null;
+    return safeJsonParse(raw, null);
+  } catch (e) {
+    console.warn(`[kvGetJson] Error reading ${key}:`, e.message);
+    return null;
+  }
 }
 __name(kvGetJson, "kvGetJson");
 
 async function kvPutJson(env, key, value, ttlSeconds) {
-  const opts = ttlSeconds ? { expirationTtl: ttlSeconds } : undefined;
-  await env.RADARTIPS_LIVE.put(key, JSON.stringify(value), opts);
+  if (!env?.RADARTIPS_LIVE) {
+    console.warn(`[kvPutJson] KV not available, skipping cache for ${key}`);
+    return;
+  }
+  try {
+    const opts = ttlSeconds ? { expirationTtl: ttlSeconds } : undefined;
+    await env.RADARTIPS_LIVE.put(key, JSON.stringify(value), opts);
+  } catch (e) {
+    console.warn(`[kvPutJson] Error writing ${key}:`, e.message);
+  }
 }
 __name(kvPutJson, "kvPutJson");
 
 async function r2GetJson(env, key) {
-  const obj = await env.R2.get(key);
-  if (!obj) return null;
-  return safeJsonParse(await obj.text(), null);
+  if (!env?.R2) {
+    console.warn(`[r2GetJson] R2 not available, cannot get ${key}`);
+    return null;
+  }
+  try {
+    const obj = await env.R2.get(key);
+    if (!obj) return null;
+    return safeJsonParse(await obj.text(), null);
+  } catch (e) {
+    console.warn(`[r2GetJson] Error reading ${key}:`, e.message);
+    return null;
+  }
 }
 __name(r2GetJson, "r2GetJson");
 
 async function r2PutJson(env, key, value) {
-  await env.R2.put(key, JSON.stringify(value), {
-    httpMetadata: { contentType: "application/json; charset=utf-8" }
-  });
+  if (!env?.R2) {
+    console.warn(`[r2PutJson] R2 not available, skipping write for ${key}`);
+    return;
+  }
+  try {
+    await env.R2.put(key, JSON.stringify(value), {
+      httpMetadata: { contentType: "application/json; charset=utf-8" }
+    });
+  } catch (e) {
+    console.warn(`[r2PutJson] Error writing ${key}:`, e.message);
+  }
 }
 __name(r2PutJson, "r2PutJson");
 
@@ -192,188 +222,206 @@ async function listBaseFiles(env) {
 __name(listBaseFiles, "listBaseFiles");
 
 async function handleApiV1(env, pathname, requestUrl) {
-  await requireBindings(env);
+  try {
+    if (pathname === "/v1/health") {
+      return ok({ ts: nowIso() });
+    }
 
-  if (pathname === "/v1/health") {
-    return ok({ ts: nowIso() });
-  }
-
-  if (pathname === "/v1/base") {
-    return ok({ ts: nowIso(), data: await listBaseFiles(env) });
-  }
+    if (pathname === "/v1/base") {
+      return ok({ ts: nowIso(), data: await listBaseFiles(env) });
+    }
 
   // LIVE endpoint used by the frontend (minute-by-minute polling)
   // Expected shape: { generatedAt, ttlSeconds, states: [...] }
   if (pathname === "/v1/live") {
     const states = await kvGetJson(env, "live_states") || [];
     return jsonResponse({ generatedAt: nowIso(), ttlSeconds: 60, states });
-  }
+    }
 
-  if (pathname === "/v1/live/state") {
-    return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
-  }
+    if (pathname === "/v1/live/state") {
+      return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
+    }
 
-  // Serve snapshot files (calendar_7d, calendar_day, radar_day, radar_week) from R2
-  if (pathname === "/v1/calendar_day") {
-    let data = await r2GetJson(env, "snapshots/calendar_day.json");
-    if (!data) {
-      let cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
-      if (!cal7d) {
-        cal7d = await fetchCalendar7dFallback();
+    // Serve snapshot files (calendar_7d, calendar_day, radar_day, radar_week) from R2
+    if (pathname === "/v1/calendar_day") {
+      let data = await r2GetJson(env, "snapshots/calendar_day.json");
+      if (!data) {
+        let cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+        if (!cal7d) {
+          cal7d = await fetchCalendar7dFallback();
+        }
+        data = buildDailyCalendar(cal7d);
       }
-      data = buildDailyCalendar(cal7d);
+      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+      return jsonResponse(data);
     }
-    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
-    return jsonResponse(data);
-  }
 
-  if (pathname === "/v1/calendar_7d") {
-    const data = await r2GetJson(env, "snapshots/calendar_7d.json");
-    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
-    return jsonResponse(data);
-  }
+    if (pathname === "/v1/calendar_7d") {
+      const data = await r2GetJson(env, "snapshots/calendar_7d.json");
+      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+      return jsonResponse(data);
+    }
 
-  // Canonical Endpoint: /v1/calendar_2d.json
-  // Alias: /v1/calendar_2d (both normalized here by request router)
-  // Separates calendar matches by today/tomorrow in user's local timezone
-  // Requires: tz query parameter (IANA timezone identifier)
-  // Returns: 400 if tz missing or invalid; 200 with { meta, today[], tomorrow[] }
-  if (pathname === "/v1/calendar_2d") {
-    const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
-    const tzParam = url.searchParams.get("tz");
-    
-    // Validate timezone parameter (strict validation, no silent fallback)
-    const tzValidation = validateTimezone(tzParam);
-    if (!tzValidation.valid) {
-      // Return 400 with error details
-      const statusCode = 400;
-      if (tzValidation.error === "missing_tz") {
-        return jsonResponse({
-          error: "missing_tz",
-          message: "Required query parameter 'tz' not provided",
-          ok: false
-        }, statusCode);
-      } else {
-        // invalid_tz
-        return jsonResponse({
-          error: "invalid_tz",
-          message: `Invalid timezone: ${tzValidation.tz}`,
-          tz: tzValidation.tz,
-          ok: false
-        }, statusCode);
+    // Canonical Endpoint: /v1/calendar_2d.json
+    // Alias: /v1/calendar_2d (both normalized here by request router)
+    // Separates calendar matches by today/tomorrow in user's local timezone
+    // Requires: tz query parameter (IANA timezone identifier)
+    // Returns: 400 if tz missing or invalid; 200 with { meta, today[], tomorrow[] }
+    if (pathname === "/v1/calendar_2d") {
+      const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
+      const tzParam = url.searchParams.get("tz");
+      
+      // Validate timezone parameter (strict validation, no silent fallback)
+      const tzValidation = validateTimezone(tzParam);
+      if (!tzValidation.valid) {
+        // Return 400 with error details
+        const statusCode = 400;
+        if (tzValidation.error === "missing_tz") {
+          return jsonResponse({
+            error: "missing_tz",
+            message: "Required query parameter 'tz' not provided",
+            ok: false
+          }, statusCode);
+        } else {
+          // invalid_tz
+          return jsonResponse({
+            error: "invalid_tz",
+            message: `Invalid timezone: ${tzValidation.tz}`,
+            tz: tzValidation.tz,
+            ok: false
+          }, statusCode);
+        }
       }
-    }
-    
-    const tz = tzParam; // Now we know it's valid
-    
-    // Cache key: cache by path + tz
-    const cacheKey = `calendar_2d:${tz}`;
-    const cached = await kvGetJson(env, cacheKey);
-    if (cached) {
-      return jsonResponse(cached);
-    }
-    
-    const DEBUG = env.DEBUG === "true" || env.DEBUG === "1";
-    const debugLog = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
-    
-    // Fetch calendar data
-    // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch
-    let calendar = null;
-    let dataSource = null;
-    
-    // 1. Try calendar_7d.json (primary: full universe)
-    debugLog("Attempting to load calendar_7d.json...");
-    calendar = await r2GetJson(env, "snapshots/calendar_7d.json");
-    if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-      debugLog(`Loaded calendar_7d.json (${calendar.matches.length} matches)`);
-      dataSource = "calendar_7d";
-    } else {
-      // 2. Fallback to calendar_day.json
-      debugLog("Attempting fallback to calendar_day.json...");
-      calendar = await r2GetJson(env, "snapshots/calendar_day.json");
+      
+      const tz = tzParam; // Now we know it's valid
+      
+      // Cache key: cache by path + tz
+      const cacheKey = `calendar_2d:${tz}`;
+      const cached = await kvGetJson(env, cacheKey);
+      if (cached) {
+        return jsonResponse(cached);
+      }
+      
+      const DEBUG = env.DEBUG === "true" || env.DEBUG === "1";
+      const debugLog = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
+      
+      // Fetch calendar data
+      // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch
+      let calendar = null;
+      let dataSource = null;
+      
+      // 1. Try calendar_7d.json (primary: full universe)
+      debugLog("Attempting to load calendar_7d.json...");
+      calendar = await r2GetJson(env, "snapshots/calendar_7d.json");
       if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-        debugLog(`Loaded calendar_day.json (${calendar.matches.length} matches)`);
-        dataSource = "calendar_day";
+        debugLog(`Loaded calendar_7d.json (${calendar.matches.length} matches)`);
+        dataSource = "calendar_7d";
       } else {
-        // 3. Fallback to external fetch
-        debugLog("Attempting external fetch from data worker...");
-        calendar = await fetchCalendar7dFallback();
-        if (calendar) {
-          debugLog(`Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
-          dataSource = "external";
+        // 2. Fallback to calendar_day.json
+        debugLog("Attempting fallback to calendar_day.json...");
+        calendar = await r2GetJson(env, "snapshots/calendar_day.json");
+        if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
+          debugLog(`Loaded calendar_day.json (${calendar.matches.length} matches)`);
+          dataSource = "calendar_day";
+        } else {
+          // 3. Fallback to external fetch
+          debugLog("Attempting external fetch from data worker...");
+          calendar = await fetchCalendar7dFallback();
+          if (calendar) {
+            debugLog(`Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
+            dataSource = "external";
+          }
         }
       }
+      
+      // If still no data, return graceful empty response (not error)
+      // This prevents UI breakage when data source is temporarily unavailable
+      if (!calendar) {
+        debugLog("No calendar data available - returning empty response");
+        const { today: todayYMD, tomorrow: tomorrowYMD } = getTodayTomorrowYMD(tz);
+        return jsonResponse({
+          meta: {
+            tz,
+            today: todayYMD,
+            tomorrow: tomorrowYMD,
+            generated_at_utc: nowIso(),
+            form_window: 5,
+            goals_window: 5,
+            source: "unavailable",
+            warning: "No calendar data available - using empty fallback"
+          },
+          today: [],
+          tomorrow: []
+        }, 200);
+      }
+      
+      // Get today/tomorrow in the specified timezone
+      const { today: todayYMD, tomorrow: tomorrowYMD } = getTodayTomorrowYMD(tz);
+      
+      // Classify matches
+      const todayMatches = [];
+      const tomorrowMatches = [];
+      
+      if (Array.isArray(calendar.matches)) {
+        calendar.matches.forEach((m) => {
+          const kickoffUTC = m.kickoff_utc || m.date || "";
+          const classification = classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD);
+          
+          if (classification === "today") {
+            todayMatches.push(m);
+          } else if (classification === "tomorrow") {
+            tomorrowMatches.push(m);
+          }
+        });
+      }
+      
+      const response = {
+        meta: {
+          tz,
+          today: todayYMD,
+          tomorrow: tomorrowYMD,
+          generated_at_utc: calendar.generated_at_utc || nowIso(),
+          form_window: calendar.form_window || 5,
+          goals_window: calendar.goals_window || 5,
+          source: dataSource
+        },
+        today: todayMatches,
+        tomorrow: tomorrowMatches
+      };
+      
+      debugLog(`Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource})`);
+      
+      // Cache for 60 seconds
+      await kvPutJson(env, cacheKey, response, 60);
+      
+      return jsonResponse(response);
     }
-    
-    // If still no data, return error
-    if (!calendar) {
-      return jsonResponse({
-        error: "Calendar data not available",
-        ok: false
-      }, 404);
+
+    if (pathname === "/v1/radar_day") {
+      const data = await r2GetJson(env, "snapshots/radar_day.json");
+      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+      return jsonResponse(data);
     }
-    
-    // Get today/tomorrow in the specified timezone
-    const { today: todayYMD, tomorrow: tomorrowYMD } = getTodayTomorrowYMD(tz);
-    
-    // Classify matches
-    const todayMatches = [];
-    const tomorrowMatches = [];
-    
-    if (Array.isArray(calendar.matches)) {
-      calendar.matches.forEach((m) => {
-        const kickoffUTC = m.kickoff_utc || m.date || "";
-        const classification = classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD);
-        
-        if (classification === "today") {
-          todayMatches.push(m);
-        } else if (classification === "tomorrow") {
-          tomorrowMatches.push(m);
-        }
-      });
+
+    if (pathname === "/v1/radar_week") {
+      const data = await r2GetJson(env, "snapshots/radar_week.json");
+      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+      return jsonResponse(data);
     }
-    
-    const response = {
-      meta: {
-        tz,
-        today: todayYMD,
-        tomorrow: tomorrowYMD,
-        generated_at_utc: calendar.generated_at_utc || nowIso(),
-        form_window: calendar.form_window || 5,
-        goals_window: calendar.goals_window || 5,
-        source: dataSource
-      },
-      today: todayMatches,
-      tomorrow: tomorrowMatches
-    };
-    
-    debugLog(`Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource})`);
-    
-    // Cache for 60 seconds
-    await kvPutJson(env, cacheKey, response, 60);
-    
-    return jsonResponse(response);
-  }
 
-  if (pathname === "/v1/radar_day") {
-    const data = await r2GetJson(env, "snapshots/radar_day.json");
-    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
-    return jsonResponse(data);
+    return null;
+  } catch (e) {
+    console.error("[handleApiV1] Unexpected error:", e.message);
+    return jsonResponse({
+      error: "Internal server error",
+      message: e.message,
+      ok: false
+    }, 500);
   }
-
-  if (pathname === "/v1/radar_week") {
-    const data = await r2GetJson(env, "snapshots/radar_week.json");
-    if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
-    return jsonResponse(data);
-  }
-
-  return null;
 }
 __name(handleApiV1, "handleApiV1");
 
 async function handleTeamStats(env, url) {
-  await requireBindings(env);
-
   const urlObj = new URL(url);
   const teamId = urlObj.searchParams.get("team");
   const leagueId = urlObj.searchParams.get("league");
@@ -386,7 +434,7 @@ async function handleTeamStats(env, url) {
     );
   }
 
-  // Try KV cache first (TTL: 6-12 hours)
+  // Try KV cache first (TTL: 6-12 hours) - optional if KV not available
   const cacheKey = `teamstats:${teamId}:${leagueId}:${season}`;
   const cached = await kvGetJson(env, cacheKey);
   if (cached) return jsonResponse(cached);
@@ -395,7 +443,7 @@ async function handleTeamStats(env, url) {
   if (!env.APIFOOTBALL_KEY) {
     return jsonResponse(
       { error: "API key not configured", ok: false },
-      500
+      503
     );
   }
 
