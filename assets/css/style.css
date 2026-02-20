@@ -520,8 +520,8 @@ a{color:inherit; text-decoration:none}
 .match > .match-center{
   grid-column:2;
   display:flex;
-  flex-direction:column;
-  gap:0;
+  flex-direction:row;
+  gap:10px;
   align-items:center;
   justify-content:center;
 }
@@ -533,10 +533,11 @@ a{color:inherit; text-decoration:none}
 .team-away{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:6px;
   font-weight:950;
-  font-size:14px;
+  font-size:13px;
   color:#ffffff;
+  white-space:nowrap;
 }
 .team-home span,
 .team-away span{
@@ -547,16 +548,16 @@ a{color:inherit; text-decoration:none}
 .team-away .crest,
 .team-home .crest.crest--img,
 .team-away .crest.crest--img{
-  width:28px;
-  height:28px;
-  min-width:28px;
-  font-size:11px;
+  width:24px;
+  height:24px;
+  min-width:24px;
+  font-size:10px;
 }
 .vs-symbol{
   font-weight:900;
   color:rgba(255,255,255,.7);
   font-size:18px;
-  margin:2px 0;
+  margin:0 4px;
   text-align:center;
 }
 
@@ -601,19 +602,9 @@ a{color:inherit; text-decoration:none}
     grid-column:1;
     grid-row:1;
   }
-  .match > .team-home{
+  .match > .match-center{
     grid-column:1;
     grid-row:2;
-  }
-  .match > .vs-symbol{
-    grid-column:1;
-    grid-row:2;
-    text-align:center;
-  }
-  .match > .team-away{
-    grid-column:1;
-    grid-row:2;
-    justify-content:flex-start;
   }
   .match > .suggestion{
     grid-column:1;
