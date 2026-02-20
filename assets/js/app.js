@@ -1778,6 +1778,33 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   root.classList.add("rt-cal-root");
   root.innerHTML = "";
 
+  if(!root.__rtCalDelegationBound){
+    root.__rtCalDelegationBound = true;
+    root.addEventListener("click", (e)=>{
+      const toggle = e.target.closest(".rt-cal-country-toggle");
+      if(toggle && root.contains(toggle)){
+        e.preventDefault();
+        const accordion = toggle.closest(".rt-cal-country-accordion");
+        const body = accordion ? accordion.querySelector(".rt-cal-country-body") : null;
+        if(!body) return;
+
+        const nextCollapsed = !body.classList.contains("is-collapsed");
+        body.classList.toggle("is-collapsed", nextCollapsed);
+        toggle.classList.toggle("is-open", !nextCollapsed);
+        toggle.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
+
+        const countryName = String(toggle.getAttribute("data-country") || "");
+        if(countryName) setCountryCollapsed(countryName, nextCollapsed);
+        return;
+      }
+
+      const moreBtn = e.target.closest(".rt-match-more-btn");
+      if(moreBtn && root.contains(moreBtn)){
+        e.stopPropagation();
+      }
+    });
+  }
+
   const q = normalize(query);
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
@@ -1882,8 +1909,9 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
     // Live bindings
     const _fxId = m.fixture_id ?? m.fixtureId ?? m.id ?? m.fixture ?? null;
-    if(_fxId !== null && _fxId !== undefined && String(_fxId).trim() !== ""){
-      row.setAttribute("data-fixture-id", String(_fxId));
+    const fixtureId = (_fxId !== null && _fxId !== undefined && String(_fxId).trim() !== "") ? String(_fxId) : "";
+    if(fixtureId){
+      row.setAttribute("data-fixture-id", fixtureId);
     }
     row.setAttribute("data-sugg", String(m.suggestion_free || ""));
 
@@ -1891,6 +1919,10 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const awayLogo = pickTeamLogo(m, "away");
 
     const market = localizeMarket(m.suggestion_free, t) || "—";
+    const moreTitle = t.match_radar || "Match Radar";
+    const moreAttrs = fixtureId
+      ? `data-fixture-id="${escAttr(fixtureId)}" data-sugg="${escAttr(String(m.suggestion_free || ""))}"`
+      : `disabled aria-disabled="true"`;
 
     row.innerHTML = `
       <div class="rt-match-time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
@@ -1900,6 +1932,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
         <div class="rt-match-away">${crestHTML(m.away, awayLogo)}<span class="rt-match-team-label">${escAttr(m.away)}</span></div>
       </div>
       <div class="rt-match-suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(market)}</div>
+      <button class="rt-match-more-btn" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>＋</button>
     `;
 
     return row;
@@ -1935,12 +1968,12 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
     countryBox.innerHTML = `
       <div class="rt-cal-country-head">
-        <button class="rt-cal-country-toggle" type="button" aria-expanded="${isCollapsed ? "false" : "true"}" aria-label="${escAttr(countryName)}">
+        <button class="rt-cal-country-toggle ${isCollapsed ? "" : "is-open"}" data-country="${escAttr(countryName)}" type="button" aria-expanded="${isCollapsed ? "false" : "true"}" aria-label="${escAttr(countryName)}">
           <div class="rt-cal-country-title">${countryFlagHtml}<span class="rt-cal-country-label">${escAttr(countryName)} (${totalMatches})</span></div>
           <span class="rt-cal-country-chevron" aria-hidden="true">▾</span>
         </button>
       </div>
-      <div class="rt-cal-competition-groups" ${isCollapsed ? "hidden" : ""}></div>
+      <div class="rt-cal-country-body rt-cal-competition-groups ${isCollapsed ? "is-collapsed" : ""}" data-country-body="${escAttr(countryName)}"></div>
     `;
 
     const subgroups = countryBox.querySelector(".rt-cal-competition-groups");
@@ -1960,27 +1993,6 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
       subgroups.appendChild(compBox);
     });
-
-    const countryToggle = countryBox.querySelector(".rt-cal-country-toggle");
-    if(countryToggle){
-      const updateCountryExpanded = (collapsed)=>{
-        countryBox.classList.toggle("rt-cal-country-collapsed", collapsed);
-        if(subgroups) subgroups.hidden = collapsed;
-        countryToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        setCountryCollapsed(countryName, collapsed);
-      };
-
-      countryToggle.addEventListener("click", ()=>{
-        updateCountryExpanded(!countryBox.classList.contains("rt-cal-country-collapsed"));
-      });
-
-      countryToggle.addEventListener("keydown", (ev)=>{
-        if(ev.key === "Enter" || ev.key === " "){
-          ev.preventDefault();
-          updateCountryExpanded(!countryBox.classList.contains("rt-cal-country-collapsed"));
-        }
-      });
-    }
 
     root.appendChild(countryBox);
   }

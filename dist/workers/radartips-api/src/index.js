@@ -154,6 +154,64 @@ function checkBindings(env) {
 }
 __name(checkBindings, "checkBindings");
 
+function isDebugEnabled(env) {
+  return env?.DEBUG === "true" || env?.DEBUG === "1";
+}
+__name(isDebugEnabled, "isDebugEnabled");
+
+function debugLog(env, message, extra) {
+  if (!isDebugEnabled(env)) return;
+  if (extra !== undefined) {
+    console.log(`[worker] ${message}`, extra);
+    return;
+  }
+  console.log(`[worker] ${message}`);
+}
+__name(debugLog, "debugLog");
+
+function degradedCalendar2D(tz = "UTC", reason = "no_data") {
+  const { today, tomorrow } = getTodayTomorrowYMD(tz);
+  return {
+    meta: {
+      tz,
+      today,
+      tomorrow,
+      generated_at_utc: nowIso(),
+      form_window: 5,
+      goals_window: 5,
+      source: "degraded",
+      warning: reason
+    },
+    today: [],
+    tomorrow: []
+  };
+}
+__name(degradedCalendar2D, "degradedCalendar2D");
+
+function degradedRadarDay(reason = "no_data") {
+  return {
+    meta: {
+      generated_at_utc: nowIso(),
+      warning: reason
+    },
+    highlights: [],
+    matches: []
+  };
+}
+__name(degradedRadarDay, "degradedRadarDay");
+
+function degradedLive(reason = "no_data") {
+  return {
+    generatedAt: nowIso(),
+    ttlSeconds: 60,
+    states: [],
+    meta: {
+      warning: reason
+    }
+  };
+}
+__name(degradedLive, "degradedLive");
+
 async function kvGetJson(env, key) {
   if (!env?.RADARTIPS_LIVE) return null;
   try {
@@ -161,7 +219,7 @@ async function kvGetJson(env, key) {
     if (!raw) return null;
     return safeJsonParse(raw, null);
   } catch (e) {
-    console.warn(`[kvGetJson] Error reading ${key}:`, e.message);
+    debugLog(env, `kvGetJson error for ${key}`, e.message);
     return null;
   }
 }
@@ -169,21 +227,21 @@ __name(kvGetJson, "kvGetJson");
 
 async function kvPutJson(env, key, value, ttlSeconds) {
   if (!env?.RADARTIPS_LIVE) {
-    console.warn(`[kvPutJson] KV not available, skipping cache for ${key}`);
+    debugLog(env, `KV not available, skipping cache for ${key}`);
     return;
   }
   try {
     const opts = ttlSeconds ? { expirationTtl: ttlSeconds } : undefined;
     await env.RADARTIPS_LIVE.put(key, JSON.stringify(value), opts);
   } catch (e) {
-    console.warn(`[kvPutJson] Error writing ${key}:`, e.message);
+    debugLog(env, `kvPutJson error for ${key}`, e.message);
   }
 }
 __name(kvPutJson, "kvPutJson");
 
 async function r2GetJson(env, key) {
   if (!env?.R2) {
-    console.warn(`[r2GetJson] R2 not available, cannot get ${key}`);
+    debugLog(env, `R2 not available, cannot get ${key}`);
     return null;
   }
   try {
@@ -191,7 +249,7 @@ async function r2GetJson(env, key) {
     if (!obj) return null;
     return safeJsonParse(await obj.text(), null);
   } catch (e) {
-    console.warn(`[r2GetJson] Error reading ${key}:`, e.message);
+    debugLog(env, `r2GetJson error for ${key}`, e.message);
     return null;
   }
 }
@@ -199,7 +257,7 @@ __name(r2GetJson, "r2GetJson");
 
 async function r2PutJson(env, key, value) {
   if (!env?.R2) {
-    console.warn(`[r2PutJson] R2 not available, skipping write for ${key}`);
+    debugLog(env, `R2 not available, skipping write for ${key}`);
     return;
   }
   try {
@@ -207,7 +265,7 @@ async function r2PutJson(env, key, value) {
       httpMetadata: { contentType: "application/json; charset=utf-8" }
     });
   } catch (e) {
-    console.warn(`[r2PutJson] Error writing ${key}:`, e.message);
+    debugLog(env, `r2PutJson error for ${key}`, e.message);
   }
 }
 __name(r2PutJson, "r2PutJson");
@@ -256,14 +314,30 @@ async function handleApiV1(env, pathname, requestUrl) {
   // Expected shape: { generatedAt, ttlSeconds, states: [...] }
   if (pathname === "/v1/live") {
     const missing = getMissingBindings(bindings, ["RADARTIPS_LIVE"]);
-    if (missing.length) return missingBindingsResponse(missing);
+    if (missing.length) {
+      const payload = degradedLive("no_data");
+      payload.meta.missing_bindings = missing;
+      debugLog(env, "Degraded /v1/live due to missing bindings", missing);
+      return jsonResponse(payload, 200);
+    }
     const states = await kvGetJson(env, "live_states") || [];
     return jsonResponse({ generatedAt: nowIso(), ttlSeconds: 60, states });
     }
 
     if (pathname === "/v1/live/state") {
       const missing = getMissingBindings(bindings, ["RADARTIPS_LIVE"]);
-      if (missing.length) return missingBindingsResponse(missing);
+      if (missing.length) {
+        debugLog(env, "Degraded /v1/live/state due to missing bindings", missing);
+        return jsonResponse({
+          ok: true,
+          ts: nowIso(),
+          state: {},
+          meta: {
+            warning: "no_data",
+            missing_bindings: missing
+          }
+        }, 200);
+      }
       return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
     }
 
@@ -278,6 +352,7 @@ async function handleApiV1(env, pathname, requestUrl) {
         data = buildDailyCalendar(cal7d);
       }
       if (!data) {
+        debugLog(env, "Degraded /v1/calendar_day response");
         return jsonResponse({
           generated_at_utc: nowIso(),
           form_window: 5,
@@ -339,7 +414,7 @@ async function handleApiV1(env, pathname, requestUrl) {
       }
       
       const DEBUG = env.DEBUG === "true" || env.DEBUG === "1";
-      const debugLog = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
+      const logCal2d = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
       
       // Fetch calendar data
       // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch
@@ -347,24 +422,24 @@ async function handleApiV1(env, pathname, requestUrl) {
       let dataSource = null;
       
       // 1. Try calendar_7d.json (primary: full universe)
-      debugLog("Attempting to load calendar_7d.json...");
+      logCal2d("Attempting to load calendar_7d.json...");
       calendar = await r2GetJson(env, "snapshots/calendar_7d.json");
       if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-        debugLog(`Loaded calendar_7d.json (${calendar.matches.length} matches)`);
+        logCal2d(`Loaded calendar_7d.json (${calendar.matches.length} matches)`);
         dataSource = "calendar_7d";
       } else {
         // 2. Fallback to calendar_day.json
-        debugLog("Attempting fallback to calendar_day.json...");
+        logCal2d("Attempting fallback to calendar_day.json...");
         calendar = await r2GetJson(env, "snapshots/calendar_day.json");
         if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-          debugLog(`Loaded calendar_day.json (${calendar.matches.length} matches)`);
+          logCal2d(`Loaded calendar_day.json (${calendar.matches.length} matches)`);
           dataSource = "calendar_day";
         } else {
           // 3. Fallback to external fetch
-          debugLog("Attempting external fetch from data worker...");
+          logCal2d("Attempting external fetch from data worker...");
           calendar = await fetchCalendar7dFallback();
           if (calendar) {
-            debugLog(`Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
+            logCal2d(`Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
             dataSource = "external";
           }
         }
@@ -373,23 +448,10 @@ async function handleApiV1(env, pathname, requestUrl) {
       // If still no data, return graceful empty response (not error)
       // This prevents UI breakage when data source is temporarily unavailable
       if (!calendar) {
-        debugLog("No calendar data available - returning empty response");
-        const { today: todayYMD, tomorrow: tomorrowYMD } = getTodayTomorrowYMD(tz);
-        return jsonResponse({
-          meta: {
-            tz,
-            today: todayYMD,
-            tomorrow: tomorrowYMD,
-            generated_at_utc: nowIso(),
-            form_window: 5,
-            goals_window: 5,
-            source: "unavailable",
-            warning: "No calendar data available - using empty fallback",
-            missing_bindings: getMissingBindings(bindings, ["R2"])
-          },
-          today: [],
-          tomorrow: []
-        }, 200);
+        logCal2d("No calendar data available - returning empty response");
+        const payload = degradedCalendar2D(tz, "no_data");
+        payload.meta.missing_bindings = getMissingBindings(bindings, ["R2"]);
+        return jsonResponse(payload, 200);
       }
       
       // Get today/tomorrow in the specified timezone
@@ -426,7 +488,7 @@ async function handleApiV1(env, pathname, requestUrl) {
         tomorrow: tomorrowMatches
       };
       
-      debugLog(`Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource})`);
+      logCal2d(`Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource})`);
       
       // Cache for 60 seconds
       await kvPutJson(env, cacheKey, response, 60);
@@ -436,9 +498,14 @@ async function handleApiV1(env, pathname, requestUrl) {
 
     if (pathname === "/v1/radar_day") {
       const missing = getMissingBindings(bindings, ["R2"]);
-      if (missing.length) return missingBindingsResponse(missing);
+      if (missing.length) {
+        const payload = degradedRadarDay("no_data");
+        payload.meta.missing_bindings = missing;
+        debugLog(env, "Degraded /v1/radar_day due to missing bindings", missing);
+        return jsonResponse(payload, 200);
+      }
       const data = await r2GetJson(env, "snapshots/radar_day.json");
-      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
+      if (!data) return jsonResponse(degradedRadarDay("no_data"), 200);
       return jsonResponse(data);
     }
 
@@ -452,7 +519,18 @@ async function handleApiV1(env, pathname, requestUrl) {
 
     return null;
   } catch (e) {
-    console.error("[handleApiV1] Unexpected error:", e.message);
+    debugLog(env, "handleApiV1 unexpected error", e.message);
+    if (pathname === "/v1/calendar_2d") {
+      const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
+      const tz = url.searchParams.get("tz") || "UTC";
+      return jsonResponse(degradedCalendar2D(tz, "no_data"), 200);
+    }
+    if (pathname === "/v1/radar_day") {
+      return jsonResponse(degradedRadarDay("no_data"), 200);
+    }
+    if (pathname === "/v1/live") {
+      return jsonResponse(degradedLive("no_data"), 200);
+    }
     return jsonResponse({
       error: "Internal server error",
       message: e.message,
@@ -534,7 +612,7 @@ async function handleTeamStats(env, url) {
 
     return jsonResponse(stats);
   } catch (e) {
-    console.log("Team stats fetch error:", e.message);
+    debugLog(env, "Team stats fetch error", e.message);
     return jsonResponse(
       { error: "Internal server error", ok: false },
       500
@@ -544,7 +622,11 @@ async function handleTeamStats(env, url) {
 __name(handleTeamStats, "handleTeamStats");
 
 async function cronUpdateLive(env) {
-  await requireBindings(env);
+  const bindings = checkBindings(env);
+  if (!bindings.kv) {
+    debugLog(env, "Skipping cronUpdateLive: RADARTIPS_LIVE binding missing");
+    return;
+  }
 
   // 1 request per minute total: fetch ALL live fixtures, then filter to our leagues.
   // League allowlist comes from a comma-separated env var.
@@ -598,7 +680,7 @@ async function cronFinalizeRecent(env) {
   try {
     await cronUpdateLive(env);
   } catch (e) {
-    console.log("cronFinalizeRecent failed:", e.message);
+    debugLog(env, "cronFinalizeRecent failed", e.message);
   }
 }
 __name(cronFinalizeRecent, "cronFinalizeRecent");
@@ -639,7 +721,7 @@ var index_default = {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(
       cronUpdateLive(env).catch(e =>
-        console.log("cron error:", e.message)
+        debugLog(env, "cron error", e.message)
       )
     );
   }
