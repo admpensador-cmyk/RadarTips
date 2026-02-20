@@ -65,6 +65,26 @@ function buildDailyCalendar(calendar) {
 }
 __name(buildDailyCalendar, "buildDailyCalendar");
 
+// Validate timezone string using Intl.DateTimeFormat
+function validateTimezone(tz) {
+  if (!tz || typeof tz !== "string" || tz.trim().length === 0) {
+    return { valid: false, error: "missing_tz" };
+  }
+  
+  try {
+    // Try to create a formatter with this timezone
+    // If timezone is invalid, this throws RangeError
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz
+    });
+    return { valid: true };
+  } catch (e) {
+    // Invalid timezone
+    return { valid: false, error: "invalid_tz", tz };
+  }
+}
+__name(validateTimezone, "validateTimezone");
+
 // Format date in local timezone to YYYY-MM-DD
 function formatLocalYMD(date, tz = "UTC") {
   try {
@@ -213,10 +233,38 @@ async function handleApiV1(env, pathname, requestUrl) {
     return jsonResponse(data);
   }
 
-  // NEW: Calendar separated by today/tomorrow in user's local timezone
+  // Canonical Endpoint: /v1/calendar_2d.json
+  // Alias: /v1/calendar_2d (both normalized here by request router)
+  // Separates calendar matches by today/tomorrow in user's local timezone
+  // Requires: tz query parameter (IANA timezone identifier)
+  // Returns: 400 if tz missing or invalid; 200 with { meta, today[], tomorrow[] }
   if (pathname === "/v1/calendar_2d") {
     const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
-    const tz = url.searchParams.get("tz") || "America/Sao_Paulo";
+    const tzParam = url.searchParams.get("tz");
+    
+    // Validate timezone parameter (strict validation, no silent fallback)
+    const tzValidation = validateTimezone(tzParam);
+    if (!tzValidation.valid) {
+      // Return 400 with error details
+      const statusCode = 400;
+      if (tzValidation.error === "missing_tz") {
+        return jsonResponse({
+          error: "missing_tz",
+          message: "Required query parameter 'tz' not provided",
+          ok: false
+        }, statusCode);
+      } else {
+        // invalid_tz
+        return jsonResponse({
+          error: "invalid_tz",
+          message: `Invalid timezone: ${tzValidation.tz}`,
+          tz: tzValidation.tz,
+          ok: false
+        }, statusCode);
+      }
+    }
+    
+    const tz = tzParam; // Now we know it's valid
     
     // Cache key: cache by path + tz
     const cacheKey = `calendar_2d:${tz}`;
@@ -225,17 +273,44 @@ async function handleApiV1(env, pathname, requestUrl) {
       return jsonResponse(cached);
     }
     
+    const DEBUG = env.DEBUG === "true" || env.DEBUG === "1";
+    const debugLog = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
+    
     // Fetch calendar data
-    let calendar = await r2GetJson(env, "snapshots/calendar_day.json");
-    if (!calendar || !Array.isArray(calendar.matches) || calendar.matches.length === 0) {
-      const cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
-      if (!cal7d) {
-        return jsonResponse({
-          error: "Calendar data not available",
-          ok: false
-        }, 404);
+    // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch
+    let calendar = null;
+    let dataSource = null;
+    
+    // 1. Try calendar_7d.json (primary: full universe)
+    debugLog("Attempting to load calendar_7d.json...");
+    calendar = await r2GetJson(env, "snapshots/calendar_7d.json");
+    if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
+      debugLog(`Loaded calendar_7d.json (${calendar.matches.length} matches)`);
+      dataSource = "calendar_7d";
+    } else {
+      // 2. Fallback to calendar_day.json
+      debugLog("Attempting fallback to calendar_day.json...");
+      calendar = await r2GetJson(env, "snapshots/calendar_day.json");
+      if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
+        debugLog(`Loaded calendar_day.json (${calendar.matches.length} matches)`);
+        dataSource = "calendar_day";
+      } else {
+        // 3. Fallback to external fetch
+        debugLog("Attempting external fetch from data worker...");
+        calendar = await fetchCalendar7dFallback();
+        if (calendar) {
+          debugLog(`Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
+          dataSource = "external";
+        }
       }
-      calendar = cal7d;
+    }
+    
+    // If still no data, return error
+    if (!calendar) {
+      return jsonResponse({
+        error: "Calendar data not available",
+        ok: false
+      }, 404);
     }
     
     // Get today/tomorrow in the specified timezone
@@ -265,11 +340,14 @@ async function handleApiV1(env, pathname, requestUrl) {
         tomorrow: tomorrowYMD,
         generated_at_utc: calendar.generated_at_utc || nowIso(),
         form_window: calendar.form_window || 5,
-        goals_window: calendar.goals_window || 5
+        goals_window: calendar.goals_window || 5,
+        source: dataSource
       },
       today: todayMatches,
       tomorrow: tomorrowMatches
     };
+    
+    debugLog(`Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource})`);
     
     // Cache for 60 seconds
     await kvPutJson(env, cacheKey, response, 60);

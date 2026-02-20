@@ -9,12 +9,17 @@
 
 ## Endpoint Details
 
-### GET /api/v1/calendar_2d.json
+### GET /api/v1/calendar_2d.json (canonical)
+
+**Canonical Route**: `/api/v1/calendar_2d.json`  
+**Alias**: `/api/v1/calendar_2d` (both work identically)  
+**Note**: The Worker normalizes both forms to the same handler. Use `.json` for explicit content type.
 
 **Query Parameters**:
-- `tz`: Timezone string (default: `America/Sao_Paulo`)
-  - Examples: `America/Sao_Paulo`, `Europe/Berlin`, `Asia/Tokyo`, `UTC`
+- `tz`: Timezone string (required, validated)
+  - Examples: `America/Sao_Paulo`, `Europe/Berlin`, `Asia/Tokyo`
   - Uses IANA timezone identifiers (TZ database)
+  - Invalid timezone returns 400 Bad Request
 
 **Response Structure**:
 ```json
@@ -81,8 +86,9 @@ tomorrow_count: 1
 ### Endpoint Implementation
 
 **File**: `workers/radartips-api/src/index.js`  
-**Route**: `/v1/calendar_2d`  
-**Cache**: KV store by `calendar_2d:{tz}` with 60s TTL  
+**Canonical Route**: `/v1/calendar_2d.json`  
+**Handler Route**: `/v1/calendar_2d` (normalized from both forms)  
+**Cache Key**: `calendar_2d:{tz}` with 60s TTL  
 **Data Source Priority**:
 1. Local KV cache (60s)
 2. R2 bucket: `snapshots/calendar_day.json`

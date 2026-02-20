@@ -2045,12 +2045,38 @@ async function loadCalendar2D() {
     // Get user's timezone
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
     
-    // Fetch from Worker endpoint
+    // Fetch from Worker endpoint with validation error handling
     const url = `/api/v1/calendar_2d.json?tz=${encodeURIComponent(tz)}`;
     const response = await fetch(url);
     
+    // Handle validation errors (400) - timezone invalid/missing
+    if (response.status === 400) {
+      try {
+        const errorData = await response.json();
+        console.warn('loadCalendar2D validation error:', {
+          error: errorData.error,
+          message: errorData.message,
+          tz: errorData.tz
+        });
+      } catch (parseErr) {
+        console.warn('loadCalendar2D validation error (unparseable):', response.status);
+      }
+      
+      // Fallback: retry with default timezone
+      console.info('Retrying with default timezone (America/Sao_Paulo)...');
+      const fallbackUrl = `/api/v1/calendar_2d.json?tz=America/Sao_Paulo`;
+      const fallbackResponse = await fetch(fallbackUrl);
+      
+      if (fallbackResponse.ok) {
+        const data = await fallbackResponse.json();
+        cache.data = data;
+        cache.loadedAt = now;
+        return data;
+      }
+    }
+    
     if (!response.ok) {
-      console.warn('loadCalendar2D failed:', response.status);
+      console.warn('loadCalendar2D failed:', response.status, response.statusText);
       return { meta: { tz }, today: [], tomorrow: [] };
     }
     

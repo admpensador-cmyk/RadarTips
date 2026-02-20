@@ -1,17 +1,78 @@
-<!doctype html>
-<html lang="pt">
+#!/usr/bin/env node
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Ler o arquivo scaffold e extrair a função de geração de HTML
+const scaffoldContent = fs.readFileSync(path.join(__dirname, 'scaffold-radartips.sh'), 'utf-8');
+
+// Extrair strings JSON do scaffold
+const stringsMatch = scaffoldContent.match(/cat > i18n\/strings\.json <<'JSON'([\s\S]*?)^JSON/m);
+const cssMatch = scaffoldContent.match(/cat > assets\/css\/style\.css <<'CSS'([\s\S]*?)^CSS/m);
+
+if (!stringsMatch || !cssMatch) {
+  console.error('❌ Erro: não foi possível extrair CSS ou i18n do scaffold');
+  process.exit(1);
+}
+
+const i18nContent = stringsMatch[1].trim();
+const cssContent = cssMatch[1].trim();
+
+// Criar diretórios
+const dirs = [
+  'assets/css', 'assets/js', 'assets/img',
+  'i18n', 'data/v1',
+  'en/radar/day', 'en/radar/week', 'en/calendar',
+  'pt/radar/day', 'pt/radar/week', 'pt/calendar',
+  'es/radar/day', 'es/radar/week', 'es/calendar',
+  'fr/radar/day', 'fr/radar/week', 'fr/calendar',
+  'de/radar/day', 'de/radar/week', 'de/calendar'
+];
+
+dirs.forEach(dir => {
+  const fullPath = path.join(__dirname, dir);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+  }
+});
+
+// Escrever arquivos
+fs.writeFileSync(path.join(__dirname, 'i18n/strings.json'), i18nContent);
+fs.writeFileSync(path.join(__dirname, 'assets/css/style.css'), cssContent);
+
+console.log('✅ CSS e i18n regenerados');
+
+// Agora parse as strings para gerar os HTMLs
+const i18n = JSON.parse(i18nContent);
+
+const languages = Object.keys(i18n);
+const pages = [
+  { key: 'day', title: 'hero_title_day', path: 'radar/day' },
+  { key: 'week', title: 'hero_title_week', path: 'radar/week' },
+  { key: 'calendar', title: 'hero_title_cal', path: 'calendar' }
+];
+
+// Template base para HTML
+function generateHtml(lang, page, strings) {
+  const title = strings[page.title] || 'Radar';
+  const pageName = page.key;
+
+  return `<!doctype html>
+<html lang="${lang}">
 <head>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ME07NV3W8Y"></script>
   <script>window.dataLayer=window.dataLayer||[]; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-ME07NV3W8Y', { anonymize_ip: true });</script>
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips • Calendário</title>
+  <title>RadarTips • ${title}</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/assets/css/style.css?v=11" />
 </head>
-<body data-page="calendar">
+<body data-page="${pageName}">
   <div class="container">
     <div class="topbar">
       <div class="brand">
@@ -103,9 +164,24 @@
   </div>
 
   <script>
-    window.RT_LOCALE = "pt";
+    window.RT_LOCALE = "${lang}";
   </script>
   <script src="/assets/radar.js"></script>
   <link rel="stylesheet" href="/assets/match-radar-v2.66f5a85a02d7.css" />
 </body>
 </html>
+`;
+}
+
+// Gerar HTMLs para todas as combinações de lang+page
+languages.forEach(lang => {
+  const langStrings = i18n[lang];
+  pages.forEach(page => {
+    const htmlContent = generateHtml(lang, page, langStrings);
+    const filePath = path.join(__dirname, lang, page.path, 'index.html');
+    fs.writeFileSync(filePath, htmlContent);
+    console.log(`✅ ${filePath}`);
+  });
+});
+
+console.log('\n✨ Regeneração concluída com sucesso!');
