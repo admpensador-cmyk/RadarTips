@@ -3522,8 +3522,14 @@ async function init(){
     });
   }
 
-  qs("#modal_close").addEventListener("click", closeModal);
-  qs("#modal_backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+  const modalClose = qs("#modal_close");
+  if (modalClose) {
+    modalClose.addEventListener("click", closeModal);
+  }
+  const modalBackdrop = qs("#modal_backdrop");
+  if (modalBackdrop) {
+    modalBackdrop.addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+  }
 
   // language switch (preserve page)
   qsa("[data-lang]").forEach(btn=>{

@@ -555,6 +555,7 @@ function localDateKey(isoUtc){
     return new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
   }catch{ return ""; }
 }
+
 function fmtDateShortDDMM(date){
   try{
     return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(date);
@@ -1765,48 +1766,113 @@ function renderStats(match){
 }
 
 
-function renderCalendar(t, matches, viewMode, query, activeDateKey){
+function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, activeTabType){
   const root = qs("#calendar");
   if(!root) return;
   root.innerHTML = "";
 
   const q = normalize(query);
 
-  const filtered = (matches || []).filter(m=>{
-    // Date filter (local timezone)
-    if(activeDateKey && activeDateKey !== "7d"){
-      if(localDateKey(m.kickoff_utc) !== activeDateKey) return false;
-    }
+  // Determine active tab (default to "today" if both have matches, else to whichever has matches)
+  let active = activeTabType || "today";
+  if(todayMatches.length === 0 && tomorrowMatches.length > 0) active = "tomorrow";
+  if(tomorrowMatches.length === 0 && todayMatches.length > 0) active = "today";
 
+  // Get matches for the active tab
+  const matchesForTab = active === "today" ? todayMatches : tomorrowMatches;
+
+  const filtered = (matchesForTab || []).filter(m=>{
     if(!q) return true;
     const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
     return blob.includes(q);
   });
 
+  // Format date labels (DD/MM)
+  function formatTabDate(offset, baseDate = meta?.today || new Date()) {
+    const parts = typeof baseDate === 'string' ? baseDate.split('-') : [];
+    if (parts.length === 3) {
+      // baseDate is in YYYY-MM-DD format from Worker
+      const [year, month, day] = parts;
+      const d = new Date(year, Number(month) - 1, Number(day));
+      if (offset === 1) d.setDate(d.getDate() + 1);
+      return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+    } else {
+      // Fallback to local calculation
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+    }
+  }
+
+  const todayLabel = t.tab_today || "Hoje";
+  const tomorrowLabel = t.tab_tomorrow || "Amanhã";
+  const todayDate = formatTabDate(0);
+  const tomorrowDate = formatTabDate(1);
+
+  // Create tab header
+  const header = document.createElement("div");
+  header.className = "calendar-tabs-header";
+  header.style.cssText = "display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px";
+
+  // Tab styling
+  const makeTabButton = (label, date, type, isActive, count) => {
+    const btn = document.createElement("button");
+    btn.className = "calendar-tab";
+    btn.setAttribute("data-tab", type);
+    btn.style.cssText = `
+      flex:1;
+      padding:10px 12px;
+      background:${isActive ? "rgba(56,189,248,.1)" : "transparent"};
+      border:${isActive ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,.1)"};
+      border-radius:6px;
+      color:${isActive ? "#38bdf8" : "#9fb0c9"};
+      cursor:pointer;
+      font-size:14px;
+      font-weight:${isActive ? "600" : "500"};
+      transition:all 0.2s ease;
+      white-space:nowrap;
+    `;
+    btn.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span>${escAttr(label)}</span>
+        <span style="font-size:12px;opacity:0.7">${escAttr(date)}</span>
+        <span style="font-size:11px;opacity:0.6">${count} ${count === 1 ? (t.match_singular || "jogo") : (t.match_plural || "jogos")}</span>
+      </div>
+    `;
+    
+    btn.addEventListener("click", () => {
+      renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, type);
+    });
+    
+    return btn;
+  };
+
+  header.appendChild(makeTabButton(todayLabel, todayDate, "today", active === "today", todayMatches.length));
+  header.appendChild(makeTabButton(tomorrowLabel, tomorrowDate, "tomorrow", active === "tomorrow", tomorrowMatches.length));
+
+  root.appendChild(header);
+
+  // Render content based on selected tab
   if(!filtered.length){
-    // Distinguish between "no data at all" vs "filtered to zero"
-    const hasAnyMatches = (matches || []).length > 0;
-    const isFiltered = (activeDateKey && activeDateKey !== "7d") || q;
+    const hasAnyMatches = matchesForTab.length > 0;
     
     let title, subtitle;
     if (!hasAnyMatches) {
-      // No matches loaded at all - data issue
-      title = t.calendar_no_data || "Calendar data unavailable";
-      subtitle = t.calendar_no_data_hint || "Daily data unavailable.";
-    } else if (isFiltered) {
-      // Matches exist but filter returned zero
-      title = t.empty_list || "No matches found.";
-      subtitle = t.calendar_empty_hint || "Try another day or adjust the search.";
+      // No matches for this tab
+      title = active === "today" 
+        ? (t.no_matches_today || "Sem jogos para hoje")
+        : (t.no_matches_tomorrow || "Sem jogos para amanhã");
+      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
     } else {
-      // Edge case: shouldn't happen
-      title = t.empty_list || "No matches found.";
-      subtitle = t.calendar_empty_hint || "Try another day or adjust the search.";
+      // Matches exist but search filtered to zero
+      title = t.empty_list || "Nenhum jogo encontrado.";
+      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
     }
     
-    root.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-title">${escAttr(title)}</div>
-        <div class="empty-sub">${escAttr(subtitle)}</div>
+    root.innerHTML += `
+      <div class="empty-state" style="text-align:center;padding:32px 16px;color:#9fb0c9">
+        <div class="empty-title" style="font-size:16px;margin-bottom:8px">${escAttr(title)}</div>
+        <div class="empty-sub" style="font-size:14px">${escAttr(subtitle)}</div>
       </div>
     `;
     return;
@@ -1932,6 +1998,7 @@ let RADAR_DAY_DATA = null;
 // Caches para single-source-of-truth architecture
 window.__RADAR_DAY_CACHE = { data: null, loadedAt: 0 };
 window.__DAILY_MATCHES_CACHE = { data: null, loadedAt: 0 };
+window.__CALENDAR_2D_CACHE = { data: null, loadedAt: 0 };
 
 async function loadRadarDay() {
   const radar = await loadV1JSON('radar_day.json', { highlights: [] });
@@ -1965,6 +2032,62 @@ async function getRadarDay() {
     }
   } catch (e) {}
   return cache.data;
+}
+
+// Load calendar separated by today/tomorrow from Worker (timezone-aware)
+async function loadCalendar2D() {
+  const cache = window.__CALENDAR_2D_CACHE;
+  const now = Date.now();
+  const ttl = 60000; // 60 seconds
+  if (cache.data && (now - cache.loadedAt) < ttl) return cache.data;
+
+  try {
+    // Get user's timezone
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
+    
+    // Fetch from Worker endpoint with validation error handling
+    const url = `/api/v1/calendar_2d.json?tz=${encodeURIComponent(tz)}`;
+    const response = await fetch(url);
+    
+    // Handle validation errors (400) - timezone invalid/missing
+    if (response.status === 400) {
+      try {
+        const errorData = await response.json();
+        console.warn('loadCalendar2D validation error:', {
+          error: errorData.error,
+          message: errorData.message,
+          tz: errorData.tz
+        });
+      } catch (parseErr) {
+        console.warn('loadCalendar2D validation error (unparseable):', response.status);
+      }
+      
+      // Fallback: retry with default timezone
+      console.info('Retrying with default timezone (America/Sao_Paulo)...');
+      const fallbackUrl = `/api/v1/calendar_2d.json?tz=America/Sao_Paulo`;
+      const fallbackResponse = await fetch(fallbackUrl);
+      
+      if (fallbackResponse.ok) {
+        const data = await fallbackResponse.json();
+        cache.data = data;
+        cache.loadedAt = now;
+        return data;
+      }
+    }
+    
+    if (!response.ok) {
+      console.warn('loadCalendar2D failed:', response.status, response.statusText);
+      return { meta: { tz }, today: [], tomorrow: [] };
+    }
+    
+    const data = await response.json();
+    cache.data = data;
+    cache.loadedAt = now;
+    return data;
+  } catch (e) {
+    console.error('loadCalendar2D error:', e.message);
+    return { meta: { tz: 'America/Sao_Paulo' }, today: [], tomorrow: [] };
+  }
 }
 
 // Resolver match APENAS do radar_day
@@ -3313,7 +3436,7 @@ async function init(){
   setText("hero_sub", T.hero_sub_day || "Jogos de hoje");
 
   const radar = await loadRadarDay();
-  const daily = await loadDailyMatches();
+  const cal2d = await loadCalendar2D();
 
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
@@ -3326,16 +3449,22 @@ async function init(){
   setText("calendar_title", T.day_matches_title || "Jogos do dia");
   setText("calendar_sub", "");
 
-  CAL_MATCHES = Array.isArray(daily?.matches) ? daily.matches : [];
+  // Merge all matches for fixture resolution
+  const allMatches = [
+    ...cal2d.today,
+    ...cal2d.tomorrow
+  ];
+  
+  CAL_MATCHES = allMatches;
   CAL_META = {
-    form_window: Number(daily?.meta?.form_window || 5),
-    goals_window: Number(daily?.meta?.goals_window || 5)
+    form_window: Number(cal2d?.meta?.form_window || 5),
+    goals_window: Number(cal2d?.meta?.goals_window || 5)
   };
   window.CAL_MATCHES = CAL_MATCHES;
   window.CAL_SNAPSHOT_META = { goals_window: CAL_META.goals_window, form_window: CAL_META.form_window };
 
   function rerender(){
-    renderCalendar(T, CAL_MATCHES, "time", "", null);
+    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", null);
     bindOpenHandlers();
   }
 
@@ -3393,8 +3522,14 @@ async function init(){
     });
   }
 
-  qs("#modal_close").addEventListener("click", closeModal);
-  qs("#modal_backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+  const modalClose = qs("#modal_close");
+  if (modalClose) {
+    modalClose.addEventListener("click", closeModal);
+  }
+  const modalBackdrop = qs("#modal_backdrop");
+  if (modalBackdrop) {
+    modalBackdrop.addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+  }
 
   // language switch (preserve page)
   qsa("[data-lang]").forEach(btn=>{
