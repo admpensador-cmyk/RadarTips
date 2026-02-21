@@ -52,6 +52,10 @@ jobs:
 
           test -f "data/v1/radar_week.json"
 
+          wrangler r2 object put "${R2_BUCKET_NAME}/snapshots/radar_week.json" \
+            --file "data/v1/radar_week.json" \
+            --content-type "application/json"
+
           wrangler r2 object put "${R2_BUCKET_NAME}/v1/radar_week.json" \
             --file "data/v1/radar_week.json" \
             --content-type "application/json"
