@@ -1902,7 +1902,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const awayName = String(m?.away?.name || m?.away_team || m?.away_team_name || m?.away || "");
 
     const row = document.createElement("div");
-    row.className = "rt-match-card";
+    row.className = "rt-match-card rt-cal-match";
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     const radarLabel = t.match_radar || "Match Radar";
@@ -1938,12 +1938,18 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       : `disabled aria-disabled="true"`;
 
     row.innerHTML = `
-      <div class="rt-match-time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-      <div class="rt-team-home">${crestHTML(homeName, homeLogo)}<span class="name">${escAttr(homeName)}</span></div>
-      <div class="${scoreClass}" data-score>${escAttr(scoreText)}</div>
-      <div class="rt-team-away"><span class="name">${escAttr(awayName)}</span>${crestHTML(awayName, awayLogo)}</div>
-      <div class="rt-match-market" ${tipAttr(t.suggestion_tooltip || "")}><span class="rt-match-suggestion">${escAttr(market)}</span></div>
-      <button class="rt-match-more-btn" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>＋</button>
+      <div class="rt-cal-when" ${tipAttr(t.kickoff_tooltip || "")}>
+        <div class="rt-cal-time">${fmtTime(m.kickoff_utc)}</div>
+        <div class="${scoreClass} rt-cal-score" data-score>${escAttr(scoreText)}</div>
+      </div>
+      <div class="rt-cal-teams">
+        <div class="rt-cal-teamrow rt-team-home">${crestHTML(homeName, homeLogo)}<span class="name">${escAttr(homeName)}</span></div>
+        <div class="rt-cal-teamrow rt-team-away">${crestHTML(awayName, awayLogo)}<span class="name">${escAttr(awayName)}</span></div>
+      </div>
+      <div class="rt-cal-actions">
+        <div class="rt-match-market rt-cal-market" ${tipAttr(t.suggestion_tooltip || "")}><span class="rt-match-suggestion">${escAttr(market)}</span></div>
+        <button class="rt-match-more-btn rt-cal-more" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>＋</button>
+      </div>
     `;
 
     if(fixtureId){
