@@ -2150,6 +2150,25 @@ async function loadCalendar2D() {
     }
     
     const data = await response.json();
+    
+    // If Worker returned valid response but with empty data, fallback to static file
+    if ((!Array.isArray(data.today) || data.today.length === 0) && 
+        (!Array.isArray(data.tomorrow) || data.tomorrow.length === 0)) {
+      console.info('Worker returned empty data, falling back to static calendar file...');
+      try {
+        const staticFallback = await fetch('/data/v1/calendar_2d.json');
+        if (staticFallback.ok) {
+          const staticData = await staticFallback.json();
+          console.warn('Using static fallback calendar (Worker had no data)');
+          cache.data = staticData;
+          cache.loadedAt = now;
+          return staticData;
+        }
+      } catch (fallbackErr) {
+        console.warn('Static fallback also failed:', fallbackErr.message);
+      }
+    }
+    
     cache.data = data;
     cache.loadedAt = now;
     return data;
