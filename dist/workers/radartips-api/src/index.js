@@ -417,30 +417,34 @@ async function handleApiV1(env, pathname, requestUrl) {
       const logCal2d = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
       
       // Fetch calendar data
-      // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch
+      // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch → degraded
       let calendar = null;
       let dataSource = null;
+      const sourceKeysTried = [];
       
       // 1. Try calendar_7d.json (primary: full universe)
-      logCal2d("Attempting to load calendar_7d.json...");
+      logCal2d("Attempting to load snapshots/calendar_7d.json...");
+      sourceKeysTried.push("snapshots/calendar_7d.json");
       calendar = await r2GetJson(env, "snapshots/calendar_7d.json");
       if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-        logCal2d(`Loaded calendar_7d.json (${calendar.matches.length} matches)`);
-        dataSource = "calendar_7d";
+        logCal2d(`✓ Loaded calendar_7d.json (${calendar.matches.length} matches)`);
+        dataSource = "R2:calendar_7d";
       } else {
-        // 2. Fallback to calendar_day.json
-        logCal2d("Attempting fallback to calendar_day.json...");
+        // 2. Fallback to calendar_day.json  (for backward compat, though 2d should use 7d)
+        logCal2d("Attempting fallback to snapshots/calendar_day.json...");
+        sourceKeysTried.push("snapshots/calendar_day.json");
         calendar = await r2GetJson(env, "snapshots/calendar_day.json");
         if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-          logCal2d(`Loaded calendar_day.json (${calendar.matches.length} matches)`);
-          dataSource = "calendar_day";
+          logCal2d(`✓ Loaded calendar_day.json (${calendar.matches.length} matches)`);
+          dataSource = "R2:calendar_day";
         } else {
           // 3. Fallback to external fetch
           logCal2d("Attempting external fetch from data worker...");
+          sourceKeysTried.push("external:radartips-data");
           calendar = await fetchCalendar7dFallback();
-          if (calendar) {
-            logCal2d(`Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
-            dataSource = "external";
+          if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
+            logCal2d(`✓ Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
+            dataSource = "external:radartips-data";
           }
         }
       }
@@ -448,8 +452,10 @@ async function handleApiV1(env, pathname, requestUrl) {
       // If still no data, return graceful empty response (not error)
       // This prevents UI breakage when data source is temporarily unavailable
       if (!calendar) {
-        logCal2d("No calendar data available - returning empty response");
+        logCal2d("No calendar data available - returning degraded response");
         const payload = degradedCalendar2D(tz, "no_data");
+        payload.meta.sourceUsed = "none";
+        payload.meta.sourceKeysTried = sourceKeysTried;
         payload.meta.missing_bindings = getMissingBindings(bindings, ["R2"]);
         return jsonResponse(payload, 200);
       }
@@ -474,6 +480,7 @@ async function handleApiV1(env, pathname, requestUrl) {
         });
       }
       
+      
       const response = {
         meta: {
           tz,
@@ -482,13 +489,18 @@ async function handleApiV1(env, pathname, requestUrl) {
           generated_at_utc: calendar.generated_at_utc || nowIso(),
           form_window: calendar.form_window || 5,
           goals_window: calendar.goals_window || 5,
-          source: dataSource
+          sourceUsed: dataSource,
+          sourceKeysTried: sourceKeysTried,
+          totalRead: calendar.matches?.length || 0,
+          todayCount: todayMatches.length,
+          tomorrowCount: tomorrowMatches.length,
+          timestamp: nowIso()
         },
         today: todayMatches,
         tomorrow: tomorrowMatches
       };
       
-      logCal2d(`Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource})`);
+      logCal2d(`✓ Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource}, total: ${calendar.matches?.length})`);
       
       // Cache for 60 seconds
       await kvPutJson(env, cacheKey, response, 60);
