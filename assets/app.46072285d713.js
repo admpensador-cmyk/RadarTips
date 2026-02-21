@@ -1782,8 +1782,8 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   root.classList.add("rt-cal-root");
   root.innerHTML = "";
 
-  if(!root.__rtCalDelegationBound){
-    root.__rtCalDelegationBound = true;
+  if(!root.__rtCountryDelegationBound){
+    root.__rtCountryDelegationBound = true;
     root.addEventListener("click", (e)=>{
       const toggle = e.target.closest(".rt-cal-country-toggle");
       if(toggle && root.contains(toggle)){
@@ -1807,7 +1807,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   const q = normalize(query);
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
-  let active = activeTabType || "today";
+  let active = CAL_ACTIVE_TAB || activeTabType || "today";
   if(todayMatches.length === 0 && tomorrowMatches.length > 0) active = "tomorrow";
   if(tomorrowMatches.length === 0 && todayMatches.length > 0) active = "today";
 
@@ -1849,20 +1849,16 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   // Tab styling
   const makeTabButton = (label, date, type, isActive, count) => {
     const btn = document.createElement("button");
-    btn.className = `rt-cal-tab ${isActive ? "rt-cal-tab-active" : ""}`;
-    btn.setAttribute("data-tab", type);
+    btn.className = `rt-cal-tab ${isActive ? "rt-cal-tab-active is-active" : ""}`;
+    btn.setAttribute("data-cal-tab", type);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    const countSuffix = Number.isFinite(Number(count)) ? ` (${Number(count)})` : "";
     btn.innerHTML = `
       <div class="rt-cal-tab-inner">
-        <span class="rt-cal-tab-label">${escAttr(label)}</span>
-        <span class="rt-cal-tab-date">${escAttr(date)}</span>
-        <span class="rt-cal-tab-count">${count} ${count === 1 ? (t.match_singular || "jogo") : (t.match_plural || "jogos")}</span>
+        <span class="rt-cal-tab-label">${escAttr(`${label} ${date}${countSuffix}`)}</span>
       </div>
     `;
-    
-    btn.addEventListener("click", () => {
-      renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, type);
-    });
-    
+
     return btn;
   };
 
@@ -2032,6 +2028,30 @@ let T = null;
 let LANG = null;
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
+let CAL_ACTIVE_TAB = "today";
+let CAL_DATA = { today: [], tomorrow: [] };
+let DEBUG_CALENDAR = false;
+
+function setupCalendarTabDelegation(){
+  if(window.__CAL_TAB_DELEGATION_BOUND__) return;
+  window.__CAL_TAB_DELEGATION_BOUND__ = true;
+  
+  document.addEventListener("click", (e)=>{
+    const tabBtn = e.target.closest("[data-cal-tab]");
+    if(!tabBtn) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const newTab = String(tabBtn.getAttribute("data-cal-tab") || "today");
+    if(DEBUG_CALENDAR) console.log("[calendar] tab click ->", newTab, "today:", CAL_DATA.today?.length, "tomorrow:", CAL_DATA.tomorrow?.length);
+    
+    CAL_ACTIVE_TAB = newTab;
+    if(typeof window.__RERENDER_CALENDAR__ === "function"){
+      window.__RERENDER_CALENDAR__();
+    }
+  }, true);
+}
 let RADAR_DAY_DATA = null;
 
 // Caches para single-source-of-truth architecture
@@ -3431,6 +3451,8 @@ async function init(){
   if(heroGrid) heroGrid.classList.add("rt-hero-radar-day-grid");
   const calendarSection = qs("#calendar_section");
   if(calendarSection) calendarSection.classList.add("rt-cal-section");
+  const legacyCalendarControls = calendarSection ? calendarSection.querySelector(".controls") : null;
+  if(legacyCalendarControls) legacyCalendarControls.remove();
   const calendarRoot = qs("#calendar");
   if(calendarRoot) calendarRoot.classList.add("rt-cal-root");
 
@@ -3471,11 +3493,17 @@ async function init(){
     form_window: Number(cal2d?.meta?.form_window || 5),
     goals_window: Number(cal2d?.meta?.goals_window || 5)
   };
+  CAL_DATA = { today: cal2d.today, tomorrow: cal2d.tomorrow };
   window.CAL_MATCHES = CAL_MATCHES;
   window.CAL_SNAPSHOT_META = { goals_window: CAL_META.goals_window, form_window: CAL_META.form_window };
 
+  setupCalendarTabDelegation();
+  window.__RERENDER_CALENDAR__ = function(){
+    rerender();
+  };
+
   function rerender(){
-    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", null);
+    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", CAL_ACTIVE_TAB);
     bindOpenHandlers();
   }
 
