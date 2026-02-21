@@ -1779,12 +1779,25 @@ function renderStats(match){
 function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, activeTabType){
   const root = qs("#calendar");
   if(!root) return;
+  const setActiveTab = (tabType)=>{
+    const nextTab = tabType === "tomorrow" ? "tomorrow" : "today";
+    CAL_ACTIVE_TAB = nextTab;
+    renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, nextTab);
+  };
   root.classList.add("rt-cal-root");
   root.innerHTML = "";
 
   if(!root.__rtCalDelegationBound){
     root.__rtCalDelegationBound = true;
     root.addEventListener("click", (e)=>{
+      const tabBtn = e.target.closest("[data-cal-tab]");
+      if(tabBtn && root.contains(tabBtn)){
+        e.preventDefault();
+        const tab = String(tabBtn.getAttribute("data-cal-tab") || "today");
+        setActiveTab(tab);
+        return;
+      }
+
       const toggle = e.target.closest(".rt-cal-country-toggle");
       if(toggle && root.contains(toggle)){
         e.preventDefault();
@@ -1807,9 +1820,10 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   const q = normalize(query);
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
-  let active = activeTabType || "today";
+  let active = activeTabType || CAL_ACTIVE_TAB || "today";
   if(todayMatches.length === 0 && tomorrowMatches.length > 0) active = "tomorrow";
   if(tomorrowMatches.length === 0 && todayMatches.length > 0) active = "today";
+  CAL_ACTIVE_TAB = active;
 
   // Get matches for the active tab
   const matchesForTab = active === "today" ? todayMatches : tomorrowMatches;
@@ -1849,20 +1863,16 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   // Tab styling
   const makeTabButton = (label, date, type, isActive, count) => {
     const btn = document.createElement("button");
-    btn.className = `rt-cal-tab ${isActive ? "rt-cal-tab-active" : ""}`;
-    btn.setAttribute("data-tab", type);
+    btn.className = `rt-cal-tab ${isActive ? "rt-cal-tab-active is-active" : ""}`;
+    btn.setAttribute("data-cal-tab", type);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    const countSuffix = Number.isFinite(Number(count)) ? ` (${Number(count)})` : "";
     btn.innerHTML = `
       <div class="rt-cal-tab-inner">
-        <span class="rt-cal-tab-label">${escAttr(label)}</span>
-        <span class="rt-cal-tab-date">${escAttr(date)}</span>
-        <span class="rt-cal-tab-count">${count} ${count === 1 ? (t.match_singular || "jogo") : (t.match_plural || "jogos")}</span>
+        <span class="rt-cal-tab-label">${escAttr(`${label} ${date}${countSuffix}`)}</span>
       </div>
     `;
-    
-    btn.addEventListener("click", () => {
-      renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, type);
-    });
-    
+
     return btn;
   };
 
@@ -2032,6 +2042,7 @@ let T = null;
 let LANG = null;
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
+let CAL_ACTIVE_TAB = "today";
 let RADAR_DAY_DATA = null;
 
 // Caches para single-source-of-truth architecture
@@ -3431,6 +3442,8 @@ async function init(){
   if(heroGrid) heroGrid.classList.add("rt-hero-radar-day-grid");
   const calendarSection = qs("#calendar_section");
   if(calendarSection) calendarSection.classList.add("rt-cal-section");
+  const legacyCalendarControls = calendarSection ? calendarSection.querySelector(".controls") : null;
+  if(legacyCalendarControls) legacyCalendarControls.remove();
   const calendarRoot = qs("#calendar");
   if(calendarRoot) calendarRoot.classList.add("rt-cal-root");
 
@@ -3475,7 +3488,7 @@ async function init(){
   window.CAL_SNAPSHOT_META = { goals_window: CAL_META.goals_window, form_window: CAL_META.form_window };
 
   function rerender(){
-    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", null);
+    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", CAL_ACTIVE_TAB);
     bindOpenHandlers();
   }
 

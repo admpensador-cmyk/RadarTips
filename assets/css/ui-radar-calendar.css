@@ -15,7 +15,7 @@
 
 .rt-cal-tabs-header{
   display:flex;
-  gap:12px;
+  gap:10px;
   padding:12px 0;
   border-bottom:1px solid rgba(255,255,255,.08);
   margin-bottom:16px;
@@ -23,40 +23,32 @@
 
 .rt-cal-tab{
   flex:1;
-  padding:10px 12px;
+  padding:11px 12px;
   background:transparent;
   border:1px solid rgba(255,255,255,.1);
-  border-radius:6px;
+  border-radius:8px;
   color:#9fb0c9;
   cursor:pointer;
   font-size:14px;
-  font-weight:500;
+  font-weight:700;
   transition:all .2s ease;
   white-space:nowrap;
 }
 
+.rt-cal-tab.is-active,
 .rt-cal-tab-active{
   background:rgba(56,189,248,.1);
   border-color:#38bdf8;
   color:#38bdf8;
-  font-weight:600;
+  font-weight:800;
 }
 
 .rt-cal-tab-inner{
   display:flex;
-  flex-direction:column;
+  flex-direction:row;
   align-items:center;
-  gap:4px;
-}
-
-.rt-cal-tab-date{
-  font-size:12px;
-  opacity:.7;
-}
-
-.rt-cal-tab-count{
-  font-size:11px;
-  opacity:.6;
+  justify-content:center;
+  gap:6px;
 }
 
 .rt-cal-empty-state{
