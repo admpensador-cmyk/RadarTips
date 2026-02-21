@@ -912,6 +912,29 @@ function setHTML(id, val){
 function qs(sel){ return document.querySelector(sel); }
 function qsa(sel){ return [...document.querySelectorAll(sel)]; }
 
+function mountOfficialHeaderLogo(){
+  const logoRoot = qs(".topbar .logo");
+  if(!logoRoot) return;
+
+  logoRoot.innerHTML = `
+    <div class="rt-logo" aria-label="RadarTips">
+      <svg class="rt-logo-symbol" viewBox="0 0 64 64" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="rtLogoGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#2F80FF"/>
+            <stop offset="100%" stop-color="#56CCF2"/>
+          </linearGradient>
+        </defs>
+        <path d="M16 50V14h18c9 0 14 5 14 13 0 6-3 10-8 12l8 11H39l-7-10h-7v10h-9zm9-18h8c4 0 6-2 6-5s-2-5-6-5h-8v10z" fill="url(#rtLogoGrad)"/>
+        <circle cx="42" cy="22" r="2" fill="#56CCF2"/>
+        <path d="M34 22a8 8 0 0 1 8-8" fill="none" stroke="#56CCF2" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M30 22a12 12 0 0 1 12-12" fill="none" stroke="#2F80FF" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>
+      </svg>
+      <span class="rt-logo-wordmark"><span class="rt-logo-radar">Radar</span><span class="rt-logo-tips">Tips</span></span>
+    </div>
+  `;
+}
+
 function ensureTopSearch(t){
   const nav = qs(".topbar .nav");
   if(!nav) return;
@@ -3450,7 +3473,7 @@ async function init(){
     return val || defaultValue || key;
   };
 
-  setText("brand", T.brand);
+  mountOfficialHeaderLogo();
 
   const heroContainer = qs(".hero");
   if(heroContainer) heroContainer.classList.add("rt-hero-radar-day");
