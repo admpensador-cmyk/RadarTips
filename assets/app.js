@@ -465,26 +465,16 @@ const LEGAL_PATHS = {
 function renderComplianceFooter(lang){
   const foot = qs(".footer");
   if(!foot) return;
-  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
   const labels = {
-    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"},
-    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo responsável",note:"Conteúdo informativo • Não somos casa de apostas • +18"},
-    es:{how:"Cómo funciona",about:"Sobre",contact:"Contacto",terms:"Términos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo • No somos casa de apuestas • 18+"},
-    fr:{how:"Comment ça marche",about:"À propos",contact:"Contact",terms:"Conditions",privacy:"Confidentialité",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif • Pas un bookmaker • 18+"},
-    de:{how:"So funktioniert es",about:"Über uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt • Kein Buchmacher • 18+"}
-  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"};
+    en:{note:"Informational content • We are not a bookmaker • 18+"},
+    pt:{note:"Conteúdo informativo • Não somos casa de apostas • +18"},
+    es:{note:"Contenido informativo • No somos casa de apuestas • 18+"},
+    fr:{note:"Contenu informatif • Pas un bookmaker • 18+"},
+    de:{note:"Info-Inhalt • Kein Buchmacher • 18+"}
+  }[lang] || {note:"Informational content • We are not a bookmaker • 18+"};
 
   foot.innerHTML = `
     <div class="foot-wrap">
-      <div class="foot-links">
-        <a href="${p.how}">${labels.how}</a>
-        <a href="${p.about}">${labels.about}</a>
-        <a href="${p.contact}">${labels.contact}</a>
-        <a href="${p.terms}">${labels.terms}</a>
-        <a href="${p.privacy}">${labels.privacy}</a>
-        <a href="${p.aff}">${labels.aff}</a>
-        <a href="${p.rg}">${labels.rg}</a>
-      </div>
       <div class="foot-meta">
         <span>${labels.note}</span>
         <span>© <span id="year"></span> RadarTips</span>
@@ -1193,25 +1183,42 @@ function initTooltips(){
 }
 
 function setNav(lang, t){
-  const map = {
-    day: `/${lang}/radar/day/`,
-    week: `/${lang}/radar/week/`,
-    calendar: `/${lang}/calendar/`
+  const labelsByLang = {
+    pt: { day: "Radar do Dia", calendar: "Jogos" },
+    en: { day: "Daily Picks", calendar: "Games" },
+    es: { day: "Radar del Día", calendar: "Partidos" },
+    fr: { day: "Radar du Jour", calendar: "Matchs" },
+    de: { day: "Tagesradar", calendar: "Spiele" }
   };
+  const navLabels = labelsByLang[lang] || labelsByLang.en;
+  const map = {
+    day: "#hero_section",
+    calendar: "#calendar_section"
+  };
+
   qsa("[data-nav]").forEach(a=>{
     const k=a.getAttribute("data-nav");
-
-    // Calendar is a fixed section on Day/Week pages, so we don't need a separate Calendar tab in the topbar.
-    if(k==="calendar" && pageType()!=="calendar"){
+    if(!map[k]){
       a.style.display = "none";
       return;
     }
 
     a.href = map[k];
-    a.textContent = (k==="day") ? t.nav_day : (k==="week") ? t.nav_week : t.nav_calendar;
-    a.classList.toggle("active", location.pathname.startsWith(map[k]));
+    a.textContent = navLabels[k];
+    a.classList.toggle("active", k === "day");
     a.setAttribute("data-tip", a.textContent);
     a.title = a.textContent;
+
+    if(!a.dataset.boundScroll){
+      a.dataset.boundScroll = "1";
+      a.addEventListener("click", (e)=>{
+        e.preventDefault();
+        const target = qs(a.getAttribute("href"));
+        if(target) target.scrollIntoView({behavior:"smooth", block:"start"});
+        qsa("[data-nav]").forEach(el=>el.classList.remove("active"));
+        a.classList.add("active");
+      });
+    }
   });
 
   // Language pills get decorated later with flags
@@ -2943,21 +2950,12 @@ async function init(){
     return val || defaultValue || key;
   };
 
-  initThemeToggle(T);
-
   setText("brand", T.brand);
-  setText("disclaimer", T.disclaimer);
-
-  setText("subtitle", T.subtitle || "");
 
   setNav(LANG, T);
   decorateLangPills(LANG);
   initTooltips();
   injectPatchStyles();
-
-  // Dashboard layout helpers (sidebar + top search + top date strip)
-  ensureSidebar(T, LANG);
-  ensureTopSearch(T);
 
   const p = pageType();
   if(p==="day"){

@@ -60,6 +60,20 @@ jobs:
           test -f "data/v1/radar_week.json"
 
           echo "=== PUT (REMOTE) ==="
+          # Worker reads snapshots/* keys from R2
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/calendar_7d.json" \
+            --file "data/v1/calendar_7d.json" \
+            --content-type "application/json"
+
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/radar_day.json" \
+            --file "data/v1/radar_day.json" \
+            --content-type "application/json"
+
+          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/radar_week.json" \
+            --file "data/v1/radar_week.json" \
+            --content-type "application/json"
+
+          # Keep v1/* keys for compatibility with existing consumers
           wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
             --file "data/v1/calendar_7d.json" \
             --content-type "application/json"
@@ -73,9 +87,17 @@ jobs:
             --content-type "application/json"
 
           echo "=== GET (REMOTE) + SHA256 (deve bater) ==="
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_7d.json" --file "/tmp/r2_snapshots_calendar_7d.json"
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/radar_day.json"  --file "/tmp/r2_snapshots_radar_day.json"
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/radar_week.json" --file "/tmp/r2_snapshots_radar_week.json"
+
           wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/r2_calendar_7d.json"
           wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "/tmp/r2_radar_day.json"
           wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_week.json" --file "/tmp/r2_radar_week.json"
+
+          sha256sum "data/v1/calendar_7d.json" "/tmp/r2_snapshots_calendar_7d.json"
+          sha256sum "data/v1/radar_day.json"  "/tmp/r2_snapshots_radar_day.json"
+          sha256sum "data/v1/radar_week.json" "/tmp/r2_snapshots_radar_week.json"
 
           sha256sum "data/v1/calendar_7d.json" "/tmp/r2_calendar_7d.json"
           sha256sum "data/v1/radar_day.json"  "/tmp/r2_radar_day.json"

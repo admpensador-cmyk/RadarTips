@@ -70,6 +70,27 @@ function isoDateOnlyUTC(d) {
   return `${y}-${m}-${dd}`;
 }
 
+function isoDateOnlyInTimezone(date, timezone) {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  const parts = fmt.formatToParts(date);
+  const y = parts.find((p) => p.type === "year")?.value;
+  const m = parts.find((p) => p.type === "month")?.value;
+  const d = parts.find((p) => p.type === "day")?.value;
+  return `${y}-${m}-${d}`;
+}
+
+function addDaysToIsoDate(isoDate, days) {
+  const [y, m, d] = String(isoDate).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return isoDateOnlyUTC(dt);
+}
+
 function toIso(dt) {
   if (!dt) return null;
   const t = Date.parse(dt);
@@ -559,11 +580,8 @@ async function main() {
   const formWindow = Number(cfg.form_window || 5);
   const goalsWindow = Number(cfg.goals_window || 5);
 
-  const start = startOfDayUtc(new Date());
-  const end = addDaysUtc(start, daysAhead);
-
-  const from = isoDateOnlyUTC(start);
-  const to = isoDateOnlyUTC(end);
+  const from = isoDateOnlyInTimezone(new Date(), timezone);
+  const to = addDaysToIsoDate(from, daysAhead);
 
   console.log(`Timezone: ${timezone}`);
   console.log(`Range: ${from} -> ${to}`);

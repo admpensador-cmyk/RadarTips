@@ -492,26 +492,16 @@ const I18N_VERSION = "b0b2f7cc";
 function renderComplianceFooter(lang){
   const foot = qs(".footer");
   if(!foot) return;
-  const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
   const labels = {
-    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"},
-    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo responsável",note:"Conteúdo informativo • Não somos casa de apostas • +18"},
-    es:{how:"Cómo funciona",about:"Sobre",contact:"Contacto",terms:"Términos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo • No somos casa de apuestas • 18+"},
-    fr:{how:"Comment ça marche",about:"À propos",contact:"Contact",terms:"Conditions",privacy:"Confidentialité",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif • Pas un bookmaker • 18+"},
-    de:{how:"So funktioniert es",about:"Über uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt • Kein Buchmacher • 18+"}
-  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content • We are not a bookmaker • 18+"};
+    en:{note:"Informational content • We are not a bookmaker • 18+"},
+    pt:{note:"Conteúdo informativo • Não somos casa de apostas • +18"},
+    es:{note:"Contenido informativo • No somos casa de apuestas • 18+"},
+    fr:{note:"Contenu informatif • Pas un bookmaker • 18+"},
+    de:{note:"Info-Inhalt • Kein Buchmacher • 18+"}
+  }[lang] || {note:"Informational content • We are not a bookmaker • 18+"};
 
   foot.innerHTML = `
     <div class="foot-wrap">
-      <div class="foot-links">
-        <a href="${p.how}">${labels.how}</a>
-        <a href="${p.about}">${labels.about}</a>
-        <a href="${p.contact}">${labels.contact}</a>
-        <a href="${p.terms}">${labels.terms}</a>
-        <a href="${p.privacy}">${labels.privacy}</a>
-        <a href="${p.aff}">${labels.aff}</a>
-        <a href="${p.rg}">${labels.rg}</a>
-      </div>
       <div class="foot-meta">
         <span>${labels.note}</span>
         <span>© <span id="year"></span> RadarTips</span>
@@ -1254,17 +1244,20 @@ function initTooltips(){
 
 function setNav(lang, t){
   const map = {
-    day: `/${lang}/radar/day/`
+    day: "#hero_section",
+    calendar: "#calendar_section"
   };
   qsa("[data-nav]").forEach(a=>{
     const k=a.getAttribute("data-nav");
-    if(k !== "day"){
+    if(!map[k]){
       a.style.display = "none";
       return;
     }
     a.href = map[k];
-    a.textContent = t.nav_day;
-    a.classList.toggle("active", location.pathname.startsWith(map[k]));
+    if(k === "day") a.textContent = t.nav_day || "Radar do Dia";
+    if(k === "calendar") a.textContent = t.day_matches_title || "Jogos do dia";
+    const isHeroActive = k === "day";
+    a.classList.toggle("active", isHeroActive);
     a.setAttribute("data-tip", a.textContent);
     a.title = a.textContent;
   });
@@ -3457,12 +3450,7 @@ async function init(){
     return val || defaultValue || key;
   };
 
-  initThemeToggle(T);
-
   setText("brand", T.brand);
-  setText("disclaimer", T.disclaimer);
-
-  setText("subtitle", T.subtitle || "");
 
   const heroContainer = qs(".hero");
   if(heroContainer) heroContainer.classList.add("rt-hero-radar-day");
@@ -3479,9 +3467,6 @@ async function init(){
   decorateLangPills(LANG);
   initTooltips();
   injectPatchStyles();
-
-  // Dashboard layout helpers (sidebar only)
-  ensureSidebar(T, LANG);
 
   const p = pageType();
   setText("hero_title", T.hero_title_day || "Radar do Dia");
