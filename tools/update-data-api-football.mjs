@@ -2,28 +2,16 @@
 /**
  * RadarTips - Update data via API-FOOTBALL (API-SPORTS)
  *
- * QUOTA-AWARE: Disables LIVE fetching to reduce API quota consumption.
- * Separates calendar/stats/standings into independent tasks via CLI flags.
- *
- * Generates (depending on flags):
- *  - data/v1/calendar_7d.json (default, --calendar)
- *  - data/v1/radar_day.json (with calendar)
+ * Generates:
+ *  - data/v1/calendar_7d.json
+ *  - data/v1/radar_day.json
  *  - data/v1/radar_week.json (placeholder, safe)
- *  - Stats/standings (only with --stats, --standings, or --all)
- *
- * Usage:
- *  node tools/update-data-api-football.mjs              # calendar only (default)
- *  node tools/update-data-api-football.mjs --calendar   # calendar only
- *  node tools/update-data-api-football.mjs --stats      # stats only
- *  node tools/update-data-api-football.mjs --standings  # standings only
- *  node tools/update-data-api-football.mjs --all        # calendar + stats + standings
  *
  * Keeps: form/gols enrichment.
  * Fixes:
  *  - API errors can come in JSON even with HTTP 200 (handled by api-football-client.mjs).
  *  - /leagues endpoint DOES NOT allow mixing `search` with `country/type/current`.
  *    So we call /leagues?search=... ONLY, then filter locally by country/type.
- *  - LIVE disabled by default (config.live_enabled=false) to preserve quota.
  */
 
 import fs from "node:fs";
@@ -32,45 +20,13 @@ import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
+const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
+const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
 const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
-
-// Parse CLI arguments
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const flags = {
-    calendar: false,
-    stats: false,
-    standings: false,
-    all: false
-  };
-
-  for (const arg of args) {
-    if (arg === "--calendar") flags.calendar = true;
-    if (arg === "--stats") flags.stats = true;
-    if (arg === "--standings") flags.standings = true;
-    if (arg === "--all") flags.all = true;
-  }
-
-  // Default: if no flags or only mode flags, run calendar
-  if (!flags.calendar && !flags.stats && !flags.standings && !flags.all) {
-    flags.calendar = true;
-  }
-
-  // --all expands to all three
-  if (flags.all) {
-    flags.calendar = true;
-    flags.stats = true;
-    flags.standings = true;
-  }
-
-  return flags;
-}
-
-const cliArgs = parseArgs();
 
 const KEY =
   (process.env.APIFOOTBALL_KEY && String(process.env.APIFOOTBALL_KEY).trim()) ||
@@ -617,111 +573,103 @@ function pickRadarHighlights(matches) {
   return eligible.slice(0, 3);
 }
 
-async function main() {
-  const cfg = readConfig();
-  ensureDir(OUT_DIR);
-
-  const timezone = String(cfg.timezone || "UTC");
-  const daysAhead = Number(cfg.days_ahead || 7);
-  const formWindow = Number(cfg.form_window || 5);
-  const goalsWindow = Number(cfg.goals_window || 5);
-
-  const liveEnabled = Boolean(cfg.live_enabled ?? false);
-  const statsMode = String(cfg.stats_mode || "daily");
-  const standingsMode = String(cfg.standings_mode || "daily");
-
-  console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
-  console.log(`║  RadarTips - Update API-FOOTBALL Data (Quota-Aware)            ║`);
-  console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
-
-  console.log(`⚙️  Configuration:`);
-  console.log(`  • Timezone: ${timezone}`);
-  console.log(`  • Range: ${daysAhead} days ahead`);
-  console.log(`  • Form window: ${formWindow} matches`);
-  console.log(`  • Goals window: ${goalsWindow} matches`);
-  console.log(`  • LIVE enabled: ${liveEnabled}`);
-  console.log(`  • Stats mode: ${statsMode}`);
-  console.log(`  • Standings mode: ${standingsMode}`);
-  console.log(`\n🎯 Requested tasks:`);
-  console.log(`  • Calendar: ${cliArgs.calendar ? "YES" : "NO"}`);
-  console.log(`  • Stats: ${cliArgs.stats ? "YES" : "NO"}`);
-  console.log(`  • Standings: ${cliArgs.standings ? "YES" : "NO"}`);
-
-  // Smoke test for key/quota validity
-  await smokeTestStatus();
-
-  // Resolve leagues once (used by all tasks)
-  console.log(`\n📋 Resolving leagues...`);
-  const resolved = [];
-  for (const entry of cfg.leagues) {
-    const r = await resolveLeague(entry);
-    if (r?.league_id) resolved.push(r);
-  }
-  if (!resolved.length) {
-    throw new Error("No leagues resolved from config. Check tools/api-football.config.json.");
-  }
-  console.log(`[OK] Resolved ${resolved.length} league(s)`);
-
-  // TASK 1: CALENDAR (fixtures + form + goals)
-  if (cliArgs.calendar) {
-    console.log(`\n📅 TASK: Calendar (fixtures + enrichment)...`);
-    await doCalendarTask({ resolved, timezone, daysAhead, formWindow, goalsWindow, liveEnabled });
-  } else {
-    console.log(`[SKIP] Calendar (not requested)`);
-  }
-
-  // TASK 2: STATS
-  if (cliArgs.stats) {
-    console.log(`\n📊 TASK: Statistics (form, standings, etc)...`);
-    if (statsMode === "off") {
-      console.log(`[SKIP] Stats disabled (stats_mode="off")`);
-    } else {
-      console.log(`[INFO] Stats task would be handled here (not yet implemented)`);
-    }
-  } else {
-    if (statsMode === "daily" && !cliArgs.all) {
-      console.log(`[SKIP] Stats (stats_mode="${statsMode}" but not --stats job)`);
-    } else {
-      console.log(`[INFO] Stats (not requested)`);
-    }
-  }
-
-  // TASK 3: STANDINGS
-  if (cliArgs.standings) {
-    console.log(`\n🏆 TASK: Standings...`);
-    if (standingsMode === "off") {
-      console.log(`[SKIP] Standings disabled (standings_mode="off")`);
-    } else {
-      console.log(`[INFO] Standings task would be handled here (not yet implemented)`);
-    }
-  } else {
-    if (standingsMode === "daily" && !cliArgs.all) {
-      console.log(`[SKIP] Standings (standings_mode="${standingsMode}" but not --standings job)`);
-    } else {
-      console.log(`[INFO] Standings (not requested)`);
-    }
-  }
-
-  // LIVE DISABLED
-  if (!liveEnabled) {
-    console.log(`\n⚠️  LIVE fetching DISABLED (live_enabled=false)`);
-    console.log(`[SKIP] live - disabled to reduce quota consumption`);
-  }
-
-  console.log(`\n✅ Done. All requested tasks completed.\n`);
+function localDateInTimezone(isoUtc, timezone) {
+  const t = Date.parse(isoUtc || "");
+  if (!Number.isFinite(t)) return null;
+  return isoDateOnlyInTimezone(new Date(t), timezone);
 }
 
-async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goalsWindow, liveEnabled }) {
+function splitCalendar2d(matches, timezone) {
+  const today = isoDateOnlyInTimezone(new Date(), timezone);
+  const tomorrow = addDaysToIsoDate(today, 1);
+
+  const dayMatches = [];
+  const todayMatches = [];
+  const tomorrowMatches = [];
+
+  for (const m of matches) {
+    const ymd = localDateInTimezone(m?.kickoff_utc, timezone);
+    if (!ymd) continue;
+    if (ymd === today) {
+      todayMatches.push(m);
+      dayMatches.push(m);
+    } else if (ymd === tomorrow) {
+      tomorrowMatches.push(m);
+      dayMatches.push(m);
+    }
+  }
+
+  return { today, tomorrow, dayMatches, todayMatches, tomorrowMatches };
+}
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const flags = {
+    calendar: false,
+    stats: false,
+    standings: false,
+    all: false,
+    mode: "default" // legacy: --mode=daily | --mode=weekly
+  };
+
+  // Handle --mode=X (legacy)
+  for (const arg of args) {
+    if (arg.startsWith("--mode=")) {
+      flags.mode = arg.split("=")[1];
+    }
+  }
+
+  // Handle individual flags
+  for (const arg of args) {
+    if (arg === "--calendar") flags.calendar = true;
+    if (arg === "--stats") flags.stats = true;
+    if (arg === "--standings") flags.standings = true;
+    if (arg === "--all") flags.all = true;
+  }
+
+  // Legacy mode: --mode=daily means run everything
+  if (flags.mode === "daily") {
+    flags.calendar = true;
+    flags.stats = true;
+    flags.standings = true;
+  } else if (flags.mode === "weekly") {
+    flags.calendar = true;
+    flags.stats = false;
+    flags.standings = false;
+  }
+
+  // If no explicit flags, default to calendar only
+  if (!flags.calendar && !flags.stats && !flags.standings && !flags.all) {
+    flags.calendar = true;
+  }
+
+  // --all means everything
+  if (flags.all) {
+    flags.calendar = true;
+    flags.stats = true;
+    flags.standings = true;
+  }
+
+  return flags;
+}
+
+async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar) {
+  console.log("\n[CALENDAR] Starting calendar generation...");
   const from = isoDateOnlyInTimezone(new Date(), timezone);
   const to = addDaysToIsoDate(from, daysAhead);
 
-  console.log(`  From: ${from} To: ${to}`);
+  console.log(`  Range: ${from} -> ${to}`);
+  console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
+
+  if (!includeStatsInCalendar) {
+    console.log("[SKIP] stats enrichment disabled for calendar run");
+  }
 
   // Fetch fixtures per league
   const rawFixtures = [];
   for (const r of resolved) {
     if (!Number.isFinite(r.season)) {
-      console.warn(`  [WARN] Missing season for league_id=${r.league_id} (${r.league_name}). Skipping.`);
+      console.warn(`[WARN] Missing season for league_id=${r.league_id} (${r.league_name}). Skipping fixtures.`);
       continue;
     }
     const fx = await fetchFixturesLeagueRange({
@@ -731,7 +679,7 @@ async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goals
       to,
       timezone
     });
-    console.log(`  [OK] Fixtures: league_id=${r.league_id} count=${fx.length}`);
+    console.log(`  [OK] league_id=${r.league_id} count=${fx.length}`);
     rawFixtures.push(...fx);
   }
 
@@ -746,7 +694,7 @@ async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goals
     fixtures.push(fx);
   }
 
-  // Enrich: form + goals
+  // Enrich: form + goals (optional in frequent runs)
   const teamCache = new Map();
   const matches = [];
 
@@ -755,30 +703,40 @@ async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goals
     const awayId = fx?.teams?.away?.id ?? null;
     if (!homeId || !awayId) continue;
 
-    const homeLast = await fetchTeamLastFinished(homeId, Math.max(formWindow, goalsWindow), timezone, teamCache);
-    const awayLast = await fetchTeamLastFinished(awayId, Math.max(formWindow, goalsWindow), timezone, teamCache);
+    let formHomeDetails = [];
+    let formAwayDetails = [];
+    let homeAgg = { gf: 0, ga: 0, counted: 0 };
+    let awayAgg = { gf: 0, ga: 0, counted: 0 };
+    let analysis = null;
 
-    const formHomeDetails = buildFormDetails(homeId, homeLast, formWindow);
-    const formAwayDetails = buildFormDetails(awayId, awayLast, formWindow);
+    if (includeStatsInCalendar) {
+      const homeLast = await fetchTeamLastFinished(homeId, Math.max(formWindow, goalsWindow), timezone, teamCache);
+      const awayLast = await fetchTeamLastFinished(awayId, Math.max(formWindow, goalsWindow), timezone, teamCache);
 
-    const homeAgg = sumGoalsForAgainst(homeId, homeLast, goalsWindow);
-    const awayAgg = sumGoalsForAgainst(awayId, awayLast, goalsWindow);
+      formHomeDetails = buildFormDetails(homeId, homeLast, formWindow);
+      formAwayDetails = buildFormDetails(awayId, awayLast, formWindow);
+
+      homeAgg = sumGoalsForAgainst(homeId, homeLast, goalsWindow);
+      awayAgg = sumGoalsForAgainst(awayId, awayLast, goalsWindow);
+
+      const volHome = volatilityFromFixtures(homeLast, homeId, goalsWindow);
+      const volAway = volatilityFromFixtures(awayLast, awayId, goalsWindow);
+      const vol = (volHome + volAway) / 2;
+      const baseRisk = riskLabelFrom(vol);
+
+      const markets = buildMarketsForMatch({
+        homeAgg,
+        awayAgg,
+        formHomeDetails,
+        formAwayDetails,
+        vol,
+        baseRisk
+      });
+
+      analysis = { markets, volatility: vol };
+    }
 
     const { suggestion_free, risk } = pickSuggestionAndRisk(homeAgg, awayAgg);
-
-    const volHome = volatilityFromFixtures(homeLast, homeId, goalsWindow);
-    const volAway = volatilityFromFixtures(awayLast, awayId, goalsWindow);
-    const vol = (volHome + volAway) / 2;
-    const baseRisk = riskLabelFrom(vol);
-
-    const markets = buildMarketsForMatch({
-      homeAgg,
-      awayAgg,
-      formHomeDetails,
-      formAwayDetails,
-      vol,
-      baseRisk
-    });
 
     matches.push(
       mapFixtureToMatchRow(fx, {
@@ -791,7 +749,7 @@ async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goals
         gf_away: awayAgg.gf,
         ga_away: awayAgg.ga,
 
-        analysis: { markets, volatility: vol }
+        analysis
       })
     );
   }
@@ -806,7 +764,33 @@ async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goals
     matches: sorted
   };
   writeJsonAtomic(OUT_CAL_7D, calendarOut);
-  console.log(`  [OK] Wrote calendar_7d.json (${sorted.length} matches)`);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_7D.replace(process.cwd(), ".")} matches=${sorted.length}`);
+
+  const split = splitCalendar2d(sorted, timezone);
+  const calendarDayOut = {
+    generated_at_utc: calendarOut.generated_at_utc,
+    form_window: formWindow,
+    goals_window: goalsWindow,
+    matches: split.dayMatches
+  };
+  writeJsonAtomic(OUT_CAL_DAY, calendarDayOut);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${split.dayMatches.length}`);
+
+  const calendar2dOut = {
+    meta: {
+      tz: timezone,
+      today: split.today,
+      tomorrow: split.tomorrow,
+      generated_at_utc: calendarOut.generated_at_utc,
+      form_window: formWindow,
+      goals_window: goalsWindow,
+      source: "calendar_7d"
+    },
+    today: split.todayMatches,
+    tomorrow: split.tomorrowMatches
+  };
+  writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
 
   // Write radar_day.json
   const radarDayOut = {
@@ -814,11 +798,116 @@ async function doCalendarTask({ resolved, timezone, daysAhead, formWindow, goals
     highlights: pickRadarHighlights(sorted)
   };
   writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
-  console.log(`  [OK] Wrote radar_day.json (${radarDayOut.highlights.length} highlights)`);
+  console.log(`[CALENDAR] Wrote ${OUT_RADAR_DAY.replace(process.cwd(), ".")} highlights=${radarDayOut.highlights.length}`);
 
   // Write radar_week.json (safe placeholder)
   writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: calendarOut.generated_at_utc, highlights: [] });
-  console.log(`  [OK] Wrote radar_week.json (placeholder)`);
+  console.log(`[CALENDAR] Wrote ${OUT_RADAR_WEEK.replace(process.cwd(), ".")}`);
+}
+
+async function generateStats(flags) {
+  const cfg = readConfig();
+  const mode = String(cfg.stats_mode || "daily");
+  const manual = flags.stats || flags.all;
+
+  if (!manual) {
+    console.log(`[SKIP] stats not requested (stats_mode=${mode})`);
+    return;
+  }
+
+  if (mode !== "daily") {
+    console.log(`[INFO] stats manual override accepted (stats_mode=${mode})`);
+  }
+
+  if (mode === "off" && !manual) {
+    console.log("[SKIP] stats disabled (stats_mode=off)");
+    return;
+  }
+
+  console.log("[FUTURE] stats generation placeholder (not implemented yet)");
+}
+
+async function generateStandings(flags) {
+  const cfg = readConfig();
+  const mode = String(cfg.standings_mode || "daily");
+  const manual = flags.standings || flags.all;
+
+  if (!manual) {
+    console.log(`[SKIP] standings not requested (standings_mode=${mode})`);
+    return;
+  }
+
+  if (mode !== "daily") {
+    console.log(`[INFO] standings manual override accepted (standings_mode=${mode})`);
+  }
+
+  if (mode === "off" && !manual) {
+    console.log("[SKIP] standings disabled (standings_mode=off)");
+    return;
+  }
+
+  console.log("[FUTURE] standings generation placeholder (not implemented yet)");
+}
+
+async function main() {
+  const cfg = readConfig();
+  const flags = parseArgs();
+  ensureDir(OUT_DIR);
+
+  const timezone = String(cfg.timezone || "UTC");
+  const daysAhead = Number(cfg.days_ahead || 7);
+  const formWindow = Number(cfg.form_window || 5);
+  const goalsWindow = Number(cfg.goals_window || 5);
+  const includeStatsInCalendar = Boolean(flags.stats || flags.all);
+
+  console.log("\\n╔═══════════════════════════════════════════════════════╗");
+  console.log("║    RadarTips API-FOOTBALL Update Pipeline              ║");
+  console.log("╚═══════════════════════════════════════════════════════╝");
+  console.log(`Timezone: ${timezone}`);
+  console.log(`Windows: form=${formWindow} goals=${goalsWindow}`);
+  console.log(`[RUN] calendar=${flags.calendar} stats=${flags.stats} standings=${flags.standings} all=${flags.all}`);
+
+  // Check LIVE flag
+  const liveEnabled = cfg.live_enabled !== false;
+  if (!liveEnabled) {
+    console.log("[SKIP] LIVE disabled (live_enabled=false) - no live score fetching");
+  }
+
+  // Smoke test for key/quota validity
+  await smokeTestStatus();
+
+  // Resolve leagues
+  const resolved = [];
+  console.log("\\n[LEAGUES] Resolving configured leagues...");
+  for (const entry of cfg.leagues) {
+    const r = await resolveLeague(entry);
+    if (r?.league_id) resolved.push(r);
+  }
+  if (!resolved.length) {
+    throw new Error("No leagues resolved from config. Check tools/api-football.config.json.");
+  }
+  console.log(`[OK] Resolved ${resolved.length}/${cfg.leagues.length} leagues`);
+
+  // Execute requested tasks
+  if (flags.calendar) {
+    await generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar);
+  } else {
+    console.log("[SKIP] calendar not requested");
+  }
+
+  if (flags.stats) {
+    await generateStats(flags);
+  } else {
+    await generateStats(flags);
+  }
+
+  if (flags.standings) {
+    await generateStandings(flags);
+  } else {
+    await generateStandings(flags);
+  }
+
+  console.log("\\n[OK] Pipeline complete.\\n");
 }
 
 main().catch((err) => {

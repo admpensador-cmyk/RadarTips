@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * RadarTips - Print configured leagues from config
- *
- * Reads tools/api-football.config.json and displays:
- *  - Total leagues count
- *  - For each league: id | country | search (name)
- *  - Breakdown by country
- *
- * Usage: node tools/print-leagues.mjs
+ * RadarTips - Print configured leagues (from api-football.config.json)
+ * 
+ * Usage:
+ *   node tools/print-leagues.mjs
+ * 
+ * Output:
+ *   - Total number of leagues
+ *   - List of leagues by ID, country, search name
+ *   - Breakdown by country
  */
 
 import fs from "node:fs";
@@ -16,53 +17,48 @@ import process from "node:process";
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 
-function readConfig() {
-  if (!fs.existsSync(CONFIG_PATH)) {
-    throw new Error(`Missing config file: ${CONFIG_PATH}`);
-  }
-  const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
-  return JSON.parse(raw);
+if (!fs.existsSync(CONFIG_PATH)) {
+  console.error(`[ERROR] Config not found: ${CONFIG_PATH}`);
+  process.exit(1);
 }
 
-function main() {
-  const cfg = readConfig();
-  const leagues = cfg?.leagues || [];
+const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+const leagues = Array.isArray(config?.leagues) ? config.leagues : [];
 
-  if (!Array.isArray(leagues) || leagues.length === 0) {
-    console.log("[ERROR] No leagues found in config.");
-    process.exit(1);
-  }
-
-  console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
-  console.log(`║  RadarTips - Configured Leagues (${String(leagues.length).padStart(2, " ")})                      ║`);
-  console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
-
-  // Display all leagues
-  console.log(`📋 All Leagues:\n`);
-  console.log(`${"Type".padEnd(6)} | ${"Country".padEnd(15)} | ${"Search / Name"}`);
-  console.log(`${"".padEnd(6)}-+-${"".padEnd(15)}-+-${"".padEnd(18)}`);
-
-  const byCountry = {};
-  for (const entry of leagues) {
-    const country = String(entry?.country || "").trim() || "—";
-    const search = String(entry?.search || "").trim();
-    const type = String(entry?.type || "league").trim();
-    const typeShort = type === "cup" ? "CUP" : "LGE";
-
-    console.log(`${typeShort.padEnd(6)} | ${country.padEnd(15)} | ${search}`);
-
-    if (!byCountry[country]) byCountry[country] = [];
-    byCountry[country].push(search);
-  }
-
-  // Breakdown by country
-  console.log(`\n📊 Breakdown by Country:\n`);
-  const countries = Object.keys(byCountry).sort();
-  for (const country of countries) {
-    const count = byCountry[country].length;
-    console.log(`  ${country.padEnd(15)} ${String(count).padStart(2, " ")} league(s)`);
-  }
-
-  console.log(`\n✅ Total: ${leagues.length} league(s) configured.\n`);
+if (!leagues.length) {
+  console.error("[ERROR] No leagues in config");
+  process.exit(1);
 }
-main();
+
+console.log("\n╔═══════════════════════════════════════════════════════╗");
+console.log("║        RadarTips - Configured Leagues List             ║");
+console.log("╚═══════════════════════════════════════════════════════╝\n");
+
+console.log(`📋 Total leagues: ${leagues.length}`);
+console.log("\n[LEAGUES]");
+
+for (const league of leagues) {
+  const id = Number.isFinite(Number(league?.id)) ? Number(league.id) : "-";
+  const country = String(league?.country || "(international)");
+  const searchOrName = String(league?.search || league?.name || "-");
+  console.log(`${id} | ${country} | ${searchOrName}`);
+}
+
+console.log("\n[BREAKDOWN BY COUNTRY]");
+
+// Group by country
+const byCountry = {};
+for (const league of leagues) {
+  const country = league.country || "(international)";
+  if (!byCountry[country]) byCountry[country] = [];
+  byCountry[country].push(league);
+}
+
+// Print by country
+const sortedCountries = Object.keys(byCountry).sort();
+for (const country of sortedCountries) {
+  const leaguesInCountry = byCountry[country];
+  console.log(`${country}: ${leaguesInCountry.length}`);
+}
+
+console.log("\n[OK] League list printed successfully.");
