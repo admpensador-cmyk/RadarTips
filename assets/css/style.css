@@ -874,321 +874,25 @@ a{color:inherit; text-decoration:none}
   }
 }
 
-/* MOBILE OVERRIDES (SAFE) */
+/* ===== MOBILE SAFE OVERRIDES (<=768px) - desktop preservado ===== */
 @media (max-width: 768px){
+  /* TEMA DARK */
   html,
   body{
     max-width:100%;
     overflow-x:hidden;
-  }
-
-  body,
-  .container,
-  .topbar,
-  .hero,
-  .grid,
-  .card,
-  .section,
-  #calendar,
-  .rt-cal-root,
-  .rt-cal-country-accordion,
-  .rt-cal-competition-group,
-  .rt-cal-match,
-  .rt-match-card,
-  .modal,
-  .modal-body{
-    max-width:100%;
-    min-width:0;
+    background:#070B12;
+    color:rgba(255,255,255,.92);
   }
 
   body,
   .container,
   .section,
   .card,
-  .meta,
-  .rt-cal-root,
-  .rt-cal-match,
-  .rt-match-card,
-  .rt-cal-teamrow,
-  .rt-team-home,
-  .rt-team-away,
-  .rt-cal-teamrow .name,
-  .rt-team-home .name,
-  .rt-team-away .name,
-  .pill,
-  .lang,
-  .btn,
-  .lock .btn{
+  .meta{
     -webkit-user-select:text;
     user-select:text;
     -webkit-touch-callout:default;
-  }
-
-  #hero_section,
-  #calendar_section{
-    scroll-margin-top:64px;
-  }
-
-  .container{
-    padding:16px 16px 70px;
-  }
-
-  .topbar{
-    min-height:56px;
-    height:56px;
-    padding:0 12px;
-    gap:8px;
-  }
-
-  .brand,
-  .brandline,
-  .logo{
-    min-width:0;
-  }
-
-  .rt-logo{
-    gap:6px;
-    min-width:0;
-  }
-
-  .rt-logo-symbol{
-    width:24px;
-    height:24px;
-  }
-
-  .rt-logo-wordmark{
-    font-size:18px;
-    line-height:1;
-    max-width:120px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
-
-  .nav{
-    min-width:0;
-    max-width:60%;
-    gap:8px;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-  }
-
-  .pill,
-  .lang,
-  .btn,
-  .lock .btn,
-  .rt-cal-country-toggle,
-  .rt-cal-tab,
-  .rt-match-more-btn,
-  .rt-cal-more{
-    min-height:44px;
-    min-width:44px;
-  }
-
-  .pill,
-  .lang{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:10px 12px;
-  }
-
-  .hero{
-    margin-top:12px;
-  }
-
-  .hero-header{
-    padding:20px 16px 12px;
-  }
-
-  .hero h1{
-    font-size:20px;
-    line-height:1.2;
-  }
-
-  .hero p{
-    font-size:16px;
-    line-height:1.4;
-  }
-
-  .grid{
-    grid-template-columns:1fr;
-    gap:14px;
-    margin:14px 0 0;
-  }
-
-  .card{
-    padding:14px 14px 16px;
-    min-height:auto;
-  }
-
-  .card h3,
-  .teamline span{
-    font-size:18px;
-    line-height:1.25;
-  }
-
-  .suggestion-highlight{
-    width:100%;
-    min-height:44px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:12px 14px;
-    font-size:16px;
-  }
-
-  .section{
-    padding:14px;
-  }
-
-  .section h2{
-    font-size:20px;
-    line-height:1.25;
-  }
-
-  .sub{
-    font-size:16px;
-    line-height:1.4;
-  }
-
-  .controls{
-    gap:12px;
-  }
-
-  .toggle{
-    width:100%;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-  }
-
-  .input{
-    width:100%;
-    min-width:0;
-    font-size:16px;
-    padding:12px 14px;
-  }
-
-  .rt-cal-root{
-    margin-top:12px;
-    padding:12px;
-    border-radius:12px;
-  }
-
-  .rt-cal-tabs-header{
-    gap:8px;
-    padding:10px 0;
-    margin-bottom:12px;
-  }
-
-  .rt-cal-tab{
-    font-size:14px;
-    padding:12px 10px;
-  }
-
-  .rt-cal-country-toggle{
-    padding:12px;
-  }
-
-  .rt-cal-competition-groups{
-    padding:0 10px 10px;
-    gap:8px;
-  }
-
-  .rt-cal-competition-head{
-    padding:10px;
-  }
-
-  .rt-cal-match,
-  .rt-match-card{
-    display:grid;
-    grid-template-columns:64px minmax(0,1fr);
-    grid-template-areas:
-      "when teams"
-      "actions actions";
-    gap:10px;
-    padding:12px;
-    min-height:unset;
-    align-items:start;
-  }
-
-  .rt-cal-when{
-    grid-area:when;
-    gap:4px;
-  }
-
-  .rt-cal-time,
-  .rt-match-time,
-  .rt-cal-score,
-  .rt-match-score{
-    font-size:13px;
-    line-height:1.2;
-  }
-
-  .rt-cal-teams{
-    grid-area:teams;
-    gap:6px;
-  }
-
-  .rt-cal-teamrow,
-  .rt-team-home,
-  .rt-team-away{
-    gap:8px;
-  }
-
-  .rt-cal-teamrow .name,
-  .rt-team-home .name,
-  .rt-team-away .name{
-    font-size:13px;
-    line-height:1.25;
-    min-width:0;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
-
-  .rt-cal-actions{
-    grid-area:actions;
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 44px;
-    gap:8px;
-    width:100%;
-    align-items:center;
-  }
-
-  .rt-match-market,
-  .rt-cal-market,
-  .rt-match-suggestion{
-    min-width:0;
-    width:100%;
-  }
-
-  .rt-match-suggestion{
-    height:44px;
-    font-size:12px;
-    padding:0 10px;
-    line-height:1.2;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-
-  .rt-match-more-btn,
-  .rt-cal-more{
-    width:44px;
-    height:44px;
-    font-size:18px;
-    justify-self:end;
-  }
-
-  /* ===== MOBILE SAFE OVERRIDES (<=768px) - preserva desktop ===== */
-  
-  /* A) TEMA DARK CONSISTENTE */
-  html,
-  body{
-    background:#070B12;
-    color:rgba(255,255,255,.92);
   }
 
   .topbar,
@@ -1199,7 +903,7 @@ a{color:inherit; text-decoration:none}
     color:rgba(255,255,255,.92);
   }
 
-  /* B) HEADER MOBILE: STICKY + RETO + SEM PILLS DE NAVEGAÇÃO */
+  /* HEADER: STICKY + LIMPO (SEM PILLS) */
   .topbar{
     position:sticky;
     top:0;
@@ -1256,12 +960,11 @@ a{color:inherit; text-decoration:none}
     color:rgba(255,255,255,.92);
   }
 
-  /* REMOVER pills de navegação (Daily Radar / Calendar etc) */
+  /* NAV: REMOVER PILLS, MOSTRAR SÓ IDIOMAS */
   .nav .pill{
     display:none !important;
   }
 
-  /* Nav container: apenas idiomas, scroll horizontal */
   .nav{
     display:flex;
     gap:8px;
@@ -1277,7 +980,7 @@ a{color:inherit; text-decoration:none}
     display:none;
   }
 
-  /* C) IDIOMAS: PEQUENOS E CLICKÁVEIS */
+  /* IDIOMAS COMPACTOS */
   .lang{
     height:32px;
     padding:0 10px;
@@ -1287,6 +990,8 @@ a{color:inherit; text-decoration:none}
     align-items:center;
     gap:8px;
     flex:0 0 auto;
+    min-height:44px;
+    min-width:44px;
   }
 
   .lang img,
@@ -1296,13 +1001,106 @@ a{color:inherit; text-decoration:none}
     flex:0 0 auto;
   }
 
-  /* Ajustes globais */
-  body{
-    font-size:15px;
+  /* HERO */
+  #hero_section,
+  #calendar_section{
+    scroll-margin-top:64px;
   }
 
+  .hero{
+    margin-top:12px;
+  }
+
+  .hero-header{
+    padding:20px 16px 12px;
+  }
+
+  .hero h1{
+    font-size:20px;
+    line-height:1.2;
+  }
+
+  .hero p{
+    font-size:16px;
+    line-height:1.4;
+  }
+
+  /* GRID */
+  .grid{
+    grid-template-columns:1fr;
+    gap:14px;
+    margin:14px 0 0;
+  }
+
+  /* CARDS */
+  .card{
+    padding:14px 14px 16px;
+    min-height:auto;
+  }
+
+  .card h3,
+  .teamline span{
+    font-size:18px;
+    line-height:1.25;
+  }
+
+  .suggestion-highlight{
+    width:100%;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px 14px;
+    font-size:16px;
+  }
+
+  /* SECTION */
+  .section{
+    padding:14px;
+  }
+
+  .section h2{
+    font-size:20px;
+    line-height:1.25;
+  }
+
+  .sub{
+    font-size:16px;
+    line-height:1.4;
+  }
+
+  /* CONTROLS */
+  .controls{
+    gap:12px;
+  }
+
+  .toggle{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .input{
+    width:100%;
+    min-width:0;
+    font-size:16px;
+    padding:12px 14px;
+  }
+
+  /* BUTTONS */
+  .btn,
+  .lock .btn{
+    min-height:44px;
+    min-width:44px;
+  }
+
+  /* CONTAINER */
   .container{
-    padding-left:14px;
-    padding-right:14px;
+    padding:16px 16px 70px;
+  }
+
+  body{
+    font-size:15px;
   }
 }
