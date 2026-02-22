@@ -980,15 +980,18 @@ a{color:inherit; text-decoration:none}
     display:none;
   }
 
-  /* IDIOMAS COMPACTOS */
+  /* IDIOMAS: SÓ BANDEIRAS (BR + UK), SEM TEXTO */
   .lang{
-    height:32px;
-    padding:0 10px;
+    width:38px;
+    height:38px;
+    padding:0;
     border-radius:999px;
-    font-size:13px;
+    font-size:0;
+    line-height:0;
     display:inline-flex;
     align-items:center;
-    gap:8px;
+    justify-content:center;
+    gap:0;
     flex:0 0 auto;
     min-height:44px;
     min-width:44px;
@@ -996,9 +999,17 @@ a{color:inherit; text-decoration:none}
 
   .lang img,
   .lang svg{
-    width:18px;
-    height:18px;
+    width:22px;
+    height:22px;
     flex:0 0 auto;
+    display:block;
+  }
+
+  /* MOBILE: mostrar APENAS PT e EN */
+  .lang[data-lang="es"],
+  .lang[data-lang="fr"],
+  .lang[data-lang="de"]{
+    display:none !important;
   }
 
   /* HERO */

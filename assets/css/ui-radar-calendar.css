@@ -528,37 +528,4 @@
   .rt-cal-actions{
     gap:8px;
   }
-
-  .rt-match-suggestion{
-    min-width:110px;
-    padding:0 8px;
-    height:34px;
-    font-size:11px;
-  }
-
-  .rt-team-home .name,
-  .rt-team-away .name{
-    font-size:12px;
-  }
-
-  .rt-cal-score,
-  .rt-match-score{
-    font-size:12px;
-  }
-
-  .rt-match-more-btn,
-  .rt-cal-more{
-    width:34px;
-    height:34px;
-    font-size:14px;
-  }
-
-  .rt-cal-match .crest,
-  .rt-cal-match .crest.crest--img,
-  .rt-match-card .crest,
-  .rt-match-card .crest.crest--img{
-    width:20px;
-    height:20px;
-    flex-basis:20px;
-  }
 }
