@@ -1182,76 +1182,118 @@ a{color:inherit; text-decoration:none}
     justify-self:end;
   }
 
-  /* ===== MOBILE: Header simplificado ===== */
-  header{
+  /* ===== MOBILE SAFE OVERRIDES (<=768px) - preserva desktop ===== */
+  
+  /* A) TEMA DARK CONSISTENTE */
+  html,
+  body{
+    background:#070B12;
+    color:rgba(255,255,255,.92);
+  }
+
+  .topbar,
+  .hero,
+  .card,
+  .section{
+    background:rgba(10,14,22,.92);
+    color:rgba(255,255,255,.92);
+  }
+
+  /* B) HEADER MOBILE: STICKY + ALINHADO + CLEAN */
+  .topbar{
     position:sticky;
     top:0;
-    z-index:999;
-    backdrop-filter:blur(12px);
+    z-index:9999;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    overflow:visible;
   }
 
-  .nav-flags{
-    display:none;
-  }
-
-  .nav-lang-toggle{
+  .brand{
     display:flex;
     align-items:center;
-    justify-content:center;
-    width:38px;
-    height:38px;
-    border-radius:10px;
+    gap:10px;
+    min-width:0;
   }
 
-  /* ===== MOBILE: Bandeiras grandes ocultas ===== */
-  .country-flag-large{
+  .logo{
+    display:flex;
+    align-items:center;
+    min-width:0;
+  }
+
+  .rt-logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+
+  .rt-logo-symbol{
+    width:34px;
+    height:34px;
+    flex:0 0 auto;
+  }
+
+  .rt-logo-wordmark{
+    font-size:16px;
+    line-height:1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:45vw;
+  }
+
+  /* Nav pills: scroll horizontal, mostrar só pill ativa */
+  .nav{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+
+  .nav::-webkit-scrollbar{
     display:none;
   }
 
-  .country-header{
-    display:flex;
+  .nav .pill{
+    display:none;
+  }
+
+  .nav .pill.active{
+    display:inline-flex;
+  }
+
+  .pill{
+    height:32px;
+    padding:0 12px;
+    border-radius:999px;
+    font-size:13px;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+
+  /* C) IDIOMAS: PEQUENOS E CLICKÁVEIS */
+  .lang{
+    height:32px;
+    padding:0 10px;
+    border-radius:999px;
+    font-size:13px;
+    display:inline-flex;
     align-items:center;
     gap:8px;
+    flex:0 0 auto;
   }
 
-  .country-header img{
-    width:22px;
-    height:14px;
-    object-fit:cover;
+  .lang img,
+  .lang svg{
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
   }
 
-  /* ===== MOBILE: Layout das partidas ===== */
-  .match-row{
-    display:flex;
-    flex-direction:column;
-    padding:14px;
-    gap:6px;
-  }
-
-  .match-time{
-    font-size:14px;
-    opacity:0.7;
-  }
-
-  .match-teams{
-    font-size:16px;
-    font-weight:600;
-  }
-
-  .match-market{
-    font-size:14px;
-    font-weight:700;
-    padding:6px 10px;
-    border-radius:10px;
-  }
-
-  .match-action{
-    width:44px;
-    height:44px;
-    font-size:20px;
-  }
-
-  /* ===== MOBILE: Ajustes globais ===== */
+  /* Ajustes globais */
   body{
     font-size:15px;
   }
