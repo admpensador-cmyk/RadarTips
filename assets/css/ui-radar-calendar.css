@@ -413,17 +413,41 @@
     font-size:15px;
   }
 
-  /* H) MATCH CARDS: LEGÍVEIS + NOMES COM 2 LINHAS */
+  /* H) MATCH CARDS TIPO FLASHSCORE: GARANTIR NOMES SEMPRE VISÍVEIS */
   .rt-cal-match,
   .rt-match-card{
-    width:100%;
+    display:grid;
+    grid-template-columns:72px minmax(0,1fr) 44px;
+    grid-template-areas:
+      "when teams more"
+      "when actions more";
+    align-items:center;
+    gap:8px 10px;
+    padding:10px 10px;
     border-radius:14px;
-    grid-template-columns:76px 1fr auto;
-    gap:10px;
-    min-height:70px;
+    width:100%;
+    min-height:auto;
   }
 
-  /* Nomes de times: permitir 2 linhas antes de truncar */
+  /* WHEN: horário + placar */
+  .rt-cal-when{
+    grid-area:when;
+  }
+
+  /* TEAMS: garantir nomes aparecem (2 linhas) */
+  .rt-cal-teams{
+    grid-area:teams;
+    gap:8px;
+    min-width:0;
+  }
+
+  .rt-cal-teamrow,
+  .rt-team-home,
+  .rt-team-away{
+    min-width:0;
+  }
+
+  /* Nomes: 2 linhas, sem truncamento agressivo */
   .rt-cal-teamrow .name,
   .rt-team-home .name,
   .rt-team-away .name{
@@ -432,39 +456,51 @@
     -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
     overflow:hidden;
-    font-size:13px;
+    font-size:14px;
+    line-height:1.2;
+    color:rgba(255,255,255,.92);
+    min-width:0;
   }
 
-  /* Crests consistentes */
+  /* Escudos: consistentes */
   .rt-cal-match .crest,
   .rt-cal-match .crest.crest--img,
   .rt-match-card .crest,
   .rt-match-card .crest.crest--img{
-    width:20px;
-    height:20px;
+    width:18px;
+    height:18px;
     flex:0 0 auto;
   }
 
-  /* I) ACTIONS: MERCADO + BOTÃO TOUCH-FRIENDLY */
+  /* ACTIONS: chip compacto abaixo dos times */
   .rt-cal-actions{
+    grid-area:actions;
     gap:10px;
+    min-width:0;
   }
 
+  /* Chip da sugestão: menor, não empurra times */
   .rt-match-suggestion{
-    height:40px;
-    padding:0 14px;
-    border-radius:12px;
-    font-size:14px;
+    height:32px;
+    padding:0 12px;
+    border-radius:10px;
+    font-size:13px;
     font-weight:800;
-    min-width:120px;
+    white-space:nowrap;
+    max-width:70vw;
+    min-width:auto;
   }
 
+  /* Botão +: coluna fixa, sem sobrepor */
   .rt-match-more-btn,
   .rt-cal-more{
+    grid-area:more;
     width:40px;
     height:40px;
     border-radius:12px;
     font-size:16px;
+    justify-self:end;
+    align-self:center;
   }
 
   .rt-cal-time,
