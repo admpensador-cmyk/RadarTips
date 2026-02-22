@@ -26,12 +26,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate JSON (weekly)
+      - name: Generate JSON (weekly radar)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -e
-          node tools/update-data-api-football.mjs --mode=weekly
+          echo "📅 [TASK] Calendar (weekly snapshot)"
+          node tools/update-data-api-football.mjs --calendar
 
       - name: Upload weekly snapshot to R2 (optional, no rebuild)
         shell: bash

@@ -1,61 +1,68 @@
 #!/usr/bin/env node
 /**
- * print-leagues.mjs
- * Lists all configured leagues from api-football.config.json
+ * RadarTips - Print configured leagues from config
+ *
+ * Reads tools/api-football.config.json and displays:
+ *  - Total leagues count
+ *  - For each league: id | country | search (name)
+ *  - Breakdown by country
+ *
  * Usage: node tools/print-leagues.mjs
  */
 
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 
-// Read config
-const configPath = join(__dirname, 'api-football.config.json');
-const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-
-const leagues = config.leagues || [];
-
-// Group by country
-const byCountry = {};
-leagues.forEach((league, idx) => {
-  const country = league.country || 'International';
-  if (!byCountry[country]) {
-    byCountry[country] = [];
+function readConfig() {
+  if (!fs.existsSync(CONFIG_PATH)) {
+    throw new Error(`Missing config file: ${CONFIG_PATH}`);
   }
-  byCountry[country].push({ ...league, index: idx });
-});
+  const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
+  return JSON.parse(raw);
+}
 
-// Sort countries alphabetically
-const countries = Object.keys(byCountry).sort();
+function main() {
+  const cfg = readConfig();
+  const leagues = cfg?.leagues || [];
 
-console.log('╔══════════════════════════════════════════════════════════╗');
-console.log('║          Radartips - Configured Leagues                  ║');
-console.log('╚══════════════════════════════════════════════════════════╝\n');
+  if (!Array.isArray(leagues) || leagues.length === 0) {
+    console.log("[ERROR] No leagues found in config.");
+    process.exit(1);
+  }
 
-console.log(`Total leagues: ${leagues.length}\n`);
+  console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
+  console.log(`║  RadarTips - Configured Leagues (${String(leagues.length).padStart(2, " ")})                      ║`);
+  console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
 
-// Print by country
-countries.forEach(country => {
-  const countryLeagues = byCountry[country];
-  // Sort by search name within country
-  countryLeagues.sort((a, b) => a.search.localeCompare(b.search));
-  
-  console.log(`\n📍 ${country} (${countryLeagues.length} league${countryLeagues.length > 1 ? 's' : ''})`);
-  console.log('─'.repeat(60));
-  
-  countryLeagues.forEach(league => {
-    const type = league.type ? ` [${league.type}]` : '';
-    console.log(`  • ${league.search}${type}`);
-  });
-});
+  // Display all leagues
+  console.log(`📋 All Leagues:\n`);
+  console.log(`${"Type".padEnd(6)} | ${"Country".padEnd(15)} | ${"Search / Name"}`);
+  console.log(`${"".padEnd(6)}-+-${"".padEnd(15)}-+-${"".padEnd(18)}`);
 
-// Print all search terms in one line for quick reference
-console.log('\n\n📋 Quick reference (search terms):');
-console.log('─'.repeat(60));
-const searchTerms = leagues.map(l => l.search).sort();
-console.log(searchTerms.join(', '));
+  const byCountry = {};
+  for (const entry of leagues) {
+    const country = String(entry?.country || "").trim() || "—";
+    const search = String(entry?.search || "").trim();
+    const type = String(entry?.type || "league").trim();
+    const typeShort = type === "cup" ? "CUP" : "LGE";
 
-console.log('\n');
+    console.log(`${typeShort.padEnd(6)} | ${country.padEnd(15)} | ${search}`);
+
+    if (!byCountry[country]) byCountry[country] = [];
+    byCountry[country].push(search);
+  }
+
+  // Breakdown by country
+  console.log(`\n📊 Breakdown by Country:\n`);
+  const countries = Object.keys(byCountry).sort();
+  for (const country of countries) {
+    const count = byCountry[country].length;
+    console.log(`  ${country.padEnd(15)} ${String(count).padStart(2, " ")} league(s)`);
+  }
+
+  console.log(`\n✅ Total: ${leagues.length} league(s) configured.\n`);
+}
+main();

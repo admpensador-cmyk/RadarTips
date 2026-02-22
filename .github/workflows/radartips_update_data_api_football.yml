@@ -26,12 +26,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate JSON (API-FOOTBALL)
+      - name: Generate JSON (API-FOOTBALL) - Calendar Only
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -euo pipefail
-          node tools/update-data-api-football.mjs --mode=daily
+          echo "📅 [TASK] Calendar (fixtures + enrichment only)"
+          node tools/update-data-api-football.mjs --calendar
 
           test -f "data/v1/calendar_7d.json"
           test -f "data/v1/radar_day.json"
