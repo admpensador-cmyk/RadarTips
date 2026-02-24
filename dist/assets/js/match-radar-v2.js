@@ -13,6 +13,9 @@
     return defaultValue || key;
   }
 
+  // In-memory cache for match stats (fixture_id → stats payload)
+  const statsCache = new Map();
+
   function ensureStyles(){
     if(document.getElementById(CSS_ID)) return;
     // Prefer an existing stylesheet reference (possibly hasheado) injected into HTML
@@ -370,115 +373,292 @@
     panel.innerHTML = `<div class="mr-table-wrap"><table class="mr-table">${headerHtml}<tbody>${rows}</tbody></table></div>`;
   }
 
-  async function renderStatsTab(ov, data){
-    const panel = ov.querySelector('[data-panel="stats"]');
-    if(!panel) return;
-    
-    // If stats are empty, try to fetch from API
-    if(!data.stats || Object.keys(data.stats).length === 0) {
-      if(data.league?.id && data.season && data.home?.id && data.away?.id) {
-        try{
-          const homeStats = await fetchTeamStats(data.home.id, data.league.id, data.season);
-          const awayStats = await fetchTeamStats(data.away.id, data.league.id, data.season);
-          
-          if(homeStats || awayStats) {
-            renderStatsCards(panel, data, homeStats, awayStats);
-            return;
-          }
-        }catch(e){/* ignore API errors */}
-      }
-    }
-    
-    // Fallback to inline stats if available
-    const s = data.stats || {};
-    if(s && typeof s === 'object' && Object.keys(s).length > 0) {
-      // simple rows
-      const rows = [];
-      const pushStat = (label, left, right) => rows.push({label, left: left==null?'—':String(left), right: right==null?'—':String(right)});
-
-      if(s.xg) pushStat('xG', s.xg.home, s.xg.away);
-      if(s.possession) pushStat('Posse', s.possession.homePct ?? s.possession.home, s.possession.awayPct ?? s.possession.away);
-      if(s.shotsTotal) pushStat('Remates', s.shotsTotal.home, s.shotsTotal.away);
-      if(s.shotsOn) pushStat('Remates no alvo', s.shotsOn.home, s.shotsOn.away);
-      if(s.bigChances) pushStat('Grandes oportunidades', s.bigChances.home, s.bigChances.away);
-      if(s.corners) pushStat('Cantos', s.corners.home, s.corners.away);
-      if(s.passes) pushStat('Passe (%)', s.passes.home?.pct ?? s.passes.home?.pct, s.passes.away?.pct ?? s.passes.away?.pct);
-      if(s.yellows) pushStat('Amarelos', s.yellows.home, s.yellows.away);
-
-      if(rows.length > 0) {
-        const html = rows.map(r=>{
-          const l = Number(String(r.left).replace('%','')) || 0;
-          const rt = Number(String(r.right).replace('%','')) || 0;
-          const total = Math.max(l, rt) || 1;
-          const lw = Math.round((l/(l+rt||1))*100);
-          const rw = 100 - lw;
-          return `<div class="mr-stat-row"><div class="mr-left">${escapeHtml(r.left)}</div><div class="mr-label">${escapeHtml(r.label)}</div><div class="mr-right">${escapeHtml(r.right)}</div><div class="mr-bar"><div class="mr-bar-left" style="width:${lw}%;"></div><div class="mr-bar-right" style="width:${rw}%;"></div></div></div>`;
-        }).join('');
-        panel.innerHTML = `<div class="mr-stats-wrap">${html}</div>`;
-        return;
-      }
-    }
-    
-    panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
+  // Utility functions for stats rendering
+  function displayValue(val) {
+    if (val === null || val === undefined) return '—';
+    return String(val);
   }
 
-  async function fetchTeamStats(teamId, leagueId, season) {
+  function formatNumber(val, decimals = 2) {
+    if (val === null || val === undefined) return '—';
+    const num = Number(val);
+    if (isNaN(num)) return '—';
+    return decimals > 0 ? num.toFixed(decimals) : Math.round(num).toString();
+  }
+
+  function formatPct(val) {
+    if (val === null || val === undefined) return '—';
+    const num = Number(val);
+    if (isNaN(num)) return '—';
+    return num.toFixed(1) + '%';
+  }
+
+  // Render stats from new team-window-5 endpoint
+  async function fetchMatchStats(fixtureId) {
+    // Check in-memory cache first
+    if (statsCache.has(fixtureId)) {
+      return statsCache.get(fixtureId);
+    }
+    
     try {
-      const url = `/api/team-stats?team=${teamId}&league=${leagueId}&season=${season}`;
+      const url = `/api/match-stats?fixture=${fixtureId}`;
       const res = await fetch(url, { cache: 'no-store' });
-      if(res.ok) return await res.json();
-    } catch(e) {}
+      if (res.ok) {
+        const data = await res.json();
+        // Store in cache
+        statsCache.set(fixtureId, data);
+        return data;
+      }
+    } catch (e) {}
     return null;
   }
 
-  function renderStatsCards(panel, data, homeStats, awayStats) {
-    if(!homeStats && !awayStats) {
+  async function renderStatsTab(ov, data) {
+    const panel = ov.querySelector('[data-panel="stats"]');
+    if (!panel) return;
+
+    // Fetch the unified match-stats endpoint (single request)
+    const matchStats = await fetchMatchStats(data.fixtureId);
+    
+    if (!matchStats || !matchStats.home || !matchStats.away) {
       panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
       return;
     }
 
-    const leagueName = data.league?.name || '—';
-    const season = data.season || '—';
-
-    let html = `<div class="mr-stats-header">`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.competition', 'Competição')}: ${escapeHtml(leagueName)}</div>`;
-    html += `<div class="mr-stat-info">${t('match_radar.stats.season', 'Temporada')}: ${season}</div>`;
-    html += `</div>`;
-
-    if(homeStats) {
-      html += renderStatCard(data.home.name, homeStats);
-    }
-    if(awayStats) {
-      html += renderStatCard(data.away.name, awayStats);
-    }
-
-    panel.innerHTML = `<div class="mr-stats-cards">${html}</div>`;
+    // Render accordion-based stats layout
+    renderStatsAccordion(panel, matchStats);
   }
 
-  function renderStatCard(teamName, stats) {
-    let cardHtml = `<div class="mr-stat-card"><div class="mr-stat-card-title">${escapeHtml(teamName)}</div>`;
-    
-    const rows = [];
-    if(stats.games !== undefined) rows.push({ label: t('match_radar.stats.games', 'Jogos'), value: stats.games });
-    if(stats.goals_for_total !== undefined) rows.push({ label: t('match_radar.stats.goals_for_total', 'Gols marcados'), value: stats.goals_for_total });
-    if(stats.goals_for_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_for_avg', 'Gols marcados (média)'), value: Number(stats.goals_for_avg).toFixed(2) });
-    if(stats.goals_against_total !== undefined) rows.push({ label: t('match_radar.stats.goals_against_total', 'Gols sofridos'), value: stats.goals_against_total });
-    if(stats.goals_against_avg !== undefined) rows.push({ label: t('match_radar.stats.goals_against_avg', 'Gols sofridos (média)'), value: Number(stats.goals_against_avg).toFixed(2) });
-    if(stats.corners_total !== undefined) rows.push({ label: t('match_radar.stats.corners_total', 'Escanteios') || 'Escanteios', value: stats.corners_total });
-    if(stats.corners_avg !== undefined) rows.push({ label: t('match_radar.stats.corners_avg', 'Escanteios (média)') || 'Escanteios (média)', value: Number(stats.corners_avg).toFixed(2) });
-    if(stats.cards_total !== undefined) rows.push({ label: t('match_radar.stats.cards_total', 'Cartões') || 'Cartões', value: stats.cards_total });
-    if(stats.cards_avg !== undefined) rows.push({ label: t('match_radar.stats.cards_avg', 'Cartões (média)') || 'Cartões (média)', value: Number(stats.cards_avg).toFixed(2) });
+  function renderStatsAccordion(panel, matchStats) {
+    // State for accordion: which block is open
+    let openBlock = null;
 
-    if(rows.length === 0) {
-      cardHtml += `<div class="mr-stat-row-empty">${t('match_radar.no_stats', 'Sem dados')}</div>`;
-    } else {
-      rows.forEach(r => {
-        cardHtml += `<div class="mr-stat-row-item"><span class="mr-stat-label">${escapeHtml(r.label)}:</span><span class="mr-stat-value">${escapeHtml(r.value)}</span></div>`;
-      });
-    }
+    const homeStats = matchStats.home || {};
+    const awayStats = matchStats.away || {};
+    const homeGames = homeStats.games_used || {};
+    const awayGames = awayStats.games_used || {};
+
+    // Anti-Mentira check: if no real data, show "Sem dados ainda"
+    const homeHasData = (homeGames.games_used_total || 0) > 0;
+    const awayHasData = (awayGames.games_used_total || 0) > 0;
     
-    cardHtml += `</div>`;
-    return cardHtml;
+    if (!homeHasData && !awayHasData) {
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados ainda — aguarde próximas partidas')}</div>`;
+      return;
+    }
+
+    // Helper: render a line comparing home vs away
+    function renderComparisonRow(label, homeVal, awayVal) {
+      const hVal = displayValue(homeVal);
+      const aVal = displayValue(awayVal);
+      return `<div class="mr-stat-comp-row">
+        <div class="mr-comp-home">${escapeHtml(hVal)}</div>
+        <div class="mr-comp-label">${escapeHtml(label)}</div>
+        <div class="mr-comp-away">${escapeHtml(aVal)}</div>
+      </div>`;
+    }
+
+    // Build accordion blocks
+    const blocks = [
+      {
+        id: 'goals',
+        title: t('match_radar.stats.block_goals', 'Gols'),
+        content: () => {
+          const homeW = homeStats.stats || {};
+          const awayW = awayStats.stats || {};
+          const window = 'total_last5'; // Default to total window
+          const homeData = homeW[window] || {};
+          const awayData = awayW[window] || {};
+
+          return `
+            <div class="mr-stat-block-content">
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.goals_for', 'Gols marcados')}</div>
+                ${renderComparisonRow('', homeData.gols_marcados, awayData.gols_marcados)}
+              </div>
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.goals_against', 'Gols sofridos')}</div>
+                ${renderComparisonRow('', homeData.gols_sofridos, awayData.gols_sofridos)}
+              </div>
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.clean_sheets', 'Clean Sheets')}</div>
+                ${renderComparisonRow('', homeData.clean_sheets, awayData.clean_sheets)}
+              </div>
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.failed_to_score', 'Falha em marcar')}</div>
+                ${renderComparisonRow('', homeData.falha_marcar, awayData.falha_marcar)}
+              </div>
+            </div>
+          `;
+        }
+      },
+      {
+        id: 'cards',
+        title: t('match_radar.stats.block_cards', 'Cartões'),
+        content: () => {
+          const homeW = homeStats.stats || {};
+          const awayW = awayStats.stats || {};
+          const window = 'total_last5';
+          const homeData = homeW[window] || {};
+          const awayData = awayW[window] || {};
+
+          return `
+            <div class="mr-stat-block-content">
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.yellow_cards', 'Cartões amarelos')}</div>
+                ${renderComparisonRow('', homeData.cartoes_amarelos, awayData.cartoes_amarelos)}
+              </div>
+            </div>
+          `;
+        }
+      },
+      {
+        id: 'corners',
+        title: t('match_radar.stats.block_corners', 'Escanteios'),
+        content: () => {
+          const homeW = homeStats.stats || {};
+          const awayW = awayStats.stats || {};
+          const window = 'total_last5';
+          const homeData = homeW[window] || {};
+          const awayData = awayW[window] || {};
+
+          return `
+            <div class="mr-stat-block-content">
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.corners', 'Cantos')}</div>
+                ${renderComparisonRow('', homeData.cantos, awayData.cantos)}
+              </div>
+            </div>
+          `;
+        }
+      },
+      {
+        id: 'style',
+        title: t('match_radar.stats.block_style', 'Estilo de jogo'),
+        content: () => {
+          const homeW = homeStats.stats || {};
+          const awayW = awayStats.stats || {};
+          const window = 'total_last5';
+          const homeData = homeW[window] || {};
+          const awayData = awayW[window] || {};
+
+          return `
+            <div class="mr-stat-block-content">
+              <div class="mr-stat-metric">
+                <div class="mr-metric-label">${t('match_radar.stats.possession', 'Posse (%)')}</div>
+                ${renderComparisonRow('', formatPct(homeData.posse_pct), formatPct(awayData.posse_pct))}
+              </div>
+            </div>
+          `;
+        }
+      }
+    ];
+
+    // Window selector
+    const windowSelector = `
+      <div class="mr-window-selector">
+        <div class="mr-window-label">${t('match_radar.stats.window', 'Janela')}:</div>
+        <button class="mr-window-btn mr-window-btn-active" data-window="total_last5">${t('match_radar.stats.window_total', 'Total')}</button>
+        <button class="mr-window-btn" data-window="home_last5">${t('match_radar.stats.window_home', 'Casa')}</button>
+        <button class="mr-window-btn" data-window="away_last5">${t('match_radar.stats.window_away', 'Fora')}</button>
+      </div>
+    `;
+
+    // Teams base disclosure
+    const baseDisclosure = `
+      <div class="mr-base-disclosure">
+        <span class="mr-base-home">${t('match_radar.stats.base', 'Base')}: ${homeHasData ? homeGames.games_used_total || 0 : '—'}</span>
+        <span class="mr-base-away">${t('match_radar.stats.base', 'Base')}: ${awayHasData ? awayGames.games_used_total || 0 : '—'}</span>
+      </div>
+    `;
+
+    // Build accordion HTML
+    let accordionHtml = windowSelector + baseDisclosure;
+    accordionHtml += '<div class="mr-stats-accordion">';
+
+    blocks.forEach((block, idx) => {
+      accordionHtml += `
+        <div class="mr-accordion-block">
+          <div class="mr-accordion-header" data-block-id="${block.id}" role="button" tabindex="0" aria-expanded="false" aria-controls="block-${block.id}">
+            <span class="mr-accordion-title">${escapeHtml(block.title)}</span>
+            <span class="mr-accordion-arrow">›</span>
+          </div>
+          <div class="mr-accordion-content" id="block-${block.id}" aria-hidden="true">
+            ${block.content()}
+          </div>
+        </div>
+      `;
+    });
+
+    accordionHtml += '</div>';
+    panel.innerHTML = accordionHtml;
+
+    // Bind accordion logic
+    const headers = panel.querySelectorAll('.mr-accordion-header');
+    const currentWindow = { value: 'total_last5' };
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const blockId = header.getAttribute('data-block-id');
+        
+        // Toggle: if same block is open, close it; else open new one
+        if (openBlock === blockId) {
+          openBlock = null;
+          header.classList.remove('mr-accordion-header-open');
+          header.setAttribute('aria-expanded', 'false');
+          const content = header.nextElementSibling;
+          if (content) {
+            content.classList.remove('mr-accordion-content-open');
+            content.setAttribute('aria-hidden', 'true');
+          }
+        } else {
+          // Close previous open block
+          if (openBlock) {
+            const prevHeader = panel.querySelector(`[data-block-id="${openBlock}"]`);
+            if (prevHeader) {
+              prevHeader.classList.remove('mr-accordion-header-open');
+              prevHeader.setAttribute('aria-expanded', 'false');
+              const prevContent = prevHeader.nextElementSibling;
+              if (prevContent) {
+                prevContent.classList.remove('mr-accordion-content-open');
+                prevContent.setAttribute('aria-hidden', 'true');
+              }
+            }
+          }
+          
+          // Open new block
+          openBlock = blockId;
+          header.classList.add('mr-accordion-header-open');
+          header.setAttribute('aria-expanded', 'true');
+          const content = header.nextElementSibling;
+          if (content) {
+            content.classList.add('mr-accordion-content-open');
+            content.setAttribute('aria-hidden', 'false');
+          }
+        }
+      });
+
+      // Keyboard support
+      header.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
+    });
+
+    // Window selector buttons
+    const windowBtns = panel.querySelectorAll('.mr-window-btn');
+    windowBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        windowBtns.forEach(b => b.classList.remove('mr-window-btn-active'));
+        btn.classList.add('mr-window-btn-active');
+        currentWindow.value = btn.getAttribute('data-window');
+        
+        // Re-render accordion content with new window
+        // TODO: Update stats display when window changes
+      });
+    });
   }
 
   function formatScore(data){

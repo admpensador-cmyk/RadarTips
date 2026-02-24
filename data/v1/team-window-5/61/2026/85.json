@@ -1,0 +1,41 @@
+{
+  "windows": {
+    "total_last5": {
+      "gols_marcados": 8,
+      "gols_sofridos": 4,
+      "clean_sheets": 2,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    },
+    "home_last5": {
+      "gols_marcados": 4,
+      "gols_sofridos": 1,
+      "clean_sheets": 1,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    },
+    "away_last5": {
+      "gols_marcados": 4,
+      "gols_sofridos": 3,
+      "clean_sheets": 1,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    }
+  },
+  "meta": {
+    "league_id": 61,
+    "season": 2026,
+    "team_id": 85,
+    "team_name": "Paris Saint Germain",
+    "games_used_total": 5,
+    "games_used_home": 2,
+    "games_used_away": 3,
+    "last_updated": "2026-02-24T01:17:31.782Z"
+  }
+}

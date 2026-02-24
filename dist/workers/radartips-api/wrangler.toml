@@ -5,6 +5,11 @@ compatibility_date = "2026-02-03"
 [triggers]
 crons = ["* * * * *"]
 
+# Environment Variables (set via: wrangler secret put <NAME>)
+# LIVE_ENABLED: "true" to enable live score fetching (default: false to avoid API quota)
+# APIFOOTBALL_KEY: API key for api-football.com
+# LIVE_LEAGUE_IDS: Comma-separated league IDs for live filtering (optional)
+
 [[kv_namespaces]]
 binding = "RADARTIPS_LIVE"
 id = "7985bdade9df416690cfd0226ebd78d2"

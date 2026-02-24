@@ -16,7 +16,7 @@
 ║  ❌ ANTES                          ✅ DEPOIS                   ║
 ║  ────────────────────────────────────────────────────────────  ║
 ║  • Sugestão perdida                • Sugestão DOMINANTE       ║
-║  • Sem interatividade              • Hover com glow azul      ║
+║  • Sem interatividade              • Hover com glow azul      ║![alt text](image.png)
 ║  • Título pequeno (34px)           • Título grande (42px)     ║
 ║  • Cards simples                   • Cards elegantes           ║
 ║  • Glow sutil (320px)              • Glow bokeh (500px)       ║

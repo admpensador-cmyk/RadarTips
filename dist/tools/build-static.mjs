@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { generateMatchRadarCssHash } from "./hash-css.mjs";
 
 const ROOT = process.cwd();
 const DIST = path.join(ROOT, "dist");
@@ -90,6 +91,14 @@ async function updateHtmlFiles(htmlFiles, newName) {
 async function main() {
   await rmDirSafe(DIST);
   await copyDir(ROOT, DIST);
+
+  // Generate hashed CSS file for match-radar
+  try {
+    const cssResult = await generateMatchRadarCssHash(ROOT);
+    console.log(`[build-static] CSS hash generated: ${cssResult.filename}`);
+  } catch (e) {
+    console.warn(`[build-static] Warning: CSS hashing skipped - ${e.message}`);
+  }
 
   // Ensure assets dir exists in dist
   const distAssets = path.join(DIST, "assets");

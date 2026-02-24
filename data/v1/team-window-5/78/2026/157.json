@@ -1,0 +1,41 @@
+{
+  "windows": {
+    "total_last5": {
+      "gols_marcados": 12,
+      "gols_sofridos": 6,
+      "clean_sheets": 1,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    },
+    "home_last5": {
+      "gols_marcados": 3,
+      "gols_sofridos": 2,
+      "clean_sheets": 1,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    },
+    "away_last5": {
+      "gols_marcados": 9,
+      "gols_sofridos": 4,
+      "clean_sheets": null,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    }
+  },
+  "meta": {
+    "league_id": 78,
+    "season": 2026,
+    "team_id": 157,
+    "team_name": "Bayern München",
+    "games_used_total": 5,
+    "games_used_home": 2,
+    "games_used_away": 3,
+    "last_updated": "2026-02-24T01:17:31.776Z"
+  }
+}

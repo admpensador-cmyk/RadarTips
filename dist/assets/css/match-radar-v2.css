@@ -38,3 +38,39 @@
 @media(max-width:640px){.mr-stats-cards{grid-template-columns:1fr}}
 .mr-table-wrap::-webkit-scrollbar{height:8px}
 .mr-table-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:8px}
+
+/* Phase 2: Team-Window-5 Accordion Styles */
+.mr-window-selector{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.02);font-size:13px}
+.mr-window-label{color:#9fb0c9;font-weight:500}
+.mr-window-btn{padding:6px 12px;background:transparent;border:1px solid rgba(255,255,255,.1);color:#b0bcc9;cursor:pointer;border-radius:4px;font-size:12px;transition:all .2s ease}
+.mr-window-btn:hover{border-color:rgba(255,255,255,.2);color:#e6eef8}
+.mr-window-btn-active{background:#38bdf8;border-color:#38bdf8;color:#0f1720;font-weight:500}
+
+.mr-base-disclosure{display:flex;justify-content:space-between;padding:8px 16px;font-size:12px;color:#9fb0c9}
+.mr-base-home,.mr-base-away{font-weight:500}
+
+.mr-stats-accordion{display:flex;flex-direction:column;gap:0;padding:0 16px 16px}
+.mr-accordion-block{border:1px solid rgba(255,255,255,.06);border-radius:6px;margin-bottom:8px;overflow:hidden;background:rgba(255,255,255,.01)}
+
+.mr-accordion-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:rgba(255,255,255,.02);cursor:pointer;user-select:none;border:0;color:inherit;width:100%;font-size:14px;font-weight:500;transition:all .2s ease}
+.mr-accordion-header:hover{background:rgba(255,255,255,.05)}
+.mr-accordion-header-open{background:rgba(56,189,248,.1)}
+
+.mr-accordion-arrow{display:inline-block;transition:transform .2s ease;color:#9fb0c9}
+.mr-accordion-header-open .mr-accordion-arrow{transform:rotate(90deg);color:#38bdf8}
+
+.mr-accordion-content{max-height:0;overflow:hidden;opacity:0;transition:all .2s ease}
+.mr-accordion-content-open{max-height:500px;opacity:1}
+
+.mr-stat-block-content{padding:12px}
+.mr-stat-metric{margin-bottom:12px}
+.mr-stat-metric:last-child{margin-bottom:0}
+.mr-metric-label{font-size:12px;color:#9fb0c9;margin-bottom:6px;font-weight:500}
+
+.mr-stat-comp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.mr-stat-comp-row:last-child{border-bottom:0}
+
+.mr-comp-home{text-align:left;font-weight:500;color:#38bdf8;font-size:14px}
+.mr-comp-label{text-align:center;font-size:12px;color:#b0bcc9}
+.mr-comp-away{text-align:right;font-weight:500;color:#f59e0b;font-size:14px}
+

@@ -10,6 +10,7 @@
     "build:static": "node tools/build-static.mjs",
     "build:hash": "node tools/hash-js.mjs",
     "smoke": "node -c assets/js/app.js && node -c workers/radartips-api/src/index.js && node -e \"JSON.parse(require('fs').readFileSync('./i18n/strings.json','utf8')); console.log('i18n ok')\"",
-    "test": "node tools/final-validation.mjs"
+    "test": "node tools/final-validation.mjs",
+    "leagues": "node tools/print-leagues.mjs"
   }
 }

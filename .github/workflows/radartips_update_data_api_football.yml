@@ -39,6 +39,27 @@ jobs:
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
 
+      - name: Seed team-window-5 snapshots
+        run: |
+          set -euo pipefail
+          echo "🌱 Seeding team-window-5 snapshots from calendar_7d..."
+          node tools/seed-team-window-5.mjs
+          echo "✅ Seed complete"
+
+      - name: Smoke test team-window-5
+        run: |
+          set -euo pipefail
+          echo "🧪 Running smoke tests..."
+          node tools/smoke-test-team-window-5.mjs
+          echo "✅ Smoke tests passed"
+
+      - name: Healthcheck match-stats endpoint
+        run: |
+          set -euo pipefail
+          echo "🏥 Healthcheck: verifying match-stats data..."
+          node tools/healthcheck-match-stats.mjs
+          echo "✅ Healthcheck passed"
+
       - name: Upload snapshots to R2 (optional, no rebuild)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

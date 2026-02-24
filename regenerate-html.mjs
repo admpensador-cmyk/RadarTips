@@ -2,8 +2,31 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getLatestMatchRadarCssFile } from './tools/hash-css.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Get the most recent app.[hash].js file from assets/js directory
+ * Falls back to app.js if no hashed version exists
+ */
+function getLatestAppJsFile(rootDir = process.cwd()) {
+  try {
+    const jsDir = path.join(rootDir, 'assets', 'js');
+    const files = fs.readdirSync(jsDir);
+    const hashed = files
+      .filter(f => /^app\.[a-f0-9]+\.js$/.test(f))
+      .sort()
+      .reverse(); // Most recent first
+    
+    if (hashed.length > 0) {
+      return hashed[0];
+    }
+  } catch (e) {
+    // Fall through to fallback
+  }
+  return 'app.js'; // Fallback
+}
 
 // Ler o arquivo scaffold e extrair a função de geração de HTML
 const scaffoldContent = fs.readFileSync(path.join(__dirname, 'scaffold-radartips.sh'), 'utf-8');
@@ -55,7 +78,7 @@ const pages = [
 ];
 
 // Template base para HTML
-function generateHtml(lang, page, strings) {
+function generateHtml(lang, page, strings, cssFilename, appJsFilename) {
   const title = strings[page.title] || 'Radar';
   const pageName = page.key;
 
@@ -166,22 +189,70 @@ function generateHtml(lang, page, strings) {
   <script>
     window.RT_LOCALE = "${lang}";
   </script>
-  <script src="/assets/js/app.js"></script>
-  <link rel="stylesheet" href="/assets/match-radar-v2.66f5a85a02d7.css" />
+  <script src="/assets/js/${appJsFilename}"></script>
+  <link rel="stylesheet" href="/${cssFilename}" />
 </body>
 </html>
 `;
 }
 
+// Obter o CSS hashed mais recente
+const cssFile = await getLatestMatchRadarCssFile(__dirname);
+if (!cssFile) {
+  console.error('❌ Erro: arquivo match-radar-v2.*.css não encontrado em assets/');
+  console.error('Execute: node tools/hash-css.mjs para gerar o arquivo hashed');
+  process.exit(1);
+}
+
+// Obter o app.js hashed mais recente (ou fallback para app.js)
+const appJsFilename = getLatestAppJsFile(__dirname);
+
+console.log(`📦 Bundle JS: ${appJsFilename}`);
+console.log(`📦 Stylesheet: ${cssFile.filename}`);
+
 // Gerar HTMLs para todas as combinações de lang+page
 languages.forEach(lang => {
   const langStrings = i18n[lang];
   pages.forEach(page => {
-    const htmlContent = generateHtml(lang, page, langStrings);
+    const htmlContent = generateHtml(lang, page, langStrings, cssFile.path, appJsFilename);
     const filePath = path.join(__dirname, lang, page.path, 'index.html');
     fs.writeFileSync(filePath, htmlContent);
     console.log(`✅ ${filePath}`);
   });
 });
+
+// Validação OBRIGATÓRIA: confirmar que assets estão hashed corretamente
+try {
+  const testHtmlPath = path.join(__dirname, languages[0], pages[0].path, 'index.html');
+  const testHtmlContent = fs.readFileSync(testHtmlPath, 'utf-8');
+  
+  const cssPattern = /match-radar-v2\.[a-f0-9]{12}\.css/;
+  const appPattern = /app\.([a-f0-9]+\.)?js/;
+  
+  const hasCssHash = cssPattern.test(testHtmlContent);
+  const hasAppJs = appPattern.test(testHtmlContent);
+  
+  if (!hasCssHash) {
+    console.error(`\n❌ FALHA: CSS hash não encontrado no HTML`);
+    console.error(`   Padrão esperado: match-radar-v2.[a-f0-9]{12}.css`);
+    process.exit(1);
+  }
+  
+  if (!hasAppJs) {
+    console.error(`\n❌ FALHA: app.js não encontrado no HTML`);
+    console.error(`   Padrão esperado: app.[hash].js ou app.js`);
+    process.exit(1);
+  }
+  
+  const cssMatch = testHtmlContent.match(cssPattern);
+  const appMatch = testHtmlContent.match(/app\.([a-f0-9]+\.)?js/);
+  
+  console.log(`\n✅ Validação de Assets:`);
+  console.log(`   CSS: ${cssMatch[0]}`);
+  console.log(`   JS:  ${appMatch[0]}`);
+} catch (e) {
+  console.error(`\n⚠️  Erro na validação de assets:`, e.message);
+  process.exit(1);
+}
 
 console.log('\n✨ Regeneração concluída com sucesso!');

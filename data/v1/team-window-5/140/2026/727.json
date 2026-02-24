@@ -1,0 +1,41 @@
+{
+  "windows": {
+    "total_last5": {
+      "gols_marcados": 9,
+      "gols_sofridos": 7,
+      "clean_sheets": null,
+      "falha_marcar": 1,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    },
+    "home_last5": {
+      "gols_marcados": 6,
+      "gols_sofridos": 5,
+      "clean_sheets": null,
+      "falha_marcar": null,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    },
+    "away_last5": {
+      "gols_marcados": 3,
+      "gols_sofridos": 2,
+      "clean_sheets": null,
+      "falha_marcar": 1,
+      "cartoes_amarelos": null,
+      "cantos": null,
+      "posse_pct": null
+    }
+  },
+  "meta": {
+    "league_id": 140,
+    "season": 2026,
+    "team_id": 727,
+    "team_name": "Osasuna",
+    "games_used_total": 5,
+    "games_used_home": 3,
+    "games_used_away": 2,
+    "last_updated": "2026-02-24T01:46:07.153Z"
+  }
+}

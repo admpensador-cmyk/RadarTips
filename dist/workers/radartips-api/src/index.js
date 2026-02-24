@@ -313,6 +313,14 @@ async function handleApiV1(env, pathname, requestUrl) {
   // LIVE endpoint used by the frontend (minute-by-minute polling)
   // Expected shape: { generatedAt, ttlSeconds, states: [...] }
   if (pathname === "/v1/live") {
+    // Feature flag: LIVE_ENABLED (default: false to avoid API quota exhaustion)
+    const liveEnabled = String(env.LIVE_ENABLED || "false").toLowerCase() === "true";
+    if (!liveEnabled) {
+      const payload = degradedLive("live_disabled");
+      payload.meta.live_enabled = false;
+      return jsonResponse(payload, 200);
+    }
+
     const missing = getMissingBindings(bindings, ["RADARTIPS_LIVE"]);
     if (missing.length) {
       const payload = degradedLive("no_data");
@@ -325,6 +333,20 @@ async function handleApiV1(env, pathname, requestUrl) {
     }
 
     if (pathname === "/v1/live/state") {
+      // Feature flag: LIVE_ENABLED (default: false to avoid API quota exhaustion)
+      const liveEnabled = String(env.LIVE_ENABLED || "false").toLowerCase() === "true";
+      if (!liveEnabled) {
+        return jsonResponse({
+          ok: true,
+          ts: nowIso(),
+          state: {},
+          meta: {
+            warning: "live_disabled",
+            live_enabled: false
+          }
+        }, 200);
+      }
+
       const missing = getMissingBindings(bindings, ["RADARTIPS_LIVE"]);
       if (missing.length) {
         debugLog(env, "Degraded /v1/live/state due to missing bindings", missing);
@@ -633,7 +655,115 @@ async function handleTeamStats(env, url) {
 }
 __name(handleTeamStats, "handleTeamStats");
 
+async function handleMatchStats(env, url) {
+  const urlObj = new URL(url);
+  const fixtureId = urlObj.searchParams.get("fixture");
+
+  if (!fixtureId) {
+    return jsonResponse(
+      { error: "Missing fixture parameter", ok: false },
+      400
+    );
+  }
+
+  // Check KV cache first (TTL: 12 hours)
+  const cacheKey = `matchstats:${fixtureId}`;
+  const cached = await kvGetJson(env, cacheKey);
+  if (cached) {
+    debugLog(env, `match-stats cache hit for fixture ${fixtureId}`);
+    return jsonResponse(cached);
+  }
+
+  try {
+    // Try to load fixture metadata from calendar snapshots
+    const calendar7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+    const calendarDay = await r2GetJson(env, "snapshots/calendar_day.json");
+    
+    const calendars = [calendar7d, calendarDay].filter(Boolean);
+    let fixtureData = null;
+    
+    for (const cal of calendars) {
+      const matches = cal.matches || [];
+      const found = matches.find(m => m.fixture_id === parseInt(fixtureId));
+      if (found) {
+        fixtureData = found;
+        break;
+      }
+    }
+
+    if (!fixtureData) {
+      return jsonResponse(
+        { error: "Fixture not found", ok: false },
+        404
+      );
+    }
+
+    const { home_id, away_id, league_id, season } = fixtureData;
+
+    // Try to load team-window-5 snapshots for both teams
+    const homeSnapshot = await r2GetJson(
+      env,
+      `team-window-5/${league_id}/${season}/${home_id}.json`
+    );
+    const awaySnapshot = await r2GetJson(
+      env,
+      `team-window-5/${league_id}/${season}/${away_id}.json`
+    );
+
+    const payload = {
+      fixture_id: parseInt(fixtureId),
+      fixture_status: fixtureData.status || "NS",
+      home: {
+        id: home_id,
+        name: fixtureData.home,
+        stats: homeSnapshot?.windows || {
+          total_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
+          home_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
+          away_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null }
+        },
+        games_used: homeSnapshot?.meta || { games_used_total: 0, games_used_home: 0, games_used_away: 0 }
+      },
+      away: {
+        id: away_id,
+        name: fixtureData.away,
+        stats: awaySnapshot?.windows || {
+          total_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
+          home_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
+          away_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null }
+        },
+        games_used: awaySnapshot?.meta || { games_used_total: 0, games_used_home: 0, games_used_away: 0 }
+      },
+      meta: {
+        cached_at: nowIso(),
+        source: homeSnapshot || awaySnapshot ? "snapshots" : "fallback",
+        league_id,
+        season
+      }
+    };
+
+    // Cache for 12 hours (43200 seconds)
+    await kvPutJson(env, cacheKey, payload, 43200);
+    debugLog(env, `match-stats generated and cached for fixture ${fixtureId}`);
+
+    return jsonResponse(payload);
+  } catch (e) {
+    debugLog(env, "Match stats fetch error", e.message);
+    return jsonResponse(
+      { error: "Internal server error", ok: false },
+      500
+    );
+  }
+}
+__name(handleMatchStats, "handleMatchStats");
+
 async function cronUpdateLive(env) {
+  // Feature flag: LIVE_ENABLED (default: false to avoid API quota exhaustion)
+  const liveEnabled = String(env.LIVE_ENABLED || "false").toLowerCase() === "true";
+  if (!liveEnabled) {
+    debugLog(env, "LIVE disabled via LIVE_ENABLED flag - skipping live fetch");
+    return;
+  }
+
   const bindings = checkBindings(env);
   if (!bindings.kv) {
     debugLog(env, "Skipping cronUpdateLive: RADARTIPS_LIVE binding missing");
@@ -709,6 +839,11 @@ var index_default = {
     // Handle team stats endpoint (no normalization needed, parse query params)
     if (pathname === "/api/team-stats") {
       return await handleTeamStats(env, request.url);
+    }
+
+    // Handle match stats endpoint (unified home+away stats)
+    if (pathname === "/api/match-stats") {
+      return await handleMatchStats(env, request.url);
     }
 
     // Support both route styles:

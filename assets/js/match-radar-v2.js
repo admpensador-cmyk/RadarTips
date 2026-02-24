@@ -438,6 +438,15 @@
     const homeGames = homeStats.games_used || {};
     const awayGames = awayStats.games_used || {};
 
+    // Anti-Mentira check: if no real data, show "Sem dados ainda"
+    const homeHasData = (homeGames.games_used_total || 0) > 0;
+    const awayHasData = (awayGames.games_used_total || 0) > 0;
+    
+    if (!homeHasData && !awayHasData) {
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados ainda — aguarde próximas partidas')}</div>`;
+      return;
+    }
+
     // Helper: render a line comparing home vs away
     function renderComparisonRow(label, homeVal, awayVal) {
       const hVal = displayValue(homeVal);
@@ -558,8 +567,8 @@
     // Teams base disclosure
     const baseDisclosure = `
       <div class="mr-base-disclosure">
-        <span class="mr-base-home">${t('match_radar.stats.base', 'Base')}: ${homeGames.games_used_total || 0}</span>
-        <span class="mr-base-away">${t('match_radar.stats.base', 'Base')}: ${awayGames.games_used_total || 0}</span>
+        <span class="mr-base-home">${t('match_radar.stats.base', 'Base')}: ${homeHasData ? homeGames.games_used_total || 0 : '—'}</span>
+        <span class="mr-base-away">${t('match_radar.stats.base', 'Base')}: ${awayHasData ? awayGames.games_used_total || 0 : '—'}</span>
       </div>
     `;
 
