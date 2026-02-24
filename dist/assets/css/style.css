@@ -13,6 +13,29 @@
   --red:#e04545;
   --yellow:#e0b300;
 }
+
+/* ===== DARK THEME (default for RadarTips) ===== */
+body[data-theme="dark"]{
+  --bg1:#0a0e18;
+  --bg2:#0f1419;
+  --ink:#e6eef8;
+  --muted:#9fb0c9;
+  --card:rgba(20,26,38,.85);
+  --stroke:rgba(255,255,255,.10);
+  --accent:#38bdf8;
+  --accent2:#7dd3fc;
+  --shadow: 0 12px 40px rgba(0, 0, 0, .35);
+  --green:#22c55e;
+  --red:#ef4444;
+  --yellow:#fbbf24;
+}
+body[data-theme="dark"]{
+  background:
+    radial-gradient(900px 500px at 18% 10%, rgba(56,189,248,.08), transparent 60%),
+    radial-gradient(700px 450px at 80% 0%, rgba(14,165,233,.05), transparent 55%),
+    linear-gradient(180deg, var(--bg1), var(--bg2) 60%);
+}
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
