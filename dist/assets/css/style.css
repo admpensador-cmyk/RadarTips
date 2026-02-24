@@ -36,6 +36,22 @@ body[data-theme="dark"]{
     linear-gradient(180deg, var(--bg1), var(--bg2) 60%);
 }
 
+/* ===== LIGHT THEME (optional override) ===== */
+body[data-theme="light"]{
+  --bg1:#d9e9ff;
+  --bg2:#f7fbff;
+  --ink:#0b1220;
+  --muted:#4a586e;
+  --card:#ffffffcc;
+  --stroke:#d7e3f6;
+  --accent:#2b6ff2;
+  --accent2:#7aa7ff;
+  --shadow: 0 12px 40px rgba(8, 24, 56, .12);
+  --green:#18a957;
+  --red:#e04545;
+  --yellow:#e0b300;
+}
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -385,7 +401,6 @@ a{color:inherit; text-decoration:none}
   display:block;
   stroke-width:2;
 }
-
 
 /* ===== SUGGESTION - VISUAL DOMINANCE ===== */
 .suggestion-highlight{

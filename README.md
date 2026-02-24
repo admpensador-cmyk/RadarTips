@@ -18,6 +18,68 @@ Cloudflare Pages recommended settings for this repo (ensure Pages runs the stati
 
 Note: `npm run build` runs `node tools/build-static.mjs` which generates the `dist/` folder and produces a hashed bundle under `dist/assets/` (e.g. `app.cba3bb4ebed9.js`). Pages must publish the `dist/` directory for the site to reflect the built assets.
 
+## Theme System & UI Constraints
+
+### How Themes Work
+
+**Default**: Dark theme (`data-theme="dark"`)  
+**Override**: Users can toggle to light theme via the theme button (saved in localStorage)
+
+The theme is applied in **two layers** to prevent flash of unstyled content:
+
+1. **HTML Generation** (`regenerate-html.mjs`):
+   - All HTML files are generated with `<body data-theme="dark" data-page="...">` by default
+   - This ensures dark theme is applied immediately on page load (no flash)
+
+2. **JavaScript Override** (`assets/app.js`):
+   - On init, `getSavedTheme()` checks localStorage for user preference
+   - If user saved "light", it overrides the HTML default
+   - Theme toggle button allows switching and saves preference
+
+### CSS Theme Rules
+
+- **Dark theme** (default): `body[data-theme="dark"]` - Uses dark palette (--bg1:#0a0e18, --ink:#e6eef8, --accent:#38bdf8)
+- **Light theme** (optional): `body[data-theme="light"]` - Uses light palette (--bg1:#d9e9ff, --ink:#0b1220, --accent:#2b6ff2)
+- **Fallback**: `:root` variables provide baseline light colors for graceful degradation
+
+### Icon Size Constraints
+
+To prevent layout blowup, icons are constrained with **scoped CSS rules**:
+
+- `.meta-chip .ico` - 18×18px icons in radar meta chips (time, trophy, etc.)
+- `.meta-link .ico` - 18×18px icons in actionable links
+- `.callout-label .ico` - 18×18px icons in callout labels
+- `.group-title .ico` - 18×18px icons in calendar group titles
+
+**Rationale**: SVG icons (`<svg viewBox="0 0 24 24">`) have no intrinsic size and expand to fill their container. The scoped rules (`width:18px; height:18px; flex:0 0 18px`) ensure icons stay at a fixed, readable size.
+
+**Scope safety**: All icon rules are scoped to specific radar/calendar UI components. They do **not** apply globally, so other parts of the site (e.g., Match Radar modal, future features) are unaffected.
+
+### Adjusting Icon Sizes
+
+If you need to change icon sizes:
+1. Edit `assets/css/style.css` - search for `.meta-chip .ico` and related selectors
+2. Modify `width`, `height`, and `flex` values (keep them consistent: e.g., `20px/20px/0 0 20px`)
+3. Rebuild: `npm run build`
+4. Validate: `node tools/check-theme-and-icons.mjs`
+
+### Regression Checks
+
+Run regression checks before deploying:
+
+```bash
+npm run test:regression
+# or directly:
+node tools/check-theme-and-icons.mjs
+```
+
+This validates:
+- All HTML files have `data-theme` attribute
+- `style.css` contains `body[data-theme="dark"]` rules
+- `style.css` contains `.meta-chip .ico` rules with fixed width/height
+
+Exit code 0 = pass, 1 = fail (blocks deploy if integrated into CI).
+
 ## Pre-commit smoke (required)
 
 Before any `git commit` / `git push`, run:

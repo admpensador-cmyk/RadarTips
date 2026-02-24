@@ -63,9 +63,12 @@ dirs.forEach(dir => {
 
 // Escrever arquivos
 fs.writeFileSync(path.join(__dirname, 'i18n/strings.json'), i18nContent);
-fs.writeFileSync(path.join(__dirname, 'assets/css/style.css'), cssContent);
 
-console.log('✅ CSS e i18n regenerados');
+// NOTE: style.css is NOT regenerated here (maintained separately)
+// The scaffold CSS is outdated and would overwrite manual improvements (dark theme, icon constraints, etc.)
+// If you need to regenerate style.css, copy it manually from scaffold-radartips.sh
+
+console.log('✅ i18n regenerados (style.css mantido separadamente)');
 
 // Agora parse as strings para gerar os HTMLs
 const i18n = JSON.parse(i18nContent);
@@ -78,6 +81,8 @@ const pages = [
 ];
 
 // Template base para HTML
+// Default theme: "dark" (set in HTML to prevent flash)
+// app.js can override based on localStorage or system preference
 function generateHtml(lang, page, strings, cssFilename, appJsFilename) {
   const title = strings[page.title] || 'Radar';
   const pageName = page.key;
@@ -95,7 +100,7 @@ function generateHtml(lang, page, strings, cssFilename, appJsFilename) {
   <link rel="icon" href="/assets/favicon.svg" />
   <link rel="stylesheet" href="/assets/css/style.css?v=11" />
 </head>
-<body data-page="${pageName}">
+<body data-theme="dark" data-page="${pageName}">
   <div class="container">
     <div class="topbar">
       <div class="brand">
