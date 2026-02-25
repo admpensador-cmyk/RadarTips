@@ -363,10 +363,12 @@
     
     // Check if we have essential data
     const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
+    const allGoalsZero = Number(gfHome || 0) === 0 && Number(gaHome || 0) === 0 && Number(gfAway || 0) === 0 && Number(gaAway || 0) === 0;
     const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
     
-    if(!hasGoalsData && !hasFormData) {
-      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis')}</div>`;
+    if((!hasGoalsData && !hasFormData) || (allGoalsZero && !hasFormData)) {
+      console.warn('⚠️ Missing/enriched stats not available for fixture:', data.fixture_id || data.id);
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis para este jogo')}</div>`;
       return;
     }
     
