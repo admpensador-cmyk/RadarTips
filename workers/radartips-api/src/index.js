@@ -255,6 +255,21 @@ async function r2GetJson(env, key) {
 }
 __name(r2GetJson, "r2GetJson");
 
+// Fallback fetch from GitHub Pages when R2 fails
+async function fetchFromGitHub(path) {
+  try {
+    const url = `https://github.com/admpensador-cmyk/RadarTips/raw/main/${path}`;
+    const res = await fetch(url, {
+      cf: { cacheTtl: 300, cacheEverything: true }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+__name(fetchFromGitHub, "fetchFromGitHub");
+
 async function r2PutJson(env, key, value) {
   if (!env?.R2) {
     debugLog(env, `R2 not available, skipping write for ${key}`);
@@ -679,7 +694,11 @@ async function handleMatchStats(env, url) {
     const calendar7d = await r2GetJson(env, "snapshots/calendar_7d.json");
     const calendarDay = await r2GetJson(env, "snapshots/calendar_day.json");
     
-    const calendars = [calendar7d, calendarDay].filter(Boolean);
+    // If R2 fails, try GitHub fallback
+    const cal7d = calendar7d || await fetchFromGitHub("dist/data/v1/calendar_7d.json");
+    const calDay = calendarDay || await fetchFromGitHub("dist/data/v1/calendar_day.json");
+    
+    const calendars = [cal7d, calDay].filter(Boolean);
     let fixtureData = null;
     
     for (const cal of calendars) {
@@ -701,14 +720,22 @@ async function handleMatchStats(env, url) {
     const { home_id, away_id, league_id, season } = fixtureData;
 
     // Try to load team-window-5 snapshots for both teams
-    const homeSnapshot = await r2GetJson(
+    let homeSnapshot = await r2GetJson(
       env,
-      `team-window-5/${league_id}/${season}/${home_id}.json`
+      `snapshots/team-window-5/${league_id}/${season}/${home_id}.json`
     );
-    const awaySnapshot = await r2GetJson(
+    let awaySnapshot = await r2GetJson(
       env,
-      `team-window-5/${league_id}/${season}/${away_id}.json`
+      `snapshots/team-window-5/${league_id}/${season}/${away_id}.json`
     );
+
+    // If R2 fails, try GitHub fallback
+    if (!homeSnapshot) {
+      homeSnapshot = await fetchFromGitHub(`data/v1/team-window-5/${league_id}/${season}/${home_id}.json`);
+    }
+    if (!awaySnapshot) {
+      awaySnapshot = await fetchFromGitHub(`data/v1/team-window-5/${league_id}/${season}/${away_id}.json`);
+    }
 
     const payload = {
       fixture_id: parseInt(fixtureId),
