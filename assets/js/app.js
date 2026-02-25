@@ -171,7 +171,10 @@
     const analysis = m.analysis || {};
 
     return { 
-      fixtureId, home, away, league, season, datetimeUtc, markets, stats,
+      fixtureId,
+      fixture_id: fixtureId,
+      id: fixtureId,
+      home, away, league, season, datetimeUtc, markets, stats,
       gf_home, ga_home, gf_away, ga_away, 
       form_home_details, form_away_details,
       goals_window, form_window,
@@ -349,19 +352,41 @@
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
 
-    const fixtureId = data?.fixture_id || data?.id;
-    if(!fixtureId) return renderStatsTabLegacy(ov, data);
+    const fixtureId = data?.fixture_id || data?.id || data?.fixtureId || data?.fixture;
+    console.log('[MR2][stats] renderStatsTab:start', {
+      fixtureId,
+      home: data?.home?.name || data?.home,
+      away: data?.away?.name || data?.away
+    });
+    if(!fixtureId) {
+      console.warn('[MR2][stats] missing fixture id, using legacy renderer');
+      return renderStatsTabLegacy(ov, data, 'missing_fixture_id');
+    }
 
     panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.loading_stats', 'Carregando estatísticas...')}</div>`;
 
-    fetch(`/api/match-stats?fixture=${encodeURIComponent(fixtureId)}`, { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
+    const apiUrl = `/api/match-stats?fixture=${encodeURIComponent(fixtureId)}`;
+    console.log('[MR2][stats] fetching api', { fixtureId, apiUrl });
+
+    fetch(apiUrl, { cache: 'no-store' })
+      .then(r => {
+        console.log('[MR2][stats] api response', { fixtureId, status: r.status, ok: r.ok });
+        if(!r.ok) throw new Error(`http_${r.status}`);
+        return r.json();
+      })
       .then(api => {
         if(!api || !api.home || !api.away) throw new Error('no_api_payload');
         const homeGames = api.home.games_used || {};
         const awayGames = api.away.games_used || {};
         const hasApiData = Number(homeGames.games_used_total || 0) > 0 || Number(awayGames.games_used_total || 0) > 0;
         if(!hasApiData) throw new Error('api_no_data');
+
+        console.log('[MR2][stats] api payload accepted', {
+          fixtureId,
+          source: api.source || null,
+          homeGames: homeGames.games_used_total || 0,
+          awayGames: awayGames.games_used_total || 0
+        });
 
         const h = api.home.stats?.total_last5 || {};
         const a = api.away.stats?.total_last5 || {};
@@ -395,12 +420,23 @@
           </div>
         `;
       })
-      .catch(() => renderStatsTabLegacy(ov, data));
+      .catch((err) => {
+        console.warn('[MR2][stats] api path failed, using legacy', {
+          fixtureId,
+          error: err?.message || String(err)
+        });
+        renderStatsTabLegacy(ov, data, err?.message || 'api_error');
+      });
   }
 
-  function renderStatsTabLegacy(ov, data){
+  function renderStatsTabLegacy(ov, data, reason){
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
+
+    console.log('[MR2][stats][legacy] start', {
+      fixtureId: data?.fixture_id || data?.id,
+      reason: reason || 'unknown'
+    });
 
     const goalsWindow = data.goals_window || 5;
     const gfHome = data.gf_home;
@@ -414,7 +450,19 @@
     const allGoalsZero = Number(gfHome || 0) === 0 && Number(gaHome || 0) === 0 && Number(gfAway || 0) === 0 && Number(gaAway || 0) === 0;
     const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
 
+    console.log('[MR2][stats][legacy] data check', {
+      fixtureId: data?.fixture_id || data?.id,
+      hasGoalsData,
+      allGoalsZero,
+      formHome: formHomeDetails.length,
+      formAway: formAwayDetails.length
+    });
+
     if((!hasGoalsData && !hasFormData) || (allGoalsZero && !hasFormData)) {
+      console.warn('[MR2][stats][legacy] no stats available', {
+        fixtureId: data?.fixture_id || data?.id,
+        reason: reason || 'legacy_no_data'
+      });
       panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis para este jogo')}</div>`;
       return;
     }
