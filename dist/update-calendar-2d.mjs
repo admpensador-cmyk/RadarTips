@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Update calendar_2d.json from production data worker
- * Fetches latest calendar_7d snapshot and saves locally
+ * Fetches latest calendar_7d snapshot and splits into today/tomorrow (site timezone)
  */
 
 import fs from 'fs';
@@ -14,7 +14,39 @@ const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 
 const CALENDAR_URL = 'https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json';
-const OUTPUT_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
+const OUTPUT_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
+const OUTPUT_7D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_7d.json');
+const TIMEZONE = 'America/Sao_Paulo';
+
+function isoDateOnlyInTimezone(date, timezone) {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const parts = fmt.formatToParts(date);
+  const y = parts.find((p) => p.type === 'year')?.value;
+  const m = parts.find((p) => p.type === 'month')?.value;
+  const d = parts.find((p) => p.type === 'day')?.value;
+  return `${y}-${m}-${d}`;
+}
+
+function addDaysToIsoDate(isoDate, days) {
+  const [y, m, d] = String(isoDate).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+function localDateInTimezone(isoUtc, timezone) {
+  const t = Date.parse(isoUtc || '');
+  if (!Number.isFinite(t)) return null;
+  return isoDateOnlyInTimezone(new Date(t), timezone);
+}
 
 function fetchJSON(url) {
   return new Promise((resolve, reject) => {
@@ -61,17 +93,47 @@ async function main() {
       console.log(`  ${date}: ${count} matches`);
     });
     
-    // Save to file
-    fs.writeFileSync(OUTPUT_PATH, JSON.stringify(calendar, null, 2), 'utf8');
-    console.log(`\n✅ Saved to: ${OUTPUT_PATH}`);
-    
-    // Show first match details
-    const first = calendar.matches[0];
-    console.log(`\n🔍 First match details:`);
-    console.log(`  Home: ${first.home} (ID: ${first.home_id})`);
-    console.log(`  Away: ${first.away} (ID: ${first.away_id})`);
-    console.log(`  Kickoff: ${first.kickoff_utc}`);
-    console.log(`  Stats: gf_home=${first.gf_home}, ga_home=${first.ga_home}, gf_away=${first.gf_away}, ga_away=${first.ga_away}`);
+    const sortedMatches = Array.isArray(calendar.matches) ? [...calendar.matches] : [];
+    sortedMatches.sort((a, b) => (Date.parse(a?.kickoff_utc || '') || 0) - (Date.parse(b?.kickoff_utc || '') || 0));
+
+    const today = isoDateOnlyInTimezone(new Date(), TIMEZONE);
+    const tomorrow = addDaysToIsoDate(today, 1);
+
+    const todayMatches = [];
+    const tomorrowMatches = [];
+    for (const match of sortedMatches) {
+      const ymd = localDateInTimezone(match?.kickoff_utc, TIMEZONE);
+      if (!ymd) continue;
+      if (ymd === today) todayMatches.push(match);
+      else if (ymd === tomorrow) tomorrowMatches.push(match);
+    }
+
+    const calendar2d = {
+      meta: {
+        tz: TIMEZONE,
+        today,
+        tomorrow,
+        generated_at_utc: calendar.generated_at_utc || new Date().toISOString(),
+        form_window: Number(calendar.form_window || 5),
+        goals_window: Number(calendar.goals_window || 5),
+        source: 'calendar_7d'
+      },
+      today: todayMatches,
+      tomorrow: tomorrowMatches
+    };
+
+    fs.writeFileSync(OUTPUT_7D_PATH, JSON.stringify(calendar, null, 2), 'utf8');
+    fs.writeFileSync(OUTPUT_2D_PATH, JSON.stringify(calendar2d, null, 2), 'utf8');
+    console.log(`\n✅ Saved 7d snapshot to: ${OUTPUT_7D_PATH}`);
+    console.log(`✅ Saved 2d snapshot to: ${OUTPUT_2D_PATH}`);
+
+    const firstToday = todayMatches[0];
+    console.log(`\n🔍 First TODAY match details (${today}):`);
+    console.log(`  Home: ${firstToday?.home || '-'} (ID: ${firstToday?.home_id || '-'})`);
+    console.log(`  Away: ${firstToday?.away || '-'} (ID: ${firstToday?.away_id || '-'})`);
+    console.log(`  Kickoff: ${firstToday?.kickoff_utc || '-'}`);
+    console.log(`  Stats: gf_home=${firstToday?.gf_home ?? '-'}, ga_home=${firstToday?.ga_home ?? '-'}, gf_away=${firstToday?.gf_away ?? '-'}, ga_away=${firstToday?.ga_away ?? '-'}`);
+    console.log(`\n📌 2D counts: today=${todayMatches.length}, tomorrow=${tomorrowMatches.length}`);
     
   } catch (err) {
     console.error('❌ Error:', err.message);
