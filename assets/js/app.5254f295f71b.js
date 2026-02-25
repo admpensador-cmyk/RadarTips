@@ -2089,6 +2089,11 @@ window.__CALENDAR_2D_CACHE = { data: null, loadedAt: 0 };
 
 async function loadRadarDay() {
   const radar = await loadV1JSON('radar_day.json', { highlights: [] });
+  console.log('📡 loadRadarDay() returned:', {
+    highlights_count: Array.isArray(radar?.highlights) ? radar.highlights.length : 0,
+    matches_count: Array.isArray(radar?.matches) ? radar.matches.length : 0,
+    raw_highlights: radar?.highlights?.slice(0, 3).map(h => h.home + ' vs ' + h.away) || []
+  });
   RADAR_DAY_DATA = radar;
   return radar;
 }
