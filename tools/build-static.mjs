@@ -53,7 +53,7 @@ async function listHtmlFiles(dir, excludeDirs = new Set()) {
   return out;
 }
 
-async function updateHtmlFiles(htmlFiles, newName) {
+async function updateHtmlFiles(htmlFiles, newName, newCssName) {
   for (const file of htmlFiles) {
     let html = await fs.readFile(file, "utf8");
     if (newName) {
@@ -62,6 +62,11 @@ async function updateHtmlFiles(htmlFiles, newName) {
       const cacheBust = newName.match(/app\.([a-f0-9]{12})\.js/)?.[1]?.slice(0, 8) || Date.now();
       html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/js/${newName}?v=${cacheBust}`);
       html = html.replace(/assets\/js\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/js/${newName}?v=${cacheBust}`);
+    }
+    
+    // Update Match Radar V2 CSS hash reference
+    if (newCssName) {
+      html = html.replace(/assets\/match-radar-v2(\.[a-f0-9]{12})?\.css/g, `assets/${newCssName}`);
     }
 
     // Inject GA4 snippet right after <head>, if missing
@@ -94,9 +99,11 @@ async function main() {
   await copyDir(ROOT, DIST);
 
   // Generate hashed CSS file for match-radar
+  let newCssName = null;
   try {
     const cssResult = await generateMatchRadarCssHash(ROOT);
-    console.log(`[build-static] CSS hash generated: ${cssResult.filename}`);
+    newCssName = cssResult.filename;
+    console.log(`[build-static] CSS hash generated: ${newCssName}`);
   } catch (e) {
     console.warn(`[build-static] Warning: CSS hashing skipped - ${e.message}`);
   }
@@ -174,11 +181,11 @@ async function main() {
   }
 
   const htmlFiles = await listHtmlFiles(DIST);
-  await updateHtmlFiles(htmlFiles, newName);
+  await updateHtmlFiles(htmlFiles, newName, newCssName);
 
   // If Pages is serving repo root, update HTML there too (exclude dist/node_modules/.git)
   const rootHtmlFiles = await listHtmlFiles(ROOT, new Set(["dist", "node_modules", ".git"]));
-  await updateHtmlFiles(rootHtmlFiles, newName);
+  await updateHtmlFiles(rootHtmlFiles, newName, newCssName);
 
   // Ensure hashed bundle exists in root assets/js, then prune old hashes
   if (newName) {
