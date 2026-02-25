@@ -1,8 +1,8 @@
 ﻿{
-    "generated_at_utc":  "2026-02-19T11:53:16.924Z",
+    "generated_at_utc": "2026-02-25T12:00:00.000Z",
     "highlights":  [
                        {
-                           "kickoff_utc":  "2026-02-20T00:00:00.000Z",
+                           "kickoff_utc":  "2026-02-25T00:00:00.000Z",
                            "country":  "Brazil",
                            "competition":  "Copa Do Brasil",
                            "competition_id":  73,
@@ -138,7 +138,7 @@
                                         }
                        },
                        {
-                           "kickoff_utc":  "2026-02-20T08:35:00.000Z",
+                           "kickoff_utc":  "2026-02-25T08:35:00.000Z",
                            "country":  "Australia",
                            "competition":  "A-League",
                            "competition_id":  188,
@@ -282,7 +282,7 @@
                                         }
                        },
                        {
-                           "kickoff_utc":  "2026-02-20T17:30:00.000Z",
+                           "kickoff_utc":  "2026-02-25T17:30:00.000Z",
                            "country":  "Germany",
                            "competition":  "2. Bundesliga",
                            "competition_id":  79,
@@ -412,7 +412,7 @@
                    ],
     "matches":  [
                     {
-                        "kickoff_utc":  "2026-02-20T00:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T00:00:00.000Z",
                         "country":  "Brazil",
                         "competition":  "Copa Do Brasil",
                         "competition_id":  73,
@@ -548,7 +548,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T08:35:00.000Z",
+                        "kickoff_utc":  "2026-02-25T08:35:00.000Z",
                         "country":  "Australia",
                         "competition":  "A-League",
                         "competition_id":  188,
@@ -692,7 +692,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T17:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T17:30:00.000Z",
                         "country":  "Germany",
                         "competition":  "2. Bundesliga",
                         "competition_id":  79,
@@ -820,7 +820,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T17:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T17:30:00.000Z",
                         "country":  "Germany",
                         "competition":  "2. Bundesliga",
                         "competition_id":  79,
@@ -964,7 +964,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:00:00.000Z",
                         "country":  "France",
                         "competition":  "Ligue 2",
                         "competition_id":  62,
@@ -1084,7 +1084,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:00:00.000Z",
                         "country":  "France",
                         "competition":  "Ligue 2",
                         "competition_id":  62,
@@ -1220,7 +1220,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:00:00.000Z",
                         "country":  "France",
                         "competition":  "Ligue 2",
                         "competition_id":  62,
@@ -1348,7 +1348,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:00:00.000Z",
                         "country":  "France",
                         "competition":  "Ligue 2",
                         "competition_id":  62,
@@ -1468,7 +1468,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:00:00.000Z",
                         "country":  "France",
                         "competition":  "Ligue 2",
                         "competition_id":  62,
@@ -1604,7 +1604,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Spain",
                         "competition":  "Segunda DivisiÃ³n",
                         "competition_id":  141,
@@ -1748,7 +1748,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Italy",
                         "competition":  "Serie B",
                         "competition_id":  136,
@@ -1884,7 +1884,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Germany",
                         "competition":  "Bundesliga",
                         "competition_id":  78,
@@ -2004,7 +2004,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Egypt",
                         "competition":  "Premier League",
                         "competition_id":  233,
@@ -2140,7 +2140,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Egypt",
                         "competition":  "Premier League",
                         "competition_id":  233,
@@ -2284,7 +2284,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Egypt",
                         "competition":  "Premier League",
                         "competition_id":  233,
@@ -2420,7 +2420,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:30:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:30:00.000Z",
                         "country":  "Egypt",
                         "competition":  "Premier League",
                         "competition_id":  233,
@@ -2556,7 +2556,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:45:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:45:00.000Z",
                         "country":  "Italy",
                         "competition":  "Serie A",
                         "competition_id":  135,
@@ -2692,7 +2692,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T19:45:00.000Z",
+                        "kickoff_utc":  "2026-02-25T19:45:00.000Z",
                         "country":  "France",
                         "competition":  "Ligue 1",
                         "competition_id":  61,
@@ -2820,7 +2820,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T20:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T20:00:00.000Z",
                         "country":  "England",
                         "competition":  "Championship",
                         "competition_id":  40,
@@ -2940,7 +2940,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T20:00:00.000Z",
+                        "kickoff_utc":  "2026-02-25T20:00:00.000Z",
                         "country":  "Spain",
                         "competition":  "La Liga",
                         "competition_id":  140,
@@ -3084,7 +3084,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T21:45:00.000Z",
+                        "kickoff_utc":  "2026-02-25T21:45:00.000Z",
                         "country":  "Uruguay",
                         "competition":  "Primera DivisiÃ³n - Apertura",
                         "competition_id":  268,
@@ -3204,7 +3204,7 @@
                                      }
                     },
                     {
-                        "kickoff_utc":  "2026-02-20T23:20:00.000Z",
+                        "kickoff_utc":  "2026-02-25T23:20:00.000Z",
                         "country":  "Colombia",
                         "competition":  "Primera A",
                         "competition_id":  239,
@@ -3343,3 +3343,5 @@
     "goals_window":  5,
     "form_window":  5
 }
+
+
