@@ -1,0 +1,51 @@
+name: Generate Snapshots
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify API Key (safe check)
+        run: node -e "console.log('✅ API Key present:', !!process.env.APIFOOTBALL_KEY, 'length:', (process.env.APIFOOTBALL_KEY||'').length)"
+        env:
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+
+      - name: Generate snapshots
+        run: node tools/generate-all-snapshots-v2.mjs
+        env:
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Build manifest
+        run: node tools/build-manifest.mjs
+
+      - name: Verify League 40 Data
+        run: node -e "const m = JSON.parse(require('fs').readFileSync('data/v1/manifest.json')); const e = m.entries.find(x => x.leagueId === 40); console.log('League 40:', e ? `Present (season ${e.season}, standings: ${!!e.standings})` : 'MISSING'); if(e?.standings) console.log('  SeasonSource:', e.standings.seasonSource, ', DataStatus:', e.standings.dataStatus);"
+
+      - name: Smoke test (local)
+        run: node tools/smoke-test-snapshots.mjs
+        env:
+          R2_BASE_URL: https://radartips-data.m2otta-music.workers.dev/v1
+
+      - name: Summary
+        run: |
+          echo "✅ Snapshots generation completed"
+          echo "📋 Manifest: data/v1/manifest.json"
+          echo "🔗 R2 Base: https://radartips-data.m2otta-music.workers.dev/v1"

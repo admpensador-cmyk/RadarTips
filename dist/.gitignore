@@ -16,8 +16,9 @@ data/v1/team-window-5/**
 # Wrangler local config
 .wrangler/
 
-# Build output
-dist/
+# Build output - REMOVED from .gitignore because dist/ MUST stay in sync with source
+# dist/ is now committed to ensure production bundles are always up-to-date
+# (See scripts/verify-bundle-sync.sh for validation)
 
 # Dependencies
 node_modules/
