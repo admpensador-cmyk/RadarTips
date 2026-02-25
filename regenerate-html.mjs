@@ -201,7 +201,7 @@ function generateHtml(lang, page, strings, cssFilename, appJsFilename) {
 `;
 }
 
-// Obter o CSS hashed mais recente
+// Obter o CSS hashed mais recente (Match Radar CSS hash injection)
 const cssFile = await getLatestMatchRadarCssFile(__dirname);
 if (!cssFile) {
   console.error('❌ Erro: arquivo match-radar-v2.*.css não encontrado em assets/');

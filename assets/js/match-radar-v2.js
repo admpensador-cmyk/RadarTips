@@ -59,28 +59,6 @@
     return 1 / prob;
   }
 
-  async function fetchWithFallback(path1, path2){
-    // Only log when page URL or the requested URL explicitly includes ?debug=1
-    const pageDebug = (typeof window !== 'undefined') && (window.location && window.location.search && window.location.search.indexOf('debug=1') !== -1);
-
-    async function tryFetch(url){
-      try{
-        const r = await fetch(url, { cache: 'no-store' });
-        const debugThis = pageDebug || String(url).indexOf('?debug=1') !== -1;
-        if(debugThis) try{ console.log('MRV2 fetch', url, '=>', r.status); }catch(e){}
-        if(r.ok) return await r.json();
-      }catch(e){
-        // swallow network errors; we'll try the fallback
-      }
-      return null;
-    }
-
-    const res1 = await tryFetch(path1);
-    if(res1) return res1;
-    const res2 = await tryFetch(path2);
-    return res2;
-  }
-
   async function getMatchRadarV2Data(fixtureId){
     // 1) try find in CAL_MATCHES
     try{
@@ -89,11 +67,25 @@
       if(found) return normalizeMatch(found);
     }catch(e){/*ignore*/}
 
-    // 2) fetch calendar snapshot
-    const data = await fetchWithFallback('/api/v1/calendar_7d.json','/data/v1/calendar_7d.json');
-    if(!data || !Array.isArray(data.matches)) return null;
-    const found = data.matches.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
-    return found ? normalizeMatch(found) : null;
+    // Do not fetch calendar here (single-request rule)
+    return null;
+  }
+
+  function buildBaseFromMatchStats(fixtureId, matchStats){
+    const homeName = matchStats?.home?.name || '';
+    const awayName = matchStats?.away?.name || '';
+    const homeId = matchStats?.home?.id ?? null;
+    const awayId = matchStats?.away?.id ?? null;
+    return {
+      fixtureId: String(fixtureId || ''),
+      home: { name: homeName || '—', score: null, id: homeId },
+      away: { name: awayName || '—', score: null, id: awayId },
+      league: { id: matchStats?.meta?.league_id ?? null, country: '', name: '' },
+      season: matchStats?.meta?.season ?? null,
+      datetimeUtc: null,
+      markets: [],
+      stats: null
+    };
   }
 
   function normalizeMatch(m){
@@ -157,16 +149,20 @@
   function openMatchRadarV2(fixtureId){
     ensureStyles();
     renderLoadingModal();
-    getMatchRadarV2Data(fixtureId).then(data => {
-      if(!data) return renderEmpty();
-      renderModal(data);
+    Promise.all([
+      getMatchRadarV2Data(fixtureId),
+      fetchMatchStats(fixtureId)
+    ]).then(([baseData, matchStats]) => {
+      if(!matchStats) return renderEmpty();
+      const data = baseData || buildBaseFromMatchStats(fixtureId, matchStats);
+      renderModal(data, matchStats);
     }).catch(()=>renderEmpty());
   }
 
   // modal management
   function renderLoadingModal(){
     removeModal();
-    const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
+    const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
     box.innerHTML = `<div class="mr-v2-head"><div class="mr-v2-title">${t('match_radar.loading', 'Loading...')}</div><button class="mr-v2-close">×</button></div><div class="mr-v2-body">${t('match_radar.loading', 'Carregando...')}</div>`;
     ov.appendChild(box);
@@ -266,9 +262,9 @@
     return `<span class="crest" style="--h:${hue}" aria-hidden="true">${escapeHtml(ini)}</span>`;
   }
 
-  function renderModal(data){
+  function renderModal(data, matchStats){
     removeModal();
-    const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
+    const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
 
     const homeLogo = pickTeamLogo(data, 'home');
@@ -285,7 +281,7 @@
     bindModalClose(ov);
     bindTabs(ov);
     renderMarketsTab(ov, data);
-    renderStatsTab(ov, data);
+    renderStatsTab(ov, data, matchStats);
   }
 
   function bindTabs(ov){
@@ -413,12 +409,12 @@
     return null;
   }
 
-  async function renderStatsTab(ov, data) {
+  async function renderStatsTab(ov, data, matchStatsInput) {
     const panel = ov.querySelector('[data-panel="stats"]');
     if (!panel) return;
 
-    // Fetch the unified match-stats endpoint (single request)
-    const matchStats = await fetchMatchStats(data.fixtureId);
+    // Use provided stats (single request) or fallback to fetch if missing
+    const matchStats = matchStatsInput || await fetchMatchStats(data.fixtureId);
     
     if (!matchStats || !matchStats.home || !matchStats.away) {
       panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Sem dados disponíveis')}</div>`;
@@ -458,17 +454,24 @@
       </div>`;
     }
 
+    function formatBase(meta){
+      if(!meta) return '—/—/—';
+      const total = displayValue(meta.games_used_total ?? '—');
+      const home = displayValue(meta.games_used_home ?? '—');
+      const away = displayValue(meta.games_used_away ?? '—');
+      return `${total}/${home}/${away}`;
+    }
+
     // Build accordion blocks
     const blocks = [
       {
         id: 'goals',
         title: t('match_radar.stats.block_goals', 'Gols'),
-        content: () => {
+        content: (windowKey) => {
           const homeW = homeStats.stats || {};
           const awayW = awayStats.stats || {};
-          const window = 'total_last5'; // Default to total window
-          const homeData = homeW[window] || {};
-          const awayData = awayW[window] || {};
+          const homeData = homeW[windowKey] || {};
+          const awayData = awayW[windowKey] || {};
 
           return `
             <div class="mr-stat-block-content">
@@ -495,12 +498,11 @@
       {
         id: 'cards',
         title: t('match_radar.stats.block_cards', 'Cartões'),
-        content: () => {
+        content: (windowKey) => {
           const homeW = homeStats.stats || {};
           const awayW = awayStats.stats || {};
-          const window = 'total_last5';
-          const homeData = homeW[window] || {};
-          const awayData = awayW[window] || {};
+          const homeData = homeW[windowKey] || {};
+          const awayData = awayW[windowKey] || {};
 
           return `
             <div class="mr-stat-block-content">
@@ -515,12 +517,11 @@
       {
         id: 'corners',
         title: t('match_radar.stats.block_corners', 'Escanteios'),
-        content: () => {
+        content: (windowKey) => {
           const homeW = homeStats.stats || {};
           const awayW = awayStats.stats || {};
-          const window = 'total_last5';
-          const homeData = homeW[window] || {};
-          const awayData = awayW[window] || {};
+          const homeData = homeW[windowKey] || {};
+          const awayData = awayW[windowKey] || {};
 
           return `
             <div class="mr-stat-block-content">
@@ -535,12 +536,11 @@
       {
         id: 'style',
         title: t('match_radar.stats.block_style', 'Estilo de jogo'),
-        content: () => {
+        content: (windowKey) => {
           const homeW = homeStats.stats || {};
           const awayW = awayStats.stats || {};
-          const window = 'total_last5';
-          const homeData = homeW[window] || {};
-          const awayData = awayW[window] || {};
+          const homeData = homeW[windowKey] || {};
+          const awayData = awayW[windowKey] || {};
 
           return `
             <div class="mr-stat-block-content">
@@ -567,12 +567,14 @@
     // Teams base disclosure
     const baseDisclosure = `
       <div class="mr-base-disclosure">
-        <span class="mr-base-home">${t('match_radar.stats.base', 'Base')}: ${homeHasData ? homeGames.games_used_total || 0 : '—'}</span>
-        <span class="mr-base-away">${t('match_radar.stats.base', 'Base')}: ${awayHasData ? awayGames.games_used_total || 0 : '—'}</span>
+        <span class="mr-base-home">${t('match_radar.stats.base', 'Base')} (T/C/F): ${homeHasData ? formatBase(homeGames) : '—/—/—'}</span>
+        <span class="mr-base-away">${t('match_radar.stats.base', 'Base')} (T/C/F): ${awayHasData ? formatBase(awayGames) : '—/—/—'}</span>
       </div>
     `;
 
     // Build accordion HTML
+    const currentWindow = { value: 'total_last5' };
+
     let accordionHtml = windowSelector + baseDisclosure;
     accordionHtml += '<div class="mr-stats-accordion">';
 
@@ -584,7 +586,7 @@
             <span class="mr-accordion-arrow">›</span>
           </div>
           <div class="mr-accordion-content" id="block-${block.id}" aria-hidden="true">
-            ${block.content()}
+            ${block.content(currentWindow.value)}
           </div>
         </div>
       `;
@@ -595,7 +597,12 @@
 
     // Bind accordion logic
     const headers = panel.querySelectorAll('.mr-accordion-header');
-    const currentWindow = { value: 'total_last5' };
+    function updateAccordionForWindow(windowKey){
+      blocks.forEach(block => {
+        const content = panel.querySelector(`#block-${block.id}`);
+        if(content) content.innerHTML = block.content(windowKey);
+      });
+    }
 
     headers.forEach(header => {
       header.addEventListener('click', () => {
@@ -654,9 +661,7 @@
         windowBtns.forEach(b => b.classList.remove('mr-window-btn-active'));
         btn.classList.add('mr-window-btn-active');
         currentWindow.value = btn.getAttribute('data-window');
-        
-        // Re-render accordion content with new window
-        // TODO: Update stats display when window changes
+        updateAccordionForWindow(currentWindow.value);
       });
     });
   }
