@@ -209,7 +209,7 @@
   // modal management
   function renderLoadingModal(){
     removeModal();
-    const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
+    const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
     box.innerHTML = `<div class="mr-v2-head"><div class="mr-v2-title">Loading...</div><button class="mr-v2-close">×</button></div><div class="mr-v2-body">Carregando...</div>`;
     ov.appendChild(box);
@@ -238,7 +238,7 @@
 
   function renderModal(data){
     removeModal();
-    const ov = el('div','mr-v2-overlay'); ov.id = 'mr-v2-overlay';
+    const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
 
     const homeLogo = pickTeamLogo(data, 'home');
@@ -3511,8 +3511,13 @@ async function init(){
   setText("calendar_title", T.day_matches_title || "Jogos do dia");
   setText("calendar_sub", "");
 
-  // Merge all matches for fixture resolution
+  // Merge all matches for fixture resolution (radar + calendar)
+  const radarMatches = [
+    ...(Array.isArray(radar.highlights) ? radar.highlights : []),
+    ...(Array.isArray(radar.matches) ? radar.matches : [])
+  ];
   const allMatches = [
+    ...radarMatches,
     ...cal2d.today,
     ...cal2d.tomorrow
   ];
