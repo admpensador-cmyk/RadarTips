@@ -186,6 +186,7 @@
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
 
   function openMatchRadarV2(fixtureId){
+    console.log('🎯 Match clicked - fixtureId:', fixtureId);
     ensureStyles();
     renderLoadingModal();
     
@@ -193,6 +194,7 @@
     if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
       const ctx = window.__MATCH_CTX__;
       const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
+      console.log('📦 Match data found in context:', data);
       data.radarMeta = ctx.meta;
       window.__MATCH_CTX__ = null;
       renderModal(data);
@@ -344,6 +346,9 @@
   }
 
   function renderStatsTab(ov, data){
+    console.log('📊 Rendering stats for:', data.home, 'vs', data.away);
+    console.log('   Data fields:', { gf_home: data.gf_home, ga_home: data.ga_home, gf_away: data.gf_away, ga_away: data.ga_away });
+    
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
     
@@ -1795,6 +1800,11 @@ function renderStats(match){
 
 
 function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, activeTabType){
+  console.log('📅 renderCalendar called:');
+  console.log('   Today:', todayMatches.length, 'matches');
+  console.log('   Tomorrow:', tomorrowMatches.length, 'matches');
+  console.log('   First today:', todayMatches[0] ? `${todayMatches[0].home} vs ${todayMatches[0].away}` : 'none');
+  
   const root = qs("#calendar");
   if(!root) return;
   root.classList.add("rt-cal-root");
@@ -3500,7 +3510,17 @@ async function init(){
   const radar = await loadRadarDay();
   const cal2d = await loadCalendar2D();
 
+  // DEBUG LOGS
+  console.log('=== RADAR DAY INIT DEBUG ===');
+  console.log('Radar Data:', radar);
+  console.log('Calendar 2D Data:', cal2d);
+  console.log('Radar highlights count:', Array.isArray(radar?.highlights) ? radar.highlights.length : 0);
+  console.log('Radar matches count:', Array.isArray(radar?.matches) ? radar.matches.length : 0);
+  console.log('Calendar today count:', Array.isArray(cal2d?.today) ? cal2d.today.length : 0);
+  console.log('Calendar tomorrow count:', Array.isArray(cal2d?.tomorrow) ? cal2d.tomorrow.length : 0);
+
   if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
+    console.warn('⚠️ Radar data missing or empty');
     const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
     showUpdatingMessage(top);
     return;
@@ -3516,11 +3536,15 @@ async function init(){
     ...(Array.isArray(radar.highlights) ? radar.highlights : []),
     ...(Array.isArray(radar.matches) ? radar.matches : [])
   ];
+  console.log('Radar matches merged:', radarMatches.length);
+  
   const allMatches = [
     ...radarMatches,
     ...cal2d.today,
     ...cal2d.tomorrow
   ];
+  console.log('All matches total:', allMatches.length);
+  console.log('First 3 matches:', allMatches.slice(0, 3).map(m => `${m.home} vs ${m.away}`));
   
   CAL_MATCHES = allMatches;
   CAL_META = {
