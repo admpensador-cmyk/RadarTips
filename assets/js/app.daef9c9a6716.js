@@ -2184,15 +2184,24 @@ async function loadCalendar2D() {
     
     const data = await response.json();
     
-    // If Worker returned valid response but with empty data, fallback to static file
-    if ((!Array.isArray(data.today) || data.today.length === 0) && 
-        (!Array.isArray(data.tomorrow) || data.tomorrow.length === 0)) {
-      console.info('Worker returned empty data, falling back to static calendar file...');
+    // Check if Worker data is stale (dates don't match today)
+    const isWorkerDataStale = () => {
+      if (!Array.isArray(data.today) || data.today.length === 0) return false;
+      const firstMatch = data.today[0];
+      const kickoffDate = firstMatch.kickoff_utc?.substring(0, 10);
+      const today = new Date().toISOString().substring(0, 10);
+      return kickoffDate && kickoffDate < today; // Today's date should not be in the past
+    };
+    
+    // If Worker returned valid response but with stale or empty data, fallback to static file
+    if ((!Array.isArray(data.today) || data.today.length === 0) || isWorkerDataStale()) {
+      console.warn('⚠️ Worker data is stale or empty, falling back to static calendar file');
+      console.log('   Worker first match:', data.today?.[0]?.home, 'vs', data.today?.[0]?.away, '@', data.today?.[0]?.kickoff_utc);
       try {
         const staticFallback = await fetch('/data/v1/calendar_2d.json');
         if (staticFallback.ok) {
           const staticData = await staticFallback.json();
-          console.warn('Using static fallback calendar (Worker had no data)');
+          console.warn('✓ Using fresh static calendar');
           cache.data = staticData;
           cache.loadedAt = now;
           return staticData;
