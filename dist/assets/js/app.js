@@ -35,6 +35,17 @@
     document.head.appendChild(link);
   }
 
+  function ensureStatsV2Css(){
+    try{
+      const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(l => (l.href||'').includes('stats-v2'));
+      if(existing) return;
+    }catch(e){}
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/assets/css/stats-v2.css';
+    document.head.appendChild(link);
+  }
+
   function parseLine(text){
     if(!text) return '—';
     const m = String(text).match(/(-?\d+(?:\.\d+)?)/);
@@ -348,6 +359,124 @@
     panel.innerHTML = `<div class="mr-table-wrap"><table class="mr-table">${headerHtml}<tbody>${rows}</tbody></table></div>`;
   }
 
+  function sv2n(v){ return (v === 0 || v) ? Number(v) : null; }
+  function sv2fmt(v){ return (v === 0 || v) ? String(v) : '—'; }
+
+  function renderStatsV2(api, data){
+    ensureStatsV2Css();
+
+    const homeName = escapeHtml(api?.home?.name || data?.home?.name || data?.home || 'Home');
+    const awayName = escapeHtml(api?.away?.name || data?.away?.name || data?.away || 'Away');
+    const h = api?.home?.stats?.total_last5 || {};
+    const a = api?.away?.stats?.total_last5 || {};
+    const hg = api?.home?.games_used?.games_used_total;
+    const ag = api?.away?.games_used?.games_used_total;
+
+    const metrics = [
+      { k:'Jogos (amostra)', hk:sv2n(hg), ak:sv2n(ag), bar:true },
+      { k:'Gols marcados', hk:sv2n(h.gols_marcados), ak:sv2n(a.gols_marcados), bar:true },
+      { k:'Gols sofridos', hk:sv2n(h.gols_sofridos), ak:sv2n(a.gols_sofridos), bar:true },
+      { k:'Clean sheets', hk:sv2n(h.clean_sheets), ak:sv2n(a.clean_sheets), bar:true },
+      { k:'Falhou em marcar', hk:sv2n(h.falha_marcar), ak:sv2n(a.falha_marcar), bar:true }
+    ];
+
+    const extras = [
+      { k:'Escanteios', hk:sv2n(h.cantos), ak:sv2n(a.cantos), bar:true },
+      { k:'Amarelos', hk:sv2n(h.cartoes_amarelos), ak:sv2n(a.cartoes_amarelos), bar:true },
+      { k:'Vermelhos', hk:sv2n(h.cartoes_vermelhos), ak:sv2n(a.cartoes_vermelhos), bar:true }
+    ].filter(x => x.hk !== null || x.ak !== null);
+
+    const rowHTML = (m) => {
+      const hv = m.hk;
+      const av = m.ak;
+      const max = Math.max(hv || 0, av || 0, 1);
+      const hp = m.bar ? Math.round(((hv || 0) / max) * 100) : 0;
+      const ap = m.bar ? Math.round(((av || 0) / max) * 100) : 0;
+      return `
+        <div class="rt-sv2-row">
+          <div class="rt-sv2-k">${escapeHtml(m.k)}</div>
+          <div style="display:flex; gap:14px; align-items:flex-end;">
+            <div style="min-width:66px; text-align:right;">
+              <div class="rt-sv2-v">${sv2fmt(hv)}</div>
+              ${m.bar ? `<div class="rt-sv2-barwrap"><div class="rt-sv2-bar" style="width:${hp}%"></div></div>` : ''}
+            </div>
+            <div style="min-width:66px; text-align:right;">
+              <div class="rt-sv2-v">${sv2fmt(av)}</div>
+              ${m.bar ? `<div class="rt-sv2-barwrap"><div class="rt-sv2-bar" style="width:${ap}%"></div></div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    const baseRows = metrics.map(rowHTML).join('');
+    const extraRows = extras.length ? extras.map(rowHTML).join('') : '';
+    const trend = (Number(h.gols_marcados || 0) + Number(a.gols_marcados || 0) > 6) ? 'Jogo com cara de gols' : 'Jogo mais travado';
+    const defense = ((Number(h.gols_sofridos || 0) + Number(a.gols_sofridos || 0)) <= 4) ? 'Defesas firmes' : 'Defesas vazando';
+    const note = extras.length === 0
+      ? `<div class="rt-sv2-note">Cantos/Cartões só aparecem quando o snapshot traz esses campos. Por enquanto, exibimos o essencial (gols/defesa/consistência).</div>`
+      : '';
+
+    return `
+      <div class="rt-statsv2">
+        <div class="rt-sv2-header">
+          <span class="rt-sv2-pill">Últimos 5 jogos</span>
+          <span class="rt-sv2-pill">${homeName} vs ${awayName}</span>
+        </div>
+
+        <div class="rt-sv2-grid">
+          <div class="rt-sv2-card">
+            <div class="rt-sv2-card-hd">
+              <div>
+                <div class="rt-sv2-team">${homeName}</div>
+                <div class="rt-sv2-sub">Home</div>
+              </div>
+              <div class="rt-sv2-pill">coluna esquerda</div>
+            </div>
+            <div class="rt-sv2-body">
+              <div class="rt-sv2-section">
+                <div class="rt-sv2-title">Comparativo</div>
+                ${baseRows}
+                ${extraRows ? `<div class="rt-sv2-section"><div class="rt-sv2-title">Extras</div>${extraRows}</div>` : ''}
+                ${note}
+              </div>
+            </div>
+          </div>
+
+          <div class="rt-sv2-card">
+            <div class="rt-sv2-card-hd">
+              <div>
+                <div class="rt-sv2-team">${awayName}</div>
+                <div class="rt-sv2-sub">Away</div>
+              </div>
+              <div class="rt-sv2-pill">coluna direita</div>
+            </div>
+            <div class="rt-sv2-body">
+              <div class="rt-sv2-section">
+                <div class="rt-sv2-title">Leitura rápida</div>
+                <div class="rt-sv2-row">
+                  <div class="rt-sv2-k">Tendência</div>
+                  <div class="rt-sv2-v">${trend}</div>
+                </div>
+                <div class="rt-sv2-row">
+                  <div class="rt-sv2-k">Defesa</div>
+                  <div class="rt-sv2-v">${defense}</div>
+                </div>
+                <div class="rt-sv2-row">
+                  <div class="rt-sv2-k">Clean sheets (H/A)</div>
+                  <div class="rt-sv2-v">${sv2fmt(h.clean_sheets)} / ${sv2fmt(a.clean_sheets)}</div>
+                </div>
+                <div class="rt-sv2-note">
+                  Este layout é o “Stats V2”. Se você ainda ver o antigo, é porque o render antigo da tab não foi substituído.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderStatsTab(ov, data){
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
@@ -388,37 +517,7 @@
           awayGames: awayGames.games_used_total || 0
         });
 
-        const h = api.home.stats?.total_last5 || {};
-        const a = api.away.stats?.total_last5 || {};
-        const show = (v) => (v === null || v === undefined || Number.isNaN(Number(v))) ? '—' : String(v);
-
-        panel.innerHTML = `
-          <div class="mr-stats-container" style="padding:20px;display:grid;gap:12px;">
-            <div style="font-size:.9em;color:#8fa3bf;">${t('match_radar.form_window', 'Últimos {n} jogos').replace('{n}', 5)}</div>
-            <div style="background:#1a1a2e;border:1px solid #2d3a52;border-radius:8px;padding:14px;">
-              <div style="font-weight:700;margin-bottom:8px;">${escapeHtml(api.home.name || data.home?.name || data.home || 'Home')}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.95em;">
-                <div>Jogos: <strong>${show(homeGames.games_used_total)}</strong></div>
-                <div>GF: <strong>${show(h.gols_marcados)}</strong></div>
-                <div>GA: <strong>${show(h.gols_sofridos)}</strong></div>
-                <div>Clean Sheets: <strong>${show(h.clean_sheets)}</strong></div>
-                <div>Falha Marcar: <strong>${show(h.falha_marcar)}</strong></div>
-                <div>Cantos: <strong>${show(h.cantos)}</strong></div>
-              </div>
-            </div>
-            <div style="background:#1a1a2e;border:1px solid #2d3a52;border-radius:8px;padding:14px;">
-              <div style="font-weight:700;margin-bottom:8px;">${escapeHtml(api.away.name || data.away?.name || data.away || 'Away')}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.95em;">
-                <div>Jogos: <strong>${show(awayGames.games_used_total)}</strong></div>
-                <div>GF: <strong>${show(a.gols_marcados)}</strong></div>
-                <div>GA: <strong>${show(a.gols_sofridos)}</strong></div>
-                <div>Clean Sheets: <strong>${show(a.clean_sheets)}</strong></div>
-                <div>Falha Marcar: <strong>${show(a.falha_marcar)}</strong></div>
-                <div>Cantos: <strong>${show(a.cantos)}</strong></div>
-              </div>
-            </div>
-          </div>
-        `;
+        panel.innerHTML = renderStatsV2(api, data);
       })
       .catch((err) => {
         console.warn('[MR2][stats] api path failed, using legacy', {
