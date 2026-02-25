@@ -346,13 +346,62 @@
   }
 
   function renderStatsTab(ov, data){
-    console.log('📊 Rendering stats for:', data.home, 'vs', data.away);
-    console.log('   Data fields:', { gf_home: data.gf_home, ga_home: data.ga_home, gf_away: data.gf_away, ga_away: data.ga_away });
-    
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
-    
-    // Extract fields from match data
+
+    const fixtureId = data?.fixture_id || data?.id;
+    if(!fixtureId) return renderStatsTabLegacy(ov, data);
+
+    panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.loading_stats', 'Carregando estatísticas...')}</div>`;
+
+    fetch(`/api/match-stats?fixture=${encodeURIComponent(fixtureId)}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(api => {
+        if(!api || !api.home || !api.away) throw new Error('no_api_payload');
+        const homeGames = api.home.games_used || {};
+        const awayGames = api.away.games_used || {};
+        const hasApiData = Number(homeGames.games_used_total || 0) > 0 || Number(awayGames.games_used_total || 0) > 0;
+        if(!hasApiData) throw new Error('api_no_data');
+
+        const h = api.home.stats?.total_last5 || {};
+        const a = api.away.stats?.total_last5 || {};
+        const show = (v) => (v === null || v === undefined || Number.isNaN(Number(v))) ? '—' : String(v);
+
+        panel.innerHTML = `
+          <div class="mr-stats-container" style="padding:20px;display:grid;gap:12px;">
+            <div style="font-size:.9em;color:#8fa3bf;">${t('match_radar.form_window', 'Últimos {n} jogos').replace('{n}', 5)}</div>
+            <div style="background:#1a1a2e;border:1px solid #2d3a52;border-radius:8px;padding:14px;">
+              <div style="font-weight:700;margin-bottom:8px;">${escapeHtml(api.home.name || data.home?.name || data.home || 'Home')}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.95em;">
+                <div>Jogos: <strong>${show(homeGames.games_used_total)}</strong></div>
+                <div>GF: <strong>${show(h.gols_marcados)}</strong></div>
+                <div>GA: <strong>${show(h.gols_sofridos)}</strong></div>
+                <div>Clean Sheets: <strong>${show(h.clean_sheets)}</strong></div>
+                <div>Falha Marcar: <strong>${show(h.falha_marcar)}</strong></div>
+                <div>Cantos: <strong>${show(h.cantos)}</strong></div>
+              </div>
+            </div>
+            <div style="background:#1a1a2e;border:1px solid #2d3a52;border-radius:8px;padding:14px;">
+              <div style="font-weight:700;margin-bottom:8px;">${escapeHtml(api.away.name || data.away?.name || data.away || 'Away')}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.95em;">
+                <div>Jogos: <strong>${show(awayGames.games_used_total)}</strong></div>
+                <div>GF: <strong>${show(a.gols_marcados)}</strong></div>
+                <div>GA: <strong>${show(a.gols_sofridos)}</strong></div>
+                <div>Clean Sheets: <strong>${show(a.clean_sheets)}</strong></div>
+                <div>Falha Marcar: <strong>${show(a.falha_marcar)}</strong></div>
+                <div>Cantos: <strong>${show(a.cantos)}</strong></div>
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .catch(() => renderStatsTabLegacy(ov, data));
+  }
+
+  function renderStatsTabLegacy(ov, data){
+    const panel = ov.querySelector('[data-panel="stats"]');
+    if(!panel) return;
+
     const goalsWindow = data.goals_window || 5;
     const gfHome = data.gf_home;
     const gaHome = data.ga_home;
@@ -360,37 +409,29 @@
     const gaAway = data.ga_away;
     const formHomeDetails = Array.isArray(data.form_home_details) ? data.form_home_details : [];
     const formAwayDetails = Array.isArray(data.form_away_details) ? data.form_away_details : [];
-    
-    // Check if we have essential data
+
     const hasGoalsData = (gfHome != null && gaHome != null && gfAway != null && gaAway != null);
     const allGoalsZero = Number(gfHome || 0) === 0 && Number(gaHome || 0) === 0 && Number(gfAway || 0) === 0 && Number(gaAway || 0) === 0;
     const hasFormData = (formHomeDetails.length > 0 || formAwayDetails.length > 0);
-    
+
     if((!hasGoalsData && !hasFormData) || (allGoalsZero && !hasFormData)) {
-      console.warn('⚠️ Missing/enriched stats not available for fixture:', data.fixture_id || data.id);
       panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.no_stats', 'Estatísticas indisponíveis para este jogo')}</div>`;
       return;
     }
-    
+
     const homeName = data.home?.name || data.home || '—';
     const awayName = data.away?.name || data.away || '—';
-    
     let html = `<div class="mr-stats-container" style="padding:20px;">`;
-    
-    // Info header - "Last X matches"
     html += `<div style="font-size:0.9em;color:#888;margin-bottom:15px;">`;
     const lastMatches = `${t('match_radar.form_window', `Últimos ${goalsWindow} jogos`).replace('{n}', goalsWindow)}`;
     html += lastMatches !== 'match_radar.form_window' ? lastMatches : `Últimos ${goalsWindow} jogos`;
     html += `</div>`;
-    
-    // Home team card (continued as before)
     html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;margin-bottom:15px;">`;
     html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(homeName)}</div>`;
     if(hasGoalsData) {
       const avgGF = (gfHome / goalsWindow).toFixed(2);
       const avgGA = (gaHome / goalsWindow).toFixed(2);
       const avgTotal = ((gfHome + gaHome) / goalsWindow).toFixed(2);
-      
       html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.95em;">`;
       html += `<div><span style="color:#999;">${t('match_radar.stats.games', 'Jogos')}:</span> <span style="color:#fff;font-weight:500;">${goalsWindow}</span></div>`;
       html += `<div><span style="color:#999;">${t('match_radar.stats.gf', 'GF')}:</span> <span style="color:#fff;font-weight:500;">${gfHome}</span></div>`;
@@ -400,38 +441,13 @@
       html += `<div><span style="color:#999;">${t('match_radar.stats.avg_total', 'Total médio')}:</span> <span style="color:#fff;font-weight:500;">${avgTotal}</span></div>`;
       html += `</div>`;
     }
-    if(formHomeDetails.length > 0) {
-      const wins = formHomeDetails.filter(f => f.result === 'W').length;
-      const draws = formHomeDetails.filter(f => f.result === 'D').length;
-      const losses = formHomeDetails.filter(f => f.result === 'L').length;
-      html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">${t('match_radar.stats.form', 'Forma')}:</span> `;
-      html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
-      // Add Win boxes
-      for(let i = 0; i < wins; i++) {
-        html += `<div style="width:16px;height:16px;background:#22c55e;border-radius:2px;"></div>`;
-      }
-      // Add Loss boxes
-      for(let i = 0; i < losses; i++) {
-        html += `<div style="width:16px;height:16px;background:#ef4444;border-radius:2px;"></div>`;
-      }
-      // Add Draw boxes
-      for(let i = 0; i < draws; i++) {
-        html += `<div style="width:16px;height:16px;background:#eab308;border-radius:2px;"></div>`;
-      }
-      html += `</div>`;
-      html += `</div>`;
-    }
     html += `</div>`;
-    
-    // Away team card
     html += `<div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:15px;">`;
     html += `<div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;color:#fff;">${escapeHtml(awayName)}</div>`;
     if(hasGoalsData) {
       const avgGF = (gfAway / goalsWindow).toFixed(2);
       const avgGA = (gaAway / goalsWindow).toFixed(2);
       const avgTotal = ((gfAway + gaAway) / goalsWindow).toFixed(2);
-      
       html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.95em;">`;
       html += `<div><span style="color:#999;">${t('match_radar.stats.games', 'Jogos')}:</span> <span style="color:#fff;font-weight:500;">${goalsWindow}</span></div>`;
       html += `<div><span style="color:#999;">${t('match_radar.stats.gf', 'GF')}:</span> <span style="color:#fff;font-weight:500;">${gfAway}</span></div>`;
@@ -441,30 +457,7 @@
       html += `<div><span style="color:#999;">${t('match_radar.stats.avg_total', 'Total médio')}:</span> <span style="color:#fff;font-weight:500;">${avgTotal}</span></div>`;
       html += `</div>`;
     }
-    if(formAwayDetails.length > 0) {
-      const wins = formAwayDetails.filter(f => f.result === 'W').length;
-      const draws = formAwayDetails.filter(f => f.result === 'D').length;
-      const losses = formAwayDetails.filter(f => f.result === 'L').length;
-      html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #444;font-size:0.95em;">`;
-      html += `<span style="color:#999;">${t('match_radar.stats.form', 'Forma')}:</span> `;
-      html += `<div style="display:inline-flex;gap:3px;margin-left:6px;">`;
-      // Add Win boxes
-      for(let i = 0; i < wins; i++) {
-        html += `<div style="width:16px;height:16px;background:#22c55e;border-radius:2px;"></div>`;
-      }
-      // Add Loss boxes
-      for(let i = 0; i < losses; i++) {
-        html += `<div style="width:16px;height:16px;background:#ef4444;border-radius:2px;"></div>`;
-      }
-      // Add Draw boxes
-      for(let i = 0; i < draws; i++) {
-        html += `<div style="width:16px;height:16px;background:#eab308;border-radius:2px;"></div>`;
-      }
-      html += `</div>`;
-      html += `</div>`;
-    }
     html += `</div>`;
-    
     html += `</div>`;
     panel.innerHTML = html;
   }
