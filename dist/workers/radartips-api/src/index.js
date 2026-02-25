@@ -258,7 +258,8 @@ __name(r2GetJson, "r2GetJson");
 // Fallback fetch from GitHub Pages when R2 fails
 async function fetchFromGitHub(path) {
   try {
-    const url = `https://github.com/admpensador-cmyk/RadarTips/raw/main/${path}`;
+    const normalizedPath = String(path || "").replace(/^dist\//, "");
+    const url = `https://radartips.com/${normalizedPath}`;
     const res = await fetch(url, {
       cf: { cacheTtl: 300, cacheEverything: true }
     });
@@ -684,7 +685,7 @@ async function handleMatchStats(env, url) {
   // Check KV cache first (TTL: 12 hours)
   const cacheKey = `matchstats:${fixtureId}`;
   const cached = await kvGetJson(env, cacheKey);
-  if (cached) {
+  if (cached && cached?.meta?.source !== "fallback") {
     debugLog(env, `match-stats cache hit for fixture ${fixtureId}`);
     return jsonResponse(cached);
   }
@@ -693,12 +694,14 @@ async function handleMatchStats(env, url) {
     // Try to load fixture metadata from calendar snapshots
     const calendar7d = await r2GetJson(env, "snapshots/calendar_7d.json");
     const calendarDay = await r2GetJson(env, "snapshots/calendar_day.json");
+    const calendar2d = await r2GetJson(env, "snapshots/calendar_2d.json");
     
     // If R2 fails, try GitHub fallback
-    const cal7d = calendar7d || await fetchFromGitHub("dist/data/v1/calendar_7d.json");
-    const calDay = calendarDay || await fetchFromGitHub("dist/data/v1/calendar_day.json");
+    const cal7d = calendar7d || await fetchFromGitHub("data/v1/calendar_7d.json");
+    const calDay = calendarDay || await fetchFromGitHub("data/v1/calendar_day.json");
+    const cal2d = calendar2d || await fetchFromGitHub("data/v1/calendar_2d.json");
     
-    const calendars = [cal7d, calDay].filter(Boolean);
+    const calendars = [cal7d, calDay, cal2d].filter(Boolean);
     let fixtureData = null;
     
     for (const cal of calendars) {
@@ -717,31 +720,59 @@ async function handleMatchStats(env, url) {
       );
     }
 
-    const { home_id, away_id, league_id, season } = fixtureData;
+    const homeId = Number(fixtureData.home_id);
+    const awayId = Number(fixtureData.away_id);
+    const leagueId = Number(fixtureData.league_id ?? fixtureData.competition_id);
+    const fallbackSeasonFromKickoff = Number(String(fixtureData.kickoff_utc || "").slice(0, 4));
+    const season = Number(fixtureData.season || fallbackSeasonFromKickoff || new Date().getUTCFullYear());
 
     // Try to load team-window-5 snapshots for both teams
-    let homeSnapshot = await r2GetJson(
-      env,
-      `snapshots/team-window-5/${league_id}/${season}/${home_id}.json`
-    );
-    let awaySnapshot = await r2GetJson(
-      env,
-      `snapshots/team-window-5/${league_id}/${season}/${away_id}.json`
-    );
+    const seasonCandidates = [season, season - 1, season + 1].filter((v, i, arr) => Number.isFinite(v) && arr.indexOf(v) === i);
+    const keyCandidatesForTeam = (teamId, seasonValue) => [
+      `snapshots/team-window-5/${leagueId}/${seasonValue}/${teamId}.json`,
+      `team-window-5/${leagueId}/${seasonValue}/${teamId}.json`
+    ];
+
+    let homeSnapshot = null;
+    let awaySnapshot = null;
+
+    for (const seasonValue of seasonCandidates) {
+      if (!homeSnapshot) {
+        for (const key of keyCandidatesForTeam(homeId, seasonValue)) {
+          homeSnapshot = await r2GetJson(env, key);
+          if (homeSnapshot) break;
+        }
+      }
+      if (!awaySnapshot) {
+        for (const key of keyCandidatesForTeam(awayId, seasonValue)) {
+          awaySnapshot = await r2GetJson(env, key);
+          if (awaySnapshot) break;
+        }
+      }
+      if (homeSnapshot && awaySnapshot) break;
+    }
 
     // If R2 fails, try GitHub fallback
     if (!homeSnapshot) {
-      homeSnapshot = await fetchFromGitHub(`data/v1/team-window-5/${league_id}/${season}/${home_id}.json`);
+      for (const seasonValue of seasonCandidates) {
+        homeSnapshot = await fetchFromGitHub(`data/v1/team-window-5/${leagueId}/${seasonValue}/${homeId}.json`);
+        if (homeSnapshot) break;
+      }
     }
     if (!awaySnapshot) {
-      awaySnapshot = await fetchFromGitHub(`data/v1/team-window-5/${league_id}/${season}/${away_id}.json`);
+      for (const seasonValue of seasonCandidates) {
+        awaySnapshot = await fetchFromGitHub(`data/v1/team-window-5/${leagueId}/${seasonValue}/${awayId}.json`);
+        if (awaySnapshot) break;
+      }
     }
+
+    debugLog(env, `handleMatchStats home=${homeId} away=${awayId} league=${leagueId} season=${season}`, { homeSnapshot: !!homeSnapshot, awaySnapshot: !!awaySnapshot });
 
     const payload = {
       fixture_id: parseInt(fixtureId),
       fixture_status: fixtureData.status || "NS",
       home: {
-        id: home_id,
+        id: homeId,
         name: fixtureData.home,
         stats: homeSnapshot?.windows || {
           total_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
@@ -751,7 +782,7 @@ async function handleMatchStats(env, url) {
         games_used: homeSnapshot?.meta || { games_used_total: 0, games_used_home: 0, games_used_away: 0 }
       },
       away: {
-        id: away_id,
+        id: awayId,
         name: fixtureData.away,
         stats: awaySnapshot?.windows || {
           total_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
@@ -763,7 +794,7 @@ async function handleMatchStats(env, url) {
       meta: {
         cached_at: nowIso(),
         source: homeSnapshot || awaySnapshot ? "snapshots" : "fallback",
-        league_id,
+        league_id: leagueId,
         season
       }
     };
