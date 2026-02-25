@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from 'http';
 import { readFile } from 'fs/promises';
+import { statSync } from 'fs';
 import { extname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,6 +25,12 @@ createServer(async (req, res) => {
   let filePath = join(root, req.url === '/' ? '/index.html' : req.url);
   
   try {
+    // Check if it's a directory, and if so, try to serve index.html
+    const stats = statSync(filePath);
+    if (stats.isDirectory()) {
+      filePath = join(filePath, 'index.html');
+    }
+    
     const content = await readFile(filePath);
     const ext = extname(filePath);
     const mimeType = mimeTypes[ext] || 'application/octet-stream';
