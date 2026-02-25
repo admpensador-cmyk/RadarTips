@@ -60,7 +60,8 @@ async function updateHtmlFiles(htmlFiles, newName) {
       // Replace ALL references: assets/app.js AND assets/app.<oldhash>.js
       // Add cache-busting query param based on hash to force CDN/browser refresh
       const cacheBust = newName.match(/app\.([a-f0-9]{12})\.js/)?.[1]?.slice(0, 8) || Date.now();
-      html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/${newName}?v=${cacheBust}`);
+      html = html.replace(/assets\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/js/${newName}?v=${cacheBust}`);
+      html = html.replace(/assets\/js\/app(\.[a-f0-9]{12})?\.js(\?[^"']*)?/g, `assets/js/${newName}?v=${cacheBust}`);
     }
 
     // Inject GA4 snippet right after <head>, if missing
@@ -104,15 +105,16 @@ async function main() {
   const distAssets = path.join(DIST, "assets");
   await ensureDir(distAssets);
 
-  // Try to find an existing hashed app file in dist/assets (app.<hash>.js)
+  // Try to find an existing hashed app file in dist/assets/js (app.<hash>.js)
   // If multiple exist, choose the newest by mtime (deterministic)
-  const filesInDistAssets = await fs.readdir(distAssets).catch(() => []);
+  const distAssetsJs = path.join(distAssets, "js");
+  const filesInDistAssetsJs = await fs.readdir(distAssetsJs).catch(() => []);
   let newName = null;
 
   const candidates = [];
-  for (const f of filesInDistAssets) {
+  for (const f of filesInDistAssetsJs) {
     if (/^app\.[a-f0-9]{12}\.js$/.test(f)) {
-      const fullPath = path.join(distAssets, f);
+      const fullPath = path.join(distAssetsJs, f);
       const stat = await fs.stat(fullPath).catch(() => null);
       if (stat) {
         candidates.push({ name: f, mtime: stat.mtime.getTime() });
@@ -124,19 +126,20 @@ async function main() {
     // Sort by mtime descending, pick newest
     candidates.sort((a, b) => b.mtime - a.mtime);
     newName = candidates[0].name;
-    console.log(`[build-static] Found ${candidates.length} bundle(s) in dist/assets, using newest: ${newName}`);
+    console.log(`[build-static] Found ${candidates.length} bundle(s) in dist/assets/js, using newest: ${newName}`);
   }
 
-  // If not found in dist, try to find in project root `assets/`
+  // If not found in dist, try to find in project root `assets/js`
   if (!newName) {
     const rootAssets = path.join(ROOT, "assets");
-    const filesInRootAssets = await fs.readdir(rootAssets).catch(() => []);
+    const rootAssetsJs = path.join(rootAssets, "js");
+    const filesInRootAssetsJs = await fs.readdir(rootAssetsJs).catch(() => []);
 
     // Find all hashed files in root, choose newest by mtime
     const rootCandidates = [];
-    for (const f of filesInRootAssets) {
+    for (const f of filesInRootAssetsJs) {
       if (/^app\.[a-f0-9]{12}\.js$/.test(f)) {
-        const fullPath = path.join(rootAssets, f);
+        const fullPath = path.join(rootAssetsJs, f);
         const stat = await fs.stat(fullPath).catch(() => null);
         if (stat) {
           rootCandidates.push({ name: f, mtime: stat.mtime.getTime() });
@@ -148,19 +151,19 @@ async function main() {
       // Sort by mtime descending, pick newest
       rootCandidates.sort((a, b) => b.mtime - a.mtime);
       newName = rootCandidates[0].name;
-      console.log(`[build-static] Found ${rootCandidates.length} bundle(s) in assets/, using newest: ${newName}`);
-      await fs.copyFile(path.join(rootAssets, newName), path.join(distAssets, newName));
+      console.log(`[build-static] Found ${rootCandidates.length} bundle(s) in assets/js, using newest: ${newName}`);
+      await fs.copyFile(path.join(rootAssetsJs, newName), path.join(distAssetsJs, newName));
     } else {
-      // Fallback: look for app.js and hash it
-      const plainInRoot = filesInRootAssets.find((f) => f === "app.js");
+      // Fallback: look for assets/js/app.js and hash it
+      const plainInRoot = filesInRootAssetsJs.find((f) => f === "app.js");
       if (plainInRoot) {
-        const srcPath = path.join(rootAssets, plainInRoot);
+        const srcPath = path.join(rootAssetsJs, plainInRoot);
         const appBuf = await fs.readFile(srcPath);
         const hash = sha256Short(appBuf);
         newName = `app.${hash}.js`;
-        const newPath = path.join(distAssets, newName);
+        const newPath = path.join(distAssetsJs, newName);
         await fs.writeFile(newPath, appBuf);
-        console.log(`[build-static] Generated bundle from assets/app.js: ${newName}`);
+        console.log(`[build-static] Generated bundle from assets/js/app.js: ${newName}`);
       }
     }
   }
@@ -177,13 +180,15 @@ async function main() {
   const rootHtmlFiles = await listHtmlFiles(ROOT, new Set(["dist", "node_modules", ".git"]));
   await updateHtmlFiles(rootHtmlFiles, newName);
 
-  // Ensure hashed bundle exists in root assets and prune old hashes
+  // Ensure hashed bundle exists in root assets/js, then prune old hashes
   if (newName) {
     const rootAssets = path.join(ROOT, "assets");
+    const rootAssetsJs = path.join(ROOT, "assets", "js");
     await ensureDir(rootAssets);
-    const distBundlePath = path.join(distAssets, newName);
-    const rootBundlePath = path.join(rootAssets, newName);
-    await fs.copyFile(distBundlePath, rootBundlePath).catch(() => {});
+    await ensureDir(rootAssetsJs);
+    const distBundleJsPath = path.join(distAssetsJs, newName);
+    const rootBundleJsPath = path.join(rootAssetsJs, newName);
+    await fs.copyFile(distBundleJsPath, rootBundleJsPath).catch(() => {});
 
     const pruneOldHashes = async (dir) => {
       const files = await fs.readdir(dir).catch(() => []);
@@ -194,8 +199,8 @@ async function main() {
       }
     };
 
-    await pruneOldHashes(distAssets);
-    await pruneOldHashes(rootAssets);
+    await pruneOldHashes(distAssetsJs);
+    await pruneOldHashes(rootAssetsJs);
   }
 
   console.log("Build complete:", newName);

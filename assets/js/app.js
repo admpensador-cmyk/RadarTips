@@ -615,6 +615,7 @@ async function loadJSON(url, fallback){
 // This enables real-time live updates without triggering Cloudflare Pages builds.
 const V1_API_BASE = "/api/v1";
 const V1_STATIC_BASE = "/data/v1";
+const RADAR_DAY_ENDPOINT = "/api/v1/radar_day.json";
 
 // Snapshots (calendar + radar) must come from the R2 data worker.
 // IMPORTANT: do NOT prefer /api/v1 for these files.
@@ -639,6 +640,7 @@ async function loadV1JSON(file, fallback){
   if(SNAPSHOT_FILES.has(file) || isCompetitionSnapshot(file)){
     if (DEBUG_CAL && file === 'radar_day.json') {
       console.warn('[RADAR] Attempting R2 worker:', `${V1_DATA_BASE}/${file}`);
+      console.warn('[RADAR] API endpoint (not used for snapshots):', RADAR_DAY_ENDPOINT);
     }
     const data = await loadJSON(`${V1_DATA_BASE}/${file}`, null);
     if(data) {
