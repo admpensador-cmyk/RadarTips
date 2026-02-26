@@ -230,7 +230,7 @@
       return;
     }
     
-    // Fallback para legacy behavior
+      // Removido: legacy behavior
     getMatchRadarV2Data(fixtureId).then(data => {
       if(!data) return renderEmpty();
       renderModal(data);
@@ -541,7 +541,7 @@
     });
     if(!fixtureId) {
       console.warn('[MR2][stats] missing fixture id, using legacy renderer');
-      return renderStatsTabLegacy(ov, data, 'missing_fixture_id');
+          // Removido: legacy fallback
     }
 
     panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.loading_stats', 'Carregando estatísticas...')}</div>`;
@@ -570,7 +570,9 @@
         });
 
         statsContainer.innerHTML = renderStatsTable(api);
-        bindStatsAccordion(statsContainer);
+          const statsRoot = document.querySelector('.match-modal-body');
+          statsRoot.innerHTML = renderStatsTable(api);
+          bindStatsAccordion(statsRoot);
 
         const container = panel;
         const root = container.querySelector('.rt-statsv2');
@@ -585,10 +587,7 @@
       })
       .catch((err) => {
         console.warn('[MR2][stats] api path failed, using legacy', {
-          fixtureId,
-          error: err?.message || String(err)
-        });
-        renderStatsTabLegacy(ov, data, err?.message || 'api_error');
+          // Removido: legacy fallback
       });
   }
 
@@ -763,85 +762,7 @@ function fmtDateShortDDMM(date){
   }catch{ return "--/--"; }
 }
 function fmtDateLong(date, lang){
-  try{
-    // Keep weekday in current lang for clarity
-    return new Intl.DateTimeFormat(lang || undefined, {weekday:"long", day:"2-digit", month:"2-digit", year:"numeric"}).format(date);
-  }catch{ return ""; }
-}
-function riskClass(r){
-  const v=(r||"").toLowerCase();
-  if(v==="low") return "low";
-  if(v==="high") return "high";
-  return "med";
-}
-
-function marketRiskClass(r){
-  const v=(r||"").toLowerCase();
-  if(v==="low") return "low";
-  if(v==="med" || v==="medium") return "med";
-  if(v==="volatile") return "high"; // reuse high styling
-  if(v==="high") return "high";
-  return "med";
-}
-
-function marketRiskLabel(r){
-  const v=(r||"").toLowerCase();
-  if(v==="low") return (T.risk_low || "Baixo");
-  if(v==="high") return (T.risk_high || "Alto");
-  if(v==="volatile") return (T.risk_volatile || "Volátil");
-  return (T.risk_med || "Médio");
-}
-
-function fmtPct(x){
-  const n = Number(x);
-  if(!Number.isFinite(n)) return "—";
-  return `${Math.round(n*100)}%`;
-}
-
-// renderMarketsTable is defined later in the file (kept the single implementation there)
-function squareFor(ch){
-  if(ch==="W") return "g";
-  if(ch==="D") return "y";
-  return "r";
-}
-async function loadJSON(url, fallback){
-  try{
-    const isCompSnapshot = /standings_|compstats_/.test(url);
-    if(isCompSnapshot) console.log("[loadJSON] Fetching from:", url);
-    const r = await fetch(url,{cache:"no-store"});
-    if(!r.ok){
-      if(isCompSnapshot) console.log("[loadJSON] Failed, status:", r.status);
-      throw 0;
-    }
-    const data = await r.json();
-    if(isCompSnapshot) console.log("[loadJSON] Success, data keys:", Object.keys(data));
-    return data;
-  }catch(e){ 
-    if(/standings_|compstats_/.test(url)) console.log("[loadJSON] Exception:", e, "url:", url);
-    return fallback; 
-  }
-}
-
-// Prefer Worker API (/api/v1) with automatic fallback to static files (/data/v1).
-// This enables real-time live updates without triggering Cloudflare Pages builds.
-const V1_API_BASE = "/api/v1";
-const V1_STATIC_BASE = "/data/v1";
-const RADAR_DAY_ENDPOINT = "/api/v1/radar_day.json";
-
-// Snapshots (calendar + radar) must come from the R2 data worker.
-// IMPORTANT: do NOT prefer /api/v1 for these files.
-// Debug flag for calendar data loading (set to false in production)
-const DEBUG_CAL = false;
-const RADAR_DEBUG = false;
-window.RADAR_DEBUG = window.RADAR_DEBUG ?? false; // Global guard for inline scripts
-
-// If /api/v1 responds with an older JSON, it will "win" and the UI stays stuck.
-const V1_DATA_BASE = "https://radartips-data.m2otta-music.workers.dev/v1";
-const SNAPSHOT_FILES = new Set(["radar_day.json","calendar_day.json","manifest.json"]);
-
-// Helper to check if a file is a standings or compstats snapshot (pattern matching)
-function isCompetitionSnapshot(filename){
-  if(!filename) return false;
+    // Removido: legacy fallback
   return /^standings_\d+_\d+\.json$/.test(filename) || /^compstats_\d+_\d+\.json$/.test(filename);
 }
 
