@@ -569,8 +569,8 @@
           awayGames: awayGames.games_used_total || 0
         });
 
-        panel.innerHTML = renderStatsTable(api);
-        bindStatsAccordion(panel);
+        statsContainer.innerHTML = renderStatsTable(api);
+        bindStatsAccordion(statsContainer);
 
         const container = panel;
         const root = container.querySelector('.rt-statsv2');
