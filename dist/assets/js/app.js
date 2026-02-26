@@ -359,122 +359,159 @@
     panel.innerHTML = `<div class="mr-table-wrap"><table class="mr-table">${headerHtml}<tbody>${rows}</tbody></table></div>`;
   }
 
-  function sv2n(v){ return (v === 0 || v) ? Number(v) : null; }
-  function sv2fmt(v){ return (v === 0 || v) ? String(v) : '—'; }
+  function safeNum(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
 
-  function renderStatsV2(api, data){
+  function fmt(v) {
+    const n = safeNum(v);
+    return n === null ? "—" : String(n);
+  }
+
+  function pct(a, b) {
+    const A = safeNum(a), B = safeNum(b);
+    if (A === null && B === null) return { l:50, r:50 };
+    const aa = A ?? 0, bb = B ?? 0;
+    const max = Math.max(aa, bb, 1);
+    return { l: Math.round((aa/max)*100), r: Math.round((bb/max)*100) };
+  }
+
+  function classifyTrend(gfA, gaA, gfB, gaB) {
+    const t = (safeNum(gfA)??0)+(safeNum(gaA)??0)+(safeNum(gfB)??0)+(safeNum(gaB)??0);
+    if (t >= 14) return "Jogo com cara de gols";
+    if (t >= 10) return "Tendência de 2+ gols";
+    return "Tendência de poucos gols";
+  }
+
+  function classifyDefense(ga) {
+    const n = safeNum(ga);
+    if (n === null) return "Sem leitura";
+    if (n >= 8) return "Defesa vazando";
+    if (n >= 5) return "Defesa instável";
+    return "Defesa consistente";
+  }
+
+  function renderStatsV2(api, ctx) {
     ensureStatsV2Css();
 
-    const homeName = escapeHtml(api?.home?.name || data?.home?.name || data?.home || 'Home');
-    const awayName = escapeHtml(api?.away?.name || data?.away?.name || data?.away || 'Away');
     const h = api?.home?.stats?.total_last5 || {};
     const a = api?.away?.stats?.total_last5 || {};
-    const hg = api?.home?.games_used?.games_used_total;
-    const ag = api?.away?.games_used?.games_used_total;
 
-    const metrics = [
-      { k:'Jogos (amostra)', hk:sv2n(hg), ak:sv2n(ag), bar:true },
-      { k:'Gols marcados', hk:sv2n(h.gols_marcados), ak:sv2n(a.gols_marcados), bar:true },
-      { k:'Gols sofridos', hk:sv2n(h.gols_sofridos), ak:sv2n(a.gols_sofridos), bar:true },
-      { k:'Clean sheets', hk:sv2n(h.clean_sheets), ak:sv2n(a.clean_sheets), bar:true },
-      { k:'Falhou em marcar', hk:sv2n(h.falha_marcar), ak:sv2n(a.falha_marcar), bar:true }
-    ];
+    const homeName = api?.home?.name || "Home";
+    const awayName = api?.away?.name || "Away";
 
-    const extras = [
-      { k:'Escanteios', hk:sv2n(h.cantos), ak:sv2n(a.cantos), bar:true },
-      { k:'Amarelos', hk:sv2n(h.cartoes_amarelos), ak:sv2n(a.cartoes_amarelos), bar:true },
-      { k:'Vermelhos', hk:sv2n(h.cartoes_vermelhos), ak:sv2n(a.cartoes_vermelhos), bar:true }
-    ].filter(x => x.hk !== null || x.ak !== null);
+    const homeGames = safeNum(api?.home?.games_used?.games_used_total);
+    const awayGames = safeNum(api?.away?.games_used?.games_used_total);
 
-    const rowHTML = (m) => {
-      const hv = m.hk;
-      const av = m.ak;
-      const max = Math.max(hv || 0, av || 0, 1);
-      const hp = m.bar ? Math.round(((hv || 0) / max) * 100) : 0;
-      const ap = m.bar ? Math.round(((av || 0) / max) * 100) : 0;
-      return `
-        <div class="rt-sv2-row">
-          <div class="rt-sv2-k">${escapeHtml(m.k)}</div>
-          <div style="display:flex; gap:14px; align-items:flex-end;">
-            <div style="min-width:66px; text-align:right;">
-              <div class="rt-sv2-v">${sv2fmt(hv)}</div>
-              ${m.bar ? `<div class="rt-sv2-barwrap"><div class="rt-sv2-bar" style="width:${hp}%"></div></div>` : ''}
-            </div>
-            <div style="min-width:66px; text-align:right;">
-              <div class="rt-sv2-v">${sv2fmt(av)}</div>
-              ${m.bar ? `<div class="rt-sv2-barwrap"><div class="rt-sv2-bar" style="width:${ap}%"></div></div>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    };
+    const hGF = safeNum(h.gols_marcados);
+    const hGA = safeNum(h.gols_sofridos);
+    const hCS = safeNum(h.clean_sheets);
+    const hFTS = safeNum(h.falha_marcar);
 
-    const baseRows = metrics.map(rowHTML).join('');
-    const extraRows = extras.length ? extras.map(rowHTML).join('') : '';
-    const trend = (Number(h.gols_marcados || 0) + Number(a.gols_marcados || 0) > 6) ? 'Jogo com cara de gols' : 'Jogo mais travado';
-    const defense = ((Number(h.gols_sofridos || 0) + Number(a.gols_sofridos || 0)) <= 4) ? 'Defesas firmes' : 'Defesas vazando';
-    const note = extras.length === 0
-      ? `<div class="rt-sv2-note">Cantos/Cartões só aparecem quando o snapshot traz esses campos. Por enquanto, exibimos o essencial (gols/defesa/consistência).</div>`
-      : '';
+    const aGF = safeNum(a.gols_marcados);
+    const aGA = safeNum(a.gols_sofridos);
+    const aCS = safeNum(a.clean_sheets);
+    const aFTS = safeNum(a.falha_marcar);
+
+    const trend = classifyTrend(hGF, hGA, aGF, aGA);
+    const defA = classifyDefense(aGA);
+
+    const pGF = pct(hGF, aGF);
+    const pGA = pct(hGA, aGA);
+    const pCS = pct(hCS, aCS);
+    const pFTS = pct(hFTS, aFTS);
+
+    const mode = ctx?.mode || "last5";
 
     return `
-      <div class="rt-statsv2">
-        <div class="rt-sv2-header">
-          <span class="rt-sv2-pill">Últimos 5 jogos</span>
-          <span class="rt-sv2-pill">${homeName} vs ${awayName}</span>
+  <div class="rt-statsv2">
+    <div class="sv2-tabs" role="tablist" aria-label="Stats mode">
+      <div class="sv2-tab ${mode==="last5"?"is-active":""}" data-sv2-mode="last5">Últimos 5 jogos</div>
+      <div class="sv2-tab ${mode==="h2h"?"is-active":""}" data-sv2-mode="h2h">${homeName} vs ${awayName}</div>
+    </div>
+
+    <div class="sv2-grid">
+      <div class="sv2-card">
+        <div class="sv2-card-h">
+          <div>
+            <div class="sv2-team">${homeName}</div>
+            <div class="sv2-sub">Home</div>
+          </div>
+          <div class="sv2-pill">amostra: ${homeGames ?? "—"}</div>
         </div>
 
-        <div class="rt-sv2-grid">
-          <div class="rt-sv2-card">
-            <div class="rt-sv2-card-hd">
-              <div>
-                <div class="rt-sv2-team">${homeName}</div>
-                <div class="rt-sv2-sub">Home</div>
-              </div>
-              <div class="rt-sv2-pill">coluna esquerda</div>
-            </div>
-            <div class="rt-sv2-body">
-              <div class="rt-sv2-section">
-                <div class="rt-sv2-title">Comparativo</div>
-                ${baseRows}
-                ${extraRows ? `<div class="rt-sv2-section"><div class="rt-sv2-title">Extras</div>${extraRows}</div>` : ''}
-                ${note}
-              </div>
-            </div>
+        <div class="sv2-card-b">
+          <div class="sv2-kpis">
+            <div class="sv2-kpi"><div class="k">Jogos</div><div class="v">${fmt(homeGames)}</div><div class="h">usados</div></div>
+            <div class="sv2-kpi"><div class="k">GF</div><div class="v">${fmt(hGF)}</div><div class="h">gols pró</div></div>
+            <div class="sv2-kpi"><div class="k">GA</div><div class="v">${fmt(hGA)}</div><div class="h">gols contra</div></div>
+            <div class="sv2-kpi"><div class="k">CS</div><div class="v">${fmt(hCS)}</div><div class="h">clean sheets</div></div>
+            <div class="sv2-kpi"><div class="k">FTS</div><div class="v">${fmt(hFTS)}</div><div class="h">falhou</div></div>
           </div>
 
-          <div class="rt-sv2-card">
-            <div class="rt-sv2-card-hd">
-              <div>
-                <div class="rt-sv2-team">${awayName}</div>
-                <div class="rt-sv2-sub">Away</div>
-              </div>
-              <div class="rt-sv2-pill">coluna direita</div>
+          <div class="sv2-compare">
+            <div class="sv2-compare-title">Comparativo (Home vs Away)</div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Gols marcados (GF)</div>
+              <div class="sv2-num">${fmt(hGF)}</div>
+              <div class="sv2-bar"><i style="width:${pGF.l}%"></i><b style="width:${pGF.r}%"></b></div>
+              <div class="sv2-num">${fmt(aGF)}</div>
             </div>
-            <div class="rt-sv2-body">
-              <div class="rt-sv2-section">
-                <div class="rt-sv2-title">Leitura rápida</div>
-                <div class="rt-sv2-row">
-                  <div class="rt-sv2-k">Tendência</div>
-                  <div class="rt-sv2-v">${trend}</div>
-                </div>
-                <div class="rt-sv2-row">
-                  <div class="rt-sv2-k">Defesa</div>
-                  <div class="rt-sv2-v">${defense}</div>
-                </div>
-                <div class="rt-sv2-row">
-                  <div class="rt-sv2-k">Clean sheets (H/A)</div>
-                  <div class="rt-sv2-v">${sv2fmt(h.clean_sheets)} / ${sv2fmt(a.clean_sheets)}</div>
-                </div>
-                <div class="rt-sv2-note">
-                  Este layout é o “Stats V2”. Se você ainda ver o antigo, é porque o render antigo da tab não foi substituído.
-                </div>
-              </div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Gols sofridos (GA)</div>
+              <div class="sv2-num">${fmt(hGA)}</div>
+              <div class="sv2-bar"><i style="width:${pGA.l}%"></i><b style="width:${pGA.r}%"></b></div>
+              <div class="sv2-num">${fmt(aGA)}</div>
+            </div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Clean sheets (CS)</div>
+              <div class="sv2-num">${fmt(hCS)}</div>
+              <div class="sv2-bar"><i style="width:${pCS.l}%"></i><b style="width:${pCS.r}%"></b></div>
+              <div class="sv2-num">${fmt(aCS)}</div>
+            </div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Falhou em marcar (FTS)</div>
+              <div class="sv2-num">${fmt(hFTS)}</div>
+              <div class="sv2-bar"><i style="width:${pFTS.l}%"></i><b style="width:${pFTS.r}%"></b></div>
+              <div class="sv2-num">${fmt(aFTS)}</div>
+            </div>
+
+            <div class="sv2-note">
+              Observação: cartões/escanteios só aparecem quando o snapshot traz esses campos. Aqui mostramos o essencial (GF/GA/CS/FTS).
             </div>
           </div>
         </div>
       </div>
-    `;
+
+      <div class="sv2-card">
+        <div class="sv2-card-h">
+          <div>
+            <div class="sv2-team">${awayName}</div>
+            <div class="sv2-sub">Away</div>
+          </div>
+          <div class="sv2-pill">amostra: ${awayGames ?? "—"}</div>
+        </div>
+
+        <div class="sv2-quick">
+          <div class="qtitle">Leitura rápida</div>
+          <div class="sv2-qline"><div class="sv2-qk">Tendência</div><div class="sv2-qv">${trend}</div></div>
+          <div class="sv2-qline"><div class="sv2-qk">Defesa (Away)</div><div class="sv2-qv">${defA}</div></div>
+          <div class="sv2-qline"><div class="sv2-qk">Clean sheets (H/A)</div><div class="sv2-qv">${fmt(hCS)} / ${fmt(aCS)}</div></div>
+
+          <div class="sv2-note">
+            Se algum time vier com “—”, o snapshot ainda não trouxe dados suficientes para essa amostra.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
   }
 
   function renderStatsTab(ov, data){
@@ -518,6 +555,17 @@
         });
 
         panel.innerHTML = renderStatsV2(api, data);
+
+        const container = panel;
+        const root = container.querySelector('.rt-statsv2');
+        if (root) {
+          root.addEventListener('click', (e) => {
+            const el = e.target.closest('[data-sv2-mode]');
+            if (!el) return;
+            const mode = el.getAttribute('data-sv2-mode');
+            container.innerHTML = renderStatsV2(api, { mode });
+          });
+        }
       })
       .catch((err) => {
         console.warn('[MR2][stats] api path failed, using legacy', {

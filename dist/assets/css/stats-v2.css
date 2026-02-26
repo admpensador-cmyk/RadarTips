@@ -1,50 +1,229 @@
-/* Stats V2 */
-.rt-statsv2 { padding: 14px 10px 4px; }
-.rt-statsv2 .rt-sv2-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.rt-statsv2 .rt-sv2-pill { font-size:12px; opacity:.85; padding:6px 10px; border:1px solid rgba(255,255,255,.10); border-radius:999px; background:rgba(255,255,255,.03); }
-.rt-statsv2 .rt-sv2-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-@media (max-width: 720px){ .rt-statsv2 .rt-sv2-grid{ grid-template-columns:1fr; } }
+/* assets/css/stats-v2.css */
+/* Stats V2 Premium (Hybrid) */
 
-.rt-sv2-card {
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 12px;
-  background: rgba(255,255,255,.03);
-  overflow:hidden;
+.rt-statsv2 {
+  padding: 14px 14px 18px;
 }
-.rt-sv2-card .rt-sv2-card-hd{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 12px;
-  border-bottom:1px solid rgba(255,255,255,.08);
+
+.rt-statsv2 .sv2-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.rt-statsv2 .sv2-tab {
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  color: rgba(255,255,255,.82);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rt-statsv2 .sv2-tab.is-active {
+  background: rgba(120,180,255,.14);
+  border-color: rgba(120,180,255,.35);
+  color: rgba(255,255,255,.95);
+}
+
+.rt-statsv2 .sv2-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 860px) {
+  .rt-statsv2 .sv2-grid {
+    grid-template-columns: 1.05fr .9fr;
+    align-items: start;
+  }
+}
+
+.rt-statsv2 .sv2-card {
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.rt-statsv2 .sv2-card-h {
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.rt-statsv2 .sv2-team {
+  font-weight: 700;
+  font-size: 16px;
+  color: rgba(255,255,255,.95);
+  line-height: 1.1;
+}
+
+.rt-statsv2 .sv2-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,.55);
+  margin-top: 2px;
+}
+
+.rt-statsv2 .sv2-pill {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.02);
+  color: rgba(255,255,255,.7);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.rt-statsv2 .sv2-card-b {
+  padding: 12px 14px 14px;
+}
+
+.rt-statsv2 .sv2-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .rt-statsv2 .sv2-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.rt-statsv2 .sv2-kpi {
+  padding: 10px 10px 9px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(0,0,0,.12);
+}
+
+.rt-statsv2 .sv2-kpi .k {
+  font-size: 11px;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 6px;
+}
+
+.rt-statsv2 .sv2-kpi .v {
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(255,255,255,.92);
+  letter-spacing: .2px;
+}
+
+.rt-statsv2 .sv2-kpi .h {
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  margin-top: 4px;
+}
+
+.rt-statsv2 .sv2-compare {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
   background: rgba(0,0,0,.10);
 }
-.rt-sv2-card .rt-sv2-team { font-weight:700; }
-.rt-sv2-card .rt-sv2-sub { font-size:12px; opacity:.75; }
-.rt-sv2-card .rt-sv2-body { padding: 10px 12px 12px; }
 
-.rt-sv2-section { margin-top:10px; }
-.rt-sv2-section:first-child { margin-top:0; }
-.rt-sv2-section .rt-sv2-title{
-  font-size:12px; letter-spacing:.06em; text-transform:uppercase;
-  opacity:.75; margin: 0 0 8px 0;
+.rt-statsv2 .sv2-compare-title {
+  font-size: 12px;
+  letter-spacing: .5px;
+  color: rgba(255,255,255,.60);
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
-.rt-sv2-row{
-  display:flex; justify-content:space-between; align-items:center;
-  gap:10px; padding:8px 0;
-  border-bottom: 1px dashed rgba(255,255,255,.10);
+.rt-statsv2 .sv2-row {
+  display: grid;
+  grid-template-columns: 68px 1fr 68px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px dashed rgba(255,255,255,.08);
 }
-.rt-sv2-row:last-child{ border-bottom:none; padding-bottom:0; }
-.rt-sv2-k{ font-size:13px; opacity:.9; }
-.rt-sv2-v{ font-weight:700; }
 
-.rt-sv2-barwrap{ height:6px; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden; margin-top:6px; }
-.rt-sv2-bar{ height:100%; width:0%; background: rgba(255,255,255,.35); }
+.rt-statsv2 .sv2-row:first-of-type { border-top: none; }
 
-.rt-sv2-note{
-  margin-top:10px;
-  font-size:12px; opacity:.72;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 10px;
+.rt-statsv2 .sv2-label {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+  margin-bottom: 6px;
+}
+
+.rt-statsv2 .sv2-num {
+  font-weight: 800;
+  color: rgba(255,255,255,.88);
+  font-size: 13px;
+}
+
+.rt-statsv2 .sv2-num.is-dim { color: rgba(255,255,255,.45); font-weight: 700; }
+
+.rt-statsv2 .sv2-bar {
+  height: 10px;
+  border-radius: 999px;
+  position: relative;
+  background: rgba(255,255,255,.06);
+  overflow: hidden;
+}
+
+.rt-statsv2 .sv2-bar > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 50%;
+  background: rgba(120,180,255,.42);
+  border-radius: 999px;
+}
+
+.rt-statsv2 .sv2-bar > b {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 50%;
+  background: rgba(255,140,160,.35);
+  border-radius: 999px;
+}
+
+.rt-statsv2 .sv2-quick {
+  padding: 12px 14px 14px;
+}
+
+.rt-statsv2 .sv2-quick .qtitle {
+  font-size: 12px;
+  letter-spacing: .5px;
+  color: rgba(255,255,255,.60);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.rt-statsv2 .sv2-qline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px dashed rgba(255,255,255,.08);
+}
+
+.rt-statsv2 .sv2-qline:first-of-type { border-top: none; }
+
+.rt-statsv2 .sv2-qk {
+  color: rgba(255,255,255,.65);
+  font-size: 13px;
+}
+
+.rt-statsv2 .sv2-qv {
+  color: rgba(255,255,255,.92);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.rt-statsv2 .sv2-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,.55);
   padding: 10px 12px;
-  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(0,0,0,.10);
 }
