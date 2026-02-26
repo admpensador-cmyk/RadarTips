@@ -1,3 +1,5 @@
+﻿
+const FORCE_PLAIN_APP_JS = true; // RadarTips: always use /assets/js/app.js (no hashed bundle)
 
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -214,3 +216,36 @@ async function main() {
 }
 
 main();
+
+
+
+// POSTPROCESS_FORCE_APP_JS
+// After build completes, normalize all dist HTML references to /assets/js/app.js
+try {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+
+  function walk(dir, out = []) {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) walk(p, out);
+      else out.push(p);
+    }
+    return out;
+  }
+
+  const distDir = path.join(process.cwd(), "dist");
+  if (fs.existsSync(distDir)) {
+    const htmls = walk(distDir).filter((f) => f.endsWith(".html"));
+    for (const f of htmls) {
+      let html = fs.readFileSync(f, "utf8");
+      const before = html;
+      html = html
+        .replace(/\/assets\/js\/app\.[a-f0-9]+\.js\?v=[^"' ]*/gi, "/assets/js/app.js")
+        .replace(/\/assets\/js\/app\.[a-f0-9]+\.js/gi, "/assets/js/app.js");
+      if (html !== before) fs.writeFileSync(f, "utf8");
+    }
+  }
+} catch (e) {
+  // no-op
+}
