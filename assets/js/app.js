@@ -36,13 +36,18 @@
   }
 
   function ensureStatsV2Css(){
+    const version = '20260226-2';
+    const href = `/assets/css/stats-v2.css?v=${version}`;
     try{
       const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(l => (l.href||'').includes('stats-v2'));
-      if(existing) return;
+      if(existing){
+        if(!(existing.href || '').includes(`v=${version}`)) existing.href = href;
+        return;
+      }
     }catch(e){}
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/assets/css/stats-v2.css';
+    link.href = href;
     document.head.appendChild(link);
   }
 
