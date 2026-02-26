@@ -51,6 +51,16 @@
     document.head.appendChild(link);
   }
 
+  function ensureStatsTableCss() {
+    const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .find(l => (l.href||'').includes('stats-table'));
+    if (existing) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/assets/css/stats-table.css';
+    document.head.appendChild(link);
+  }
+
   function parseLine(text){
     if(!text) return '—';
     const m = String(text).match(/(-?\d+(?:\.\d+)?)/);
@@ -559,7 +569,8 @@
           awayGames: awayGames.games_used_total || 0
         });
 
-        panel.innerHTML = renderStatsV2(api, data);
+        panel.innerHTML = renderStatsTable(api);
+        bindStatsAccordion(panel);
 
         const container = panel;
         const root = container.querySelector('.rt-statsv2');
