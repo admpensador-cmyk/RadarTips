@@ -3,7 +3,7 @@
  * RadarTips - Update data via API-FOOTBALL (API-SPORTS)
  *
  * Generates:
- *  - data/v1/calendar_7d.json
+ *  - data/v1/calendar_2d.json
  *  - data/v1/radar_day.json
  *  - data/v1/radar_week.json (placeholder, safe)
  *
@@ -22,7 +22,7 @@ import { ApiFootballClient } from "./api-football-client.mjs";
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
-const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
+// const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json"); // Desligado
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 
@@ -756,7 +756,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const sorted = sortByKickoff(matches);
 
-  // Write calendar_7d.json
+  // calendar_7d.json desligado
   const calendarOut = {
     generated_at_utc: nowIso(),
     form_window: formWindow,
@@ -784,7 +784,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
       generated_at_utc: calendarOut.generated_at_utc,
       form_window: formWindow,
       goals_window: goalsWindow,
-      source: "calendar_7d"
+      source: "calendar_2d"
     },
     today: split.todayMatches,
     tomorrow: split.tomorrowMatches

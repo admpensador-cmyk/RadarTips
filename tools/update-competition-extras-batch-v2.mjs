@@ -4,7 +4,7 @@
  * 
  * ARQUITETURA LIMPA:
  * - Usa update-competition-extras-v2.mjs (sem tryNeighbors)
- * - Lê calendar_7d.json e gera standings/stats para todas as ligas
+ * - Lê calendar_2d.json e gera standings/stats para todas as ligas
  * - Season resolution automática via /leagues
  * 
  * Usage:
@@ -60,9 +60,9 @@ function parseArgs() {
   return config;
 }
 
-// Load calendar_7d.json
+// Load calendar_2d.json
 function loadCalendar() {
-  const calendarPath = path.join(ROOT, 'data', 'v1', 'calendar_7d.json');
+  const calendarPath = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
   try {
     const raw = fs.readFileSync(calendarPath, 'utf-8');
     return JSON.parse(raw);
@@ -148,7 +148,7 @@ async function main() {
 
   const pairs = extractLeaguePairs(calendar);
   if (pairs.length === 0) {
-    console.log(`${colors.yellow}⚠️  No league/season pairs found in calendar_7d.json${colors.reset}\n`);
+    console.log(`${colors.yellow}⚠️  No league/season pairs found in calendar_2d.json${colors.reset}\n`);
     process.exit(0);
   }
 

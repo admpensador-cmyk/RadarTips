@@ -3524,6 +3524,9 @@ function injectPatchStyles(){
 
 async function init(){
   LANG = pathLang() || detectLang();
+  // ...existing code...
+}
+window.init = init;
   const dict = await loadJSON(`/i18n/strings.json?v=${I18N_VERSION}`, {});
   T = dict[LANG] || dict.en;
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Quick upload calendar_2d.json to R2 snapshots
- * Converts calendar_2d.json to snapshot format and uploads as calendar_7d.json
+ * Upload calendar_2d.json como fonte única
  */
 
 import fs from 'fs';
@@ -15,7 +15,7 @@ const ROOT = __dirname;
 
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
-const SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'calendar_7d.json');
+const SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'calendar_2d.json');
 
 // Ensure snapshots directory exists
 if (!fs.existsSync(SNAPSHOTS_DIR)) {
@@ -26,7 +26,7 @@ if (!fs.existsSync(SNAPSHOTS_DIR)) {
 // Read calendar_2d.json
 const calendar = JSON.parse(fs.readFileSync(CALENDAR_2D_PATH, 'utf8'));
 
-// Write as calendar_7d.json snapshot
+// Write como calendar_2d.json snapshot
 fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(calendar, null, 2), 'utf8');
 console.log(`✓ Wrote snapshot to: ${SNAPSHOT_PATH}`);
 
@@ -43,7 +43,7 @@ const wranglerArgs = [
   'r2',
   'object',
   'upload',
-  'radartips-data/snapshots/calendar_7d.json',
+  'radartips-data/snapshots/calendar_2d.json',
   SNAPSHOT_PATH,
   '--account-id=' + (process.env.CLOUDFLARE_ACCOUNT_ID || 'SET_ME'),
 ];
@@ -57,8 +57,8 @@ const proc = spawn('wrangler', wranglerArgs, {
 proc.on('close', (code) => {
   if (code === 0) {
     console.log(`\n✅ Calendar snapshot uploaded to R2!`);
-    console.log(`   Path: snapshots/calendar_7d.json`);
-    console.log(`   Should be live at: https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json`);
+    console.log(`   Path: snapshots/calendar_2d.json`);
+    console.log(`   Should be live at: https://radartips-data.m2otta-music.workers.dev/v1/calendar_2d.json`);
     console.log(`   (may take 10-30 seconds to propagate via CDN)`);
   } else {
     console.error(`\n❌ Upload failed with code ${code}`);

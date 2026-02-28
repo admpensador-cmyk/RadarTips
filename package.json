@@ -6,7 +6,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node tools/build.mjs",
+    "build": "node tools/build-static.mjs && npm run verify",
+    "verify": "node tools/verify-js.mjs",
+    "predeploy": "node -c assets/js/app.js && npm run build && node -c dist/assets/js/app.js",
     "build:static": "node tools/build-static.mjs",
     "build:hash": "node tools/hash-js.mjs",
     "rebuild": "rm -f assets/js/app.*.js && npm run build:static",

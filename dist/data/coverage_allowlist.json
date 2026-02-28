@@ -1,6 +1,14 @@
 {
-  "generated_at": "2026-02-28T15:30:43.093Z",
+  "generated_at": "2026-02-28T15:50:30.978Z",
   "leagues": [
+    {
+      "region": "Africa",
+      "country": "South Africa",
+      "league_id": 197,
+      "display_name": "Premier Division",
+      "type": "league",
+      "tier": 1
+    },
     {
       "region": "Asia",
       "country": "Japan",
@@ -16,6 +24,14 @@
       "display_name": "J2 League",
       "type": "League",
       "tier": 2
+    },
+    {
+      "region": "Asia",
+      "country": "Saudi Arabia",
+      "league_id": 307,
+      "display_name": "Saudi Pro League",
+      "type": "league",
+      "tier": 1
     },
     {
       "region": "Europe",
@@ -119,6 +135,14 @@
       "league_id": 128,
       "display_name": "Primera División",
       "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 602,
+      "display_name": "Campeonato Baiano",
+      "type": "league",
       "tier": 1
     },
     {

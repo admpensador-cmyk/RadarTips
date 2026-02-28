@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Update calendar_2d.json from production data worker
- * Fetches latest calendar_7d snapshot and splits into today/tomorrow (site timezone)
+ * Gera calendar_2d.json a partir da allowlist e dados permitidos
  */
 
 import fs from 'fs';
@@ -13,9 +13,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 
-const CALENDAR_URL = 'https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json';
+// const CALENDAR_URL = 'https://radartips-data.m2otta-music.workers.dev/v1/calendar_2d.json'; // Desligado
 const OUTPUT_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
-const OUTPUT_7D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_7d.json');
+// const OUTPUT_7D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_7d.json'); // Desligado
 const TIMEZONE = 'America/Sao_Paulo';
 
 function isoDateOnlyInTimezone(date, timezone) {
@@ -116,7 +116,7 @@ async function main() {
         generated_at_utc: calendar.generated_at_utc || new Date().toISOString(),
         form_window: Number(calendar.form_window || 5),
         goals_window: Number(calendar.goals_window || 5),
-        source: 'calendar_7d'
+        source: 'calendar_2d'
       },
       today: todayMatches,
       tomorrow: tomorrowMatches
