@@ -1,11 +1,11 @@
 // ========================================
 /** Feature flags (safe defaults) */
 window.__FLAGS__ = window.__FLAGS__ || {};
-if (typeof window.__FLAGS__.statsV2 !== "boolean") window.__FLAGS__.statsV2 = false;
+if (typeof window.__FLAGS__.statsV2 !== "boolean") window.__FLAGS__.statsV2 = true;
 
-// Enable only for testing: ?stats=1
 try {
   const qs = new URLSearchParams(location.search);
+  if (qs.get("stats") === "0") window.__FLAGS__.statsV2 = false;
   if (qs.get("stats") === "1") window.__FLAGS__.statsV2 = true;
 } catch (_) {}
 // Match Radar V2 (inlined from match-radar-v2.js)
@@ -337,7 +337,7 @@ try {
     if (!rootEl) return;
 
     if (!window.__FLAGS__ || window.__FLAGS__.statsV2 !== true) {
-      renderStatsFallback(rootEl, "Estatísticas em testes (habilite com ?stats=1)");
+      rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Estatísticas temporariamente indisponíveis.</div>`;
       return;
     }
 
@@ -346,14 +346,14 @@ try {
     try {
       await loadStatsV2Once();
       if (typeof window.renderStatsTab !== "function") {
-        renderStatsFallback(rootEl, "Módulo carregou, mas renderStatsTab não foi encontrado");
+        rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Módulo carregou, mas renderStatsTab não foi encontrado</div>`;
         return;
       }
       // Important: renderStatsTab deve controlar seu próprio loading interno
       window.renderStatsTab(rootEl, fixtureId);
     } catch (e) {
       console.error("[statsV2] openStatsTabSafe failed", e);
-      renderStatsFallback(rootEl, "Falha ao carregar estatísticas");
+      rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Falha ao carregar estatísticas</div>`;
     }
   }
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
