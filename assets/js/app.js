@@ -1,3 +1,4 @@
+})();
 // ========================================
 // Match Radar V2 (inlined from match-radar-v2.js)
 // ========================================
@@ -586,10 +587,8 @@
         }
       })
       .catch((err) => {
-        console.warn('[MR2][stats] api path failed, using legacy', {
-          // Removido: legacy fallback
+        console.warn('[MR2][stats] api path failed, using legacy');
       });
-  }
 
   function renderStatsTabLegacy(ov, data, reason){
     const panel = ov.querySelector('[data-panel="stats"]');
@@ -684,7 +683,6 @@
   window.openMatchRadarV2 = openMatchRadarV2;
   window.getMatchRadarV2Data = getMatchRadarV2Data;
 
-})();
 // ========================================
 // End Match Radar V2
 // ========================================
@@ -3792,4 +3790,5 @@ async function init(){
   startLivePolling(T);
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => init());
+})();

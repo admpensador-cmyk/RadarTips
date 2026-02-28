@@ -1,3 +1,4 @@
+})();
 // ========================================
 // Match Radar V2 (inlined from match-radar-v2.js)
 // ========================================
@@ -682,7 +683,6 @@
   window.openMatchRadarV2 = openMatchRadarV2;
   window.getMatchRadarV2Data = getMatchRadarV2Data;
 
-})();
 // ========================================
 // End Match Radar V2
 // ========================================
@@ -3791,3 +3791,4 @@ async function init(){
 }
 
 document.addEventListener("DOMContentLoaded", () => init());
+})();
