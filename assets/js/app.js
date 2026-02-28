@@ -1,13 +1,4 @@
 // ========================================
-/** Feature flags (safe defaults) */
-window.__FLAGS__ = window.__FLAGS__ || {};
-if (typeof window.__FLAGS__.statsV2 !== "boolean") window.__FLAGS__.statsV2 = true;
-
-try {
-  const qs = new URLSearchParams(location.search);
-  if (qs.get("stats") === "0") window.__FLAGS__.statsV2 = false;
-  if (qs.get("stats") === "1") window.__FLAGS__.statsV2 = true;
-} catch (_) {}
 // Match Radar V2 (inlined from match-radar-v2.js)
 // ========================================
 // Match Radar V2 (isolated module)
@@ -77,50 +68,6 @@ try {
   }
 
   // Clamp probability to (0, 1)
-  // === Loader seguro para Estatísticas V2 ===
-  let _statsV2Loaded = false;
-  function loadStatsV2Once() {
-    return new Promise((resolve) => {
-      if (_statsV2Loaded && (window.renderStatsTab || (window.MatchRadarV2 && window.MatchRadarV2.renderStatsTab))) {
-        return resolve(window.renderStatsTab || (window.MatchRadarV2 && window.MatchRadarV2.renderStatsTab));
-      }
-      // CSS
-      if (!document.getElementById('mr-v2-style-loaded')) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/assets/css/match-radar-v2.css';
-        link.id = 'mr-v2-style-loaded';
-        document.head.appendChild(link);
-      }
-      // JS
-      if (!document.getElementById('mr-v2-script-loaded')) {
-        const script = document.createElement('script');
-        script.src = '/assets/js/match-radar-v2.js';
-        script.id = 'mr-v2-script-loaded';
-        script.async = true;
-        script.onerror = () => { resolve(null); };
-        script.onload = () => {
-          _statsV2Loaded = true;
-          resolve(window.renderStatsTab || (window.MatchRadarV2 && window.MatchRadarV2.renderStatsTab) || null);
-        };
-        document.body.appendChild(script);
-      } else {
-        // Já existe, aguardar global
-        let tries = 0;
-        const check = () => {
-          if (window.renderStatsTab || (window.MatchRadarV2 && window.MatchRadarV2.renderStatsTab)) {
-            _statsV2Loaded = true;
-            resolve(window.renderStatsTab || (window.MatchRadarV2 && window.MatchRadarV2.renderStatsTab));
-          } else if (++tries > 20) {
-            resolve(null);
-          } else {
-            setTimeout(check, 100);
-          }
-        };
-        check();
-      }
-    });
-  }
   function clampProb(p){
     const num = Number(p);
     if(isNaN(num)) return 0.5;
@@ -265,97 +212,6 @@ try {
   }
 
   // Simple DOM helpers
-  // === Helpers para Estatísticas V2 ===
-  let __statsV2Promise = null;
-
-  function loadStatsV2Once() {
-    if (__statsV2Promise) return __statsV2Promise;
-
-    __statsV2Promise = new Promise((resolve, reject) => {
-      // CSS
-      try {
-        const cssHref = "/assets/css/match-radar-v2.css";
-        const hasCss = [...document.querySelectorAll('link[rel="stylesheet"]')]
-          .some(l => (l.getAttribute("href") || "").includes("match-radar-v2.css"));
-        if (!hasCss) {
-          const link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = cssHref;
-          document.head.appendChild(link);
-        }
-      } catch (_) {}
-
-      // JS
-      const jsSrc = "/assets/js/match-radar-v2.js";
-      const hasScript = [...document.querySelectorAll("script")]
-        .some(s => (s.getAttribute("src") || "").includes("match-radar-v2.js"));
-
-      if (hasScript && typeof window.renderStatsTab === "function") {
-        resolve(true);
-        return;
-      }
-
-      const s = document.createElement("script");
-      s.src = jsSrc;
-      s.async = true;
-      s.onload = () => {
-        if (typeof window.renderStatsTab === "function") resolve(true);
-        else reject(new Error("renderStatsTab_not_found"));
-      };
-      s.onerror = () => reject(new Error("match-radar-v2_load_failed"));
-      document.head.appendChild(s);
-    });
-
-    // Never keep a permanently failing promise
-    __statsV2Promise.catch(() => { __statsV2Promise = null; });
-
-    return __statsV2Promise;
-  }
-
-  function renderStatsFallback(rootEl, msg) {
-    if (!rootEl) return;
-    rootEl.innerHTML = `
-      <div style="padding:12px; text-align:center;">
-        <div style="opacity:.9; margin-bottom:10px;">${msg || "Estatísticas indisponíveis agora"}</div>
-        <button data-stats-retry style="padding:8px 12px; border-radius:8px; border:0; cursor:pointer;">Tentar novamente</button>
-      </div>
-    `;
-    const btn = rootEl.querySelector("[data-stats-retry]");
-    if (btn) btn.onclick = async () => {
-      try {
-        await loadStatsV2Once();
-        // quem chamou deve re-renderizar; aqui só remove fallback visual
-        rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Carregando...</div>`;
-      } catch (e) {
-        renderStatsFallback(rootEl, "Falha ao carregar módulo de estatísticas");
-        console.error("[statsV2] retry failed", e);
-      }
-    };
-  }
-
-  async function openStatsTabSafe(rootEl, fixtureId) {
-    if (!rootEl) return;
-
-    if (!window.__FLAGS__ || window.__FLAGS__.statsV2 !== true) {
-      rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Estatísticas temporariamente indisponíveis.</div>`;
-      return;
-    }
-
-    rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Carregando estatísticas...</div>`;
-
-    try {
-      await loadStatsV2Once();
-      if (typeof window.renderStatsTab !== "function") {
-        rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Módulo carregou, mas renderStatsTab não foi encontrado</div>`;
-        return;
-      }
-      // Important: renderStatsTab deve controlar seu próprio loading interno
-      window.renderStatsTab(rootEl, fixtureId);
-    } catch (e) {
-      console.error("[statsV2] openStatsTabSafe failed", e);
-      rootEl.innerHTML = `<div style="padding:12px; text-align:center;">Falha ao carregar estatísticas</div>`;
-    }
-  }
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
 
   function openMatchRadarV2(fixtureId){
@@ -434,20 +290,14 @@ try {
   }
 
   function bindTabs(ov){
-  ov.querySelectorAll('.mr-v2-tab').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      ov.querySelectorAll('.mr-v2-tab').forEach(b=>b.classList.remove('mr-v2-tab-active'));
-      btn.classList.add('mr-v2-tab-active');
-      const t = btn.getAttribute('data-tab');
-      ov.querySelectorAll('.mr-v2-tabpanel').forEach(p=>{ p.style.display = (p.getAttribute('data-panel')===t)?'block':'none'; });
-      // Handler para aba Estatísticas
-      if (t === 'stats') {
-        const panel = ov.querySelector('[data-panel="stats"]');
-        const fixtureId = ov.__fixtureId || null;
-        await openStatsTabSafe(panel, fixtureId);
-      }
+    ov.querySelectorAll('.mr-v2-tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        ov.querySelectorAll('.mr-v2-tab').forEach(b=>b.classList.remove('mr-v2-tab-active'));
+        btn.classList.add('mr-v2-tab-active');
+        const t = btn.getAttribute('data-tab');
+        ov.querySelectorAll('.mr-v2-tabpanel').forEach(p=>{ p.style.display = (p.getAttribute('data-panel')===t)?'block':'none'; });
+      });
     });
-  });
   }
 
   const REASON_KEY_MAP = {
