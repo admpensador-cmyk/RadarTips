@@ -1,3 +1,4 @@
+window.renderStatsTab = renderStatsTab;
 // Match Radar V2 (isolated module)
 (function(){
   // Minimal, self-contained Match Radar V2 with professional odds/risk calculations
@@ -386,7 +387,7 @@
     if (val === null || val === undefined) return '—';
     const num = Number(val);
     if (isNaN(num)) return '—';
-    return num.toFixed(1) + '%';
+    return Math.round(num) + '%';
   }
 
   // Render stats from new team-window-5 endpoint
@@ -462,6 +463,63 @@
       return `${total}/${home}/${away}`;
     }
 
+    // PT-BR labels e ordem fixa por bloco
+    const GOALS_LABELS = [
+      { key: 'gols_marcados', label: 'Gols marcados', fmt: 'int' },
+      { key: 'gols_sofridos', label: 'Gols sofridos', fmt: 'int' },
+      { key: 'clean_sheets', label: 'Clean Sheets', fmt: 'int' },
+      { key: 'falha_marcar', label: 'Falha em marcar', fmt: 'int' }
+    ];
+    const CARDS_LABELS = [
+      { key: 'cartoes_amarelos', label: 'Cartões amarelos', fmt: 'int' }
+    ];
+    const CORNERS_LABELS = [
+      { key: 'cantos', label: 'Cantos', fmt: 'int' }
+    ];
+    const STYLE_LABELS = [
+      { key: 'posse_pct', label: 'Posse (%)', fmt: 'pct' }
+    ];
+
+    function renderBlockRows(labels, homeData, awayData) {
+      return labels.map(({key, label, fmt}) => {
+        let hVal = homeData[key];
+        let aVal = awayData[key];
+        if(fmt === 'pct') {
+          hVal = formatPct(hVal);
+          aVal = formatPct(aVal);
+        } else if(fmt === 'int') {
+          hVal = formatInt(hVal);
+          aVal = formatInt(aVal);
+        } else if(fmt === 'float') {
+          hVal = formatFloat(hVal);
+          aVal = formatFloat(aVal);
+        }
+        return `<div class="mr-stat-comp-row">
+          <div class="mr-comp-home">${escapeHtml(hVal ?? '—')}</div>
+          <div class="mr-comp-label">${escapeHtml(label)}</div>
+          <div class="mr-comp-away">${escapeHtml(aVal ?? '—')}</div>
+        </div>`;
+      }).join('');
+    }
+    function formatInt(val) {
+      if(val === null || val === undefined) return '—';
+      const num = Number(val);
+      if(isNaN(num)) return '—';
+      return Math.round(num).toString();
+    }
+    function formatFloat(val) {
+      if(val === null || val === undefined) return '—';
+      const num = Number(val);
+      if(isNaN(num)) return '—';
+      return num.toFixed(1);
+    }
+    function formatPct(val) {
+      if(val === null || val === undefined) return '—';
+      const num = Number(val);
+      if(isNaN(num)) return '—';
+      return Math.round(num) + '%';
+    }
+
     // Build accordion blocks
     const blocks = [
       {
@@ -472,27 +530,7 @@
           const awayW = awayStats.stats || {};
           const homeData = homeW[windowKey] || {};
           const awayData = awayW[windowKey] || {};
-
-          return `
-            <div class="mr-stat-block-content">
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.goals_for', 'Gols marcados')}</div>
-                ${renderComparisonRow('', homeData.gols_marcados, awayData.gols_marcados)}
-              </div>
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.goals_against', 'Gols sofridos')}</div>
-                ${renderComparisonRow('', homeData.gols_sofridos, awayData.gols_sofridos)}
-              </div>
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.clean_sheets', 'Clean Sheets')}</div>
-                ${renderComparisonRow('', homeData.clean_sheets, awayData.clean_sheets)}
-              </div>
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.failed_to_score', 'Falha em marcar')}</div>
-                ${renderComparisonRow('', homeData.falha_marcar, awayData.falha_marcar)}
-              </div>
-            </div>
-          `;
+          return `<div class="mr-stat-block-content">${renderBlockRows(GOALS_LABELS, homeData, awayData)}</div>`;
         }
       },
       {
@@ -503,15 +541,7 @@
           const awayW = awayStats.stats || {};
           const homeData = homeW[windowKey] || {};
           const awayData = awayW[windowKey] || {};
-
-          return `
-            <div class="mr-stat-block-content">
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.yellow_cards', 'Cartões amarelos')}</div>
-                ${renderComparisonRow('', homeData.cartoes_amarelos, awayData.cartoes_amarelos)}
-              </div>
-            </div>
-          `;
+          return `<div class="mr-stat-block-content">${renderBlockRows(CARDS_LABELS, homeData, awayData)}</div>`;
         }
       },
       {
@@ -522,15 +552,7 @@
           const awayW = awayStats.stats || {};
           const homeData = homeW[windowKey] || {};
           const awayData = awayW[windowKey] || {};
-
-          return `
-            <div class="mr-stat-block-content">
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.corners', 'Cantos')}</div>
-                ${renderComparisonRow('', homeData.cantos, awayData.cantos)}
-              </div>
-            </div>
-          `;
+          return `<div class="mr-stat-block-content">${renderBlockRows(CORNERS_LABELS, homeData, awayData)}</div>`;
         }
       },
       {
@@ -541,28 +563,27 @@
           const awayW = awayStats.stats || {};
           const homeData = homeW[windowKey] || {};
           const awayData = awayW[windowKey] || {};
-
-          return `
-            <div class="mr-stat-block-content">
-              <div class="mr-stat-metric">
-                <div class="mr-metric-label">${t('match_radar.stats.possession', 'Posse (%)')}</div>
-                ${renderComparisonRow('', formatPct(homeData.posse_pct), formatPct(awayData.posse_pct))}
-              </div>
-            </div>
-          `;
+          return `<div class="mr-stat-block-content">${renderBlockRows(STYLE_LABELS, homeData, awayData)}</div>`;
         }
       }
     ];
 
-    // Window selector
-    const windowSelector = `
-      <div class="mr-window-selector">
-        <div class="mr-window-label">${t('match_radar.stats.window', 'Janela')}:</div>
-        <button class="mr-window-btn mr-window-btn-active" data-window="total_last5">${t('match_radar.stats.window_total', 'Total')}</button>
-        <button class="mr-window-btn" data-window="home_last5">${t('match_radar.stats.window_home', 'Casa')}</button>
-        <button class="mr-window-btn" data-window="away_last5">${t('match_radar.stats.window_away', 'Fora')}</button>
-      </div>
-    `;
+    // Window selector buttons
+    const windowBtns = panel.querySelectorAll('.mr-window-btn');
+    windowBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        windowBtns.forEach(b => b.classList.remove('mr-window-btn-active'));
+        btn.classList.add('mr-window-btn-active');
+        const mode = btn.getAttribute('data-window');
+        // Garante que windowKey é total_last5, home_last5, away_last5
+        let windowKey = mode;
+        if(windowKey === 'total' || windowKey === 'home' || windowKey === 'away') {
+          windowKey = `${windowKey}_last5`;
+        }
+        currentWindow.value = windowKey;
+        updateAccordionForWindow(currentWindow.value);
+      });
+    });
 
     // Teams base disclosure
     const baseDisclosure = `
@@ -575,23 +596,31 @@
     // Build accordion HTML
     const currentWindow = { value: 'total_last5' };
 
-    let accordionHtml = windowSelector + baseDisclosure;
-    accordionHtml += '<div class="mr-stats-accordion">';
+    // Helper to get base for current window
+    function getBaseForTeam(teamStats, windowKey) {
+      const winStats = teamStats.windows?.[windowKey] || {};
+      return winStats.base !== undefined && winStats.base !== null ? winStats.base : '—';
+    }
 
+    let accordionHtml = windowSelector;
+    accordionHtml += `<div class="mr-base-disclosure">
+      <span class="mr-base-home">${t('match_radar.stats.base', 'Base')}: <span class="mr-base-val" data-base-home></span></span>
+      <span class="mr-base-away">${t('match_radar.stats.base', 'Base')}: <span class="mr-base-val" data-base-away></span></span>
+    </div>`;
+    accordionHtml += '<div class="mr-stats-accordion">';
     blocks.forEach((block, idx) => {
       accordionHtml += `
-        <div class="mr-accordion-block">
+        <div class="mr-v2-acc-block mr-accordion-block" data-block-id="${block.id}">
           <div class="mr-accordion-header" data-block-id="${block.id}" role="button" tabindex="0" aria-expanded="false" aria-controls="block-${block.id}">
             <span class="mr-accordion-title">${escapeHtml(block.title)}</span>
             <span class="mr-accordion-arrow">›</span>
           </div>
-          <div class="mr-accordion-content" id="block-${block.id}" aria-hidden="true">
+          <div class="mr-v2-acc-body mr-accordion-content" id="block-${block.id}" aria-hidden="true">
             ${block.content(currentWindow.value)}
           </div>
         </div>
       `;
     });
-
     accordionHtml += '</div>';
     panel.innerHTML = accordionHtml;
 
@@ -602,68 +631,16 @@
         const content = panel.querySelector(`#block-${block.id}`);
         if(content) content.innerHTML = block.content(windowKey);
       });
+      // Atualiza base disclosure para cada time
+      const homeBase = getBaseForTeam(homeStats, windowKey);
+      const awayBase = getBaseForTeam(awayStats, windowKey);
+      const homeBaseEl = panel.querySelector('.mr-base-val[data-base-home]');
+      const awayBaseEl = panel.querySelector('.mr-base-val[data-base-away]');
+      if(homeBaseEl) homeBaseEl.textContent = homeBase;
+      if(awayBaseEl) awayBaseEl.textContent = awayBase;
     }
-
-    headers.forEach(header => {
-      header.addEventListener('click', () => {
-        const blockId = header.getAttribute('data-block-id');
-        
-        // Toggle: if same block is open, close it; else open new one
-        if (openBlock === blockId) {
-          openBlock = null;
-          header.classList.remove('mr-accordion-header-open');
-          header.setAttribute('aria-expanded', 'false');
-          const content = header.nextElementSibling;
-          if (content) {
-            content.classList.remove('mr-accordion-content-open');
-            content.setAttribute('aria-hidden', 'true');
-          }
-        } else {
-          // Close previous open block
-          if (openBlock) {
-            const prevHeader = panel.querySelector(`[data-block-id="${openBlock}"]`);
-            if (prevHeader) {
-              prevHeader.classList.remove('mr-accordion-header-open');
-              prevHeader.setAttribute('aria-expanded', 'false');
-              const prevContent = prevHeader.nextElementSibling;
-              if (prevContent) {
-                prevContent.classList.remove('mr-accordion-content-open');
-                prevContent.setAttribute('aria-hidden', 'true');
-              }
-            }
-          }
-          
-          // Open new block
-          openBlock = blockId;
-          header.classList.add('mr-accordion-header-open');
-          header.setAttribute('aria-expanded', 'true');
-          const content = header.nextElementSibling;
-          if (content) {
-            content.classList.add('mr-accordion-content-open');
-            content.setAttribute('aria-hidden', 'false');
-          }
-        }
-      });
-
-      // Keyboard support
-      header.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          header.click();
-        }
-      });
-    });
-
-    // Window selector buttons
-    const windowBtns = panel.querySelectorAll('.mr-window-btn');
-    windowBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        windowBtns.forEach(b => b.classList.remove('mr-window-btn-active'));
-        btn.classList.add('mr-window-btn-active');
-        currentWindow.value = btn.getAttribute('data-window');
-        updateAccordionForWindow(currentWindow.value);
-      });
-    });
+    // Inicializa base disclosure
+    updateAccordionForWindow(currentWindow.value);
   }
 
   function formatScore(data){

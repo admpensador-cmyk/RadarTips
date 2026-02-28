@@ -1,3 +1,4 @@
+window.renderStatsTab = renderStatsTab;
 // Match Radar V2 (isolated module)
 (function(){
   // Minimal, self-contained Match Radar V2 with professional odds/risk calculations

@@ -39,7 +39,17 @@ function copyRecursive(src, dest) {
   }
 }
 
+
 copyRecursive(root, dist);
+
+// Ensure dist/assets/js/app.js is a direct copy of assets/js/app.js (no wrappers)
+const srcApp = path.join(root, 'assets', 'js', 'app.js');
+const distAppDir = path.join(dist, 'assets', 'js');
+const distApp = path.join(distAppDir, 'app.js');
+if (fs.existsSync(srcApp)) {
+  fs.mkdirSync(distAppDir, { recursive: true });
+  fs.copyFileSync(srcApp, distApp);
+}
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
