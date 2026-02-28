@@ -50,12 +50,35 @@ function walk(dir, out = []) {
 
 const htmlFiles = walk(dist).filter((f) => f.endsWith(".html"));
 
+
+function getGitCommitShort() {
+  try {
+    const res = require('child_process').spawnSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' });
+    if (res.status === 0) return res.stdout.trim();
+  } catch {}
+  return 'unknown';
+}
+
+function nowStamp() {
+  const d = new Date();
+  return d.toISOString().replace('T', ' ').slice(0, 16);
+}
+
+const commitShort = getGitCommitShort();
+const stamp = nowStamp();
+
 for (const file of htmlFiles) {
   let html = fs.readFileSync(file, "utf8");
 
   html = html
     .replace(/\/assets\/js\/app\.[a-f0-9]+\.js\?v=[^"' ]*/gi, "/assets/js/app.js")
     .replace(/\/assets\/js\/app\.[a-f0-9]+\.js/gi, "/assets/js/app.js");
+
+  // Replace build badge content
+  html = html.replace(
+    /(<div[^>]+id=["']build-badge["'][^>]*>)([\s\S]*?)(<\/div>)/i,
+    `$1Build: ${commitShort} | ${stamp}$3`
+  );
 
   fs.writeFileSync(file, html, "utf8");
 }
