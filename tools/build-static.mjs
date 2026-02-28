@@ -2,9 +2,11 @@
 // RadarTips build-static.mjs
 // Simplified build: always serve plain /assets/js/app.js (no hashed bundle)
 
+
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,10 +55,11 @@ const htmlFiles = walk(dist).filter((f) => f.endsWith(".html"));
 
 function getGitCommitShort() {
   try {
-    const res = require('child_process').spawnSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' });
-    if (res.status === 0) return res.stdout.trim();
-  } catch {}
-  return 'unknown';
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore","pipe","ignore"] })
+      .toString().trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 function nowStamp() {
