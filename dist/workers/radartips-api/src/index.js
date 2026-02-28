@@ -419,30 +419,20 @@ async function handleApiV1(env, pathname, requestUrl) {
     if (pathname === "/v1/calendar_2d") {
       const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
       const tzParam = url.searchParams.get("tz");
-      
-      // Validate timezone parameter (strict validation, no silent fallback)
+      // Validate timezone parameter (fallback safe)
       const tzValidation = validateTimezone(tzParam);
+      let tz = tzParam;
       if (!tzValidation.valid) {
-        // Return 400 with error details
-        const statusCode = 400;
-        if (tzValidation.error === "missing_tz") {
-          return jsonResponse({
-            error: "missing_tz",
-            message: "Required query parameter 'tz' not provided",
-            ok: false
-          }, statusCode);
-        } else {
-          // invalid_tz
-          return jsonResponse({
-            error: "invalid_tz",
-            message: `Invalid timezone: ${tzValidation.tz}`,
-            tz: tzValidation.tz,
-            ok: false
-          }, statusCode);
-        }
+        // Log motivo, mas responder 200 com shape esperado
+        console.warn(`[calendar_2d] Fallback: ${tzValidation.error} tz='${tzParam}'`);
+        tz = tzValidation.tz || "America/Sao_Paulo";
+        const payload = degradedCalendar2D(tz, tzValidation.error || "invalid_tz");
+        payload.meta.sourceUsed = "none";
+        payload.meta.sourceKeysTried = [];
+        payload.meta.missing_bindings = getMissingBindings(bindings, ["R2"]);
+        return jsonResponse(payload, 200);
       }
-      
-      const tz = tzParam; // Now we know it's valid
+      // tz é válido
       
       // Cache key: cache by path + tz
       const cacheKey = `calendar_2d:${tz}`;
@@ -674,12 +664,10 @@ __name(handleTeamStats, "handleTeamStats");
 async function handleMatchStats(env, url) {
   const urlObj = new URL(url);
   const fixtureId = urlObj.searchParams.get("fixture");
-
   if (!fixtureId) {
-    return jsonResponse(
-      { error: "Missing fixture parameter", ok: false },
-      400
-    );
+    // Log motivo, mas responder 200 com shape esperado
+    console.warn(`[match-stats] Fallback: missing fixture parameter`);
+    return jsonResponse({ ok: true, stats: null, warning: "missing_fixture_id" }, 200);
   }
 
   // Check KV cache first (TTL: 12 hours)
