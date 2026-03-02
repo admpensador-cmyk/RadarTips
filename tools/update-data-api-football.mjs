@@ -22,23 +22,30 @@ import { ApiFootballClient } from "./api-football-client.mjs";
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
-// const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json"); // Desligado
+const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
+const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
 
 const KEY =
   (process.env.APIFOOTBALL_KEY && String(process.env.APIFOOTBALL_KEY).trim()) ||
   (process.env.API_FOOTBALL_KEY && String(process.env.API_FOOTBALL_KEY).trim()) ||
   "";
 
+const MIN_INTERVAL_MS = Number.parseInt(process.env.APIFOOTBALL_MIN_INTERVAL_MS || "6500", 10);
+
 if (!KEY) {
   console.error("Missing API key. Set APIFOOTBALL_KEY (or API_FOOTBALL_KEY).");
   process.exit(1);
 }
 
-const api = new ApiFootballClient({ apiKey: KEY, minIntervalMs: 250, retries: 2 });
+const api = new ApiFootballClient({
+  apiKey: KEY,
+  minIntervalMs: Number.isFinite(MIN_INTERVAL_MS) && MIN_INTERVAL_MS > 0 ? MIN_INTERVAL_MS : 6500,
+  retries: 2
+});
 
 function ensureDir(p) {
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
@@ -106,10 +113,31 @@ function readConfig() {
   }
   const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
   const cfg = JSON.parse(raw);
-  if (!cfg?.leagues || !Array.isArray(cfg.leagues) || cfg.leagues.length === 0) {
-    throw new Error("Invalid config: 'leagues' must be a non-empty array.");
-  }
   return cfg;
+}
+
+function readCoverageAllowlist() {
+  if (!fs.existsSync(COVERAGE_ALLOWLIST_PATH)) {
+    throw new Error(`Missing coverage allowlist file: ${COVERAGE_ALLOWLIST_PATH}`);
+  }
+  const raw = fs.readFileSync(COVERAGE_ALLOWLIST_PATH, "utf-8");
+  const parsed = JSON.parse(raw);
+  const leagues = Array.isArray(parsed?.leagues) ? parsed.leagues : [];
+  if (!leagues.length) {
+    throw new Error("Invalid coverage allowlist: 'leagues' must be a non-empty array.");
+  }
+  const cleaned = leagues
+    .map((entry) => ({
+      league_id: Number(entry?.league_id),
+      country: String(entry?.country || ""),
+      display_name: String(entry?.display_name || ""),
+      type: String(entry?.type || "")
+    }))
+    .filter((entry) => Number.isFinite(entry.league_id));
+  if (!cleaned.length) {
+    throw new Error("Coverage allowlist has no valid numeric league_id entries.");
+  }
+  return cleaned;
 }
 
 function norm(s) {
@@ -205,6 +233,38 @@ async function resolveLeague(entry) {
   );
 
   return best;
+}
+
+async function resolveLeagueById(entry) {
+  const leagueId = Number(entry?.league_id);
+  if (!Number.isFinite(leagueId)) return null;
+
+  const json = await api.get("/leagues", { id: leagueId });
+  const resp = Array.isArray(json?.response) ? json.response : [];
+  if (!resp.length) {
+    console.warn(`[WARN] League not found by id: ${leagueId}`);
+    return null;
+  }
+
+  const best = resp
+    .map((r) => ({
+      league_id: r?.league?.id ?? null,
+      league_name: r?.league?.name ?? entry?.display_name ?? "",
+      league_type: r?.league?.type ?? entry?.type ?? "",
+      league_country: r?.country?.name ?? entry?.country ?? "",
+      season: pickSeasonFromLeagueResponse(r)
+    }))
+    .find((r) => Number(r.league_id) === leagueId) || null;
+
+  if (!best?.league_id) {
+    console.warn(`[WARN] League unresolved after /leagues lookup for id=${leagueId}`);
+    return null;
+  }
+
+  return {
+    ...best,
+    league_id: Number(best.league_id)
+  };
 }
 
 async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone }) {
@@ -653,7 +713,7 @@ function parseArgs() {
   return flags;
 }
 
-async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar) {
+async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
   const from = isoDateOnlyInTimezone(new Date(), timezone);
   const to = addDaysToIsoDate(from, daysAhead);
@@ -784,7 +844,9 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
       generated_at_utc: calendarOut.generated_at_utc,
       form_window: formWindow,
       goals_window: goalsWindow,
-      source: "calendar_2d"
+      source: "calendar_2d",
+      leagues_source: leaguesSource,
+      leagues_count: leaguesCount
     },
     today: split.todayMatches,
     tomorrow: split.tomorrowMatches
@@ -851,6 +913,7 @@ async function generateStandings(flags) {
 
 async function main() {
   const cfg = readConfig();
+  const coverageLeagues = readCoverageAllowlist();
   const flags = parseArgs();
   ensureDir(OUT_DIR);
 
@@ -864,6 +927,7 @@ async function main() {
   console.log("║    RadarTips API-FOOTBALL Update Pipeline              ║");
   console.log("╚═══════════════════════════════════════════════════════╝");
   console.log(`Timezone: ${timezone}`);
+  console.log(`API min interval: ${api.minIntervalMs}ms`);
   console.log(`Windows: form=${formWindow} goals=${goalsWindow}`);
   console.log(`[RUN] calendar=${flags.calendar} stats=${flags.stats} standings=${flags.standings} all=${flags.all}`);
 
@@ -876,21 +940,33 @@ async function main() {
   // Smoke test for key/quota validity
   await smokeTestStatus();
 
-  // Resolve leagues
-  const resolved = [];
-  console.log("\\n[LEAGUES] Resolving configured leagues...");
-  for (const entry of cfg.leagues) {
-    const r = await resolveLeague(entry);
-    if (r?.league_id) resolved.push(r);
+  // Resolve leagues (calendar source of truth = coverage allowlist)
+  let resolved = [];
+  if (flags.calendar) {
+    console.log("\n[LEAGUES] Resolving coverage allowlist leagues...");
+    for (const entry of coverageLeagues) {
+      const r = await resolveLeagueById(entry);
+      if (r?.league_id) resolved.push(r);
+    }
+    if (!resolved.length) {
+      throw new Error("No leagues resolved from data/coverage_allowlist.json.");
+    }
+    console.log(`[OK] Resolved ${resolved.length}/${coverageLeagues.length} leagues from coverage allowlist`);
   }
-  if (!resolved.length) {
-    throw new Error("No leagues resolved from config. Check tools/api-football.config.json.");
-  }
-  console.log(`[OK] Resolved ${resolved.length}/${cfg.leagues.length} leagues`);
 
   // Execute requested tasks
   if (flags.calendar) {
-    await generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar);
+    await generateCalendar(
+      cfg,
+      resolved,
+      timezone,
+      daysAhead,
+      formWindow,
+      goalsWindow,
+      includeStatsInCalendar,
+      "data/coverage_allowlist.json",
+      coverageLeagues.length
+    );
   } else {
     console.log("[SKIP] calendar not requested");
   }

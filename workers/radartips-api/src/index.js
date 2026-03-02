@@ -379,27 +379,24 @@ async function handleApiV1(env, pathname, requestUrl) {
     // Handler para /v1/calendar_2d
     if (pathname === "/v1/calendar_2d") {
       const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
-      const tzParam = url.searchParams.get("tz");
-      const tzValidation = validateTimezone(tzParam);
-      let tz = tzParam;
-      if (!tzValidation.valid) {
-        tz = tzValidation.tz || "America/Sao_Paulo";
-        const payload = degradedCalendar2D(tz, tzValidation.error || "invalid_tz");
-        payload.meta.status = "no_data";
-        payload.meta.sourceUsed = "R2:calendar_2d";
-        return jsonResponse(payload, 200, {"cache-control": "public, max-age=60, s-maxage=120"});
-      }
+      const defaultTz = "America/Sao_Paulo";
+      const tzParam = String(url.searchParams.get("tz") || "").trim();
+      const tzCandidate = tzParam || defaultTz;
+      const tzValidation = validateTimezone(tzCandidate);
+      const tz = tzValidation.valid ? tzCandidate : defaultTz;
       const key = "snapshots/calendar_2d.json";
       const calendar = await r2GetJson(env, key);
       if (!calendar || !Array.isArray(calendar.today) || !Array.isArray(calendar.tomorrow)) {
         const payload = degradedCalendar2D(tz, "no_data");
         payload.meta.status = "no_data";
         payload.meta.sourceUsed = "R2:calendar_2d";
+        payload.meta.tz_used = tz;
         return jsonResponse(payload, 200, {"cache-control": "public, max-age=60, s-maxage=120"});
       }
       const response = {
         meta: {
           tz,
+          tz_used: tz,
           status: "ok",
           sourceUsed: "R2:calendar_2d",
           generated_at_utc: calendar.generated_at_utc || nowIso()

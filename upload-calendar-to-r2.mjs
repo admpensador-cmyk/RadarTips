@@ -12,6 +12,7 @@ import { spawn } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
+const R2_BUCKET = process.env.R2_BUCKET_NAME || 'radartips-data';
 
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
@@ -31,41 +32,83 @@ fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(calendar, null, 2), 'utf8');
 console.log(`✓ Wrote snapshot to: ${SNAPSHOT_PATH}`);
 
 // Show stats
-const today = calendar.matches.filter(m => m.kickoff_utc.substring(0, 10) === '2026-02-25');
-console.log(`  Total matches: ${calendar.matches.length}`);
-console.log(`  Today (2026-02-25): ${today.length}`);
-console.log(`  First match: ${today[0]?.home} vs ${today[0]?.away} (${today[0]?.kickoff_utc})`);
+const today = calendar.today || [];
+console.log(`  Total matches today: ${today.length}`);
+if (today.length > 0) {
+  console.log(`  First match: ${today[0].home} vs ${today[0].away} (${today[0].kickoff_utc})`);
+} else {
+  console.log('  No matches today.');
+}
 
 // Now upload to R2 using wrangler
 console.log(`\n📤 Uploading to R2 using wrangler...`);
 
 const wranglerArgs = [
+  'wrangler',
   'r2',
   'object',
-  'upload',
-  'radartips-data/snapshots/calendar_2d.json',
+  'put',
+  '--remote',
+  `${R2_BUCKET}/snapshots/calendar_2d.json`,
+  '--file',
   SNAPSHOT_PATH,
-  '--account-id=' + (process.env.CLOUDFLARE_ACCOUNT_ID || 'SET_ME'),
+  '--content-type',
+  'application/json'
 ];
 
-const proc = spawn('wrangler', wranglerArgs, {
+const proc = spawn('npx', wranglerArgs, {
   cwd: ROOT,
   stdio: 'inherit',
   env: process.env,
+  shell: true,
 });
 
 proc.on('close', (code) => {
   if (code === 0) {
-    console.log(`\n✅ Calendar snapshot uploaded to R2!`);
-    console.log(`   Path: snapshots/calendar_2d.json`);
-    console.log(`   Should be live at: https://radartips-data.m2otta-music.workers.dev/v1/calendar_2d.json`);
-    console.log(`   (may take 10-30 seconds to propagate via CDN)`);
+    const verifyArgs = [
+      'wrangler',
+      'r2',
+      'object',
+      'get',
+      '--remote',
+      `${R2_BUCKET}/snapshots/calendar_2d.json`,
+      '--file',
+      'tmp_r2_calendar_2d_verify.json'
+    ];
+
+    const verify = spawn('npx', verifyArgs, {
+      cwd: ROOT,
+      stdio: 'inherit',
+      env: process.env,
+      shell: true,
+    });
+
+    verify.on('close', (verifyCode) => {
+      if (verifyCode !== 0) {
+        console.error(`\n❌ Upload succeeded, but verification download failed with code ${verifyCode}`);
+        process.exit(verifyCode);
+      }
+
+      try {
+        const downloaded = JSON.parse(fs.readFileSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json'), 'utf8'));
+        const size = fs.statSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json')).size;
+        console.log(`\n✅ Calendar snapshot uploaded to R2!`);
+        console.log(`   Bucket: ${R2_BUCKET}`);
+        console.log(`   Key: snapshots/calendar_2d.json`);
+        console.log(`   Size: ${size} bytes`);
+        console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
+      } catch (err) {
+        console.error(`\n❌ Verification parse failed: ${err.message}`);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
   } else {
     console.error(`\n❌ Upload failed with code ${code}`);
     console.error(`Make sure you have:`);
-    console.error(`   - wrangler installed: npm install -g wrangler`);
+    console.error(`   - npx/wrangler available`);
     console.error(`   - CLOUDFLARE_ACCOUNT_ID environment variable set`);
     console.error(`   - Proper R2 perms with API token (via .env.local or env var)`);
+    process.exit(code);
   }
-  process.exit(code);
 });
