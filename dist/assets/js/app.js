@@ -764,6 +764,7 @@
   // expose globally
   window.openMatchRadarV2 = openMatchRadarV2;
   window.getMatchRadarV2Data = getMatchRadarV2Data;
+  window.renderStatsV2 = renderStatsV2;
 
 })();
 // ========================================
