@@ -31,6 +31,13 @@ function safeJsonParse(text, fallback = null) {
 }
 __name(safeJsonParse, "safeJsonParse");
 
+  const defaultStatsSupported = () => ({
+    meta: {
+      source: "stats_supported",
+      warning: "stats_supported_unavailable"
+    },
+    competitions: {}
+  });
 function jsonResponse(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -367,6 +374,12 @@ async function handleApiV1(env, pathname, requestUrl) {
       return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
     }
 
+    if (pathname === "/v1/stats_supported") {
+      const data = await r2GetJson(env, "snapshots/stats_supported.json");
+      if (!data) return jsonResponse(defaultStatsSupported(), 200);
+      return jsonResponse(data, 200);
+    }
+
     // Serve snapshot files (calendar_7d, calendar_day, radar_day, radar_week) from R2
     if (pathname === "/v1/calendar_day") {
       let data = await r2GetJson(env, "snapshots/calendar_day.json");
@@ -391,7 +404,7 @@ async function handleApiV1(env, pathname, requestUrl) {
         payload.meta.status = "no_data";
         payload.meta.sourceUsed = "R2:calendar_2d";
         payload.meta.tz_used = tz;
-        return jsonResponse(payload, 200, {"cache-control": "public, max-age=60, s-maxage=120"});
+        return jsonResponse(payload, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
       }
       const response = {
         meta: {
@@ -404,7 +417,7 @@ async function handleApiV1(env, pathname, requestUrl) {
         today: calendar.today,
         tomorrow: calendar.tomorrow
       };
-      return jsonResponse(response, 200, {"cache-control": "public, max-age=60, s-maxage=120"});
+      return jsonResponse(response, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
     }
 
     if (pathname === "/v1/radar_day") {

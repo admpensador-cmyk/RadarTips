@@ -25,6 +25,7 @@ const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
 const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
+const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
@@ -280,6 +281,101 @@ async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone 
   });
 
   return json?.response || [];
+}
+
+async function fetchRecentFixtureIdsForLeague({ league_id, season, last = 10, timezone }) {
+  const json = await api.get("/fixtures", {
+    league: league_id,
+    season,
+    last,
+    timezone
+  });
+  const resp = Array.isArray(json?.response) ? json.response : [];
+  return resp
+    .map((fx) => Number(fx?.fixture?.id))
+    .filter((id) => Number.isFinite(id));
+}
+
+async function fixtureHasValidStatistics(fixtureId) {
+  const json = await api.get("/fixtures/statistics", { fixture: fixtureId });
+  const resp = Array.isArray(json?.response) ? json.response : [];
+  if (!resp.length) return false;
+
+  return resp.some((teamBlock) => {
+    const stats = Array.isArray(teamBlock?.statistics) ? teamBlock.statistics : [];
+    return stats.some((entry) => {
+      const value = entry?.value;
+      if (value === null || value === undefined || value === "") return false;
+      if (typeof value === "number") return Number.isFinite(value);
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.toLowerCase() === "null" || trimmed === "-") return false;
+        return true;
+      }
+      return true;
+    });
+  });
+}
+
+async function detectStatsSupportByCompetition(resolved, fixtures, timezone) {
+  const fixtureIdsByLeague = new Map();
+  for (const fx of fixtures) {
+    const leagueId = Number(fx?.league?.id);
+    const fixtureId = Number(fx?.fixture?.id);
+    if (!Number.isFinite(leagueId) || !Number.isFinite(fixtureId)) continue;
+    if (!fixtureIdsByLeague.has(leagueId)) fixtureIdsByLeague.set(leagueId, []);
+    fixtureIdsByLeague.get(leagueId).push(fixtureId);
+  }
+
+  const checkedFixtures = new Map();
+  const statsSupportedMap = {};
+
+  for (const league of resolved) {
+    const leagueId = Number(league?.league_id);
+    if (!Number.isFinite(leagueId)) continue;
+
+    let candidateFixtureIds = (fixtureIdsByLeague.get(leagueId) || []).slice(0, 5);
+
+    if (!candidateFixtureIds.length && Number.isFinite(league?.season)) {
+      try {
+        candidateFixtureIds = await fetchRecentFixtureIdsForLeague({
+          league_id: leagueId,
+          season: league.season,
+          last: 10,
+          timezone
+        });
+      } catch (err) {
+        console.warn(`[WARN] Failed to fetch recent fixtures for league_id=${leagueId}: ${err?.message || err}`);
+      }
+    }
+
+    let supported = false;
+    for (const fixtureId of candidateFixtureIds) {
+      if (!Number.isFinite(fixtureId)) continue;
+
+      let hasStats;
+      if (checkedFixtures.has(fixtureId)) {
+        hasStats = checkedFixtures.get(fixtureId);
+      } else {
+        try {
+          hasStats = await fixtureHasValidStatistics(fixtureId);
+        } catch (err) {
+          hasStats = false;
+        }
+        checkedFixtures.set(fixtureId, hasStats);
+      }
+
+      if (hasStats) {
+        supported = true;
+        break;
+      }
+    }
+
+    statsSupportedMap[String(leagueId)] = supported;
+    console.log(`[STATS-SUPPORTED] competition_id=${leagueId} supported=${supported}`);
+  }
+
+  return statsSupportedMap;
 }
 
 async function fetchTeamLastFinished(teamId, lastN, timezone, cache) {
@@ -754,6 +850,8 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     fixtures.push(fx);
   }
 
+  const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone);
+
   // Enrich: form + goals (optional in frequent runs)
   const teamCache = new Map();
   const matches = [];
@@ -865,6 +963,19 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   // Write radar_week.json (safe placeholder)
   writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: calendarOut.generated_at_utc, highlights: [] });
   console.log(`[CALENDAR] Wrote ${OUT_RADAR_WEEK.replace(process.cwd(), ".")}`);
+
+  const statsSupportedOut = {
+    meta: {
+      generated_at_utc: calendarOut.generated_at_utc,
+      source: "stats_supported",
+      criteria: "at_least_one_fixture_with_valid_statistics",
+      leagues_source: leaguesSource,
+      leagues_count: leaguesCount
+    },
+    competitions: statsSupportedMap
+  };
+  writeJsonAtomic(OUT_STATS_SUPPORTED, statsSupportedOut);
+  console.log(`[CALENDAR] Wrote ${OUT_STATS_SUPPORTED.replace(process.cwd(), ".")} competitions=${Object.keys(statsSupportedMap).length}`);
 }
 
 async function generateStats(flags) {

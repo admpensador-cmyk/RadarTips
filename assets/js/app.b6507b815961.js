@@ -92,6 +92,54 @@
     return null;
   }
 
+  const STATS_SUPPORTED_STATE = {
+    loaded: false,
+    loading: null,
+    competitions: {}
+  };
+
+  async function loadStatsSupportedMap(){
+    if(STATS_SUPPORTED_STATE.loaded) return STATS_SUPPORTED_STATE.competitions;
+    if(STATS_SUPPORTED_STATE.loading) return STATS_SUPPORTED_STATE.loading;
+
+    STATS_SUPPORTED_STATE.loading = fetch('/api/v1/stats_supported', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(payload => {
+        const competitions = payload && payload.competitions && typeof payload.competitions === 'object'
+          ? payload.competitions
+          : {};
+        STATS_SUPPORTED_STATE.competitions = competitions;
+        STATS_SUPPORTED_STATE.loaded = true;
+        return competitions;
+      })
+      .catch(() => {
+        STATS_SUPPORTED_STATE.competitions = {};
+        STATS_SUPPORTED_STATE.loaded = true;
+        return {};
+      })
+      .finally(() => {
+        STATS_SUPPORTED_STATE.loading = null;
+      });
+
+    return STATS_SUPPORTED_STATE.loading;
+  }
+
+  function resolveCompetitionId(data){
+    const candidate = data?.competition_id ?? data?.league?.id ?? data?.league_id;
+    const id = Number(candidate);
+    return Number.isFinite(id) ? id : null;
+  }
+
+  async function isStatsSupportedForMatch(data){
+    const competitionId = resolveCompetitionId(data);
+    if(!competitionId) return true;
+
+    const competitions = await loadStatsSupportedMap();
+    if(!Object.prototype.hasOwnProperty.call(competitions, String(competitionId))) return true;
+
+    return competitions[String(competitionId)] === true;
+  }
+
   function normalizeMatch(m, snapshotMeta){
     const fixtureId = String(m.fixture_id||m.id||m.fixture||m.fixtureId||'');
     const home = { name: m.home?.name||m.home_team||m.home_team_name||m.home||'', score: m.home?.score ?? m.goals_home ?? null, id: m.home?.id || m.home_id };
@@ -174,6 +222,7 @@
       fixtureId,
       fixture_id: fixtureId,
       id: fixtureId,
+      competition_id: m.competition_id ?? m.league_id ?? league.id,
       home, away, league, season, datetimeUtc, markets, stats,
       gf_home, ga_home, gf_away, ga_away, 
       form_home_details, form_away_details,
@@ -241,18 +290,24 @@
 
   function qsBody(){ return document.querySelector('#mr-v2-overlay'); }
 
-  function renderModal(data){
+  async function renderModal(data){
     removeModal();
     const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
+
+    const statsSupported = await isStatsSupportedForMatch(data);
 
     const homeLogo = pickTeamLogo(data, 'home');
     const awayLogo = pickTeamLogo(data, 'away');
     const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
     const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
     const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
-    const tabs = `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`;
-    const body = `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`;
+    const tabs = statsSupported
+      ? `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`
+      : `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button></div>`;
+    const body = statsSupported
+      ? `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`
+      : `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div></div>`;
 
     box.innerHTML = header + tabs + body;
     ov.appendChild(box);
@@ -260,7 +315,9 @@
     bindModalClose(ov);
     bindTabs(ov);
     renderMarketsTab(ov, data);
-    renderStatsTab(ov, data);
+    if(statsSupported) {
+      renderStatsTab(ov, data);
+    }
   }
 
   function bindTabs(ov){
