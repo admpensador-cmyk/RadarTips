@@ -85,11 +85,23 @@
     // 1) try find in CAL_MATCHES
     try{
       const CAL = window.CAL_MATCHES || [];
-      const found = CAL.find(m => String(m.fixture_id||m.id||m.fixture||m.fixtureId) === String(fixtureId));
+      const found = CAL.find(m => String(getFixtureId(m) || '') === String(fixtureId));
       if(found) return normalizeMatch(found, window.CAL_SNAPSHOT_META);
     }catch(e){/*ignore*/}
 
     return null;
+  }
+
+  function getFixtureId(m){
+    const candidate = m?.fixture_id ?? m?.fixture?.id ?? m?.fixtureId ?? m?.id;
+    const id = Number(candidate);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  }
+
+  function getCompetitionId(m){
+    const candidate = m?.competition_id ?? m?.league?.id ?? m?.league_id ?? m?.competition?.id;
+    const id = Number(candidate);
+    return Number.isInteger(id) && id > 0 ? id : null;
   }
 
   const STATS_SUPPORTED_STATE = {
@@ -124,14 +136,8 @@
     return STATS_SUPPORTED_STATE.loading;
   }
 
-  function resolveCompetitionId(data){
-    const candidate = data?.competition_id ?? data?.league?.id ?? data?.league_id;
-    const id = Number(candidate);
-    return Number.isFinite(id) ? id : null;
-  }
-
   async function isStatsSupportedForMatch(data){
-    const competitionId = resolveCompetitionId(data);
+    const competitionId = getCompetitionId(data);
     if(!competitionId) return true;
 
     const competitions = await loadStatsSupportedMap();
@@ -141,7 +147,8 @@
   }
 
   function normalizeMatch(m, snapshotMeta){
-    const fixtureId = String(m.fixture_id||m.id||m.fixture||m.fixtureId||'');
+    const fixtureId = getFixtureId(m);
+    const fixtureIdStr = fixtureId ? String(fixtureId) : '';
     const home = { name: m.home?.name||m.home_team||m.home_team_name||m.home||'', score: m.home?.score ?? m.goals_home ?? null, id: m.home?.id || m.home_id };
     const away = { name: m.away?.name||m.away_team||m.away_team_name||m.away||'', score: m.away?.score ?? m.goals_away ?? null, id: m.away?.id || m.away_id };
     const league = { 
@@ -219,10 +226,10 @@
     const analysis = m.analysis || {};
 
     return { 
-      fixtureId,
+      fixtureId: fixtureIdStr,
       fixture_id: fixtureId,
       id: fixtureId,
-      competition_id: m.competition_id ?? m.league_id ?? league.id,
+      competition_id: getCompetitionId(m) ?? m.competition_id ?? m.league_id ?? league.id,
       home, away, league, season, datetimeUtc, markets, stats,
       gf_home, ga_home, gf_away, ga_away, 
       form_home_details, form_away_details,
@@ -295,7 +302,9 @@
     const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
     const box = el('div','mr-v2-box');
 
-    const statsSupported = await isStatsSupportedForMatch(data);
+    const fixtureId = getFixtureId(data);
+    const hasValidFixtureId = Number.isInteger(fixtureId) && fixtureId > 0;
+    const statsSupported = hasValidFixtureId && await isStatsSupportedForMatch(data);
 
     const homeLogo = pickTeamLogo(data, 'home');
     const awayLogo = pickTeamLogo(data, 'away');
@@ -409,13 +418,13 @@
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
 
-    const fixtureId = data?.fixture_id || data?.id || data?.fixtureId || data?.fixture;
+    const fixtureId = getFixtureId(data);
     console.log('[MR2][stats] renderStatsTab:start', {
       fixtureId,
       home: data?.home?.name || data?.home,
       away: data?.away?.name || data?.away
     });
-    if(!fixtureId) {
+    if(!Number.isInteger(fixtureId) || fixtureId <= 0) {
       console.warn('[MR2][stats] missing fixture id, using legacy renderer');
       return renderStatsTabLegacy(ov, data, 'missing_fixture_id');
     }
