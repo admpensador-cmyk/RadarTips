@@ -172,6 +172,17 @@
     return competitions[String(competitionId)] === true;
   }
 
+  function hasStatsPayload(data){
+    return (data?.home?.stats != null) || (data?.away?.stats != null) || (data?.stats != null);
+  }
+
+  async function fetchMatchStatsPayload(fixtureId){
+    const apiUrl = `/api/match-stats?fixture=${encodeURIComponent(fixtureId)}&ts=${Date.now()}`;
+    const response = await fetch(apiUrl, { cache: 'no-store' });
+    if(!response.ok) throw new Error(`http_${response.status}`);
+    return response.json();
+  }
+
   function normalizeMatch(m, snapshotMeta){
     const fixtureId = getFixtureId(m);
     const fixtureIdStr = fixtureId ? String(fixtureId) : '';
@@ -330,17 +341,34 @@
 
     const fixtureId = getFixtureId(data);
     const hasValidFixtureId = Number.isInteger(fixtureId) && fixtureId > 0;
-    const statsSupported = hasValidFixtureId && await isStatsSupportedForMatch(data);
+    const statsSupportedHint = hasValidFixtureId ? await isStatsSupportedForMatch(data).catch(() => false) : false;
+
+    let prefetchedStats = null;
+    let hasStats = false;
+    if(hasValidFixtureId){
+      try{
+        prefetchedStats = await fetchMatchStatsPayload(fixtureId);
+        hasStats = hasStatsPayload(prefetchedStats);
+      }catch(err){
+        console.warn('[MR2][stats] prefetch failed', {
+          fixtureId,
+          competitionHint: statsSupportedHint,
+          error: err?.message || String(err)
+        });
+      }
+    }
+
+    const showStatsTab = hasValidFixtureId && hasStats;
 
     const homeLogo = pickTeamLogo(data, 'home');
     const awayLogo = pickTeamLogo(data, 'away');
     const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
     const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
     const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
-    const tabs = statsSupported
+    const tabs = showStatsTab
       ? `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`
       : `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button></div>`;
-    const body = statsSupported
+    const body = showStatsTab
       ? `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`
       : `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div></div>`;
 
@@ -350,8 +378,8 @@
     bindModalClose(ov);
     bindTabs(ov);
     renderMarketsTab(ov, data);
-    if(statsSupported) {
-      renderStatsTab(ov, data);
+    if(showStatsTab) {
+      renderStatsTab(ov, data, prefetchedStats);
     }
   }
 
@@ -595,7 +623,7 @@
   </div>`;
   }
 
-  function renderStatsTab(ov, data){
+  function renderStatsTab(ov, data, prefetchedStats){
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
 
@@ -606,55 +634,41 @@
       away: data?.away?.name || data?.away
     });
     if(!Number.isInteger(fixtureId) || fixtureId <= 0) {
-      console.warn('[MR2][stats] missing fixture id, using legacy renderer');
-      return renderStatsTabLegacy(ov, data, 'missing_fixture_id');
+      console.warn('[MR2][stats] missing fixture id');
+      return;
     }
 
     panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.loading_stats', 'Carregando estatísticas...')}</div>`;
 
-    const apiUrl = `/api/match-stats?fixture=${encodeURIComponent(fixtureId)}`;
-    console.log('[MR2][stats] fetching api', { fixtureId, apiUrl });
-
-    fetch(apiUrl, { cache: 'no-store' })
-      .then(r => {
-        console.log('[MR2][stats] api response', { fixtureId, status: r.status, ok: r.ok });
-        if(!r.ok) throw new Error(`http_${r.status}`);
-        return r.json();
-      })
-      .then(api => {
-        if(!api || !api.home || !api.away) throw new Error('no_api_payload');
-        const homeGames = api.home.games_used || {};
-        const awayGames = api.away.games_used || {};
-        const hasApiData = Number(homeGames.games_used_total || 0) > 0 || Number(awayGames.games_used_total || 0) > 0;
-        if(!hasApiData) throw new Error('api_no_data');
-
-        console.log('[MR2][stats] api payload accepted', {
-          fixtureId,
-          source: api.source || null,
-          homeGames: homeGames.games_used_total || 0,
-          awayGames: awayGames.games_used_total || 0
+    const bindModeSwitch = (api) => {
+      panel.innerHTML = renderStatsV2(api, { mode: 'last5' });
+      const root = panel.querySelector('.rt-statsv2');
+      if (root) {
+        root.addEventListener('click', (e) => {
+          const el = e.target.closest('[data-sv2-mode]');
+          if (!el) return;
+          const mode = el.getAttribute('data-sv2-mode');
+          panel.innerHTML = renderStatsV2(api, { mode });
         });
+      }
+    };
 
-        statsContainer.innerHTML = renderStatsTable(api);
-        bindStatsAccordion(statsContainer);
+    if(prefetchedStats && hasStatsPayload(prefetchedStats)){
+      bindModeSwitch(prefetchedStats);
+      return;
+    }
 
-        const container = panel;
-        const root = container.querySelector('.rt-statsv2');
-        if (root) {
-          root.addEventListener('click', (e) => {
-            const el = e.target.closest('[data-sv2-mode]');
-            if (!el) return;
-            const mode = el.getAttribute('data-sv2-mode');
-            container.innerHTML = renderStatsV2(api, { mode });
-          });
-        }
+    fetchMatchStatsPayload(fixtureId)
+      .then(api => {
+        if(!hasStatsPayload(api)) throw new Error('api_no_stats');
+        bindModeSwitch(api);
       })
       .catch((err) => {
-        console.warn('[MR2][stats] api path failed, using legacy', {
+        console.warn('[MR2][stats] api load failed after modal open', {
           fixtureId,
           error: err?.message || String(err)
         });
-        renderStatsTabLegacy(ov, data, err?.message || 'api_error');
+        panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.empty', 'Sem dados disponíveis')}</div>`;
       });
   }
 
