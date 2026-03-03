@@ -751,7 +751,15 @@ __name(cronFinalizeRecent, "cronFinalizeRecent");
 
 var index_default = {
   async fetch(request, env, ctx) {
-    let pathname = new URL(request.url).pathname;
+    const requestUrl = new URL(request.url);
+    let pathname = requestUrl.pathname;
+
+    if (pathname === "/calendar_2d.json" || pathname.endsWith("/calendar_2d.json")) {
+      const redirectUrl = new URL("/api/v1/calendar_2d", requestUrl.origin);
+      const tz = requestUrl.searchParams.get("tz");
+      if (tz) redirectUrl.searchParams.set("tz", tz);
+      return Response.redirect(redirectUrl.toString(), 302);
+    }
 
     // Handle health check endpoint (no normalization needed)
     if (pathname === "/api/__health") {

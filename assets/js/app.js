@@ -2405,97 +2405,50 @@ async function loadCalendar2D() {
   const ttl = 60000; // 60 seconds
   if (cache.data && (now - cache.loadedAt) < ttl) return cache.data;
 
+  const emptyFallback = (tz) => ({
+    meta: { tz, source: 'fallback_unavailable' },
+    today: [],
+    tomorrow: []
+  });
+
   try {
     // Get user's timezone
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
-    
-    // Fetch from Worker endpoint with validation error handling
-    const url = `/api/v1/calendar_2d.json?tz=${encodeURIComponent(tz)}`;
-    const response = await fetch(url);
-    
-    // Handle validation errors (400) - timezone invalid/missing
-    if (response.status === 400) {
-      try {
-        const errorData = await response.json();
-        console.warn('loadCalendar2D validation error:', {
-          error: errorData.error,
-          message: errorData.message,
-          tz: errorData.tz
-        });
-      } catch (parseErr) {
-        console.warn('loadCalendar2D validation error (unparseable):', response.status);
-      }
-      
-      // Fallback: retry with default timezone
-      console.info('Retrying with default timezone (America/Sao_Paulo)...');
-      const fallbackUrl = `/api/v1/calendar_2d.json?tz=America/Sao_Paulo`;
-      const fallbackResponse = await fetch(fallbackUrl);
-      
-      if (fallbackResponse.ok) {
-        const data = await fallbackResponse.json();
-        cache.data = data;
-        cache.loadedAt = now;
-        return data;
-      }
+    const url = `/api/v1/calendar_2d?tz=${encodeURIComponent(tz)}&ts=${Date.now()}`;
+    let response = await fetch(url, { cache: 'no-store' });
+
+    if (!response.ok && response.status === 400) {
+      console.warn('loadCalendar2D validation error, retrying default timezone', { tz, status: response.status });
+      const fallbackUrl = `/api/v1/calendar_2d?tz=${encodeURIComponent('America/Sao_Paulo')}&ts=${Date.now()}`;
+      response = await fetch(fallbackUrl, { cache: 'no-store' });
     }
-    
+
     if (!response.ok) {
       console.warn('loadCalendar2D failed:', response.status, response.statusText);
-      // Fallback to static file when Worker is down
-      console.info('Falling back to static calendar file...');
-      const staticFallback = await fetch('/data/v1/calendar_2d.json');
-      if (staticFallback.ok) {
-        const data = await staticFallback.json();
-        console.warn('Using static fallback calendar (no live data)');
-        cache.data = data;
-        cache.loadedAt = now;
-        return data;
-      }
-      return { meta: { tz }, today: [], tomorrow: [] };
+      const fallback = emptyFallback(tz);
+      cache.data = fallback;
+      cache.loadedAt = now;
+      return fallback;
     }
-    
+
     const data = await response.json();
-    
-    // Check if Worker data is stale (dates don't match today)
-    const isWorkerDataStale = () => {
-      if (!Array.isArray(data.today) || data.today.length === 0) return false;
-      const firstMatch = data.today[0];
-      const kickoffDate = firstMatch.kickoff_utc?.substring(0, 10);
-      const today = new Date().toISOString().substring(0, 10);
-      return kickoffDate && kickoffDate < today; // Today's date should not be in the past
-    };
-    
-    // If Worker returned valid response but with stale or empty data, fallback to static file
-    if ((!Array.isArray(data.today) || data.today.length === 0) || isWorkerDataStale()) {
-      console.warn('⚠️ Worker data is stale or empty, falling back to static calendar file');
-      console.log('   Worker first match:', data.today?.[0]?.home, 'vs', data.today?.[0]?.away, '@', data.today?.[0]?.kickoff_utc);
-      try {
-        const staticFallback = await fetch('/data/v1/calendar_2d.json');
-        if (staticFallback.ok) {
-          const staticData = await staticFallback.json();
-          console.warn('✓ Using fresh static calendar');
-          cache.data = staticData;
-          cache.loadedAt = now;
-          return staticData;
-        }
-      } catch (fallbackErr) {
-        console.warn('Static fallback also failed:', fallbackErr.message);
-      }
+    if (!Array.isArray(data?.today) || !Array.isArray(data?.tomorrow)) {
+      console.warn('loadCalendar2D invalid payload shape, using empty fallback');
+      const fallback = emptyFallback(tz);
+      cache.data = fallback;
+      cache.loadedAt = now;
+      return fallback;
     }
-    
+
     cache.data = data;
     cache.loadedAt = now;
     return data;
   } catch (e) {
     console.error('loadCalendar2D error:', e.message);
-    // Try static fallback on network error
-    try {
-      const staticFallback = await fetch('/data/v1/calendar_2d.json');
-      if (staticFallback.ok) {
-        return await staticFallback.json();
-      }
-    } catch (fallbackErr) {}
-    return { meta: { tz: 'America/Sao_Paulo' }, today: [], tomorrow: [] };
+    const fallback = emptyFallback('America/Sao_Paulo');
+    cache.data = fallback;
+    cache.loadedAt = now;
+    return fallback;
   }
 }
 
