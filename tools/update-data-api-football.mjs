@@ -154,6 +154,10 @@ function isoDateOnlyInTimezone(date, timezone) {
   return `${y}-${m}-${d}`;
 }
 
+function nowInTimezone(timezone) {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: timezone }));
+}
+
 function addDaysToIsoDate(isoDate, days) {
   const [y, m, d] = String(isoDate).split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
@@ -846,9 +850,7 @@ function localDateInTimezone(isoUtc, timezone) {
 }
 
 function splitCalendar2d(matches, timezone) {
-  const now = new Date(
-    new Date().toLocaleString("en-US", { timeZone: timezone })
-  );
+  const now = nowInTimezone(timezone);
   const today = isoDateOnlyInTimezone(now, timezone);
   const tomorrow = addDaysToIsoDate(today, 1);
 
@@ -926,8 +928,11 @@ function parseArgs() {
 
 async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
-  const from = isoDateOnlyInTimezone(new Date(), timezone);
+  const nowTz = nowInTimezone(timezone);
+  const from = isoDateOnlyInTimezone(nowTz, timezone);
   const to = addDaysToIsoDate(from, daysAhead);
+
+  console.log("[CALENDAR] now_tz=", nowTz.toISOString(), "from=", from, "to=", to, "tz=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
