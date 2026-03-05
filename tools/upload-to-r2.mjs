@@ -29,6 +29,14 @@ const DATA_DIR = path.join(ROOT, 'data', 'v1');
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'radartips-data';
+const BLOCKED_7D_PATTERN = /calendar_7d/i;
+
+function assertNotBlocked7D(value, context) {
+  const text = String(value || '');
+  if (BLOCKED_7D_PATTERN.test(text)) {
+    throw new Error(`[BLOCKED_7D] Refusing R2 upload (${context}): ${text}`);
+  }
+}
 
 console.log(`\n╔════════════════════════════════════════════════╗`);
 console.log(`║ 📤 Upload to R2 (Manual)                      ║`);
@@ -71,6 +79,12 @@ filesToUpload.push({
   name: 'manifest.json'
 });
 
+for (const file of filesToUpload) {
+  assertNotBlocked7D(file.name, 'file_name');
+  assertNotBlocked7D(file.local, 'local_path');
+  assertNotBlocked7D(file.remote, 'remote_key');
+}
+
 console.log(`📦 Files to upload: ${filesToUpload.length}`);
 console.log(`   - Compstats: ${compstatsFiles.length}`);
 console.log(`   - Standings: ${standingsFiles.length}`);
@@ -91,6 +105,7 @@ function uploadFile(index) {
 
   const file = filesToUpload[index];
   console.log(`[${index + 1}/${filesToUpload.length}] ${file.name}...`, );
+  assertNotBlocked7D(`${R2_BUCKET_NAME}/${file.remote}`, 'upload_target');
 
   const proc = spawn('wrangler', [
     'r2', 'object', 'put',

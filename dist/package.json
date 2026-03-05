@@ -8,6 +8,7 @@
   "scripts": {
     "build": "node tools/build-static.mjs && npm run verify",
     "verify": "node tools/verify-js.mjs",
+    "verify:no-7d": "node tools/verify-no-7d.mjs",
     "predeploy": "node -c assets/js/app.js && npm run build && node -c dist/assets/js/app.js",
     "build:static": "node tools/build-static.mjs",
     "build:hash": "node tools/hash-js.mjs",

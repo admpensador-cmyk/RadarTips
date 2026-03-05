@@ -172,15 +172,74 @@
     return competitions[String(competitionId)] === true;
   }
 
+  function hasStructuredStatsData(value){
+    if(value === null || value === undefined) return false;
+    if(Array.isArray(value)) {
+      return value.some(item => hasStructuredStatsData(item));
+    }
+    if(typeof value === 'object') {
+      const entries = Object.values(value);
+      if(entries.length === 0) return false;
+      return entries.some(item => hasStructuredStatsData(item));
+    }
+    if(typeof value === 'string') return value.trim().length > 0;
+    return true;
+  }
+
+  function hasAnyTeamWindowData(payload){
+    const teams = [payload?.home, payload?.away];
+    return teams.some(team => {
+      if(!team || typeof team !== 'object') return false;
+      const stats = team?.stats || {};
+      const gamesUsed = team?.games_used || {};
+      const hasWindowData =
+        hasStructuredStatsData(stats?.total_last5) ||
+        hasStructuredStatsData(stats?.home_last5) ||
+        hasStructuredStatsData(stats?.away_last5);
+      const hasGamesUsedData =
+        Number(gamesUsed?.games_used_total || 0) > 0 ||
+        Number(gamesUsed?.games_used_home || 0) > 0 ||
+        Number(gamesUsed?.games_used_away || 0) > 0;
+      return hasWindowData || hasGamesUsedData;
+    });
+  }
+
+  function isValidStatsPayload(payload){
+    if(!payload || typeof payload !== 'object') return false;
+    if(payload.error || payload.ok === false) return false;
+
+    const hasLegacyStatsFlag = payload.hasStats === true;
+    const hasCurrentStatsShape =
+      hasStructuredStatsData(payload?.home?.stats) ||
+      hasStructuredStatsData(payload?.away?.stats) ||
+      hasStructuredStatsData(payload?.stats);
+
+    const hasSchemaWithStatusData =
+      payload?.status === 'ok' && hasStructuredStatsData(payload?.data);
+
+    if(payload.hasStats === false) return false;
+
+    return hasLegacyStatsFlag || hasCurrentStatsShape || hasSchemaWithStatusData || hasAnyTeamWindowData(payload);
+  }
+
   function hasStatsPayload(data){
-    return (data?.home?.stats != null) || (data?.away?.stats != null) || (data?.stats != null);
+    return isValidStatsPayload(data) === true;
   }
 
   async function fetchMatchStatsPayload(fixtureId){
     const apiUrl = `/api/match-stats?fixture=${encodeURIComponent(fixtureId)}&ts=${Date.now()}`;
+    console.log('[MR2][stats][prefetch] before fetch', { fixtureId, apiUrl });
     const response = await fetch(apiUrl, { cache: 'no-store' });
+    console.log('[MR2][stats][prefetch] after fetch', { fixtureId, status: response.status, ok: response.ok });
     if(!response.ok) throw new Error(`http_${response.status}`);
-    return response.json();
+    const payload = await response.json();
+    console.log('[MR2][stats][prefetch] payload received', {
+      fixtureId,
+      payloadType: typeof payload,
+      payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload) : [],
+      isValidStatsPayload: isValidStatsPayload(payload)
+    });
+    return payload;
   }
 
   function normalizeMatch(m, snapshotMeta){
@@ -343,13 +402,25 @@
     const hasValidFixtureId = Number.isInteger(fixtureId) && fixtureId > 0;
     const statsSupportedHint = hasValidFixtureId ? await isStatsSupportedForMatch(data).catch(() => false) : false;
 
-    let prefetchedStats = null;
+    let prefetchedStats;
+    console.log('[MR2][stats][renderModal] initial state', {
+      fixtureId,
+      prefetchedStatsIsUndefined: prefetchedStats === undefined
+    });
+
     let hasStats = false;
     if(hasValidFixtureId){
       try{
         prefetchedStats = await fetchMatchStatsPayload(fixtureId);
+        console.log('[MR2][stats][renderModal] post-fetch state', {
+          fixtureId,
+          prefetchedStatsType: typeof prefetchedStats,
+          prefetchedStatsKeys: prefetchedStats && typeof prefetchedStats === 'object' ? Object.keys(prefetchedStats) : [],
+          isValidStatsPayload: isValidStatsPayload(prefetchedStats)
+        });
         hasStats = hasStatsPayload(prefetchedStats);
       }catch(err){
+        prefetchedStats = null;
         console.warn('[MR2][stats] prefetch failed', {
           fixtureId,
           competitionHint: statsSupportedHint,
@@ -512,8 +583,19 @@
     const homeName = api?.home?.name || "Home";
     const awayName = api?.away?.name || "Away";
 
-    const homeGames = safeNum(api?.home?.games_used?.games_used_total);
-    const awayGames = safeNum(api?.away?.games_used?.games_used_total);
+    const homeGamesMeta = api?.home?.games_used || {};
+    const awayGamesMeta = api?.away?.games_used || {};
+
+    const homeGames = safeNum(homeGamesMeta?.games_used_total);
+    const awayGames = safeNum(awayGamesMeta?.games_used_total);
+
+    const formatSampleLabel = (meta, games) => {
+      const partialByFlag = meta && Object.keys(meta).some(k => k.startsWith('partial_') && meta[k] === true);
+      const partialBySize = games !== null && games < 5;
+      if(partialByFlag || partialBySize) return `parcial (${games ?? 0}/5)`;
+      if(games === null) return 'amostra: —';
+      return `amostra: ${games}/5`;
+    };
 
     const hGF = safeNum(h.gols_marcados);
     const hGA = safeNum(h.gols_sofridos);
@@ -549,7 +631,7 @@
             <div class="sv2-team">${homeName}</div>
             <div class="sv2-sub">Home</div>
           </div>
-          <div class="sv2-pill">amostra: ${homeGames ?? "—"}</div>
+          <div class="sv2-pill">${formatSampleLabel(homeGamesMeta, homeGames)}</div>
         </div>
 
         <div class="sv2-card-b">
@@ -605,7 +687,7 @@
             <div class="sv2-team">${awayName}</div>
             <div class="sv2-sub">Away</div>
           </div>
-          <div class="sv2-pill">amostra: ${awayGames ?? "—"}</div>
+          <div class="sv2-pill">${formatSampleLabel(awayGamesMeta, awayGames)}</div>
         </div>
 
         <div class="sv2-quick">

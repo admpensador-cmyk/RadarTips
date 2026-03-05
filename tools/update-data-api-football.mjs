@@ -22,7 +22,6 @@ import { ApiFootballClient } from "./api-football-client.mjs";
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
-const OUT_CAL_7D = path.join(OUT_DIR, "calendar_7d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
@@ -47,6 +46,67 @@ const api = new ApiFootballClient({
   minIntervalMs: Number.isFinite(MIN_INTERVAL_MS) && MIN_INTERVAL_MS > 0 ? MIN_INTERVAL_MS : 6500,
   retries: 2
 });
+
+const REQUEST_METRICS = {
+  totalRequests: 0,
+  categories: {
+    fixtures: 0,
+    teamLast5: 0,
+    fixtureStats: 0,
+    others: 0
+  },
+  endpoints: new Map(),
+  cache: {
+    teamLast5: { hits: 0, misses: 0, avoided: 0 },
+    fixtureStats: { hits: 0, misses: 0, avoided: 0 }
+  }
+};
+
+function bumpEndpoint(pathKey) {
+  const prev = REQUEST_METRICS.endpoints.get(pathKey) || 0;
+  REQUEST_METRICS.endpoints.set(pathKey, prev + 1);
+}
+
+async function trackedApiGet(pathKey, params = {}, category = "others") {
+  REQUEST_METRICS.totalRequests += 1;
+  if (category === "fixtures") REQUEST_METRICS.categories.fixtures += 1;
+  else if (category === "teamLast5") REQUEST_METRICS.categories.teamLast5 += 1;
+  else if (category === "fixtureStats") REQUEST_METRICS.categories.fixtureStats += 1;
+  else REQUEST_METRICS.categories.others += 1;
+  bumpEndpoint(pathKey);
+  return api.get(pathKey, params);
+}
+
+function printRequestMetricsSummary() {
+  const sortedEndpoints = Array.from(REQUEST_METRICS.endpoints.entries())
+    .sort((a, b) => b[1] - a[1]);
+
+  const cacheHits = REQUEST_METRICS.cache.teamLast5.hits + REQUEST_METRICS.cache.fixtureStats.hits;
+  const cacheMisses = REQUEST_METRICS.cache.teamLast5.misses + REQUEST_METRICS.cache.fixtureStats.misses;
+  const avoidedByCache = REQUEST_METRICS.cache.teamLast5.avoided + REQUEST_METRICS.cache.fixtureStats.avoided;
+
+  console.log("\n[REQ-SUMMARY] API request usage");
+  console.log(`[REQ-SUMMARY] TOTAL_REQUESTS=${REQUEST_METRICS.totalRequests}`);
+  console.log(
+    `[REQ-SUMMARY] categories fixtures=${REQUEST_METRICS.categories.fixtures} team_last5=${REQUEST_METRICS.categories.teamLast5} fixture_stats=${REQUEST_METRICS.categories.fixtureStats} others=${REQUEST_METRICS.categories.others}`
+  );
+
+  if (sortedEndpoints.length > 0) {
+    for (const [endpoint, count] of sortedEndpoints) {
+      console.log(`[REQ-SUMMARY] endpoint ${endpoint}=${count}`);
+    }
+  }
+
+  console.log(
+    `[REQ-SUMMARY] cache hit=${cacheHits} miss=${cacheMisses} avoided=${avoidedByCache}`
+  );
+  console.log(
+    `[REQ-SUMMARY] cache.team_last5 hit=${REQUEST_METRICS.cache.teamLast5.hits} miss=${REQUEST_METRICS.cache.teamLast5.misses} avoided=${REQUEST_METRICS.cache.teamLast5.avoided}`
+  );
+  console.log(
+    `[REQ-SUMMARY] cache.fixture_stats hit=${REQUEST_METRICS.cache.fixtureStats.hits} miss=${REQUEST_METRICS.cache.fixtureStats.misses} avoided=${REQUEST_METRICS.cache.fixtureStats.avoided}`
+  );
+}
 
 function ensureDir(p) {
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
@@ -141,6 +201,42 @@ function readCoverageAllowlist() {
   return cleaned;
 }
 
+function extractLeagueIdFromMatch(match) {
+  const raw = match?.league_id ?? match?.competition_id ?? null;
+  const leagueId = Number(raw);
+  return Number.isFinite(leagueId) ? leagueId : null;
+}
+
+function assertCalendarMatchesWithinAllowlist(matches, allowlistLeagueIds, contextLabel) {
+  const invalidLeagueIds = new Set();
+  const invalidFixtures = [];
+
+  for (const match of Array.isArray(matches) ? matches : []) {
+    const leagueId = extractLeagueIdFromMatch(match);
+    if (!Number.isFinite(leagueId)) continue;
+    if (!allowlistLeagueIds.has(leagueId)) {
+      invalidLeagueIds.add(leagueId);
+      if (invalidFixtures.length < 5) {
+        invalidFixtures.push({
+          fixture_id: match?.fixture_id ?? null,
+          league_id: leagueId,
+          competition: match?.competition ?? null,
+          country: match?.country ?? null,
+          kickoff_utc: match?.kickoff_utc ?? null
+        });
+      }
+    }
+  }
+
+  if (invalidLeagueIds.size > 0) {
+    throw new Error(
+      `[FAIL-CLOSED] ${contextLabel}: found ${invalidLeagueIds.size} out-of-allowlist league_id values. ` +
+      `league_ids=${JSON.stringify(Array.from(invalidLeagueIds).sort((a, b) => a - b))} ` +
+      `sample_fixtures=${JSON.stringify(invalidFixtures)}`
+    );
+  }
+}
+
 function norm(s) {
   return String(s || "")
     .normalize("NFKD")
@@ -159,7 +255,7 @@ function pickSeasonFromLeagueResponse(r) {
 }
 
 async function smokeTestStatus() {
-  const js = await api.get("/status");
+  const js = await trackedApiGet("/status", {}, "others");
   const payload = js?.response ?? js;
   console.log("[OK] /status response (summary):", JSON.stringify(payload).slice(0, 300));
 }
@@ -177,7 +273,7 @@ async function resolveLeague(entry) {
   if (!search) return null;
 
   // API rule: do NOT mix search with other filters
-  const json = await api.get("/leagues", { search });
+  const json = await trackedApiGet("/leagues", { search }, "others");
   const resp = json?.response || [];
 
   if (!resp.length) {
@@ -240,7 +336,7 @@ async function resolveLeagueById(entry) {
   const leagueId = Number(entry?.league_id);
   if (!Number.isFinite(leagueId)) return null;
 
-  const json = await api.get("/leagues", { id: leagueId });
+  const json = await trackedApiGet("/leagues", { id: leagueId }, "others");
   const resp = Array.isArray(json?.response) ? json.response : [];
   if (!resp.length) {
     console.warn(`[WARN] League not found by id: ${leagueId}`);
@@ -272,24 +368,24 @@ async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone 
   // /fixtures (api-football v3) rejeita parâmetro desconhecido `page` com:
   //   { "page": "The Page field do not exist." }
   // Portanto: 1 chamada para o range (nossa janela é pequena: 7 dias).
-  const json = await api.get("/fixtures", {
+  const json = await trackedApiGet("/fixtures", {
     league: league_id,
     season,
     from,
     to,
     timezone
-  });
+  }, "fixtures");
 
   return json?.response || [];
 }
 
 async function fetchRecentFixtureIdsForLeague({ league_id, season, last = 10, timezone }) {
-  const json = await api.get("/fixtures", {
+  const json = await trackedApiGet("/fixtures", {
     league: league_id,
     season,
     last,
     timezone
-  });
+  }, "fixtures");
   const resp = Array.isArray(json?.response) ? json.response : [];
   return resp
     .map((fx) => Number(fx?.fixture?.id))
@@ -297,7 +393,7 @@ async function fetchRecentFixtureIdsForLeague({ league_id, season, last = 10, ti
 }
 
 async function fixtureHasValidStatistics(fixtureId) {
-  const json = await api.get("/fixtures/statistics", { fixture: fixtureId });
+  const json = await trackedApiGet("/fixtures/statistics", { fixture: fixtureId }, "fixtureStats");
   const resp = Array.isArray(json?.response) ? json.response : [];
   if (!resp.length) return false;
 
@@ -317,14 +413,17 @@ async function fixtureHasValidStatistics(fixtureId) {
   });
 }
 
-async function detectStatsSupportByCompetition(resolved, fixtures, timezone) {
+async function detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds) {
   const fixtureIdsByLeague = new Map();
+  const knownFixtureLeagueById = new Map();
   for (const fx of fixtures) {
     const leagueId = Number(fx?.league?.id);
     const fixtureId = Number(fx?.fixture?.id);
     if (!Number.isFinite(leagueId) || !Number.isFinite(fixtureId)) continue;
+    if (allowlistLeagueIds instanceof Set && allowlistLeagueIds.size > 0 && !allowlistLeagueIds.has(leagueId)) continue;
     if (!fixtureIdsByLeague.has(leagueId)) fixtureIdsByLeague.set(leagueId, []);
     fixtureIdsByLeague.get(leagueId).push(fixtureId);
+    knownFixtureLeagueById.set(fixtureId, leagueId);
   }
 
   const checkedFixtures = new Map();
@@ -352,11 +451,17 @@ async function detectStatsSupportByCompetition(resolved, fixtures, timezone) {
     let supported = false;
     for (const fixtureId of candidateFixtureIds) {
       if (!Number.isFinite(fixtureId)) continue;
+      const knownLeagueId = knownFixtureLeagueById.get(fixtureId);
+      if (!Number.isFinite(knownLeagueId) || knownLeagueId !== leagueId) continue;
+      if (allowlistLeagueIds instanceof Set && allowlistLeagueIds.size > 0 && !allowlistLeagueIds.has(knownLeagueId)) continue;
 
       let hasStats;
       if (checkedFixtures.has(fixtureId)) {
+        REQUEST_METRICS.cache.fixtureStats.hits += 1;
+        REQUEST_METRICS.cache.fixtureStats.avoided += 1;
         hasStats = checkedFixtures.get(fixtureId);
       } else {
+        REQUEST_METRICS.cache.fixtureStats.misses += 1;
         try {
           hasStats = await fixtureHasValidStatistics(fixtureId);
         } catch (err) {
@@ -380,14 +485,19 @@ async function detectStatsSupportByCompetition(resolved, fixtures, timezone) {
 
 async function fetchTeamLastFinished(teamId, lastN, timezone, cache) {
   const key = `${teamId}|${lastN}`;
-  if (cache.has(key)) return cache.get(key);
+  if (cache.has(key)) {
+    REQUEST_METRICS.cache.teamLast5.hits += 1;
+    REQUEST_METRICS.cache.teamLast5.avoided += 1;
+    return cache.get(key);
+  }
+  REQUEST_METRICS.cache.teamLast5.misses += 1;
 
-  const json = await api.get("/fixtures", {
+  const json = await trackedApiGet("/fixtures", {
     team: teamId,
     last: lastN,
     status: "FT",
     timezone
-  });
+  }, "teamLast5");
 
   const resp = json?.response || [];
   cache.set(key, resp);
@@ -850,7 +960,16 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     fixtures.push(fx);
   }
 
-  const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone);
+  const allowlistLeagueIds = new Set(
+    (Array.isArray(resolved) ? resolved : [])
+      .map((entry) => Number(entry?.league_id))
+      .filter((leagueId) => Number.isFinite(leagueId))
+  );
+  if (!allowlistLeagueIds.size) {
+    throw new Error("[FAIL-CLOSED] Allowlist is empty after league resolution. Aborting calendar publication.");
+  }
+
+  const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
 
   // Enrich: form + goals (optional in frequent runs)
   const teamCache = new Map();
@@ -913,20 +1032,15 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   }
 
   const sorted = sortByKickoff(matches);
+  assertCalendarMatchesWithinAllowlist(sorted, allowlistLeagueIds, "calendar generation");
 
-  // calendar_7d.json desligado
-  const calendarOut = {
-    generated_at_utc: nowIso(),
-    form_window: formWindow,
-    goals_window: goalsWindow,
-    matches: sorted
-  };
-  writeJsonAtomic(OUT_CAL_7D, calendarOut);
-  console.log(`[CALENDAR] Wrote ${OUT_CAL_7D.replace(process.cwd(), ".")} matches=${sorted.length}`);
+  const generatedAtUtc = nowIso();
 
   const split = splitCalendar2d(sorted, timezone);
+  assertCalendarMatchesWithinAllowlist(split.todayMatches, allowlistLeagueIds, "calendar_2d today");
+  assertCalendarMatchesWithinAllowlist(split.tomorrowMatches, allowlistLeagueIds, "calendar_2d tomorrow");
   const calendarDayOut = {
-    generated_at_utc: calendarOut.generated_at_utc,
+    generated_at_utc: generatedAtUtc,
     form_window: formWindow,
     goals_window: goalsWindow,
     matches: split.dayMatches
@@ -939,7 +1053,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
       tz: timezone,
       today: split.today,
       tomorrow: split.tomorrow,
-      generated_at_utc: calendarOut.generated_at_utc,
+      generated_at_utc: generatedAtUtc,
       form_window: formWindow,
       goals_window: goalsWindow,
       source: "calendar_2d",
@@ -954,19 +1068,19 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   // Write radar_day.json
   const radarDayOut = {
-    generated_at_utc: calendarOut.generated_at_utc,
+    generated_at_utc: generatedAtUtc,
     highlights: pickRadarHighlights(sorted)
   };
   writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
   console.log(`[CALENDAR] Wrote ${OUT_RADAR_DAY.replace(process.cwd(), ".")} highlights=${radarDayOut.highlights.length}`);
 
   // Write radar_week.json (safe placeholder)
-  writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: calendarOut.generated_at_utc, highlights: [] });
+  writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: generatedAtUtc, highlights: [] });
   console.log(`[CALENDAR] Wrote ${OUT_RADAR_WEEK.replace(process.cwd(), ".")}`);
 
   const statsSupportedOut = {
     meta: {
-      generated_at_utc: calendarOut.generated_at_utc,
+      generated_at_utc: generatedAtUtc,
       source: "stats_supported",
       criteria: "at_least_one_fixture_with_valid_statistics",
       leagues_source: leaguesSource,
@@ -1093,6 +1207,8 @@ async function main() {
   } else {
     await generateStandings(flags);
   }
+
+  printRequestMetricsSummary();
 
   console.log("\\n[OK] Pipeline complete.\\n");
 }

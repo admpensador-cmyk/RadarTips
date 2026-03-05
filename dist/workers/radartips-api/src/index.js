@@ -9,7 +9,7 @@ var JSON_HEADERS = {
 
 var BASE_FILES = [
   "calendar_day.json",
-  "calendar_7d.json",
+  "calendar_2d.json",
   "radar_day.json",
   "radar_week.json"
 ];
@@ -31,6 +31,30 @@ function safeJsonParse(text, fallback = null) {
 }
 __name(safeJsonParse, "safeJsonParse");
 
+function hasStructuredStatsData(value) {
+  if (value === null || value === void 0) return false;
+  if (Array.isArray(value)) {
+    return value.some((item) => hasStructuredStatsData(item));
+  }
+  if (typeof value === "object") {
+    const entries = Object.values(value);
+    if (entries.length === 0) return false;
+    return entries.some((item) => hasStructuredStatsData(item));
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+  return true;
+}
+__name(hasStructuredStatsData, "hasStructuredStatsData");
+
+  const defaultStatsSupported = () => ({
+    meta: {
+      source: "stats_supported",
+      warning: "stats_supported_unavailable"
+    },
+    competitions: {}
+  });
 function jsonResponse(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -132,18 +156,6 @@ function classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD) {
 }
 __name(classifyMatchByLocalDate, "classifyMatchByLocalDate");
 
-async function fetchCalendar7dFallback() {
-  try {
-    const res = await fetch("https://radartips-data.m2otta-music.workers.dev/v1/calendar_7d.json", {
-      cf: { cacheTtl: 60, cacheEverything: true }
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-__name(fetchCalendar7dFallback, "fetchCalendar7dFallback");
 
 // Check bindings availability without throwing
 function checkBindings(env) {
@@ -379,161 +391,64 @@ async function handleApiV1(env, pathname, requestUrl) {
       return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
     }
 
-    // Serve snapshot files (calendar_7d, calendar_day, radar_day, radar_week) from R2
+    if (pathname === "/v1/stats_supported") {
+      const data = await r2GetJson(env, "snapshots/stats_supported.json");
+      if (!data) return jsonResponse(defaultStatsSupported(), 200);
+      return jsonResponse(data, 200);
+    }
+
+    // Serve snapshot files (calendar_day, radar_day, radar_week) from R2
     if (pathname === "/v1/calendar_day") {
-      let data = await r2GetJson(env, "snapshots/calendar_day.json");
-      if (!data) {
-        let cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
-        if (!cal7d) {
-          cal7d = await fetchCalendar7dFallback();
-        }
-        data = buildDailyCalendar(cal7d);
-      }
-      if (!data) {
-        debugLog(env, "Degraded /v1/calendar_day response");
+      const data = await r2GetJson(env, "snapshots/calendar_day.json");
+      if (!data || !Array.isArray(data.matches)) {
         return jsonResponse({
           generated_at_utc: nowIso(),
           form_window: 5,
           goals_window: 5,
           matches: [],
-          warning: "no_data",
-          missing_bindings: getMissingBindings(bindings, ["R2"])
+          meta: {
+            warning: "no_data",
+            source: "R2:calendar_day",
+            fail_closed: true
+          }
         }, 200);
       }
       return jsonResponse(data);
     }
 
     if (pathname === "/v1/calendar_7d") {
-      const missing = getMissingBindings(bindings, ["R2"]);
-      if (missing.length) return missingBindingsResponse(missing);
-      const data = await r2GetJson(env, "snapshots/calendar_7d.json");
-      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
-      return jsonResponse(data);
+      return jsonResponse({ error: "calendar_7d_deprecated", use: "/api/v1/calendar_2d" }, 410);
     }
 
-    // Canonical Endpoint: /v1/calendar_2d.json
-    // Alias: /v1/calendar_2d (both normalized here by request router)
-    // Separates calendar matches by today/tomorrow in user's local timezone
-    // Requires: tz query parameter (IANA timezone identifier)
-    // Returns: 400 if tz missing or invalid; 200 with { meta, today[], tomorrow[] }
+    // Handler para /v1/calendar_2d
     if (pathname === "/v1/calendar_2d") {
       const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
-      const tzParam = url.searchParams.get("tz");
-      // Validate timezone parameter (fallback safe)
-      const tzValidation = validateTimezone(tzParam);
-      let tz = tzParam;
-      if (!tzValidation.valid) {
-        // Log motivo, mas responder 200 com shape esperado
-        console.warn(`[calendar_2d] Fallback: ${tzValidation.error} tz='${tzParam}'`);
-        tz = tzValidation.tz || "America/Sao_Paulo";
-        const payload = degradedCalendar2D(tz, tzValidation.error || "invalid_tz");
-        payload.meta.sourceUsed = "none";
-        payload.meta.sourceKeysTried = [];
-        payload.meta.missing_bindings = getMissingBindings(bindings, ["R2"]);
-        return jsonResponse(payload, 200);
-      }
-      // tz é válido
-      
-      // Cache key: cache by path + tz
-      const cacheKey = `calendar_2d:${tz}`;
-      const cached = await kvGetJson(env, cacheKey);
-      if (cached) {
-        return jsonResponse(cached);
-      }
-      
-      const DEBUG = env.DEBUG === "true" || env.DEBUG === "1";
-      const logCal2d = (msg) => DEBUG && console.log(`[calendar_2d] ${msg}`);
-      
-      // Fetch calendar data
-      // Priority: calendar_7d.json (full universe) → calendar_day.json → external fetch → degraded
-      let calendar = null;
-      let dataSource = null;
-      const sourceKeysTried = [];
-      
-      // 1. Try calendar_7d.json (primary: full universe)
-      logCal2d("Attempting to load snapshots/calendar_7d.json...");
-      sourceKeysTried.push("snapshots/calendar_7d.json");
-      calendar = await r2GetJson(env, "snapshots/calendar_7d.json");
-      if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-        logCal2d(`✓ Loaded calendar_7d.json (${calendar.matches.length} matches)`);
-        dataSource = "R2:calendar_7d";
-      } else {
-        // 2. Fallback to calendar_day.json  (for backward compat, though 2d should use 7d)
-        logCal2d("Attempting fallback to snapshots/calendar_day.json...");
-        sourceKeysTried.push("snapshots/calendar_day.json");
-        calendar = await r2GetJson(env, "snapshots/calendar_day.json");
-        if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-          logCal2d(`✓ Loaded calendar_day.json (${calendar.matches.length} matches)`);
-          dataSource = "R2:calendar_day";
-        } else {
-          // 3. Fallback to external fetch
-          logCal2d("Attempting external fetch from data worker...");
-          sourceKeysTried.push("external:radartips-data");
-          calendar = await fetchCalendar7dFallback();
-          if (calendar && Array.isArray(calendar.matches) && calendar.matches.length > 0) {
-            logCal2d(`✓ Loaded from external fetch (${calendar.matches?.length || 0} matches)`);
-            dataSource = "external:radartips-data";
-          }
-        }
-      }
-      
-      // If still no data, return graceful empty response (not error)
-      // This prevents UI breakage when data source is temporarily unavailable
-      if (!calendar) {
-        logCal2d("No calendar data available - returning degraded response");
+      const defaultTz = "America/Sao_Paulo";
+      const tzParam = String(url.searchParams.get("tz") || "").trim();
+      const tzCandidate = tzParam || defaultTz;
+      const tzValidation = validateTimezone(tzCandidate);
+      const tz = tzValidation.valid ? tzCandidate : defaultTz;
+      const key = "snapshots/calendar_2d.json";
+      const calendar = await r2GetJson(env, key);
+      if (!calendar || !Array.isArray(calendar.today) || !Array.isArray(calendar.tomorrow)) {
         const payload = degradedCalendar2D(tz, "no_data");
-        payload.meta.sourceUsed = "none";
-        payload.meta.sourceKeysTried = sourceKeysTried;
-        payload.meta.missing_bindings = getMissingBindings(bindings, ["R2"]);
-        return jsonResponse(payload, 200);
+        payload.meta.status = "no_data";
+        payload.meta.sourceUsed = "R2:calendar_2d";
+        payload.meta.tz_used = tz;
+        return jsonResponse(payload, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
       }
-      
-      // Get today/tomorrow in the specified timezone
-      const { today: todayYMD, tomorrow: tomorrowYMD } = getTodayTomorrowYMD(tz);
-      
-      // Classify matches
-      const todayMatches = [];
-      const tomorrowMatches = [];
-      
-      if (Array.isArray(calendar.matches)) {
-        calendar.matches.forEach((m) => {
-          const kickoffUTC = m.kickoff_utc || m.date || "";
-          const classification = classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD);
-          
-          if (classification === "today") {
-            todayMatches.push(m);
-          } else if (classification === "tomorrow") {
-            tomorrowMatches.push(m);
-          }
-        });
-      }
-      
-      
       const response = {
         meta: {
           tz,
-          today: todayYMD,
-          tomorrow: tomorrowYMD,
-          generated_at_utc: calendar.generated_at_utc || nowIso(),
-          form_window: calendar.form_window || 5,
-          goals_window: calendar.goals_window || 5,
-          sourceUsed: dataSource,
-          sourceKeysTried: sourceKeysTried,
-          totalRead: calendar.matches?.length || 0,
-          todayCount: todayMatches.length,
-          tomorrowCount: tomorrowMatches.length,
-          timestamp: nowIso()
+          tz_used: tz,
+          status: "ok",
+          sourceUsed: "R2:calendar_2d",
+          generated_at_utc: calendar.generated_at_utc || nowIso()
         },
-        today: todayMatches,
-        tomorrow: tomorrowMatches
+        today: calendar.today,
+        tomorrow: calendar.tomorrow
       };
-      
-      logCal2d(`✓ Response: ${todayMatches.length} today, ${tomorrowMatches.length} tomorrow (source: ${dataSource}, total: ${calendar.matches?.length})`);
-      
-      // Cache for 60 seconds
-      await kvPutJson(env, cacheKey, response, 60);
-      
-      return jsonResponse(response);
+      return jsonResponse(response, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
     }
 
     if (pathname === "/v1/radar_day") {
@@ -565,17 +480,9 @@ async function handleApiV1(env, pathname, requestUrl) {
       const tz = url.searchParams.get("tz") || "UTC";
       return jsonResponse(degradedCalendar2D(tz, "no_data"), 200);
     }
-    if (pathname === "/v1/radar_day") {
-      return jsonResponse(degradedRadarDay("no_data"), 200);
-    }
-    if (pathname === "/v1/live") {
-      return jsonResponse(degradedLive("no_data"), 200);
-    }
-    return jsonResponse({
-      error: "Internal server error",
-      message: e.message,
-      ok: false
-    }, 500);
+    if (pathname === "/v1/radar_day") return jsonResponse(degradedRadarDay("no_data"), 200);
+    if (pathname === "/v1/live") return jsonResponse(degradedLive("no_data"), 200);
+    return jsonResponse({ error: "Internal server error", message: e.message, ok: false }, 500);
   }
 }
 __name(handleApiV1, "handleApiV1");
@@ -674,31 +581,39 @@ async function handleMatchStats(env, url) {
   const cacheKey = `matchstats:${fixtureId}`;
   const cached = await kvGetJson(env, cacheKey);
   if (cached && cached?.meta?.source !== "fallback") {
+    if (cached.hasStats !== true) {
+      cached.hasStats = hasStructuredStatsData(cached?.home?.stats) || hasStructuredStatsData(cached?.away?.stats);
+    }
     debugLog(env, `match-stats cache hit for fixture ${fixtureId}`);
     return jsonResponse(cached);
   }
 
   try {
     // Try to load fixture metadata from calendar snapshots
-    const calendar7d = await r2GetJson(env, "snapshots/calendar_7d.json");
     const calendarDay = await r2GetJson(env, "snapshots/calendar_day.json");
     const calendar2d = await r2GetJson(env, "snapshots/calendar_2d.json");
     
     // If R2 fails, try GitHub fallback
-    const cal7d = calendar7d || await fetchFromGitHub("data/v1/calendar_7d.json");
     const calDay = calendarDay || await fetchFromGitHub("data/v1/calendar_day.json");
     const cal2d = calendar2d || await fetchFromGitHub("data/v1/calendar_2d.json");
     
-    const calendars = [cal7d, calDay, cal2d].filter(Boolean);
+    const calendars = [calDay, cal2d].filter(Boolean);
     let fixtureData = null;
     
     for (const cal of calendars) {
-      const matches = cal.matches || [];
-      const found = matches.find(m => m.fixture_id === parseInt(fixtureId));
-      if (found) {
-        fixtureData = found;
-        break;
+      const buckets = [];
+      if (Array.isArray(cal?.matches)) buckets.push(cal.matches);
+      if (Array.isArray(cal?.today)) buckets.push(cal.today);
+      if (Array.isArray(cal?.tomorrow)) buckets.push(cal.tomorrow);
+
+      for (const matches of buckets) {
+        const found = matches.find(m => m.fixture_id === parseInt(fixtureId));
+        if (found) {
+          fixtureData = found;
+          break;
+        }
       }
+      if (fixtureData) break;
     }
 
     if (!fixtureData) {
@@ -757,6 +672,7 @@ async function handleMatchStats(env, url) {
     debugLog(env, `handleMatchStats home=${homeId} away=${awayId} league=${leagueId} season=${season}`, { homeSnapshot: !!homeSnapshot, awaySnapshot: !!awaySnapshot });
 
     const payload = {
+      ok: true,
       fixture_id: parseInt(fixtureId),
       fixture_status: fixtureData.status || "NS",
       home: {
@@ -786,6 +702,8 @@ async function handleMatchStats(env, url) {
         season
       }
     };
+
+    payload.hasStats = hasStructuredStatsData(payload.home?.stats) || hasStructuredStatsData(payload.away?.stats);
 
     // Cache for 12 hours (43200 seconds)
     await kvPutJson(env, cacheKey, payload, 43200);
@@ -875,7 +793,15 @@ __name(cronFinalizeRecent, "cronFinalizeRecent");
 
 var index_default = {
   async fetch(request, env, ctx) {
-    let pathname = new URL(request.url).pathname;
+    const requestUrl = new URL(request.url);
+    let pathname = requestUrl.pathname;
+
+    if (pathname === "/calendar_2d.json" || pathname.endsWith("/calendar_2d.json")) {
+      const redirectUrl = new URL("/api/v1/calendar_2d", requestUrl.origin);
+      const tz = requestUrl.searchParams.get("tz");
+      if (tz) redirectUrl.searchParams.set("tz", tz);
+      return Response.redirect(redirectUrl.toString(), 302);
+    }
 
     // Handle health check endpoint (no normalization needed)
     if (pathname === "/api/__health") {

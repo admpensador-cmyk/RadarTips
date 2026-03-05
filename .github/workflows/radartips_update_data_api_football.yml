@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify no calendar_7d regressions
+        run: npm run verify:no-7d
+
       - name: Generate calendar snapshot (API-FOOTBALL, frequent, low quota)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
@@ -35,14 +41,13 @@ jobs:
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
-          test -f "data/v1/calendar_7d.json"
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
 
       - name: Seed team-window-5 snapshots
         run: |
           set -euo pipefail
-          echo "🌱 Seeding team-window-5 snapshots from calendar_7d..."
+          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
           node tools/seed-team-window-5.mjs
           echo "✅ Seed complete"
 

@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify no calendar_7d regressions
+        run: npm run verify:no-7d
+
       - name: Generate calendar snapshot (API-FOOTBALL, frequent, low quota)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
@@ -35,14 +41,13 @@ jobs:
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
-          test -f "data/v1/calendar_7d.json"
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
 
       - name: Seed team-window-5 snapshots
         run: |
           set -euo pipefail
-          echo "🌱 Seeding team-window-5 snapshots from calendar_7d..."
+          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
           node tools/seed-team-window-5.mjs
           echo "✅ Seed complete"
 
@@ -64,92 +69,24 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_BUCKET_NAME: radartips-data
         run: |
           set -euo pipefail
 
-          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${R2_BUCKET_NAME:-}" ]]; then
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
             echo "Skipping R2 upload (missing Cloudflare secrets)."
             exit 0
           fi
 
           echo "R2_BUCKET_NAME=${R2_BUCKET_NAME}"
 
+          test -f "data/v1/calendar_2d.json"
           npm i -g wrangler@4.62.0
           wrangler --version
 
-          test -f "data/v1/calendar_day.json"
-          test -f "data/v1/calendar_2d.json"
-          test -f "data/v1/calendar_7d.json"
-          test -f "data/v1/radar_day.json"
-          test -f "data/v1/radar_week.json"
+          node upload-calendar-to-r2.mjs
 
-          echo "=== PUT (REMOTE) ==="
-          # Worker reads snapshots/* keys from R2
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/calendar_day.json" \
-            --file "data/v1/calendar_day.json" \
-            --content-type "application/json"
+          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_2d.json" --file "/tmp/r2_calendar_2d_uploaded.json"
 
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/calendar_2d.json" \
-            --file "data/v1/calendar_2d.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/calendar_7d.json" \
-            --file "data/v1/calendar_7d.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/radar_day.json" \
-            --file "data/v1/radar_day.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/snapshots/radar_week.json" \
-            --file "data/v1/radar_week.json" \
-            --content-type "application/json"
-
-          # Keep v1/* keys for compatibility with existing consumers
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_day.json" \
-            --file "data/v1/calendar_day.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_2d.json" \
-            --file "data/v1/calendar_2d.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" \
-            --file "data/v1/calendar_7d.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_day.json" \
-            --file "data/v1/radar_day.json" \
-            --content-type "application/json"
-
-          wrangler r2 object put --remote "${R2_BUCKET_NAME}/v1/radar_week.json" \
-            --file "data/v1/radar_week.json" \
-            --content-type "application/json"
-
-          echo "=== GET (REMOTE) + SHA256 (deve bater) ==="
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_day.json" --file "/tmp/r2_snapshots_calendar_day.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_2d.json" --file "/tmp/r2_snapshots_calendar_2d.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_7d.json" --file "/tmp/r2_snapshots_calendar_7d.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/radar_day.json"  --file "/tmp/r2_snapshots_radar_day.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/radar_week.json" --file "/tmp/r2_snapshots_radar_week.json"
-
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_day.json" --file "/tmp/r2_calendar_day.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_2d.json" --file "/tmp/r2_calendar_2d.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/calendar_7d.json" --file "/tmp/r2_calendar_7d.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_day.json"  --file "/tmp/r2_radar_day.json"
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/v1/radar_week.json" --file "/tmp/r2_radar_week.json"
-
-          sha256sum "data/v1/calendar_day.json" "/tmp/r2_snapshots_calendar_day.json"
-          sha256sum "data/v1/calendar_2d.json" "/tmp/r2_snapshots_calendar_2d.json"
-          sha256sum "data/v1/calendar_7d.json" "/tmp/r2_snapshots_calendar_7d.json"
-          sha256sum "data/v1/radar_day.json"  "/tmp/r2_snapshots_radar_day.json"
-          sha256sum "data/v1/radar_week.json" "/tmp/r2_snapshots_radar_week.json"
-
-          sha256sum "data/v1/calendar_day.json" "/tmp/r2_calendar_day.json"
-          sha256sum "data/v1/calendar_2d.json" "/tmp/r2_calendar_2d.json"
-          sha256sum "data/v1/calendar_7d.json" "/tmp/r2_calendar_7d.json"
-          sha256sum "data/v1/radar_day.json"  "/tmp/r2_radar_day.json"
-          sha256sum "data/v1/radar_week.json" "/tmp/r2_radar_week.json"
-
-          echo "Uploaded to R2 OK."
+          echo "=== R2 uploaded object verification ==="
+          node -e 'const fs=require("fs"); const p="/tmp/r2_calendar_2d_uploaded.json"; const s=fs.statSync(p); const j=JSON.parse(fs.readFileSync(p,"utf8")); console.log("size="+s.size); console.log("sha256="+require("crypto").createHash("sha256").update(fs.readFileSync(p)).digest("hex")); console.log("meta.generated_at_utc="+(j?.meta?.generated_at_utc||"")); console.log("meta.leagues_source="+(j?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(j?.meta?.leagues_count||""));'

@@ -30,6 +30,10 @@ function copyRecursive(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
+    if (entry.isFile() && entry.name.toLowerCase() === "calendar_7d.json") {
+      continue;
+    }
+
     if (entry.isDirectory()) {
       fs.mkdirSync(destPath, { recursive: true });
       copyRecursive(srcPath, destPath);

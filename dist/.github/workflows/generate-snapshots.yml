@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify no calendar_7d regressions
+        run: npm run verify:no-7d
+
       - name: Verify API Key (safe check)
         run: node -e "console.log('✅ API Key present:', !!process.env.APIFOOTBALL_KEY, 'length:', (process.env.APIFOOTBALL_KEY||'').length)"
         env:

@@ -9,7 +9,7 @@ var JSON_HEADERS = {
 
 var BASE_FILES = [
   "calendar_day.json",
-  "calendar_7d.json",
+  "calendar_2d.json",
   "radar_day.json",
   "radar_week.json"
 ];
@@ -30,6 +30,23 @@ function safeJsonParse(text, fallback = null) {
   }
 }
 __name(safeJsonParse, "safeJsonParse");
+
+function hasStructuredStatsData(value) {
+  if (value === null || value === void 0) return false;
+  if (Array.isArray(value)) {
+    return value.some((item) => hasStructuredStatsData(item));
+  }
+  if (typeof value === "object") {
+    const entries = Object.values(value);
+    if (entries.length === 0) return false;
+    return entries.some((item) => hasStructuredStatsData(item));
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+  return true;
+}
+__name(hasStructuredStatsData, "hasStructuredStatsData");
 
   const defaultStatsSupported = () => ({
     meta: {
@@ -380,13 +397,27 @@ async function handleApiV1(env, pathname, requestUrl) {
       return jsonResponse(data, 200);
     }
 
-    // Serve snapshot files (calendar_7d, calendar_day, radar_day, radar_week) from R2
+    // Serve snapshot files (calendar_day, radar_day, radar_week) from R2
     if (pathname === "/v1/calendar_day") {
-      let data = await r2GetJson(env, "snapshots/calendar_day.json");
-      if (!data) {
-        let cal7d = await r2GetJson(env, "snapshots/calendar_7d.json");
+      const data = await r2GetJson(env, "snapshots/calendar_day.json");
+      if (!data || !Array.isArray(data.matches)) {
+        return jsonResponse({
+          generated_at_utc: nowIso(),
+          form_window: 5,
+          goals_window: 5,
+          matches: [],
+          meta: {
+            warning: "no_data",
+            source: "R2:calendar_day",
+            fail_closed: true
+          }
+        }, 200);
       }
       return jsonResponse(data);
+    }
+
+    if (pathname === "/v1/calendar_7d") {
+      return jsonResponse({ error: "calendar_7d_deprecated", use: "/api/v1/calendar_2d" }, 410);
     }
 
     // Handler para /v1/calendar_2d
@@ -550,31 +581,39 @@ async function handleMatchStats(env, url) {
   const cacheKey = `matchstats:${fixtureId}`;
   const cached = await kvGetJson(env, cacheKey);
   if (cached && cached?.meta?.source !== "fallback") {
+    if (cached.hasStats !== true) {
+      cached.hasStats = hasStructuredStatsData(cached?.home?.stats) || hasStructuredStatsData(cached?.away?.stats);
+    }
     debugLog(env, `match-stats cache hit for fixture ${fixtureId}`);
     return jsonResponse(cached);
   }
 
   try {
     // Try to load fixture metadata from calendar snapshots
-    const calendar7d = await r2GetJson(env, "snapshots/calendar_7d.json");
     const calendarDay = await r2GetJson(env, "snapshots/calendar_day.json");
     const calendar2d = await r2GetJson(env, "snapshots/calendar_2d.json");
     
     // If R2 fails, try GitHub fallback
-    const cal7d = calendar7d || await fetchFromGitHub("data/v1/calendar_7d.json");
     const calDay = calendarDay || await fetchFromGitHub("data/v1/calendar_day.json");
     const cal2d = calendar2d || await fetchFromGitHub("data/v1/calendar_2d.json");
     
-    const calendars = [cal7d, calDay, cal2d].filter(Boolean);
+    const calendars = [calDay, cal2d].filter(Boolean);
     let fixtureData = null;
     
     for (const cal of calendars) {
-      const matches = cal.matches || [];
-      const found = matches.find(m => m.fixture_id === parseInt(fixtureId));
-      if (found) {
-        fixtureData = found;
-        break;
+      const buckets = [];
+      if (Array.isArray(cal?.matches)) buckets.push(cal.matches);
+      if (Array.isArray(cal?.today)) buckets.push(cal.today);
+      if (Array.isArray(cal?.tomorrow)) buckets.push(cal.tomorrow);
+
+      for (const matches of buckets) {
+        const found = matches.find(m => m.fixture_id === parseInt(fixtureId));
+        if (found) {
+          fixtureData = found;
+          break;
+        }
       }
+      if (fixtureData) break;
     }
 
     if (!fixtureData) {
@@ -633,6 +672,7 @@ async function handleMatchStats(env, url) {
     debugLog(env, `handleMatchStats home=${homeId} away=${awayId} league=${leagueId} season=${season}`, { homeSnapshot: !!homeSnapshot, awaySnapshot: !!awaySnapshot });
 
     const payload = {
+      ok: true,
       fixture_id: parseInt(fixtureId),
       fixture_status: fixtureData.status || "NS",
       home: {
@@ -662,6 +702,8 @@ async function handleMatchStats(env, url) {
         season
       }
     };
+
+    payload.hasStats = hasStructuredStatsData(payload.home?.stats) || hasStructuredStatsData(payload.away?.stats);
 
     // Cache for 12 hours (43200 seconds)
     await kvPutJson(env, cacheKey, payload, 43200);

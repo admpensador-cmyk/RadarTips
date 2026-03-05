@@ -1,0 +1,21 @@
+name: verify-no-7d
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  guard-no-7d:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify no calendar_7d regressions
+        run: npm run verify:no-7d
