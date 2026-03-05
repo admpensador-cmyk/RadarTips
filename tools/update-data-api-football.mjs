@@ -846,8 +846,13 @@ function localDateInTimezone(isoUtc, timezone) {
 }
 
 function splitCalendar2d(matches, timezone) {
-  const today = isoDateOnlyInTimezone(new Date(), timezone);
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: timezone })
+  );
+  const today = isoDateOnlyInTimezone(now, timezone);
   const tomorrow = addDaysToIsoDate(today, 1);
+
+  console.log("[CALENDAR] today=", today, "tz=", timezone);
 
   const dayMatches = [];
   const todayMatches = [];
