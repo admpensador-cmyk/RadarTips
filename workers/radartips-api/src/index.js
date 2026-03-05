@@ -437,14 +437,19 @@ async function handleApiV1(env, pathname, requestUrl) {
         payload.meta.tz_used = tz;
         return jsonResponse(payload, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
       }
+      const baseMeta = (calendar && typeof calendar === "object" && calendar.meta && typeof calendar.meta === "object") ? calendar.meta : {};
+      const generated = baseMeta.generated_at_utc || calendar.generated_at_utc || nowIso();
+      const meta = {
+        ...baseMeta,
+        tz,
+        tz_used: tz,
+        status: "ok",
+        sourceUsed: "R2:calendar_2d",
+        generated_at_utc: generated,
+        key
+      };
       const response = {
-        meta: {
-          tz,
-          tz_used: tz,
-          status: "ok",
-          sourceUsed: "R2:calendar_2d",
-          generated_at_utc: calendar.generated_at_utc || nowIso()
-        },
+        meta,
         today: calendar.today,
         tomorrow: calendar.tomorrow
       };
