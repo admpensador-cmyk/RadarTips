@@ -793,9 +793,11 @@ function mapFixtureToMatchRow(fx, enrich) {
   const league = fx?.league || {};
   const fixture = fx?.fixture || {};
   const teams = fx?.teams || {};
+  const ts = Number(fx?.fixture?.timestamp);
+  const kickoffUtc = Number.isFinite(ts) ? new Date(ts * 1000).toISOString() : toIso(fx?.fixture?.date);
 
   return {
-    kickoff_utc: toIso(fixture?.date) || null,
+    kickoff_utc: kickoffUtc || null,
     country: league?.country ?? "",
     competition: league?.name ?? "",
     competition_id: league?.id ?? null,
@@ -1073,6 +1075,20 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     today: split.todayMatches,
     tomorrow: split.tomorrowMatches
   };
+
+  const forensicToday20Bahia = {};
+  for (const m of (calendar2dOut.today || []).slice(0, 20)) {
+    const dayKey = localDateInTimezone(m?.kickoff_utc, "America/Bahia");
+    if (!dayKey) continue;
+    forensicToday20Bahia[dayKey] = (forensicToday20Bahia[dayKey] || 0) + 1;
+  }
+  console.log(
+    "[CALENDAR][FORENSIC] dayKey_Bahia_today20=",
+    JSON.stringify(forensicToday20Bahia),
+    "meta.today=",
+    calendar2dOut.meta.today
+  );
+
   writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
   console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
 
