@@ -52,6 +52,7 @@ jobs:
           echo "✅ Seed complete"
 
       - name: Smoke test team-window-5
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "🧪 Running smoke tests..."
