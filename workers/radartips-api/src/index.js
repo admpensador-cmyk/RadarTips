@@ -131,6 +131,20 @@ function formatLocalYMD(date, tz = "UTC") {
 }
 __name(formatLocalYMD, "formatLocalYMD");
 
+function dayKey(isoUtc, tz = "UTC") {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(isoUtc));
+  } catch {
+    return null;
+  }
+}
+__name(dayKey, "dayKey");
+
 // Get today and tomorrow in YYYY-MM-DD format for a given timezone
 function getTodayTomorrowYMD(tz = "UTC") {
   const today = formatLocalYMD(new Date(), tz);
@@ -454,6 +468,60 @@ async function handleApiV1(env, pathname, requestUrl) {
         tomorrow: calendar.tomorrow
       };
       return jsonResponse(response, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
+    }
+
+    if (pathname === "/v1/calendar_2d_debug") {
+      const url = new URL(requestUrl || "http://localhost/v1/calendar_2d_debug");
+      const defaultTz = "America/Bahia";
+      const tzParam = String(url.searchParams.get("tz") || "").trim();
+      const tzCandidate = tzParam || defaultTz;
+      const tzValidation = validateTimezone(tzCandidate);
+      const tz = tzValidation.valid ? tzCandidate : defaultTz;
+      const key = "snapshots/calendar_2d.json";
+      const calendar = await r2GetJson(env, key);
+
+      if (!calendar || !Array.isArray(calendar.today) || !Array.isArray(calendar.tomorrow)) {
+        return jsonResponse({
+          meta: {
+            tz_used: tz,
+            status: "no_data",
+            sourceUsed: "R2:calendar_2d",
+            key
+          },
+          counts_by_day_bahia_today: {},
+          sample_today: []
+        }, 200, { "cache-control": "public, max-age=30, s-maxage=60" });
+      }
+
+      const baseMeta = (calendar && typeof calendar === "object" && calendar.meta && typeof calendar.meta === "object") ? calendar.meta : {};
+      const generated = baseMeta.generated_at_utc || calendar.generated_at_utc || null;
+
+      const counts = {};
+      for (const m of calendar.today || []) {
+        const k = dayKey(m?.kickoff_utc, tz);
+        if (!k) continue;
+        counts[k] = (counts[k] || 0) + 1;
+      }
+
+      const sampleToday = (calendar.today || []).slice(0, 10).map((m) => ({
+        kickoff_utc: m?.kickoff_utc ?? null,
+        competition_id: m?.competition_id ?? m?.league_id ?? null,
+        competition: m?.competition ?? null,
+        country: m?.country ?? null
+      }));
+
+      return jsonResponse({
+        meta: {
+          tz_used: tz,
+          today: baseMeta.today ?? null,
+          tomorrow: baseMeta.tomorrow ?? null,
+          generated_at_utc: generated,
+          sourceUsed: "R2:calendar_2d",
+          key
+        },
+        counts_by_day_bahia_today: counts,
+        sample_today: sampleToday
+      }, 200, { "cache-control": "public, max-age=30, s-maxage=60" });
     }
 
     if (pathname === "/v1/radar_day") {

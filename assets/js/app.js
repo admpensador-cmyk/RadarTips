@@ -3897,10 +3897,8 @@ async function init(){
   };
 
   function rerender(){
-    // Combine radar highlights with today's calendar matches for rendering
-    const todayWithRadar = [...radarMatches, ...cal2d.today];
-    console.log('📅 renderCalendar with merged today:', todayWithRadar.length, 'matches (including', radarMatches.length, 'radar highlights)');
-    renderCalendar(T, todayWithRadar, cal2d.tomorrow, cal2d.meta, "time", "", CAL_ACTIVE_TAB);
+    console.log('📅 renderCalendar with pure calendar buckets:', cal2d.today.length, 'today and', cal2d.tomorrow.length, 'tomorrow');
+    renderCalendar(T, cal2d.today, cal2d.tomorrow, cal2d.meta, "time", "", CAL_ACTIVE_TAB);
     bindOpenHandlers();
   }
 
