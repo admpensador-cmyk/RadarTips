@@ -165,6 +165,21 @@ function addDaysToIsoDate(isoDate, days) {
   return isoDateOnlyUTC(dt);
 }
 
+function isValidIsoDate(ymd) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""));
+}
+
+function resolveBaseDateUtc() {
+  const override = String(process.env.CAL_BASE_DATE || "").trim();
+  if (override) {
+    if (!isValidIsoDate(override)) {
+      throw new Error(`[CALENDAR] Invalid CAL_BASE_DATE value: ${override}. Expected YYYY-MM-DD.`);
+    }
+    return override;
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
 function toIso(dt) {
   if (!dt) return null;
   const t = Date.parse(dt);
@@ -795,9 +810,15 @@ function mapFixtureToMatchRow(fx, enrich) {
   const teams = fx?.teams || {};
   const ts = Number(fx?.fixture?.timestamp);
   const kickoffUtc = Number.isFinite(ts) ? new Date(ts * 1000).toISOString() : toIso(fx?.fixture?.date);
+  const apiDateFromField = String(fixture?.date || "").slice(0, 10);
+  const apiDateFromTimestamp = Number.isFinite(ts) ? new Date(ts * 1000).toISOString().slice(0, 10) : "";
+  const apiDate = isValidIsoDate(apiDateFromField)
+    ? apiDateFromField
+    : (isValidIsoDate(apiDateFromTimestamp) ? apiDateFromTimestamp : null);
 
   return {
     kickoff_utc: kickoffUtc || null,
+    api_date: apiDate,
     country: league?.country ?? "",
     competition: league?.name ?? "",
     competition_id: league?.id ?? null,
@@ -851,19 +872,16 @@ function localDateInTimezone(isoUtc, timezone) {
   return isoDateOnlyInTimezone(new Date(t), timezone);
 }
 
-function splitCalendar2d(matches, timezone) {
-  const now = nowInTimezone(timezone);
-  const today = isoDateOnlyInTimezone(now, timezone);
-  const tomorrow = addDaysToIsoDate(today, 1);
-
-  console.log("[CALENDAR] today=", today, "tz=", timezone);
+function splitCalendar2dByApiDate(matches, baseDate) {
+  const today = baseDate;
+  const tomorrow = addDaysToIsoDate(baseDate, 1);
 
   const dayMatches = [];
   const todayMatches = [];
   const tomorrowMatches = [];
 
   for (const m of matches) {
-    const ymd = localDateInTimezone(m?.kickoff_utc, timezone);
+    const ymd = String(m?.api_date || "");
     if (!ymd) continue;
     if (ymd === today) {
       todayMatches.push(m);
@@ -930,11 +948,11 @@ function parseArgs() {
 
 async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
-  const nowTz = nowInTimezone(timezone);
-  const from = isoDateOnlyInTimezone(nowTz, timezone);
-  const to = addDaysToIsoDate(from, daysAhead);
+  const baseDate = resolveBaseDateUtc();
+  const from = baseDate;
+  const to = addDaysToIsoDate(baseDate, daysAhead);
 
-  console.log("[CALENDAR] now_tz=", nowTz.toISOString(), "from=", from, "to=", to, "tz=", timezone);
+  console.log("[CALENDAR] base_date_utc=", baseDate, "from=", from, "to=", to, "tz(fetch)=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
@@ -1048,7 +1066,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const generatedAtUtc = nowIso();
 
-  const split = splitCalendar2d(sorted, timezone);
+  const split = splitCalendar2dByApiDate(sorted, baseDate);
   assertCalendarMatchesWithinAllowlist(split.todayMatches, allowlistLeagueIds, "calendar_2d today");
   assertCalendarMatchesWithinAllowlist(split.tomorrowMatches, allowlistLeagueIds, "calendar_2d tomorrow");
   const calendarDayOut = {
@@ -1063,6 +1081,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   const calendar2dOut = {
     meta: {
       tz: timezone,
+      base_date: baseDate,
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
@@ -1078,7 +1097,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const forensicToday20Bahia = {};
   for (const m of (calendar2dOut.today || []).slice(0, 20)) {
-    const dayKey = localDateInTimezone(m?.kickoff_utc, "America/Bahia");
+    const dayKey = String(m?.api_date || "");
     if (!dayKey) continue;
     forensicToday20Bahia[dayKey] = (forensicToday20Bahia[dayKey] || 0) + 1;
   }
