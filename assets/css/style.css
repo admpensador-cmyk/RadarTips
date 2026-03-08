@@ -455,6 +455,97 @@ a{color:inherit; text-decoration:none}
   border-color:rgba(43,111,242,.40);
 }
 
+/* ===== PREMIUM INTEGRATION: DAILY RADAR KPIs ===== */
+.rt-card-kpis{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:10px;
+}
+.rt-card-kpis span{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  padding:9px 10px;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:10px;
+  background:rgba(56,189,248,.05);
+}
+.rt-card-kpis small{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}
+.rt-card-kpis strong{font-size:13px;color:var(--ink);font-weight:900}
+
+.rt-card-confidence{display:grid;gap:7px;margin-top:2px}
+.rt-card-confidence-head{display:flex;justify-content:space-between;align-items:center}
+.rt-card-confidence-head small{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}
+.rt-card-confidence-head strong{font-size:12px;color:var(--ink)}
+.rt-card-confidence-track{height:8px;border-radius:999px;background:rgba(255,255,255,.35);overflow:hidden;border:1px solid rgba(56,189,248,.20)}
+.rt-card-confidence-track i{display:block;height:100%;background:linear-gradient(90deg,#1dde8a,#38bdf8);border-radius:inherit}
+.rt-card-insight{margin:10px 0 0;color:var(--muted);font-weight:700;font-size:12px;line-height:1.45}
+
+.card.risk-medium .rt-card-confidence-track i{background:linear-gradient(90deg,#fbbf24,#fde68a)}
+.card.risk-high .rt-card-confidence-track i{background:linear-gradient(90deg,#ef4444,#fca5a5)}
+
+/* ===== PREMIUM INTEGRATION: METRICS STRIP ===== */
+.rt-metrics-strip{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.rt-metric-card{
+  border:1px solid var(--stroke);
+  background:rgba(255,255,255,.55);
+  border-radius:14px;
+  padding:12px;
+  display:grid;
+  gap:6px;
+}
+.rt-metric-card p{margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}
+.rt-metric-card strong{font-size:26px;line-height:1;color:var(--ink);font-weight:950}
+.rt-metric-card span{font-size:12px;color:var(--muted);font-weight:700}
+
+/* ===== PREMIUM INTEGRATION: QUICK INSIGHTS ===== */
+.rt-insights-section,
+.rt-entry-section{
+  margin-top:18px;
+  padding:18px;
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  background:rgba(255,255,255,.55);
+}
+.rt-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.rt-section-head h2{margin:0;font-size:18px;letter-spacing:-.2px}
+.rt-insights-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rt-insight-card{
+  border:1px solid rgba(56,189,248,.20);
+  border-radius:12px;
+  background:rgba(56,189,248,.06);
+  padding:12px;
+  display:grid;
+  gap:8px;
+}
+.rt-insight-card .kicker{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
+.rt-insight-card h3{margin:0;font-size:14px;line-height:1.35}
+.rt-insight-card p{margin:0;color:var(--muted);font-size:12px;font-weight:700}
+
+/* ===== PREMIUM INTEGRATION: MATCH RADAR ENTRY ===== */
+.rt-entry-section{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.rt-entry-copy{display:grid;gap:6px}
+.rt-entry-copy .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:900}
+.rt-entry-copy h2{margin:0;font-size:20px;letter-spacing:-.2px}
+.rt-entry-copy p{margin:0;color:var(--muted);font-weight:700}
+.rt-entry-btn{
+  border:1px solid rgba(56,189,248,.35);
+  background:linear-gradient(180deg,rgba(56,189,248,.18),rgba(56,189,248,.08));
+  color:var(--ink);
+  border-radius:12px;
+  padding:12px 14px;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+}
+.rt-entry-btn:disabled{opacity:.5;cursor:not-allowed}
+
 .section{
   margin-top:18px;padding:18px;
   border:1px solid var(--stroke);
@@ -579,6 +670,10 @@ a{color:inherit; text-decoration:none}
 }
 
 @media (max-width:768px){
+  .rt-metrics-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .rt-insights-grid{grid-template-columns:1fr}
+  .rt-entry-section{grid-template-columns:1fr}
+
   .hero-header{
     padding:28px 20px 10px;
   }
@@ -607,6 +702,9 @@ a{color:inherit; text-decoration:none}
 }
 
 @media (max-width:640px){
+  .rt-metrics-strip{grid-template-columns:1fr 1fr}
+  .rt-metric-card strong{font-size:22px}
+
   .hero-header{
     padding:20px 16px 8px;
   }

@@ -5,6 +5,15 @@
 (function(){
   // Minimal, self-contained Match Radar V2 with professional odds/risk calculations
   const CSS_ID = 'mr-v2-style-loaded';
+  const matchCache = new Map();
+  const statsPayloadCache = new Map();
+  const marketsCache = new Map();
+  const statsPayloadInflight = new Map();
+  const prefetchInflight = new Map();
+  const STATS_ENHANCER = { loader: null, fn: null };
+  const MAX_PREFETCH = 24;
+  let MATCH_RADAR_BOOT = null;
+  let MATCH_RADAR_BOOT_LOADING = null;
 
   // Simple i18n helper (fallback to English if t() not available)
   function t(key, defaultValue){
@@ -32,6 +41,32 @@
     link.rel = 'stylesheet';
     link.href = '/assets/css/match-radar-v2.css';
     link.id = CSS_ID;
+    document.head.appendChild(link);
+  }
+
+  function ensureStatsV2Css(){
+    const version = '20260226-2';
+    const href = `/assets/css/stats-v2.css?v=${version}`;
+    try{
+      const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(l => (l.href||'').includes('stats-v2'));
+      if(existing){
+        if(!(existing.href || '').includes(`v=${version}`)) existing.href = href;
+        return;
+      }
+    }catch(e){}
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
+  function ensureStatsTableCss() {
+    const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .find(l => (l.href||'').includes('stats-table'));
+    if (existing) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/assets/css/stats-table.css';
     document.head.appendChild(link);
   }
 
@@ -82,11 +117,18 @@
   }
 
   async function getMatchRadarV2Data(fixtureId){
+    const key = String(fixtureId || '');
+    if(matchCache.has(key)) return matchCache.get(key);
+
     // 1) try find in CAL_MATCHES
     try{
       const CAL = window.CAL_MATCHES || [];
       const found = CAL.find(m => String(getFixtureId(m) || '') === String(fixtureId));
-      if(found) return normalizeMatch(found, window.CAL_SNAPSHOT_META);
+      if(found) {
+        const normalized = normalizeMatch(found, window.CAL_SNAPSHOT_META);
+        matchCache.set(key, normalized);
+        return normalized;
+      }
     }catch(e){/*ignore*/}
 
     return null;
@@ -145,6 +187,497 @@
 
     return competitions[String(competitionId)] === true;
   }
+
+  function hasStructuredStatsData(value){
+    if(value === null || value === undefined) return false;
+    if(Array.isArray(value)) {
+      return value.some(item => hasStructuredStatsData(item));
+    }
+    if(typeof value === 'object') {
+      const entries = Object.values(value);
+      if(entries.length === 0) return false;
+      return entries.some(item => hasStructuredStatsData(item));
+    }
+    if(typeof value === 'string') return value.trim().length > 0;
+    return true;
+  }
+
+  function hasAnyTeamWindowData(payload){
+    const teams = [payload?.home, payload?.away];
+    return teams.some(team => {
+      if(!team || typeof team !== 'object') return false;
+      const stats = team?.stats || {};
+      const gamesUsed = team?.games_used || {};
+      const hasWindowData =
+        hasStructuredStatsData(stats?.total_last5) ||
+        hasStructuredStatsData(stats?.home_last5) ||
+        hasStructuredStatsData(stats?.away_last5);
+      const hasGamesUsedData =
+        Number(gamesUsed?.games_used_total || 0) > 0 ||
+        Number(gamesUsed?.games_used_home || 0) > 0 ||
+        Number(gamesUsed?.games_used_away || 0) > 0;
+      return hasWindowData || hasGamesUsedData;
+    });
+  }
+
+  function isValidStatsPayload(payload){
+    if(!payload || typeof payload !== 'object') return false;
+    if(payload.error || payload.ok === false) return false;
+
+    const hasLegacyStatsFlag = payload.hasStats === true;
+    const hasCurrentStatsShape =
+      hasStructuredStatsData(payload?.home?.stats) ||
+      hasStructuredStatsData(payload?.away?.stats) ||
+      hasStructuredStatsData(payload?.stats);
+
+    const hasSchemaWithStatusData =
+      payload?.status === 'ok' && hasStructuredStatsData(payload?.data);
+
+    if(payload.hasStats === false) return false;
+
+    return hasLegacyStatsFlag || hasCurrentStatsShape || hasSchemaWithStatusData || hasAnyTeamWindowData(payload);
+  }
+
+  function hasStatsPayload(data){
+    return isValidStatsPayload(data) === true;
+  }
+
+  async function fetchMatchStatsPayload(fixtureId){
+    const key = String(fixtureId || '');
+    if(!key) return null;
+    if(statsPayloadCache.has(key)) return statsPayloadCache.get(key);
+    if(statsPayloadInflight.has(key)) return statsPayloadInflight.get(key);
+
+    const apiUrl = `/api/match-stats?fixture=${encodeURIComponent(fixtureId)}&ts=${Date.now()}`;
+    const inflight = (async () => {
+      const response = await fetch(apiUrl, { cache: 'no-store' });
+      if(!response.ok) throw new Error(`http_${response.status}`);
+      const payload = await response.json();
+      if(isValidStatsPayload(payload)) {
+        statsPayloadCache.set(key, payload);
+      }
+      return payload;
+    })();
+
+    statsPayloadInflight.set(key, inflight);
+    try {
+      return await inflight;
+    } finally {
+      statsPayloadInflight.delete(key);
+    }
+  }
+
+  async function prefetchMatchRadarV2(fixtureId, opts = {}){
+    const key = String(fixtureId || '');
+    if(!key) return;
+
+    ensureMatchRadarMicroBootstrap()
+      .then((mod) => mod.prefetchMatchRadarMicroApp(getMatchRadarMicroHost(), key))
+      .catch(() => null);
+
+    if(prefetchInflight.has(key)) return prefetchInflight.get(key);
+
+    // Keep cache bounded to avoid unbounded memory growth.
+    if(matchCache.size > MAX_PREFETCH) {
+      const first = matchCache.keys().next().value;
+      if(first) matchCache.delete(first);
+    }
+    if(statsPayloadCache.size > MAX_PREFETCH) {
+      const first = statsPayloadCache.keys().next().value;
+      if(first) statsPayloadCache.delete(first);
+    }
+
+    const includeStats = opts.includeStats !== false;
+    const run = Promise.allSettled([
+      getMatchRadarV2Data(key),
+      includeStats ? fetchMatchStatsPayload(key) : Promise.resolve(null)
+    ]).finally(() => {
+      prefetchInflight.delete(key);
+    });
+
+    prefetchInflight.set(key, run);
+    return run;
+  }
+
+  async function loadStatsEnhancer(){
+    if(STATS_ENHANCER.fn) return STATS_ENHANCER.fn;
+    if(STATS_ENHANCER.loader) return STATS_ENHANCER.loader;
+
+    STATS_ENHANCER.loader = import('/assets/js/radar-stats-enhancer.js')
+      .then((mod) => {
+        STATS_ENHANCER.fn = typeof mod.enhanceRadarStats === 'function' ? mod.enhanceRadarStats : null;
+        return STATS_ENHANCER.fn;
+      })
+      .catch(() => null)
+      .finally(() => {
+        STATS_ENHANCER.loader = null;
+      });
+
+    return STATS_ENHANCER.loader;
+  }
+
+  function getMatchRadarMicroHost(){
+    return {
+      t,
+      snapshotMeta: window.CAL_SNAPSHOT_META || null,
+      getDedicatedMatchUrl,
+      normalizeMatch,
+      getMatchRadarV2Data,
+      resolveMatchByFixtureId,
+      fetchMatchStatsPayload,
+      hasStatsPayload,
+      renderStatsV2,
+      pickTeamLogo,
+      crestHTML,
+      formatScore,
+      loadStatsEnhancer
+    };
+  }
+
+  async function ensureMatchRadarMicroBootstrap(){
+    if(MATCH_RADAR_BOOT) return MATCH_RADAR_BOOT;
+    if(MATCH_RADAR_BOOT_LOADING) return MATCH_RADAR_BOOT_LOADING;
+
+    MATCH_RADAR_BOOT_LOADING = import('/assets/js/match-radar/bootstrap.js')
+      .then((mod) => {
+        const host = getMatchRadarMicroHost();
+        mod.initMatchRadarMicroApp(host);
+        MATCH_RADAR_BOOT = mod;
+        window.__MATCH_RADAR_MICRO_CLOSE__ = () => {
+          try { mod.closeMatchRadarMicroApp(host); } catch(e) { removeModal(); }
+        };
+        return mod;
+      })
+      .finally(() => {
+        MATCH_RADAR_BOOT_LOADING = null;
+      });
+
+    return MATCH_RADAR_BOOT_LOADING;
+  }
+
+  function getDedicatedMatchUrl(fixtureId){
+    const locale = String(window.RT_LOCALE || document.documentElement?.lang || 'en').toLowerCase();
+    return `/${locale}/radar/day/?fixture=${encodeURIComponent(String(fixtureId || ''))}&mr_mode=fullscreen`;
+  }
+
+  function persistMatchRadarSnapshot(fixtureId, payload){
+    try {
+      if(!fixtureId || !payload) return;
+      const key = `mr_snapshot_${String(fixtureId)}`;
+      sessionStorage.setItem(key, JSON.stringify(payload));
+    } catch(e) {}
+  }
+
+  function restoreMatchRadarSnapshot(fixtureId){
+    try {
+      if(!fixtureId) return null;
+      const key = `mr_snapshot_${String(fixtureId)}`;
+      const raw = sessionStorage.getItem(key);
+      if(!raw) return null;
+      const parsed = JSON.parse(raw);
+      sessionStorage.removeItem(key);
+      return parsed;
+    } catch(e) {
+      return null;
+    }
+  }
+
+  function pickInitialTab(data, statsPayload){
+    if(hasStatsPayload(statsPayload)) return 'stats';
+    if(Array.isArray(data?.markets) && data.markets.length > 0) return 'markets';
+    return 'details';
+  }
+
+  function resolveRadarMode(requestedMode){
+    const isMobile = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 768px)').matches
+      : (window.innerWidth || 1024) <= 768;
+    if(requestedMode === 'fullscreen') return 'fullscreen';
+    if(requestedMode === 'sidebar') return isMobile ? 'fullscreen' : 'sidebar';
+    return isMobile ? 'fullscreen' : 'sidebar';
+  }
+
+  function SidebarContainer(content){
+    return `<div class="mr-app-panel mr-app-panel--sidebar">${content}</div>`;
+  }
+
+  function applyRootMode(root, mode){
+    if(!root) return;
+    root.classList.remove('mr-v2-overlay', 'mr-v2-sidebar-host');
+    root.classList.add(mode === 'fullscreen' ? 'mr-v2-overlay' : 'mr-v2-sidebar-host');
+
+    // Force viewport anchoring
+    root.style.position = 'fixed';
+    root.style.top = '0';
+    root.style.right = '0';
+    root.style.bottom = '0';
+    root.style.left = '0';
+    root.style.zIndex = '2147483646';
+  }
+
+  function FullscreenContainer(content){
+    return `<div class="mr-app-panel mr-app-panel--fullscreen">${content}</div>`;
+  }
+
+  function MatchRadarTabs(items, activeTab){
+    return items.map((tab) => {
+      const active = tab.id === activeTab ? ' mr-v2-tab-active' : '';
+      return `<button class="mr-v2-tab${active}" data-mr-tab="${tab.id}">${tab.label}</button>`;
+    }).join('');
+  }
+
+  function createMatchRadarDataController(){
+    return {
+      async getMatch(fixtureId, ctxMatch){
+        const key = String(fixtureId || '');
+        if(ctxMatch) {
+          const normalized = normalizeMatch(ctxMatch, window.CAL_SNAPSHOT_META);
+          matchCache.set(key, normalized);
+          return normalized;
+        }
+        return getMatchRadarV2Data(key);
+      },
+      async getStats(fixtureId){
+        try {
+          return await fetchMatchStatsPayload(fixtureId);
+        } catch(e) {
+          return null;
+        }
+      },
+      getMarkets(fixtureId, data){
+        const key = String(fixtureId || '');
+        if(marketsCache.has(key)) return marketsCache.get(key);
+        const markets = Array.isArray(data?.markets) ? data.markets : [];
+        marketsCache.set(key, markets);
+        return markets;
+      }
+    };
+  }
+
+  const MatchRadarDataController = createMatchRadarDataController();
+
+  const MatchRadarApp = {
+    state: null,
+
+    open(fixtureId, options = {}){
+      const id = String(fixtureId || '');
+      if(!id) return;
+      const ctx = options.ctx || window.__MATCH_CTX__ || null;
+      if(window.__MATCH_CTX__) window.__MATCH_CTX__ = null;
+
+      const mode = resolveRadarMode(options.mode);
+      const appState = {
+        fixtureId: id,
+        mode,
+        data: null,
+        stats: null,
+        activeTab: 'details',
+        loadedTabs: new Set(),
+        shell: null,
+        content: null,
+        tabs: null,
+        ctx: ctx || null,
+        startedAt: Date.now()
+      };
+
+      this.state = appState;
+      renderLoadingModal(mode);
+      appState.shell = document.getElementById('mr-v2-overlay');
+      appState.content = appState.shell ? appState.shell.querySelector('[data-mr-content]') : null;
+      appState.tabs = appState.shell ? appState.shell.querySelector('[data-mr-tabs]') : null;
+
+      this.bindShellEvents(appState);
+      this.hydrate(appState).catch(() => renderEmpty());
+    },
+
+    close(){
+      removeModal();
+      try {
+        const url = new URL(location.href);
+        if(url.searchParams.has('fixture')) {
+          url.searchParams.delete('fixture');
+          url.searchParams.delete('mr_mode');
+          const search = url.searchParams.toString();
+          history.replaceState({}, '', url.pathname + (search ? `?${search}` : '') + (url.hash || ''));
+        }
+      } catch(e) {}
+      this.state = null;
+    },
+
+    bindShellEvents(appState){
+      if(!appState.shell) return;
+      const closeBtn = appState.shell.querySelector('.mr-v2-close');
+      if(closeBtn) closeBtn.addEventListener('click', () => this.close());
+
+      const fullBtn = appState.shell.querySelector('[data-mr-fullview]');
+      if(fullBtn) {
+        fullBtn.addEventListener('click', () => {
+          if(!appState.data) return;
+          const preservedTab = appState.activeTab || pickInitialTab(appState.data, appState.stats);
+          persistMatchRadarSnapshot(appState.fixtureId, {
+            match: appState.data,
+            stats: appState.stats,
+            markets: Array.isArray(appState.data?.markets) ? appState.data.markets : [],
+            activeTab: preservedTab
+          });
+
+          // Prefer micro-app mode switch to preserve loaded state and active tab without full navigation.
+          ensureMatchRadarMicroBootstrap()
+            .then((mod) => mod.openMatchRadarMicroApp(getMatchRadarMicroHost(), {
+              fixtureId: appState.fixtureId,
+              mode: 'fullscreen',
+              requestedTab: preservedTab,
+              ctxMatch: appState.data,
+              syncUrl: true
+            }))
+            .catch(() => {
+              // Legacy in-place fallback keeps UX stable if module load fails.
+              appState.mode = 'fullscreen';
+              this.renderShell(appState);
+              this.switchTab(appState, preservedTab, { force: true });
+            });
+        });
+      }
+
+      const tabHost = appState.shell.querySelector('[data-mr-tabs]');
+      if(tabHost) {
+        tabHost.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-mr-tab]');
+          if(!btn) return;
+          const tab = btn.getAttribute('data-mr-tab');
+          this.switchTab(appState, tab);
+        });
+      }
+    },
+
+    async hydrate(appState){
+      const fromStorage = restoreMatchRadarSnapshot(appState.fixtureId);
+      if(fromStorage?.match) {
+        matchCache.set(appState.fixtureId, fromStorage.match);
+        if(fromStorage.stats) statsPayloadCache.set(appState.fixtureId, fromStorage.stats);
+        if(Array.isArray(fromStorage.markets)) marketsCache.set(appState.fixtureId, fromStorage.markets);
+      }
+
+      const data = await MatchRadarDataController.getMatch(appState.fixtureId, appState.ctx?.match || fromStorage?.match || null);
+      if(!data) {
+        renderEmpty();
+        return;
+      }
+
+      appState.data = data;
+      const statsCached = statsPayloadCache.get(appState.fixtureId) || fromStorage?.stats || null;
+      const statsPromise = statsCached ? Promise.resolve(statsCached) : MatchRadarDataController.getStats(appState.fixtureId);
+      const stats = await statsPromise;
+      if(stats) {
+        appState.stats = stats;
+        statsPayloadCache.set(appState.fixtureId, stats);
+      }
+
+      appState.activeTab = pickInitialTab(data, appState.stats);
+      this.renderShell(appState);
+      this.switchTab(appState, appState.activeTab, { force: true });
+
+      persistMatchRadarSnapshot(appState.fixtureId, {
+        match: data,
+        stats: appState.stats,
+        markets: MatchRadarDataController.getMarkets(appState.fixtureId, data)
+      });
+    },
+
+    renderShell(appState){
+      if(!appState.shell || !appState.data) return;
+
+      applyRootMode(appState.shell, appState.mode);
+
+      const data = appState.data;
+      const homeLogo = pickTeamLogo(data, 'home');
+      const awayLogo = pickTeamLogo(data, 'away');
+      const homeShield = `<div style="min-width:42px;width:42px;height:42px;">${crestHTML(data.home.name, homeLogo)}</div>`;
+      const awayShield = `<div style="min-width:42px;width:42px;height:42px;">${crestHTML(data.away.name, awayLogo)}</div>`;
+
+      const tabs = [
+        { id: 'stats', label: t('match_radar.tabs.stats', 'Estatisticas') },
+        { id: 'markets', label: t('match_radar.tabs.markets', 'Mercados') },
+        { id: 'details', label: t('match_radar.tabs.details', 'Detalhes') }
+      ];
+
+      const tabButtons = MatchRadarTabs(tabs, appState.activeTab);
+
+      const fullAction = appState.mode === 'sidebar'
+        ? `<button class="mr-v2-fullview" data-mr-fullview>${t('match_radar.full_view', 'Visualizacao completa')}</button>`
+        : '';
+
+      const shellInner = `
+          <div class="mr-v2-head">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div>
+            <div class="mr-v2-actions">${fullAction}<button class="mr-v2-close">×</button></div>
+          </div>
+          <div class="mr-v2-tabs" data-mr-tabs>${tabButtons}</div>
+          <div class="mr-v2-body" data-mr-content></div>
+      `;
+
+      appState.shell.innerHTML = appState.mode === 'fullscreen'
+        ? FullscreenContainer(shellInner)
+        : SidebarContainer(shellInner);
+
+      bindModalClose(appState.shell);
+      this.bindShellEvents(appState);
+      appState.content = appState.shell.querySelector('[data-mr-content]');
+      appState.tabs = appState.shell.querySelector('[data-mr-tabs]');
+    },
+
+    switchTab(appState, tabId, opts = {}){
+      if(!appState || !appState.content || !appState.data) return;
+      const tab = String(tabId || 'details');
+      appState.activeTab = tab;
+
+      if(appState.tabs) {
+        appState.tabs.querySelectorAll('[data-mr-tab]').forEach((btn) => {
+          const isActive = btn.getAttribute('data-mr-tab') === tab;
+          btn.classList.toggle('mr-v2-tab-active', isActive);
+        });
+      }
+
+      if(!opts.force && appState.loadedTabs.has(tab)) return;
+      appState.content.innerHTML = `<div class="mr-v2-stats-loading">${t('match_radar.loading', 'Carregando...')}</div>`;
+
+      const overlay = appState.shell;
+      const data = appState.data;
+      if(tab === 'markets') {
+        appState.content.innerHTML = `<div class="mr-v2-tabpanel" data-panel="markets"></div>`;
+        renderMarketsTab(overlay, data);
+      } else if(tab === 'stats') {
+        appState.content.innerHTML = `<div class="mr-v2-tabpanel" data-panel="stats"></div>`;
+        renderStatsTab(overlay, data, appState.stats || null);
+      } else {
+        const leagueName = escapeHtml(data?.league?.name || '');
+        const country = escapeHtml(data?.league?.country || '');
+        const kickoff = escapeHtml(String(data?.datetimeUtc || ''));
+        appState.content.innerHTML = `
+          <div class="mr-v2-details">
+            <div class="mr-v2-detail-row"><strong>${t('match_radar.details.fixture', 'Fixture')}</strong><span>#${escapeHtml(appState.fixtureId)}</span></div>
+            <div class="mr-v2-detail-row"><strong>${t('match_radar.details.league', 'Liga')}</strong><span>${leagueName || '—'}</span></div>
+            <div class="mr-v2-detail-row"><strong>${t('match_radar.details.country', 'Pais')}</strong><span>${country || '—'}</span></div>
+            <div class="mr-v2-detail-row"><strong>${t('match_radar.details.kickoff', 'Kickoff UTC')}</strong><span>${kickoff || '—'}</span></div>
+          </div>
+        `;
+      }
+
+      appState.loadedTabs.add(tab);
+
+      // Lazy-warm non-selected tabs after first content paint.
+      setTimeout(() => {
+        if(tab !== 'stats' && !appState.stats) {
+          MatchRadarDataController.getStats(appState.fixtureId).then((stats) => {
+            if(stats) {
+              appState.stats = stats;
+              statsPayloadCache.set(appState.fixtureId, stats);
+            }
+          }).catch(() => {});
+        }
+      }, 0);
+    }
+  };
 
   function normalizeMatch(m, snapshotMeta){
     const fixtureId = getFixtureId(m);
@@ -244,36 +777,57 @@
   // Simple DOM helpers
   function el(tag, cls, html){ const d = document.createElement(tag); if(cls) d.className = cls; if(html!==undefined) d.innerHTML = html; return d; }
 
-  function openMatchRadarV2(fixtureId){
-    console.log('🎯 Match clicked - fixtureId:', fixtureId);
+  function openMatchRadarV2(fixtureId, options = {}){
     ensureStyles();
-    renderLoadingModal();
-    
-    // Se houver contexto da nova arquitetura, usar match direto
-    if(window.__MATCH_CTX__ && window.__MATCH_CTX__.match) {
-      const ctx = window.__MATCH_CTX__;
-      const data = normalizeMatch(ctx.match, window.CAL_SNAPSHOT_META);
-      console.log('📦 Match data found in context:', data);
-      data.radarMeta = ctx.meta;
-      window.__MATCH_CTX__ = null;
-      renderModal(data);
-      return;
-    }
-    
-    // Fallback para legacy behavior
-    getMatchRadarV2Data(fixtureId).then(data => {
-      if(!data) return renderEmpty();
-      renderModal(data);
-    }).catch(()=>renderEmpty());
+    const mode = resolveRadarMode(options.mode);
+    renderLoadingModal(mode);
+
+    const ctx = window.__MATCH_CTX__ || null;
+    if(window.__MATCH_CTX__) window.__MATCH_CTX__ = null;
+
+    ensureMatchRadarMicroBootstrap()
+      .then((mod) => mod.openMatchRadarMicroApp(getMatchRadarMicroHost(), {
+        fixtureId,
+        mode,
+        requestedTab: options.requestedTab || null,
+        ctxMatch: ctx?.match || null,
+        syncUrl: options.syncUrl !== false
+      }))
+      .catch(() => {
+        if(ctx?.match) window.__MATCH_CTX__ = ctx;
+        MatchRadarApp.open(fixtureId, options);
+      });
   }
 
   // modal management
-  function renderLoadingModal(){
+  function renderLoadingModal(mode = 'sidebar'){
     removeModal();
-    const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
-    const box = el('div','mr-v2-box');
-    box.innerHTML = `<div class="mr-v2-head"><div class="mr-v2-title">Loading...</div><button class="mr-v2-close">×</button></div><div class="mr-v2-body">Carregando...</div>`;
-    ov.appendChild(box);
+    const ov = el('div','mr-v2-root'); ov.id = 'mr-v2-overlay';
+    applyRootMode(ov, mode);
+    const shellInner = `
+        <div class="mr-v2-head">
+          <div class="mr-v2-title">${t('match_radar.loading', 'Carregando radar...')}</div>
+          <button class="mr-v2-close">×</button>
+        </div>
+        <div class="mr-v2-tabs">
+          <button class="mr-v2-tab mr-v2-tab-active">${t('match_radar.tabs.stats', 'Estatisticas')}</button>
+          <button class="mr-v2-tab">${t('match_radar.tabs.markets', 'Mercados')}</button>
+          <button class="mr-v2-tab">${t('match_radar.tabs.details', 'Detalhes')}</button>
+        </div>
+        <div class="mr-v2-body mr-v2-skeleton-wrap" aria-busy="true" aria-live="polite" data-mr-content>
+          <div class="mr-v2-skeleton-row"></div>
+          <div class="mr-v2-skeleton-row mr-v2-skeleton-row-wide"></div>
+          <div class="mr-v2-skeleton-grid">
+            <div class="mr-v2-skeleton-card"></div>
+            <div class="mr-v2-skeleton-card"></div>
+            <div class="mr-v2-skeleton-card"></div>
+            <div class="mr-v2-skeleton-card"></div>
+          </div>
+        </div>
+    `;
+    ov.innerHTML = mode === 'fullscreen'
+      ? FullscreenContainer(shellInner)
+      : SidebarContainer(shellInner);
     document.body.appendChild(ov);
     bindModalClose(ov);
   }
@@ -281,52 +835,40 @@
   function renderEmpty(){
     const body = qsBody();
     if(!body) return; // nothing
-    const modal = document.querySelector('#mr-v2-overlay .mr-v2-body');
+    const modal = document.querySelector('#mr-v2-overlay [data-mr-content], #mr-v2-overlay .mr-v2-body');
     if(modal) modal.innerHTML = '<div class="mr-v2-empty">Sem dados disponíveis</div>';
   }
 
   function removeModal(){
-    const prev = document.getElementById('mr-v2-overlay'); if(prev) prev.remove();
+    const overlays = Array.from(document.querySelectorAll('#mr-v2-overlay, .mr-v2-overlay, .mr-v2-sidebar-host'));
+    overlays.forEach((node) => {
+      if(node && node.parentNode) node.parentNode.removeChild(node);
+    });
   }
 
   function bindModalClose(ov){
-    ov.addEventListener('click', (e)=>{ if(e.target === ov) removeModal(); });
-    document.addEventListener('keydown', function onEsc(e){ if(e.key==='Escape'){ removeModal(); document.removeEventListener('keydown', onEsc); } });
-    const btn = ov.querySelector('.mr-v2-close'); if(btn) btn.addEventListener('click', ()=>removeModal());
+    const closeAny = () => {
+      if(typeof window.__MATCH_RADAR_MICRO_CLOSE__ === 'function') {
+        window.__MATCH_RADAR_MICRO_CLOSE__();
+      } else {
+        MatchRadarApp.close();
+      }
+    };
+    ov.addEventListener('click', (e)=>{
+      if(!ov.classList.contains('mr-v2-overlay')) return;
+      if(e.target === ov) closeAny();
+    });
+    document.addEventListener('keydown', function onEsc(e){ if(e.key==='Escape'){ closeAny(); document.removeEventListener('keydown', onEsc); } });
+    const btn = ov.querySelector('.mr-v2-close'); if(btn) btn.addEventListener('click', ()=>closeAny());
   }
 
   function qsBody(){ return document.querySelector('#mr-v2-overlay'); }
 
-  async function renderModal(data){
-    removeModal();
-    const ov = el('div','mr-v2-root mr-v2-overlay'); ov.id = 'mr-v2-overlay';
-    const box = el('div','mr-v2-box');
-
+  function renderModal(data){
     const fixtureId = getFixtureId(data);
-    const hasValidFixtureId = Number.isInteger(fixtureId) && fixtureId > 0;
-    const statsSupported = hasValidFixtureId && await isStatsSupportedForMatch(data);
-
-    const homeLogo = pickTeamLogo(data, 'home');
-    const awayLogo = pickTeamLogo(data, 'away');
-    const homeShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.home.name, homeLogo)}</div>`;
-    const awayShield = `<div style="min-width:56px;width:56px;height:56px;">${crestHTML(data.away.name, awayLogo)}</div>`;
-    const header = `<div class="mr-v2-head"><div style="display:flex;align-items:center;gap:12px;flex:1;">${homeShield}${awayShield}<div class="mr-v2-title">${escapeHtml(data.home.name)} vs ${escapeHtml(data.away.name)} ${formatScore(data)}</div></div><button class="mr-v2-close">×</button></div>`;
-    const tabs = statsSupported
-      ? `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button><button class="mr-v2-tab" data-tab="stats">${t('match_radar.tabs.stats', 'Estatísticas')}</button></div>`
-      : `<div class="mr-v2-tabs"><button class="mr-v2-tab mr-v2-tab-active" data-tab="markets">${t('match_radar.tabs.markets', 'Mercados')}</button></div>`;
-    const body = statsSupported
-      ? `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div><div class="mr-v2-tabpanel" data-panel="stats" style="display:none"></div></div>`
-      : `<div class="mr-v2-body"><div class="mr-v2-tabpanel" data-panel="markets"></div></div>`;
-
-    box.innerHTML = header + tabs + body;
-    ov.appendChild(box);
-    document.body.appendChild(ov);
-    bindModalClose(ov);
-    bindTabs(ov);
-    renderMarketsTab(ov, data);
-    if(statsSupported) {
-      renderStatsTab(ov, data);
-    }
+    if(!fixtureId) return renderEmpty();
+    window.__MATCH_CTX__ = { match: data, meta: null, fixtureId: String(fixtureId) };
+    openMatchRadarV2(fixtureId, { mode: 'sidebar' });
   }
 
   function bindTabs(ov){
@@ -414,84 +956,220 @@
     panel.innerHTML = `<div class="mr-table-wrap"><table class="mr-table">${headerHtml}<tbody>${rows}</tbody></table></div>`;
   }
 
-  function renderStatsTab(ov, data){
+  function safeNum(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function fmt(v) {
+    const n = safeNum(v);
+    return n === null ? "—" : String(n);
+  }
+
+  function pct(a, b) {
+    const A = safeNum(a), B = safeNum(b);
+    if (A === null && B === null) return { l:50, r:50 };
+    const aa = A ?? 0, bb = B ?? 0;
+    const max = Math.max(aa, bb, 1);
+    return { l: Math.round((aa/max)*100), r: Math.round((bb/max)*100) };
+  }
+
+  function classifyTrend(gfA, gaA, gfB, gaB) {
+    const t = (safeNum(gfA)??0)+(safeNum(gaA)??0)+(safeNum(gfB)??0)+(safeNum(gaB)??0);
+    if (t >= 14) return "Jogo com cara de gols";
+    if (t >= 10) return "Tendência de 2+ gols";
+    return "Tendência de poucos gols";
+  }
+
+  function classifyDefense(ga) {
+    const n = safeNum(ga);
+    if (n === null) return "Sem leitura";
+    if (n >= 8) return "Defesa vazando";
+    if (n >= 5) return "Defesa instável";
+    return "Defesa consistente";
+  }
+
+  function renderStatsV2(api, ctx) {
+    ensureStatsV2Css();
+
+    const h = api?.home?.stats?.total_last5 || {};
+    const a = api?.away?.stats?.total_last5 || {};
+
+    const homeName = api?.home?.name || "Home";
+    const awayName = api?.away?.name || "Away";
+
+    const homeGamesMeta = api?.home?.games_used || {};
+    const awayGamesMeta = api?.away?.games_used || {};
+
+    const homeGames = safeNum(homeGamesMeta?.games_used_total);
+    const awayGames = safeNum(awayGamesMeta?.games_used_total);
+
+    const formatSampleLabel = (meta, games) => {
+      const partialByFlag = meta && Object.keys(meta).some(k => k.startsWith('partial_') && meta[k] === true);
+      const partialBySize = games !== null && games < 5;
+      if(partialByFlag || partialBySize) return `parcial (${games ?? 0}/5)`;
+      if(games === null) return 'amostra: —';
+      return `amostra: ${games}/5`;
+    };
+
+    const hGF = safeNum(h.gols_marcados);
+    const hGA = safeNum(h.gols_sofridos);
+    const hCS = safeNum(h.clean_sheets);
+    const hFTS = safeNum(h.falha_marcar);
+
+    const aGF = safeNum(a.gols_marcados);
+    const aGA = safeNum(a.gols_sofridos);
+    const aCS = safeNum(a.clean_sheets);
+    const aFTS = safeNum(a.falha_marcar);
+
+    const trend = classifyTrend(hGF, hGA, aGF, aGA);
+    const defA = classifyDefense(aGA);
+
+    const pGF = pct(hGF, aGF);
+    const pGA = pct(hGA, aGA);
+    const pCS = pct(hCS, aCS);
+    const pFTS = pct(hFTS, aFTS);
+
+    const mode = ctx?.mode || "last5";
+
+    return `
+  <div class="rt-statsv2">
+    <div class="sv2-tabs" role="tablist" aria-label="Stats mode">
+      <div class="sv2-tab ${mode==="last5"?"is-active":""}" data-sv2-mode="last5">Últimos 5 jogos</div>
+      <div class="sv2-tab ${mode==="h2h"?"is-active":""}" data-sv2-mode="h2h">${homeName} vs ${awayName}</div>
+    </div>
+
+    <div class="sv2-grid">
+      <div class="sv2-card">
+        <div class="sv2-card-h">
+          <div>
+            <div class="sv2-team">${homeName}</div>
+            <div class="sv2-sub">Home</div>
+          </div>
+          <div class="sv2-pill">${formatSampleLabel(homeGamesMeta, homeGames)}</div>
+        </div>
+
+        <div class="sv2-card-b">
+          <div class="sv2-kpis">
+            <div class="sv2-kpi"><div class="k">Jogos</div><div class="v">${fmt(homeGames)}</div><div class="h">usados</div></div>
+            <div class="sv2-kpi"><div class="k">GF</div><div class="v">${fmt(hGF)}</div><div class="h">gols pró</div></div>
+            <div class="sv2-kpi"><div class="k">GA</div><div class="v">${fmt(hGA)}</div><div class="h">gols contra</div></div>
+            <div class="sv2-kpi"><div class="k">CS</div><div class="v">${fmt(hCS)}</div><div class="h">clean sheets</div></div>
+            <div class="sv2-kpi"><div class="k">FTS</div><div class="v">${fmt(hFTS)}</div><div class="h">falhou</div></div>
+          </div>
+
+          <div class="sv2-compare">
+            <div class="sv2-compare-title">Comparativo (Home vs Away)</div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Gols marcados (GF)</div>
+              <div class="sv2-num">${fmt(hGF)}</div>
+              <div class="sv2-bar"><i style="width:${pGF.l}%"></i><b style="width:${pGF.r}%"></b></div>
+              <div class="sv2-num">${fmt(aGF)}</div>
+            </div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Gols sofridos (GA)</div>
+              <div class="sv2-num">${fmt(hGA)}</div>
+              <div class="sv2-bar"><i style="width:${pGA.l}%"></i><b style="width:${pGA.r}%"></b></div>
+              <div class="sv2-num">${fmt(aGA)}</div>
+            </div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Clean sheets (CS)</div>
+              <div class="sv2-num">${fmt(hCS)}</div>
+              <div class="sv2-bar"><i style="width:${pCS.l}%"></i><b style="width:${pCS.r}%"></b></div>
+              <div class="sv2-num">${fmt(aCS)}</div>
+            </div>
+
+            <div class="sv2-row">
+              <div class="sv2-label">Falhou em marcar (FTS)</div>
+              <div class="sv2-num">${fmt(hFTS)}</div>
+              <div class="sv2-bar"><i style="width:${pFTS.l}%"></i><b style="width:${pFTS.r}%"></b></div>
+              <div class="sv2-num">${fmt(aFTS)}</div>
+            </div>
+
+            <div class="sv2-note">
+              Observação: cartões/escanteios só aparecem quando o snapshot traz esses campos. Aqui mostramos o essencial (GF/GA/CS/FTS).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sv2-card">
+        <div class="sv2-card-h">
+          <div>
+            <div class="sv2-team">${awayName}</div>
+            <div class="sv2-sub">Away</div>
+          </div>
+          <div class="sv2-pill">${formatSampleLabel(awayGamesMeta, awayGames)}</div>
+        </div>
+
+        <div class="sv2-quick">
+          <div class="qtitle">Leitura rápida</div>
+          <div class="sv2-qline"><div class="sv2-qk">Tendência</div><div class="sv2-qv">${trend}</div></div>
+          <div class="sv2-qline"><div class="sv2-qk">Defesa (Away)</div><div class="sv2-qv">${defA}</div></div>
+          <div class="sv2-qline"><div class="sv2-qk">Clean sheets (H/A)</div><div class="sv2-qv">${fmt(hCS)} / ${fmt(aCS)}</div></div>
+
+          <div class="sv2-note">
+            Se algum time vier com “—”, o snapshot ainda não trouxe dados suficientes para essa amostra.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  }
+
+  function renderStatsTab(ov, data, prefetchedStats){
     const panel = ov.querySelector('[data-panel="stats"]');
     if(!panel) return;
 
     const fixtureId = getFixtureId(data);
-    console.log('[MR2][stats] renderStatsTab:start', {
-      fixtureId,
-      home: data?.home?.name || data?.home,
-      away: data?.away?.name || data?.away
-    });
     if(!Number.isInteger(fixtureId) || fixtureId <= 0) {
-      console.warn('[MR2][stats] missing fixture id, using legacy renderer');
-      return renderStatsTabLegacy(ov, data, 'missing_fixture_id');
+      panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.empty', 'Sem dados disponíveis')}</div>`;
+      return;
     }
 
-    panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.loading_stats', 'Carregando estatísticas...')}</div>`;
+    panel.innerHTML = `<div class="mr-v2-stats-loading">${t('match_radar.loading_stats', 'Carregando estatísticas...')}</div>`;
 
-    const apiUrl = `/api/match-stats?fixture=${encodeURIComponent(fixtureId)}`;
-    console.log('[MR2][stats] fetching api', { fixtureId, apiUrl });
-
-    fetch(apiUrl, { cache: 'no-store' })
-      .then(r => {
-        console.log('[MR2][stats] api response', { fixtureId, status: r.status, ok: r.ok });
-        if(!r.ok) throw new Error(`http_${r.status}`);
-        return r.json();
-      })
-      .then(api => {
-        if(!api || !api.home || !api.away) throw new Error('no_api_payload');
-        const homeGames = api.home.games_used || {};
-        const awayGames = api.away.games_used || {};
-        const hasApiData = Number(homeGames.games_used_total || 0) > 0 || Number(awayGames.games_used_total || 0) > 0;
-        if(!hasApiData) throw new Error('api_no_data');
-
-        console.log('[MR2][stats] api payload accepted', {
-          fixtureId,
-          source: api.source || null,
-          homeGames: homeGames.games_used_total || 0,
-          awayGames: awayGames.games_used_total || 0
+    const bindModeSwitch = (api) => {
+      panel.innerHTML = renderStatsV2(api, { mode: 'last5' });
+      const root = panel.querySelector('.rt-statsv2');
+      if (root) {
+        root.addEventListener('click', (e) => {
+          const el = e.target.closest('[data-sv2-mode]');
+          if (!el) return;
+          const mode = el.getAttribute('data-sv2-mode');
+          panel.innerHTML = renderStatsV2(api, { mode });
         });
+      }
 
-        const h = api.home.stats?.total_last5 || {};
-        const a = api.away.stats?.total_last5 || {};
-        const show = (v) => (v === null || v === undefined || Number.isNaN(Number(v))) ? '—' : String(v);
+      // Optional progressive enhancement (lazy module).
+      loadStatsEnhancer().then((enhance) => {
+        if(typeof enhance === 'function' && document.body.contains(panel)) {
+          enhance(panel, api);
+        }
+      }).catch(() => {});
+    };
 
-        panel.innerHTML = `
-          <div class="mr-stats-container" style="padding:20px;display:grid;gap:12px;">
-            <div style="font-size:.9em;color:#8fa3bf;">${t('match_radar.form_window', 'Últimos {n} jogos').replace('{n}', 5)}</div>
-            <div style="background:#1a1a2e;border:1px solid #2d3a52;border-radius:8px;padding:14px;">
-              <div style="font-weight:700;margin-bottom:8px;">${escapeHtml(api.home.name || data.home?.name || data.home || 'Home')}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.95em;">
-                <div>Jogos: <strong>${show(homeGames.games_used_total)}</strong></div>
-                <div>GF: <strong>${show(h.gols_marcados)}</strong></div>
-                <div>GA: <strong>${show(h.gols_sofridos)}</strong></div>
-                <div>Clean Sheets: <strong>${show(h.clean_sheets)}</strong></div>
-                <div>Falha Marcar: <strong>${show(h.falha_marcar)}</strong></div>
-                <div>Cantos: <strong>${show(h.cantos)}</strong></div>
-              </div>
-            </div>
-            <div style="background:#1a1a2e;border:1px solid #2d3a52;border-radius:8px;padding:14px;">
-              <div style="font-weight:700;margin-bottom:8px;">${escapeHtml(api.away.name || data.away?.name || data.away || 'Away')}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.95em;">
-                <div>Jogos: <strong>${show(awayGames.games_used_total)}</strong></div>
-                <div>GF: <strong>${show(a.gols_marcados)}</strong></div>
-                <div>GA: <strong>${show(a.gols_sofridos)}</strong></div>
-                <div>Clean Sheets: <strong>${show(a.clean_sheets)}</strong></div>
-                <div>Falha Marcar: <strong>${show(a.falha_marcar)}</strong></div>
-                <div>Cantos: <strong>${show(a.cantos)}</strong></div>
-              </div>
-            </div>
-          </div>
-        `;
+    if(prefetchedStats && hasStatsPayload(prefetchedStats)){
+      bindModeSwitch(prefetchedStats);
+      return;
+    }
+
+    fetchMatchStatsPayload(fixtureId)
+      .then(api => {
+        if(!hasStatsPayload(api)) throw new Error('api_no_stats');
+        bindModeSwitch(api);
       })
       .catch((err) => {
-        console.warn('[MR2][stats] api path failed, using legacy', {
+        console.warn('[MR2][stats] api load failed after modal open', {
           fixtureId,
           error: err?.message || String(err)
         });
-        renderStatsTabLegacy(ov, data, err?.message || 'api_error');
+        panel.innerHTML = `<div class="mr-v2-empty">${t('match_radar.empty', 'Sem dados disponíveis')}</div>`;
       });
   }
 
@@ -587,6 +1265,9 @@
   // expose globally
   window.openMatchRadarV2 = openMatchRadarV2;
   window.getMatchRadarV2Data = getMatchRadarV2Data;
+  window.prefetchMatchRadarV2 = prefetchMatchRadarV2;
+  window.renderStatsV2 = renderStatsV2;
+  window.ensureMatchRadarMicroBootstrap = ensureMatchRadarMicroBootstrap;
 
 })();
 // ========================================
@@ -1439,6 +2120,177 @@ function isEmptyCardClick(event) {
   return true;
 }
 
+function riskTone(riskRaw){
+  const risk = String(riskRaw || "").toLowerCase();
+  if(risk.includes("low") || risk.includes("baixo")) return "high";
+  if(risk.includes("med") || risk.includes("medio") || risk.includes("médio")) return "medium";
+  return "risk";
+}
+
+function confidenceFromMatch(item){
+  const explicit = Number(
+    item?.confidence ?? item?.confidence_pct ?? item?.confidence_score ?? item?.probability ?? item?.prob
+  );
+  if(Number.isFinite(explicit) && explicit > 0){
+    return Math.max(1, Math.min(99, explicit > 1 ? explicit : explicit * 100));
+  }
+  const tone = riskTone(item?.risk);
+  if(tone === "high") return 82;
+  if(tone === "medium") return 71;
+  return 59;
+}
+
+function oddFromMatch(item){
+  const candidates = [
+    item?.odd,
+    item?.odds,
+    item?.odd_avg,
+    item?.avg_odd,
+    item?.average_odd,
+    item?.market_odds,
+    item?.book_odds
+  ];
+  for(const value of candidates){
+    const num = Number(value);
+    if(Number.isFinite(num) && num > 1) return num.toFixed(2);
+  }
+  return "--";
+}
+
+function insightFromMatch(item, t){
+  const analysis = String(item?.analysis || item?.note || "").trim();
+  if(analysis) return analysis;
+
+  const gfHome = Number(item?.gf_home ?? item?.gfHome ?? 0);
+  const gfAway = Number(item?.gf_away ?? item?.gfAway ?? 0);
+  const gaHome = Number(item?.ga_home ?? item?.gaHome ?? 0);
+  const gaAway = Number(item?.ga_away ?? item?.gaAway ?? 0);
+  const totalAttack = gfHome + gfAway;
+  const totalDefense = gaHome + gaAway;
+
+  if(Number.isFinite(totalAttack) && totalAttack >= 4){
+    return t.hero_quick_insight_high_scoring || "Ataques com boa producao recente de gols.";
+  }
+  if(Number.isFinite(totalDefense) && totalDefense <= 2){
+    return t.hero_quick_insight_low_concede || "Defesas consistentes nas ultimas partidas.";
+  }
+  return t.hero_quick_insight_default || "Leitura equilibrada para o mercado sugerido.";
+}
+
+function ensurePremiumDayScaffold(t){
+  const hero = qs(".hero");
+  const calSection = qs("#calendar_section");
+  if(!hero || !calSection) return;
+
+  let metrics = qs("#rt_metrics_strip");
+  if(!metrics){
+    metrics = document.createElement("section");
+    metrics.id = "rt_metrics_strip";
+    metrics.className = "rt-metrics-strip";
+    hero.insertAdjacentElement("afterend", metrics);
+  }
+
+  let insights = qs("#rt_quick_insights");
+  if(!insights){
+    insights = document.createElement("section");
+    insights.id = "rt_quick_insights";
+    insights.className = "rt-insights-section";
+    calSection.insertAdjacentElement("afterend", insights);
+  }
+
+  let entry = qs("#rt_match_radar_entry");
+  if(!entry){
+    entry = document.createElement("section");
+    entry.id = "rt_match_radar_entry";
+    entry.className = "rt-entry-section";
+    insights.insertAdjacentElement("afterend", entry);
+  }
+
+  metrics.setAttribute("aria-label", t.metrics_strip_label || "Metricas do dia");
+  insights.setAttribute("aria-label", t.quick_insights_title || "Quick insights");
+  entry.setAttribute("aria-label", t.match_radar || "Match Radar");
+}
+
+function renderPremiumDayPanels(t, matches, highlights, activeTab){
+  const safeMatches = Array.isArray(matches) ? matches : [];
+  const safeHighlights = Array.isArray(highlights) ? highlights : [];
+  const tabLabel = activeTab === "tomorrow"
+    ? (t.tab_tomorrow || "Amanhã")
+    : (t.tab_today || "Hoje");
+
+  const leagues = new Set();
+  safeMatches.forEach((m)=>{
+    const key = m?.competition_id ?? `${m?.country || ""}-${m?.competition || ""}`;
+    if(key) leagues.add(String(key));
+  });
+
+  const highConfidence = safeHighlights.filter((m)=> confidenceFromMatch(m) >= 75).length;
+  const avgConfidence = safeHighlights.length
+    ? Math.round(safeHighlights.reduce((acc, m)=> acc + confidenceFromMatch(m), 0) / safeHighlights.length)
+    : 0;
+
+  const metrics = qs("#rt_metrics_strip");
+  if(metrics){
+    metrics.innerHTML = `
+      <article class="rt-metric-card"><p>${escAttr(t.metrics_matches_today || "Jogos no dia")}</p><strong>${safeMatches.length}</strong><span>${escAttr(tabLabel)}</span></article>
+      <article class="rt-metric-card"><p>${escAttr(t.metrics_leagues || "Ligas cobertas")}</p><strong>${leagues.size}</strong><span>${escAttr(tabLabel)}</span></article>
+      <article class="rt-metric-card"><p>${escAttr(t.metrics_high_confidence || "High confidence picks")}</p><strong>${highConfidence}</strong><span>${escAttr(t.metrics_top3_base || "Top 3 Radar")}</span></article>
+      <article class="rt-metric-card"><p>${escAttr(t.metrics_avg_confidence || "Confianca media")}</p><strong>${avgConfidence ? `${avgConfidence}%` : "--"}</strong><span>${escAttr(t.metrics_top3_base || "Top 3 Radar")}</span></article>
+    `;
+  }
+
+  const bttsMatch = safeMatches.find((m)=> /btts|both teams/i.test(String(m?.suggestion_free || ""))) || safeHighlights[0] || safeMatches[0] || null;
+  const underMatch = safeMatches.find((m)=> /under/i.test(String(m?.suggestion_free || ""))) || safeHighlights[1] || safeMatches[1] || bttsMatch;
+  const goalsMatch = safeMatches
+    .slice()
+    .sort((a,b)=> (Number((b?.gf_home ?? 0)) + Number((b?.gf_away ?? 0))) - (Number((a?.gf_home ?? 0)) + Number((a?.gf_away ?? 0))))[0] || safeHighlights[2] || safeMatches[2] || bttsMatch;
+
+  const insightCard = (title, match, fallbackText)=>{
+    if(!match){
+      return `<article class="rt-insight-card"><h3>${escAttr(title)}</h3><p>${escAttr(fallbackText)}</p></article>`;
+    }
+    const fixtureId = match?.fixture_id ?? match?.fixtureId ?? match?.id ?? "";
+    const market = localizeMarket(match?.suggestion_free, t) || "--";
+    return `
+      <article class="rt-insight-card" ${fixtureId ? `data-fixture-id="${escAttr(String(fixtureId))}"` : ""} data-sugg="${escAttr(String(match?.suggestion_free || ""))}">
+        <p class="kicker">${escAttr(title)}</p>
+        <h3>${escAttr(String(match?.home || "--"))} vs ${escAttr(String(match?.away || "--"))}</h3>
+        <p>${escAttr(market)}</p>
+      </article>
+    `;
+  };
+
+  const insights = qs("#rt_quick_insights");
+  if(insights){
+    insights.innerHTML = `
+      <div class="rt-section-head"><h2>${escAttr(t.quick_insights_title || "Quick Insights")}</h2></div>
+      <div class="rt-insights-grid">
+        ${insightCard(t.quick_insight_btts || "Most likely BTTS", bttsMatch, t.quick_insight_empty || "Sem sinal relevante para este dia.")}
+        ${insightCard(t.quick_insight_goals || "Highest expected goals", goalsMatch, t.quick_insight_empty || "Sem sinal relevante para este dia.")}
+        ${insightCard(t.quick_insight_under || "Best under opportunity", underMatch, t.quick_insight_empty || "Sem sinal relevante para este dia.")}
+      </div>
+    `;
+  }
+
+  const entry = qs("#rt_match_radar_entry");
+  if(entry){
+    const featured = safeHighlights[0] || safeMatches[0] || null;
+    const fixtureId = featured?.fixture_id ?? featured?.fixtureId ?? featured?.id ?? "";
+    const title = featured
+      ? `${String(featured?.home || "--")} vs ${String(featured?.away || "--")}`
+      : (t.match_radar || "Match Radar");
+
+    entry.innerHTML = `
+      <div class="rt-entry-copy">
+        <p class="eyebrow">${escAttr(t.match_radar || "Match Radar")}</p>
+        <h2>${escAttr(t.entry_title || "Abra a leitura completa antes de confirmar sua entrada")}</h2>
+        <p>${escAttr(title)}</p>
+      </div>
+      <button class="rt-entry-btn" type="button" ${fixtureId ? `data-fixture-id="${escAttr(String(fixtureId))}"` : "disabled"} data-sugg="${escAttr(String(featured?.suggestion_free || ""))}">${escAttr(t.entry_open_button || "Abrir Match Radar")}</button>
+    `;
+  }
+}
+
 function renderTop3(t, data){
   const slots = data.highlights || [];
   const cards = qsa(".card[data-slot]");
@@ -1457,14 +2309,28 @@ function renderTop3(t, data){
     top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
     top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
 
+    const tone = riskTone(item?.risk);
+    card.classList.remove("risk-high", "risk-medium", "risk-low");
+    card.classList.add(tone === "high" ? "risk-low" : tone === "medium" ? "risk-medium" : "risk-high");
+
     if (badge) {
-      badge.style.display = "none";
-      badge.textContent = "";
-      badge.removeAttribute("title");
-      badge.removeAttribute("data-tip");
+      badge.style.display = "inline-flex";
+      badge.classList.remove("low", "med", "high");
+      badge.classList.add(tone === "high" ? "low" : tone === "medium" ? "med" : "high");
+      badge.textContent = tone === "high"
+        ? (t.risk_low || "Risco baixo")
+        : tone === "medium"
+          ? (t.risk_medium || "Risco medio")
+          : (t.risk_high || "Risco alto");
+      badge.setAttribute("title", t.risk_tooltip || "Nivel de risco da sugestao");
+      badge.setAttribute("data-tip", t.risk_tooltip || "Nivel de risco da sugestao");
     }
 
     if(!item){
+      if (badge) {
+        badge.style.display = "none";
+        badge.textContent = "";
+      }
       h3.textContent = t.empty_slot;
       meta.innerHTML = "";
       if(suggestionEl) suggestionEl.textContent = "—";
@@ -1507,9 +2373,23 @@ function renderTop3(t, data){
     card.setAttribute("data-sugg", String(item.suggestion_free || ""));
 
     const suggestion = localizeMarket(item.suggestion_free, t) || "—";
+    const confidence = Math.round(confidenceFromMatch(item));
+    const odd = oddFromMatch(item);
+    const insight = insightFromMatch(item, t);
     if(suggestionEl) suggestionEl.textContent = suggestion;
-    lock.innerHTML = "";
-    lock.style.display = "none";
+
+    lock.innerHTML = `
+      <div class="rt-card-kpis">
+        <span><small>${escAttr(t.market_label || "Market")}</small><strong>${escAttr(suggestion)}</strong></span>
+        <span><small>${escAttr(t.odd_label || "Odd")}</small><strong>${escAttr(odd)}</strong></span>
+      </div>
+      <div class="rt-card-confidence">
+        <div class="rt-card-confidence-head"><small>${escAttr(t.confidence_label || "Confidence")}</small><strong>${confidence}%</strong></div>
+        <div class="rt-card-confidence-track"><i style="width:${confidence}%"></i></div>
+      </div>
+      <p class="rt-card-insight">${escAttr(insight)}</p>
+    `;
+    lock.style.display = "block";
   });
 }
 
@@ -1958,7 +2838,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   });
 
   // Format date labels (DD/MM)
-  function formatTabDate(offset, baseDate = meta?.today || new Date()) {
+  function formatTabDate(offset, baseDate = meta?.today_key || meta?.today || new Date()) {
     const parts = typeof baseDate === 'string' ? baseDate.split('-') : [];
     if (parts.length === 3) {
       // baseDate is in YYYY-MM-DD format from Worker
@@ -2243,15 +3123,15 @@ async function loadCalendar2D() {
   if (cache.data && (now - cache.loadedAt) < ttl) return cache.data;
 
   const emptyFallback = (tz) => ({
-    meta: { tz, source: 'fallback_unavailable' },
+    meta: { timezone: 'America/Bahia', source: 'fallback_unavailable', today_key: null, tomorrow_key: null, available_day_keys: [] },
+    days: {},
     today: [],
     tomorrow: []
   });
 
   try {
-    // Get user's timezone
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
-    const url = `/api/v1/calendar_2d?tz=${encodeURIComponent(tz)}&ts=${Date.now()}`;
+    const tz = 'America/Bahia';
+    const url = `/api/v1/calendar_2d?ts=${Date.now()}`;
     let response = await fetch(url, { cache: 'no-store' });
 
     if (!response.ok && response.status === 400) {
@@ -2287,6 +3167,52 @@ async function loadCalendar2D() {
     cache.loadedAt = now;
     return fallback;
   }
+}
+
+function getCalendarMetaDayKey(cal2d, tabType) {
+  const meta = cal2d?.meta || {};
+  if (tabType === 'tomorrow') {
+    return String(meta.tomorrow_key || meta.tomorrow || '');
+  }
+  return String(meta.today_key || meta.today || '');
+}
+
+function getCalendarBucketForTab(cal2d, tabType) {
+  const dayKey = getCalendarMetaDayKey(cal2d, tabType);
+  const fromDays = cal2d?.days && dayKey && cal2d.days[dayKey] && Array.isArray(cal2d.days[dayKey].matches)
+    ? cal2d.days[dayKey].matches
+    : null;
+  if (Array.isArray(fromDays)) return fromDays;
+  return tabType === 'tomorrow'
+    ? (Array.isArray(cal2d?.tomorrow) ? cal2d.tomorrow : [])
+    : (Array.isArray(cal2d?.today) ? cal2d.today : []);
+}
+
+function getRadarTop3ForTab(cal2d, tabType, radarFallback) {
+  const dayKey = getCalendarMetaDayKey(cal2d, tabType);
+  const bucket = cal2d?.days && dayKey ? cal2d.days[dayKey] : null;
+  if (Array.isArray(bucket?.radar_top3) && bucket.radar_top3.length) {
+    return bucket.radar_top3;
+  }
+  const matches = getCalendarBucketForTab(cal2d, tabType);
+  if (matches.length) return matches.slice(0, 3);
+  if (Array.isArray(radarFallback?.highlights)) return radarFallback.highlights.slice(0, 3);
+  return [];
+}
+
+function flattenCalendarMatches(cal2d) {
+  const out = [];
+  const days = cal2d?.days && typeof cal2d.days === 'object' ? cal2d.days : null;
+  if (days) {
+    for (const day of Object.values(days)) {
+      if (Array.isArray(day?.matches)) out.push(...day.matches);
+    }
+  }
+  if (!out.length) {
+    out.push(...(Array.isArray(cal2d?.today) ? cal2d.today : []));
+    out.push(...(Array.isArray(cal2d?.tomorrow) ? cal2d.tomorrow : []));
+  }
+  return out;
 }
 
 // Resolver match APENAS do radar_day
@@ -3543,9 +4469,6 @@ function injectPatchStyles(){
 
 async function init(){
   LANG = pathLang() || detectLang();
-  // ...existing code...
-}
-window.init = init;
   const dict = await loadJSON(`/i18n/strings.json?v=${I18N_VERSION}`, {});
   T = dict[LANG] || dict.en;
 
@@ -3577,6 +4500,8 @@ window.init = init;
   const calendarRoot = qs("#calendar");
   if(calendarRoot) calendarRoot.classList.add("rt-cal-root");
 
+  ensurePremiumDayScaffold(T);
+
   setNav(LANG, T);
   decorateLangPills(LANG);
   initTooltips();
@@ -3598,14 +4523,9 @@ window.init = init;
   console.log('Calendar today count:', Array.isArray(cal2d?.today) ? cal2d.today.length : 0);
   console.log('Calendar tomorrow count:', Array.isArray(cal2d?.tomorrow) ? cal2d.tomorrow.length : 0);
 
-  if (!radar || isMockDataset(radar) || (Array.isArray(radar.highlights) && radar.highlights.length===0 && Array.isArray(radar.matches) && radar.matches.length===0)) {
-    console.warn('⚠️ Radar data missing or empty');
-    const top = document.querySelector("#top3") || document.querySelector(".top3") || document.querySelector(".top-picks") || document.querySelector("main");
-    showUpdatingMessage(top);
-    return;
-  }
-
-  renderTop3(T, radar);
+  const initialTop3 = getRadarTop3ForTab(cal2d, 'today', radar);
+  renderTop3(T, { highlights: initialTop3 });
+  renderPremiumDayPanels(T, getCalendarBucketForTab(cal2d, 'today'), initialTop3, 'today');
 
   setText("calendar_title", T.day_matches_title || "Jogos do dia");
   setText("calendar_sub", "");
@@ -3619,8 +4539,7 @@ window.init = init;
   
   const allMatches = [
     ...radarMatches,
-    ...cal2d.today,
-    ...cal2d.tomorrow
+    ...flattenCalendarMatches(cal2d)
   ];
   console.log('All matches total:', allMatches.length);
   console.log('First 3 matches:', allMatches.slice(0, 3).map(m => `${m.home} vs ${m.away}`));
@@ -3630,7 +4549,10 @@ window.init = init;
     form_window: Number(cal2d?.meta?.form_window || 5),
     goals_window: Number(cal2d?.meta?.goals_window || 5)
   };
-  CAL_DATA = { today: cal2d.today, tomorrow: cal2d.tomorrow };
+  CAL_DATA = {
+    today: getCalendarBucketForTab(cal2d, 'today'),
+    tomorrow: getCalendarBucketForTab(cal2d, 'tomorrow')
+  };
   window.CAL_MATCHES = CAL_MATCHES;
   window.CAL_SNAPSHOT_META = { goals_window: CAL_META.goals_window, form_window: CAL_META.form_window };
 
@@ -3640,19 +4562,27 @@ window.init = init;
   };
 
   function rerender(){
-    // Combine radar highlights with today's calendar matches for rendering
-    const todayWithRadar = [...radarMatches, ...cal2d.today];
-    console.log('📅 renderCalendar with merged today:', todayWithRadar.length, 'matches (including', radarMatches.length, 'radar highlights)');
-    renderCalendar(T, todayWithRadar, cal2d.tomorrow, cal2d.meta, "time", "", CAL_ACTIVE_TAB);
+    const todayMatches = getCalendarBucketForTab(cal2d, 'today');
+    const tomorrowMatches = getCalendarBucketForTab(cal2d, 'tomorrow');
+    const activeTab = CAL_ACTIVE_TAB || 'today';
+    const highlights = getRadarTop3ForTab(cal2d, activeTab, radar);
+    const activeMatches = activeTab === 'tomorrow' ? tomorrowMatches : todayMatches;
+    setText("hero_sub", activeTab === 'tomorrow' ? (T.hero_sub_tomorrow || T.tab_tomorrow || "Jogos de amanhã") : (T.hero_sub_day || "Jogos de hoje"));
+    renderTop3(T, { highlights });
+    renderPremiumDayPanels(T, activeMatches, highlights, activeTab);
+    console.log('📅 renderCalendar day_key buckets:', todayMatches.length, 'today and', tomorrowMatches.length, 'tomorrow', 'active=', activeTab);
+    renderCalendar(T, todayMatches, tomorrowMatches, cal2d.meta, "time", "", activeTab);
     bindOpenHandlers();
   }
 
   function bindOpenHandlers(){
+    const prefetchFn = typeof window.prefetchMatchRadarV2 === 'function' ? window.prefetchMatchRadarV2 : null;
+
     // Bind the match-card click handler ONCE (rerender() calls bindOpenHandlers repeatedly)
     if(!window.__MR_CARD_CLICK_BOUND__){
       window.__MR_CARD_CLICK_BOUND__ = true;
 
-      document.addEventListener('click', async (e) => {
+      document.addEventListener('click', (e) => {
         const card = e.target.closest('[data-fixture-id]');
         if(!card) return;
 
@@ -3665,28 +4595,71 @@ window.init = init;
         e.preventDefault();
         e.stopPropagation();
 
-        // 1) Sempre resolve do radar_day (single source of truth)
-        const match = await resolveMatchByFixtureId(fixtureId);
-        if(!match) {
-          openModal('match', `fixture:${fixtureId}`);
-          return;
-        }
-
-        // 2) Se em página radar, fetch metadata overlay
+        // Immediate visual feedback (<50ms perceived): open the radar now.
+        const matchSync = findMatchByFixtureId(fixtureId);
         const path = (window.location.pathname || '');
-        let meta = null;
-        if (path.includes('/radar/day')) {
-          const rd = await getRadarDay();
-          meta = rd ? findRadarMetaByFixtureId(rd, fixtureId) : null;
-        } else if (path.includes('/radar/week')) {
-          const rw = await getRadarWeek();
-          meta = rw ? findRadarMetaByFixtureId(rw, fixtureId) : null;
+        let metaSync = null;
+        if(path.includes('/radar/day')) {
+          metaSync = RADAR_DAY_DATA ? findRadarMetaByFixtureId(RADAR_DAY_DATA, fixtureId) : null;
         }
+        if(matchSync) {
+          window.__MATCH_CTX__ = { match: matchSync, meta: metaSync, fixtureId };
+        }
+        openMatchRadarV2(fixtureId, { mode: 'sidebar' });
 
-        // 3) Abre modal com match + meta
-        window.__MATCH_CTX__ = { match, meta, fixtureId };
-        openMatchRadarV2(fixtureId);
+        // Continue enrichment asynchronously (metadata and cache warmup).
+        if(prefetchFn) prefetchFn(fixtureId, { includeStats: true });
       }, true);
+
+      // Hover/focus prefetch.
+      document.addEventListener('mouseenter', (e) => {
+        const card = e.target && e.target.closest ? e.target.closest('[data-fixture-id]') : null;
+        if(!card || !prefetchFn) return;
+        const fixtureId = card.getAttribute('data-fixture-id');
+        if(fixtureId) prefetchFn(fixtureId, { includeStats: true });
+      }, true);
+
+      document.addEventListener('focusin', (e) => {
+        const card = e.target && e.target.closest ? e.target.closest('[data-fixture-id]') : null;
+        if(!card || !prefetchFn) return;
+        const fixtureId = card.getAttribute('data-fixture-id');
+        if(fixtureId) prefetchFn(fixtureId, { includeStats: true });
+      });
+
+      // Viewport prefetch with IntersectionObserver.
+      if(prefetchFn && typeof window.IntersectionObserver === 'function') {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if(!entry.isIntersecting) return;
+            const fixtureId = entry.target?.getAttribute?.('data-fixture-id');
+            if(fixtureId) prefetchFn(fixtureId, { includeStats: false });
+            io.unobserve(entry.target);
+          });
+        }, { rootMargin: '140px 0px' });
+
+        window.__MR_PREFETCH_IO__ = io;
+      }
+
+      // Idle-time warmup for first visible cards.
+      if(prefetchFn) {
+        const idle = window.requestIdleCallback
+          ? window.requestIdleCallback.bind(window)
+          : (cb) => setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 }), 120);
+
+        idle(() => {
+          const cards = qsa('[data-fixture-id]').slice(0, 10);
+          cards.forEach((el) => {
+            const fixtureId = el.getAttribute('data-fixture-id');
+            if(fixtureId) prefetchFn(fixtureId, { includeStats: false });
+          });
+        });
+      }
+    }
+
+    if(window.__MR_PREFETCH_IO__) {
+      qsa('[data-fixture-id]').forEach((el) => {
+        try { window.__MR_PREFETCH_IO__.observe(el); } catch(e) {}
+      });
     }
 
     // No competition/country modal bindings in Free mode
@@ -3727,6 +4700,53 @@ window.init = init;
 
   rerender();
   bindOpenHandlers();
+
+  const idleWarm = window.requestIdleCallback
+    ? window.requestIdleCallback.bind(window)
+    : (cb) => setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 }), 120);
+
+  function bootstrapMatchRadarFromRoute(){
+    try {
+      if(window.__MR_ROUTE_BOOTSTRAPPED__) return false;
+      const params = new URLSearchParams(window.location.search || '');
+      const fixtureFromRoute = params.get('fixture');
+      const modeFromRoute = params.get('mr_mode');
+      const tabFromRoute = params.get('mr_tab');
+      if(!fixtureFromRoute) return false;
+
+      const preMatch = findMatchByFixtureId(fixtureFromRoute);
+      if(preMatch) {
+        window.__MATCH_CTX__ = { match: preMatch, meta: null, fixtureId: fixtureFromRoute };
+      }
+
+      const routeMode = (modeFromRoute === 'full' || modeFromRoute === 'fullscreen' || modeFromRoute === 'sidebar')
+        ? (modeFromRoute === 'full' ? 'fullscreen' : modeFromRoute)
+        : 'fullscreen';
+
+      window.__MR_ROUTE_BOOTSTRAPPED__ = true;
+      openMatchRadarV2(fixtureFromRoute, {
+        mode: routeMode,
+        requestedTab: tabFromRoute || null,
+        syncUrl: false
+      });
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  // Route bootstrap first so direct URL opens overlay immediately.
+  bootstrapMatchRadarFromRoute();
+
+  idleWarm(() => {
+    if(typeof window.ensureMatchRadarMicroBootstrap === 'function') {
+      window.ensureMatchRadarMicroBootstrap().catch(() => null);
+    }
+  });
+
+  // Dedicated route bootstrap: /{lang}/radar/day/?fixture={id}&mr_mode=fullscreen
+  bootstrapMatchRadarFromRoute();
+
   startLivePolling(T);
 }
 
