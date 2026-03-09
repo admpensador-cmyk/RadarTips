@@ -2064,9 +2064,19 @@ function initTooltips(){
 
 function setNav(lang, t){
   const map = {
-    day: "#hero_section",
-    calendar: "#calendar_section"
+    today: `/${lang}/radar/day/#hero_section`,
+    tomorrow: `/${lang}/radar/day/#calendar_section`,
+    leagues: `/${lang}/country/`,
+    stats: `/${lang}/calendar/`
   };
+
+  const labels = {
+    today: "Hoje",
+    tomorrow: "Amanhã",
+    leagues: "Ligas",
+    stats: "Estatísticas"
+  };
+
   qsa("[data-nav]").forEach(a=>{
     const k=a.getAttribute("data-nav");
     if(!map[k]){
@@ -2074,18 +2084,48 @@ function setNav(lang, t){
       return;
     }
     a.href = map[k];
-    if(k === "day") a.textContent = t.nav_day || "Radar do Dia";
-    if(k === "calendar") a.textContent = t.day_matches_title || "Jogos do dia";
-    const isHeroActive = k === "day";
-    a.classList.toggle("active", isHeroActive);
+    a.textContent = labels[k] || "";
     a.setAttribute("data-tip", a.textContent);
     a.title = a.textContent;
   });
+
+  syncTopNavActiveTab();
 
   // Language pills get decorated later with flags
   qsa("[data-lang]").forEach(b=>{
     const L=b.getAttribute("data-lang");
     b.classList.toggle("active", L===lang);
+  });
+}
+
+function syncTopNavActiveTab(){
+  const activeTab = CAL_ACTIVE_TAB || "today";
+  qsa("[data-nav]").forEach((el) => {
+    const key = String(el.getAttribute("data-nav") || "");
+    const isActive = (key === "today" && activeTab === "today") || (key === "tomorrow" && activeTab === "tomorrow");
+    el.classList.toggle("active", isActive);
+  });
+}
+
+function bindTopNavActions(){
+  qsa("[data-nav]").forEach((el) => {
+    if(el.dataset.navBound === "1") return;
+    el.dataset.navBound = "1";
+
+    el.addEventListener("click", (e) => {
+      const key = String(el.getAttribute("data-nav") || "");
+      if(key !== "today" && key !== "tomorrow") return;
+
+      e.preventDefault();
+      CAL_ACTIVE_TAB = key;
+      syncTopNavActiveTab();
+      if(typeof window.__RERENDER_CALENDAR__ === "function") window.__RERENDER_CALENDAR__();
+
+      const target = qs(key === "today" ? "#hero_section" : "#calendar_section");
+      if(target && typeof target.scrollIntoView === "function"){
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   });
 }
 
@@ -2140,6 +2180,17 @@ function confidenceFromMatch(item){
   return 59;
 }
 
+function confidenceHeatLevel(item, opts){
+  const confidence = Math.round(confidenceFromMatch(item));
+  const risk = riskTone(item?.risk);
+  const forceStrong = opts?.forceStrong === true;
+
+  if(forceStrong) return "strong";
+  if(confidence >= 78 && risk === "high") return "strong";
+  if(confidence >= 68) return "medium";
+  return "neutral";
+}
+
 function oddFromMatch(item){
   const candidates = [
     item?.odd,
@@ -2154,7 +2205,45 @@ function oddFromMatch(item){
     const num = Number(value);
     if(Number.isFinite(num) && num > 1) return num.toFixed(2);
   }
-  return "--";
+  return null;
+}
+
+function matchSignalBadges(item){
+  const badges = [];
+  const suggestionRaw = String(item?.suggestion_free || "").toLowerCase();
+  const confidence = Math.round(confidenceFromMatch(item));
+  const heat = confidenceHeatLevel(item);
+  const gfHome = Number(item?.gf_home ?? item?.gfHome ?? null);
+  const gfAway = Number(item?.gf_away ?? item?.gfAway ?? null);
+  const hasGoals = Number.isFinite(gfHome) && Number.isFinite(gfAway);
+
+  if(/under/.test(suggestionRaw) && confidence >= 70){
+    badges.push({ label: "UNDER FORTE", tone: "under", heat });
+  }
+  if(/btts|both teams|ambas/.test(suggestionRaw) && confidence >= 70){
+    badges.push({ label: "BTTS FORTE", tone: "btts", heat });
+  }
+  if(hasGoals && (gfHome + gfAway) >= 4){
+    badges.push({ label: "RITMO ALTO", tone: "tempo", heat });
+  }
+  if(hasGoals && Math.abs(gfHome - gfAway) <= 0.8){
+    badges.push({ label: "EQUILIBRADO", tone: "balanced", heat });
+  }
+
+  return badges.slice(0, 2);
+}
+
+function signalPriorityScore(type, match){
+  if(!match) return -1;
+  const confidence = Math.round(confidenceFromMatch(match));
+  const gfHome = Number(match?.gf_home ?? match?.gfHome ?? null);
+  const gfAway = Number(match?.gf_away ?? match?.gfAway ?? null);
+  const hasGoals = Number.isFinite(gfHome) && Number.isFinite(gfAway);
+
+  if(type === "under" || type === "btts") return confidence;
+  if(type === "tempo") return hasGoals ? Math.round((gfHome + gfAway) * 20) : -1;
+  if(type === "balanced") return hasGoals ? Math.round((1.5 - Math.min(1.5, Math.abs(gfHome - gfAway))) * 60) : -1;
+  return -1;
 }
 
 function insightFromMatch(item, t){
@@ -2178,117 +2267,17 @@ function insightFromMatch(item, t){
 }
 
 function ensurePremiumDayScaffold(t){
-  const hero = qs(".hero");
-  const calSection = qs("#calendar_section");
-  if(!hero || !calSection) return;
-
-  let metrics = qs("#rt_metrics_strip");
-  if(!metrics){
-    metrics = document.createElement("section");
-    metrics.id = "rt_metrics_strip";
-    metrics.className = "rt-metrics-strip";
-    hero.insertAdjacentElement("afterend", metrics);
-  }
-
-  let insights = qs("#rt_quick_insights");
-  if(!insights){
-    insights = document.createElement("section");
-    insights.id = "rt_quick_insights";
-    insights.className = "rt-insights-section";
-    calSection.insertAdjacentElement("afterend", insights);
-  }
-
-  let entry = qs("#rt_match_radar_entry");
-  if(!entry){
-    entry = document.createElement("section");
-    entry.id = "rt_match_radar_entry";
-    entry.className = "rt-entry-section";
-    insights.insertAdjacentElement("afterend", entry);
-  }
-
-  metrics.setAttribute("aria-label", t.metrics_strip_label || "Metricas do dia");
-  insights.setAttribute("aria-label", t.quick_insights_title || "Quick insights");
-  entry.setAttribute("aria-label", t.match_radar || "Match Radar");
+  ["#rt_metrics_strip", "#rt_quick_insights", "#rt_match_radar_entry"].forEach((sel)=>{
+    const node = qs(sel);
+    if(node) node.remove();
+  });
 }
 
 function renderPremiumDayPanels(t, matches, highlights, activeTab){
-  const safeMatches = Array.isArray(matches) ? matches : [];
-  const safeHighlights = Array.isArray(highlights) ? highlights : [];
-  const tabLabel = activeTab === "tomorrow"
-    ? (t.tab_tomorrow || "Amanhã")
-    : (t.tab_today || "Hoje");
-
-  const leagues = new Set();
-  safeMatches.forEach((m)=>{
-    const key = m?.competition_id ?? `${m?.country || ""}-${m?.competition || ""}`;
-    if(key) leagues.add(String(key));
-  });
-
-  const highConfidence = safeHighlights.filter((m)=> confidenceFromMatch(m) >= 75).length;
-  const avgConfidence = safeHighlights.length
-    ? Math.round(safeHighlights.reduce((acc, m)=> acc + confidenceFromMatch(m), 0) / safeHighlights.length)
-    : 0;
-
-  const metrics = qs("#rt_metrics_strip");
-  if(metrics){
-    metrics.innerHTML = `
-      <article class="rt-metric-card"><p>${escAttr(t.metrics_matches_today || "Jogos no dia")}</p><strong>${safeMatches.length}</strong><span>${escAttr(tabLabel)}</span></article>
-      <article class="rt-metric-card"><p>${escAttr(t.metrics_leagues || "Ligas cobertas")}</p><strong>${leagues.size}</strong><span>${escAttr(tabLabel)}</span></article>
-      <article class="rt-metric-card"><p>${escAttr(t.metrics_high_confidence || "High confidence picks")}</p><strong>${highConfidence}</strong><span>${escAttr(t.metrics_top3_base || "Top 3 Radar")}</span></article>
-      <article class="rt-metric-card"><p>${escAttr(t.metrics_avg_confidence || "Confianca media")}</p><strong>${avgConfidence ? `${avgConfidence}%` : "--"}</strong><span>${escAttr(t.metrics_top3_base || "Top 3 Radar")}</span></article>
-    `;
-  }
-
-  const bttsMatch = safeMatches.find((m)=> /btts|both teams/i.test(String(m?.suggestion_free || ""))) || safeHighlights[0] || safeMatches[0] || null;
-  const underMatch = safeMatches.find((m)=> /under/i.test(String(m?.suggestion_free || ""))) || safeHighlights[1] || safeMatches[1] || bttsMatch;
-  const goalsMatch = safeMatches
-    .slice()
-    .sort((a,b)=> (Number((b?.gf_home ?? 0)) + Number((b?.gf_away ?? 0))) - (Number((a?.gf_home ?? 0)) + Number((a?.gf_away ?? 0))))[0] || safeHighlights[2] || safeMatches[2] || bttsMatch;
-
-  const insightCard = (title, match, fallbackText)=>{
-    if(!match){
-      return `<article class="rt-insight-card"><h3>${escAttr(title)}</h3><p>${escAttr(fallbackText)}</p></article>`;
-    }
-    const fixtureId = match?.fixture_id ?? match?.fixtureId ?? match?.id ?? "";
-    const market = localizeMarket(match?.suggestion_free, t) || "--";
-    return `
-      <article class="rt-insight-card" ${fixtureId ? `data-fixture-id="${escAttr(String(fixtureId))}"` : ""} data-sugg="${escAttr(String(match?.suggestion_free || ""))}">
-        <p class="kicker">${escAttr(title)}</p>
-        <h3>${escAttr(String(match?.home || "--"))} vs ${escAttr(String(match?.away || "--"))}</h3>
-        <p>${escAttr(market)}</p>
-      </article>
-    `;
-  };
-
-  const insights = qs("#rt_quick_insights");
-  if(insights){
-    insights.innerHTML = `
-      <div class="rt-section-head"><h2>${escAttr(t.quick_insights_title || "Quick Insights")}</h2></div>
-      <div class="rt-insights-grid">
-        ${insightCard(t.quick_insight_btts || "Most likely BTTS", bttsMatch, t.quick_insight_empty || "Sem sinal relevante para este dia.")}
-        ${insightCard(t.quick_insight_goals || "Highest expected goals", goalsMatch, t.quick_insight_empty || "Sem sinal relevante para este dia.")}
-        ${insightCard(t.quick_insight_under || "Best under opportunity", underMatch, t.quick_insight_empty || "Sem sinal relevante para este dia.")}
-      </div>
-    `;
-  }
-
-  const entry = qs("#rt_match_radar_entry");
-  if(entry){
-    const featured = safeHighlights[0] || safeMatches[0] || null;
-    const fixtureId = featured?.fixture_id ?? featured?.fixtureId ?? featured?.id ?? "";
-    const title = featured
-      ? `${String(featured?.home || "--")} vs ${String(featured?.away || "--")}`
-      : (t.match_radar || "Match Radar");
-
-    entry.innerHTML = `
-      <div class="rt-entry-copy">
-        <p class="eyebrow">${escAttr(t.match_radar || "Match Radar")}</p>
-        <h2>${escAttr(t.entry_title || "Abra a leitura completa antes de confirmar sua entrada")}</h2>
-        <p>${escAttr(title)}</p>
-      </div>
-      <button class="rt-entry-btn" type="button" ${fixtureId ? `data-fixture-id="${escAttr(String(fixtureId))}"` : "disabled"} data-sugg="${escAttr(String(featured?.suggestion_free || ""))}">${escAttr(t.entry_open_button || "Abrir Match Radar")}</button>
-    `;
-  }
+  const subtitle = activeTab === "tomorrow"
+    ? (t.hero_sub_tomorrow || "Leitura prioritária do dia selecionado")
+    : (t.hero_sub_day || "Leitura prioritária do dia selecionado");
+  setText("hero_sub", subtitle);
 }
 
 function renderTop3(t, data){
@@ -2310,8 +2299,10 @@ function renderTop3(t, data){
     top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
 
     const tone = riskTone(item?.risk);
-    card.classList.remove("risk-high", "risk-medium", "risk-low");
+    const heatLevel = confidenceHeatLevel(item);
+    card.classList.remove("risk-high", "risk-medium", "risk-low", "heat-strong", "heat-medium", "heat-neutral");
     card.classList.add(tone === "high" ? "risk-low" : tone === "medium" ? "risk-medium" : "risk-high");
+    card.classList.add(`heat-${heatLevel}`);
 
     if (badge) {
       badge.style.display = "inline-flex";
@@ -2331,6 +2322,7 @@ function renderTop3(t, data){
         badge.style.display = "none";
         badge.textContent = "";
       }
+      card.classList.remove("heat-strong", "heat-medium", "heat-neutral");
       h3.textContent = t.empty_slot;
       meta.innerHTML = "";
       if(suggestionEl) suggestionEl.textContent = "—";
@@ -2376,15 +2368,14 @@ function renderTop3(t, data){
     const confidence = Math.round(confidenceFromMatch(item));
     const odd = oddFromMatch(item);
     const insight = insightFromMatch(item, t);
-    if(suggestionEl) suggestionEl.textContent = suggestion;
+    if(suggestionEl) suggestionEl.textContent = `PICK: ${suggestion}`;
 
     lock.innerHTML = `
       <div class="rt-card-kpis">
-        <span><small>${escAttr(t.market_label || "Market")}</small><strong>${escAttr(suggestion)}</strong></span>
-        <span><small>${escAttr(t.odd_label || "Odd")}</small><strong>${escAttr(odd)}</strong></span>
+        ${odd ? `<span><small>${escAttr(t.odd_label || "Odd")}</small><strong>${escAttr(odd)}</strong></span>` : ""}
       </div>
       <div class="rt-card-confidence">
-        <div class="rt-card-confidence-head"><small>${escAttr(t.confidence_label || "Confidence")}</small><strong>${confidence}%</strong></div>
+        <div class="rt-card-confidence-head"><small>${escAttr(t.confidence_label || "Confiança")}</small></div>
         <div class="rt-card-confidence-track"><i style="width:${confidence}%"></i></div>
       </div>
       <p class="rt-card-insight">${escAttr(insight)}</p>
@@ -2884,6 +2875,95 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
   root.appendChild(header);
 
+  const mainGrid = document.createElement("div");
+  mainGrid.className = "rt-day-main-grid";
+  root.appendChild(mainGrid);
+
+  const listColumn = document.createElement("div");
+  listColumn.className = "rt-day-main-list";
+  mainGrid.appendChild(listColumn);
+
+  const signalsColumn = document.createElement("aside");
+  signalsColumn.className = "rt-day-signals";
+  mainGrid.appendChild(signalsColumn);
+
+  const signalCard = (label, match, valueBuilder, type)=>{
+    if(!match) return "";
+    const fixtureId = match?.fixture_id ?? match?.fixtureId ?? match?.id ?? "";
+    const matchup = `${String(match?.home || "--")} vs ${String(match?.away || "--")}`;
+    const detail = valueBuilder(match);
+    if(!detail) return "";
+    const heat = confidenceHeatLevel(match);
+    return {
+      type,
+      score: signalPriorityScore(type, match),
+      heat,
+      html: `
+        <article class="rt-day-signal-item heat-${escAttr(heat)}" ${fixtureId ? `data-fixture-id="${escAttr(String(fixtureId))}"` : ""} data-sugg="${escAttr(String(match?.suggestion_free || ""))}">
+          <p class="kicker">${escAttr(label)}</p>
+          <h4>${escAttr(matchup)}</h4>
+          <p>${escAttr(detail)}</p>
+        </article>
+      `
+    };
+  };
+
+  const bySuggestion = (rx)=> (matchesForTab || []).find((m)=> rx.test(String(m?.suggestion_free || "")));
+  const bestUnder = bySuggestion(/under/i);
+  const bestBTTS = bySuggestion(/btts|both teams|ambas/i);
+  const highestTempo = (matchesForTab || [])
+    .filter((m)=> Number.isFinite(Number(m?.gf_home ?? null)) && Number.isFinite(Number(m?.gf_away ?? null)))
+    .sort((a,b)=> (Number(b?.gf_home ?? 0) + Number(b?.gf_away ?? 0)) - (Number(a?.gf_home ?? 0) + Number(a?.gf_away ?? 0)))[0];
+  const mostBalanced = (matchesForTab || [])
+    .filter((m)=> Number.isFinite(Number(m?.gf_home ?? null)) && Number.isFinite(Number(m?.gf_away ?? null)))
+    .sort((a,b)=> Math.abs(Number(a?.gf_home ?? 0) - Number(a?.gf_away ?? 0)) - Math.abs(Number(b?.gf_home ?? 0) - Number(b?.gf_away ?? 0)))[0];
+
+  const signalsItems = [
+    signalCard("Best Under", bestUnder, (m)=> {
+      const c = Math.round(confidenceFromMatch(m));
+      if(c < 70) return "";
+      return localizeMarket(m?.suggestion_free, t) || "";
+    }, "under"),
+    signalCard("Best BTTS", bestBTTS, (m)=> {
+      const c = Math.round(confidenceFromMatch(m));
+      if(c < 70) return "";
+      return localizeMarket(m?.suggestion_free, t) || "";
+    }, "btts"),
+    signalCard("Highest Tempo", highestTempo, (m)=> {
+      const total = Number(m?.gf_home ?? 0) + Number(m?.gf_away ?? 0);
+      if(!Number.isFinite(total) || total < 3.8) return "";
+      return `Média ofensiva combinada: ${total.toFixed(1)}`;
+    }, "tempo"),
+    signalCard("Most Balanced Match", mostBalanced, (m)=> {
+      const diff = Math.abs(Number(m?.gf_home ?? 0) - Number(m?.gf_away ?? 0));
+      if(!Number.isFinite(diff) || diff > 0.8) return "";
+      return `Diferença de forma: ${diff.toFixed(1)}`;
+    }, "balanced")
+  ].filter(Boolean);
+
+  const signalsSorted = signalsItems
+    .sort((a,b)=> Number(b?.score ?? -1) - Number(a?.score ?? -1));
+  const strongestType = signalsSorted[0]?.type || null;
+
+  const signalsHtml = signalsSorted.map((item)=> {
+    if(!item?.html) return "";
+    if(item.type && item.type === strongestType){
+      return item.html
+        .replace("rt-day-signal-item ", "rt-day-signal-item is-priority ")
+        .replace("heat-neutral", "heat-medium");
+    }
+    return item.html;
+  }).filter(Boolean);
+
+  signalsColumn.innerHTML = `
+    <div class="rt-day-signals-head"><h3>Sinais do Dia</h3></div>
+    ${signalsHtml.length ? `<div class="rt-day-signals-list">${signalsHtml.join("")}</div>` : ""}
+  `;
+
+  if(!signalsHtml.length){
+    signalsColumn.innerHTML += `<p class="rt-day-signals-empty">Sem sinal forte disponível hoje</p>`;
+  }
+
   // Render content based on selected tab
   if(!filtered.length){
     const hasAnyMatches = matchesForTab.length > 0;
@@ -2901,7 +2981,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
     }
     
-    root.innerHTML += `
+    listColumn.innerHTML = `
       <div class="rt-cal-empty-state">
         <div class="rt-cal-empty-title">${escAttr(title)}</div>
         <div class="rt-cal-empty-sub">${escAttr(subtitle)}</div>
@@ -2950,6 +3030,12 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       ? `data-fixture-id="${escAttr(fixtureId)}" data-sugg="${escAttr(String(m.suggestion_free || ""))}"`
       : `disabled aria-disabled="true"`;
 
+    const summary = insightFromMatch(m, t);
+    const badges = matchSignalBadges(m);
+    const badgesHtml = badges.length
+      ? `<div class="rt-cal-signal-badges">${badges.map((b)=> `<span class="rt-cal-signal-badge tone-${escAttr(b.tone)} heat-${escAttr(b.heat || "neutral")}">${escAttr(b.label)}</span>`).join("")}</div>`
+      : "";
+
     row.innerHTML = `
       <div class="rt-cal-when" ${tipAttr(t.kickoff_tooltip || "")}>
         <div class="rt-cal-time">${fmtTime(m.kickoff_utc)}</div>
@@ -2958,10 +3044,12 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       <div class="rt-cal-teams">
         <div class="rt-cal-teamrow rt-team-home">${crestHTML(homeName, homeLogo)}<span class="name">${escAttr(homeName)}</span></div>
         <div class="rt-cal-teamrow rt-team-away">${crestHTML(awayName, awayLogo)}<span class="name">${escAttr(awayName)}</span></div>
+        ${badgesHtml}
+        <p class="rt-cal-brief">${escAttr(summary)}</p>
       </div>
       <div class="rt-cal-actions">
         <div class="rt-match-market rt-cal-market" ${tipAttr(t.suggestion_tooltip || "")}><span class="rt-match-suggestion">${escAttr(market)}</span></div>
-        <button class="rt-match-more-btn rt-cal-more" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>＋</button>
+        <button class="rt-match-more-btn rt-cal-more" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>Abrir Match Radar</button>
       </div>
     `;
 
@@ -3037,7 +3125,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       subgroups.appendChild(compBox);
     });
 
-    root.appendChild(countryBox);
+    listColumn.appendChild(countryBox);
   }
 }
 
@@ -3064,6 +3152,7 @@ function setupCalendarTabDelegation(){
     if(DEBUG_CALENDAR) console.log("[calendar] tab click ->", newTab, "today:", CAL_DATA.today?.length, "tomorrow:", CAL_DATA.tomorrow?.length);
     
     CAL_ACTIVE_TAB = newTab;
+    syncTopNavActiveTab();
     if(typeof window.__RERENDER_CALENDAR__ === "function"){
       window.__RERENDER_CALENDAR__();
     }
@@ -4226,7 +4315,9 @@ function getSavedTheme(){
 }
 
 function applyTheme(theme){
-  document.body.dataset.theme = theme;
+  const resolved = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = resolved;
+  if(document.body) document.body.dataset.theme = resolved;
 }
 
 function pickDefaultTheme(){
@@ -4235,11 +4326,12 @@ function pickDefaultTheme(){
 }
 
 function setTheme(theme, t){
-  applyTheme(theme);
+  const resolved = theme === "light" ? "light" : "dark";
+  applyTheme(resolved);
   const btn = qs("#theme_toggle");
   if(!btn) return;
 
-  const isDark = theme === "dark";
+  const isDark = resolved === "dark";
   const label = isDark ? ((t && t.theme_light_short) || "Light") : ((t && t.theme_dark_short) || "Dark");
   btn.textContent = label;
 
@@ -4250,7 +4342,9 @@ function setTheme(theme, t){
 
 function initThemeToggle(t){
   const saved = getSavedTheme();
-  const theme = saved || pickDefaultTheme();
+  const fromDom = document.documentElement?.dataset?.theme;
+  const domTheme = (fromDom === "dark" || fromDom === "light") ? fromDom : null;
+  const theme = saved || domTheme || pickDefaultTheme();
   setTheme(theme, t);
 
   const btn = qs("#theme_toggle");
@@ -4503,13 +4597,14 @@ async function init(){
   ensurePremiumDayScaffold(T);
 
   setNav(LANG, T);
+  bindTopNavActions();
   decorateLangPills(LANG);
   initTooltips();
   injectPatchStyles();
 
   const p = pageType();
-  setText("hero_title", T.hero_title_day || "Radar do Dia");
-  setText("hero_sub", T.hero_sub_day || "Jogos de hoje");
+  setText("hero_title", "TOP 3 ENTRADAS DO DIA");
+  setText("hero_sub", "Leitura prioritária do dia selecionado");
 
   const radar = await loadRadarDay();
   const cal2d = await loadCalendar2D();
@@ -4527,8 +4622,12 @@ async function init(){
   renderTop3(T, { highlights: initialTop3 });
   renderPremiumDayPanels(T, getCalendarBucketForTab(cal2d, 'today'), initialTop3, 'today');
 
-  setText("calendar_title", T.day_matches_title || "Jogos do dia");
+  setText("calendar_title", "");
   setText("calendar_sub", "");
+  const calendarTitle = qs("#calendar_title");
+  const calendarSub = qs("#calendar_sub");
+  if(calendarTitle) calendarTitle.style.display = "none";
+  if(calendarSub) calendarSub.style.display = "none";
 
   // Merge all matches for fixture resolution (radar + calendar)
   const radarMatches = [
@@ -4567,7 +4666,7 @@ async function init(){
     const activeTab = CAL_ACTIVE_TAB || 'today';
     const highlights = getRadarTop3ForTab(cal2d, activeTab, radar);
     const activeMatches = activeTab === 'tomorrow' ? tomorrowMatches : todayMatches;
-    setText("hero_sub", activeTab === 'tomorrow' ? (T.hero_sub_tomorrow || T.tab_tomorrow || "Jogos de amanhã") : (T.hero_sub_day || "Jogos de hoje"));
+    setText("hero_sub", "Leitura prioritária do dia selecionado");
     renderTop3(T, { highlights });
     renderPremiumDayPanels(T, activeMatches, highlights, activeTab);
     console.log('📅 renderCalendar day_key buckets:', todayMatches.length, 'today and', tomorrowMatches.length, 'tomorrow', 'active=', activeTab);
