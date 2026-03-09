@@ -2801,6 +2801,236 @@ function groupByCountryCompetition(matches){
     }));
 }
 
+let CAL_ACTIVE_COMPETITION_KEY = "";
+const CAL_SIDEBAR_EXPANDED_CONTINENTS = new Set();
+const CAL_SIDEBAR_EXPANDED_COUNTRIES = new Set();
+let CAL_SIDEBAR_INITIALIZED = false;
+
+function normalizeContinentLabel(region){
+  if(region === "Europa") return "Europe";
+  if(region === "América do Sul") return "South America";
+  if(region === "América do Norte") return "North America";
+  if(region === "Ásia") return "Asia";
+  if(region === "África") return "Africa";
+  if(region === "Mundo") return "World";
+  return "Other";
+}
+
+function detectContinentFromMatch(match){
+  const byCompetition = normalizeContinentLabel(detectCompetitionRegionLabel(match?.competition));
+  if(byCompetition !== "Other") return byCompetition;
+
+  const country = normalize(match?.country);
+  const MAP = {
+    "brazil": "South America",
+    "argentina": "South America",
+    "chile": "South America",
+    "uruguay": "South America",
+    "paraguay": "South America",
+    "colombia": "South America",
+    "ecuador": "South America",
+    "peru": "South America",
+    "bolivia": "South America",
+    "venezuela": "South America",
+    "england": "Europe",
+    "spain": "Europe",
+    "italy": "Europe",
+    "france": "Europe",
+    "germany": "Europe",
+    "portugal": "Europe",
+    "netherlands": "Europe",
+    "belgium": "Europe",
+    "turkey": "Europe",
+    "russia": "Europe",
+    "austria": "Europe",
+    "switzerland": "Europe",
+    "scotland": "Europe",
+    "wales": "Europe",
+    "japan": "Asia",
+    "china": "Asia",
+    "saudi-arabia": "Asia",
+    "saudi arabia": "Asia",
+    "south korea": "Asia",
+    "korea republic": "Asia",
+    "qatar": "Asia",
+    "australia": "Oceania",
+    "new zealand": "Oceania",
+    "egypt": "Africa",
+    "south africa": "Africa",
+    "morocco": "Africa",
+    "nigeria": "Africa",
+    "usa": "North America",
+    "united states": "North America",
+    "canada": "North America",
+    "mexico": "North America"
+  };
+
+  if(MAP[country]) return MAP[country];
+  if(isWorldLikeLabel(match?.country)) return "World";
+  return "Other";
+}
+
+function sidebarCompetitionRef(match){
+  const country = String(countryDisplayLabel(match?.country, [{ competition: match?.competition, matches: [match] }]) || "—").trim() || "—";
+  const competition = String(competitionDisplay(match?.competition, match?.country, LANG) || "—").trim() || "—";
+  const compIdRaw = String(competitionValue(match) || "").trim();
+  const compId = compIdRaw !== "" ? compIdRaw : "";
+  const key = compId ? `id:${compId}` : `name:${normalize(country)}|${normalize(competition)}`;
+  return {
+    key,
+    id: compId || null,
+    country,
+    competition,
+    countryNorm: normalize(country),
+    competitionNorm: normalize(competition)
+  };
+}
+
+function buildLeagueSidebarModel(matches){
+  const byContinent = new Map();
+  const competitionIndex = new Map();
+
+  for(const m of (matches || [])){
+    const continentName = detectContinentFromMatch(m);
+    const compRef = sidebarCompetitionRef(m);
+
+    if(!byContinent.has(continentName)){
+      byContinent.set(continentName, { name: continentName, count: 0, countries: new Map() });
+    }
+    const continentNode = byContinent.get(continentName);
+    continentNode.count += 1;
+
+    if(!continentNode.countries.has(compRef.country)){
+      continentNode.countries.set(compRef.country, { name: compRef.country, count: 0, competitions: new Map() });
+    }
+    const countryNode = continentNode.countries.get(compRef.country);
+    countryNode.count += 1;
+
+    if(!countryNode.competitions.has(compRef.key)){
+      countryNode.competitions.set(compRef.key, { ...compRef, count: 0 });
+    }
+    countryNode.competitions.get(compRef.key).count += 1;
+
+    if(!competitionIndex.has(compRef.key)){
+      competitionIndex.set(compRef.key, { id: compRef.id, countryNorm: compRef.countryNorm, competitionNorm: compRef.competitionNorm });
+    }
+  }
+
+  const continents = [...byContinent.values()].map((continentNode)=>{
+    const countries = [...continentNode.countries.values()].map((countryNode)=>{
+      const competitions = [...countryNode.competitions.values()]
+        .sort((a,b)=> (Number(b.count) - Number(a.count)) || String(a.competition).localeCompare(String(b.competition), undefined, { sensitivity: "base" }));
+      return {
+        name: countryNode.name,
+        count: countryNode.count,
+        competitions
+      };
+    }).sort((a,b)=> (Number(b.count) - Number(a.count)) || String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
+
+    return {
+      name: continentNode.name,
+      count: continentNode.count,
+      countries
+    };
+  }).sort((a,b)=> (Number(b.count) - Number(a.count)) || String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
+
+  return {
+    continents,
+    competitionIndex,
+    totalMatches: Number(matches?.length || 0)
+  };
+}
+
+function ensureSidebarExpansion(model){
+  const validContinents = new Set((model?.continents || []).map((c)=> c.name));
+  for(const key of [...CAL_SIDEBAR_EXPANDED_CONTINENTS]){
+    if(!validContinents.has(key)) CAL_SIDEBAR_EXPANDED_CONTINENTS.delete(key);
+  }
+
+  if(!CAL_SIDEBAR_INITIALIZED && CAL_SIDEBAR_EXPANDED_CONTINENTS.size === 0 && model?.continents?.length){
+    CAL_SIDEBAR_EXPANDED_CONTINENTS.add(model.continents[0].name);
+    CAL_SIDEBAR_INITIALIZED = true;
+  }
+
+  const validCountries = new Set();
+  for(const continent of (model?.continents || [])){
+    for(const country of (continent.countries || [])){
+      validCountries.add(`${continent.name}__${country.name}`);
+    }
+  }
+  for(const key of [...CAL_SIDEBAR_EXPANDED_COUNTRIES]){
+    if(!validCountries.has(key)) CAL_SIDEBAR_EXPANDED_COUNTRIES.delete(key);
+  }
+}
+
+function matchesSidebarCompetition(match, selectedRef){
+  if(!selectedRef) return true;
+
+  const currentId = String(competitionValue(match) || "").trim();
+  if(selectedRef.id && currentId) return currentId === selectedRef.id;
+
+  const compRef = sidebarCompetitionRef(match);
+  return compRef.countryNorm === selectedRef.countryNorm && compRef.competitionNorm === selectedRef.competitionNorm;
+}
+
+function renderLeagueSidebar(target, model, activeKey, t){
+  if(!target) return;
+
+  if(!model?.continents?.length){
+    target.innerHTML = `<div class="rt-side-empty">${escAttr(t.empty_list || "Sem jogos para esta seleção")}</div>`;
+    return;
+  }
+
+  const sections = model.continents.map((continent)=>{
+    const continentOpen = CAL_SIDEBAR_EXPANDED_CONTINENTS.has(continent.name);
+    const countriesHtml = continent.countries.map((country)=>{
+      const countryKey = `${continent.name}__${country.name}`;
+      const countryOpen = CAL_SIDEBAR_EXPANDED_COUNTRIES.has(countryKey);
+      const competitionsHtml = country.competitions.map((competition)=>{
+        const activeCls = competition.key === activeKey ? "is-active" : "";
+        return `<button class="rt-side-competition ${activeCls}" type="button" data-side-action="select-competition" data-comp-key="${escAttr(competition.key)}" aria-pressed="${competition.key === activeKey ? "true" : "false"}">${escAttr(competition.competition)} <span class="rt-side-count">(${Number(competition.count)})</span></button>`;
+      }).join("");
+
+      return `
+        <section class="rt-side-country ${countryOpen ? "is-open" : ""}">
+          <button class="rt-side-toggle rt-side-toggle-country" type="button" data-side-action="toggle-country" data-continent="${escAttr(continent.name)}" data-country="${escAttr(country.name)}" aria-expanded="${countryOpen ? "true" : "false"}">
+            <span class="rt-side-chevron" aria-hidden="true">▸</span>
+            <span class="rt-side-label">${escAttr(country.name)}</span>
+            <span class="rt-side-count">(${Number(country.count)})</span>
+          </button>
+          <div class="rt-side-competitions" ${countryOpen ? "" : "hidden"}>${competitionsHtml}</div>
+        </section>
+      `;
+    }).join("");
+
+    return `
+      <section class="rt-side-continent ${continentOpen ? "is-open" : ""}">
+        <button class="rt-side-toggle rt-side-toggle-continent" type="button" data-side-action="toggle-continent" data-continent="${escAttr(continent.name)}" aria-expanded="${continentOpen ? "true" : "false"}">
+          <span class="rt-side-chevron" aria-hidden="true">▸</span>
+          <span class="rt-side-label">${escAttr(continent.name)}</span>
+          <span class="rt-side-count">(${Number(continent.count)})</span>
+        </button>
+        <div class="rt-side-countries" ${continentOpen ? "" : "hidden"}>${countriesHtml}</div>
+      </section>
+    `;
+  }).join("");
+
+  const clearButton = activeKey
+    ? `<button class="rt-side-clear" type="button" data-side-action="clear-competition">${escAttr((t.clear_filters || "Limpar filtro"))}</button>`
+    : "";
+
+  target.innerHTML = `
+    <div class="rt-side-shell">
+      <div class="rt-side-head">
+        <h3>${escAttr(t.leagues_label || "Ligas")}</h3>
+        <span class="rt-side-total">${Number(model.totalMatches)}</span>
+      </div>
+      ${clearButton}
+      <div class="rt-side-tree">${sections}</div>
+    </div>
+  `;
+}
+
 function resultLabel(ch, t){
   if(ch==="W") return t.result_green || "Vitória";
   if(ch==="D") return t.result_pending || "Empate";
@@ -3025,6 +3255,51 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     });
   }
 
+  if(!root.__rtSidebarDelegationBound){
+    root.__rtSidebarDelegationBound = true;
+    root.addEventListener("click", (e)=>{
+      const actionNode = e.target.closest("[data-side-action]");
+      if(!actionNode || !root.contains(actionNode)) return;
+
+      const action = String(actionNode.getAttribute("data-side-action") || "");
+      if(!action) return;
+      e.preventDefault();
+
+      if(action === "toggle-continent"){
+        const continent = String(actionNode.getAttribute("data-continent") || "");
+        if(!continent) return;
+        if(CAL_SIDEBAR_EXPANDED_CONTINENTS.has(continent)){
+          CAL_SIDEBAR_EXPANDED_CONTINENTS.delete(continent);
+        }else{
+          CAL_SIDEBAR_EXPANDED_CONTINENTS.add(continent);
+        }
+      }else if(action === "toggle-country"){
+        const continent = String(actionNode.getAttribute("data-continent") || "");
+        const country = String(actionNode.getAttribute("data-country") || "");
+        const key = `${continent}__${country}`;
+        if(!continent || !country) return;
+        if(CAL_SIDEBAR_EXPANDED_COUNTRIES.has(key)){
+          CAL_SIDEBAR_EXPANDED_COUNTRIES.delete(key);
+        }else{
+          CAL_SIDEBAR_EXPANDED_COUNTRIES.add(key);
+          CAL_SIDEBAR_EXPANDED_CONTINENTS.add(continent);
+        }
+      }else if(action === "select-competition"){
+        const key = String(actionNode.getAttribute("data-comp-key") || "");
+        if(!key) return;
+        CAL_ACTIVE_COMPETITION_KEY = CAL_ACTIVE_COMPETITION_KEY === key ? "" : key;
+      }else if(action === "clear-competition"){
+        CAL_ACTIVE_COMPETITION_KEY = "";
+      }else{
+        return;
+      }
+
+      if(typeof window.__RERENDER_CALENDAR__ === "function"){
+        window.__RERENDER_CALENDAR__();
+      }
+    });
+  }
+
   const q = normalize(query);
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
@@ -3035,11 +3310,26 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   // Get matches for the active tab
   const matchesForTab = active === "today" ? todayMatches : tomorrowMatches;
 
-  const filtered = (matchesForTab || []).filter(m=>{
+  const baseFiltered = (matchesForTab || []).filter(m=>{
     if(!q) return true;
     const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
     return blob.includes(q);
   });
+
+  const sidebarModel = buildLeagueSidebarModel(baseFiltered);
+  ensureSidebarExpansion(sidebarModel);
+
+  if(CAL_ACTIVE_COMPETITION_KEY && !sidebarModel.competitionIndex.has(CAL_ACTIVE_COMPETITION_KEY)){
+    CAL_ACTIVE_COMPETITION_KEY = "";
+  }
+
+  const activeCompetitionRef = CAL_ACTIVE_COMPETITION_KEY
+    ? sidebarModel.competitionIndex.get(CAL_ACTIVE_COMPETITION_KEY)
+    : null;
+
+  const filtered = activeCompetitionRef
+    ? baseFiltered.filter((m)=> matchesSidebarCompetition(m, activeCompetitionRef))
+    : baseFiltered;
 
   // Format date labels (DD/MM)
   const localeByLang = { pt: "pt-BR", en: "en-GB", es: "es-ES", fr: "fr-FR", de: "de-DE" };
@@ -3094,6 +3384,10 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   mainGrid.className = "rt-day-main-grid";
   root.appendChild(mainGrid);
 
+  const sidebarColumn = document.createElement("aside");
+  sidebarColumn.className = "rt-day-sidebar";
+  mainGrid.appendChild(sidebarColumn);
+
   const listColumn = document.createElement("div");
   listColumn.className = "rt-day-main-list";
   mainGrid.appendChild(listColumn);
@@ -3101,6 +3395,8 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   const signalsColumn = document.createElement("aside");
   signalsColumn.className = "rt-day-signals";
   mainGrid.appendChild(signalsColumn);
+
+  renderLeagueSidebar(sidebarColumn, sidebarModel, CAL_ACTIVE_COMPETITION_KEY, t);
 
   const signalCard = (label, match, valueBuilder, type)=>{
     if(!match) return "";
@@ -3123,9 +3419,10 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     };
   };
 
-  const bySuggestion = (rx)=> (matchesForTab || []).find((m)=> rx.test(String(m?.suggestion_free || "")));
+  const signalPool = filtered;
+  const bySuggestion = (rx)=> (signalPool || []).find((m)=> rx.test(String(m?.suggestion_free || "")));
   const bestUnder = bySuggestion(/under/i);
-  const mostBalanced = (matchesForTab || [])
+  const mostBalanced = (signalPool || [])
     .filter((m)=> Number.isFinite(Number(m?.gf_home ?? null)) && Number.isFinite(Number(m?.gf_away ?? null)))
     .sort((a,b)=> Math.abs(Number(a?.gf_home ?? 0) - Number(a?.gf_away ?? 0)) - Math.abs(Number(b?.gf_home ?? 0) - Number(b?.gf_away ?? 0)))[0];
 
