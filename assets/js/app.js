@@ -1937,19 +1937,53 @@ function pickCountryFlag(obj){
   const name = String(obj?.country || obj?.country_name || obj?.countryName || "").trim().toLowerCase();
   const MAP = {
     "italy":"it",
+    "italia":"it",
     "england":"gb",
+    "united kingdom":"gb",
     "scotland":"gb",
     "wales":"gb",
     "spain":"es",
+    "españa":"es",
     "france":"fr",
+    "frança":"fr",
     "germany":"de",
+    "deutschland":"de",
     "brazil":"br",
+    "brasil":"br",
     "argentina":"ar",
     "mexico":"mx",
     "colombia":"co",
     "chile":"cl",
     "uruguay":"uy",
     "paraguay":"py",
+    "portugal":"pt",
+    "netherlands":"nl",
+    "holland":"nl",
+    "belgium":"be",
+    "switzerland":"ch",
+    "austria":"at",
+    "turkey":"tr",
+    "croatia":"hr",
+    "serbia":"rs",
+    "poland":"pl",
+    "denmark":"dk",
+    "sweden":"se",
+    "norway":"no",
+    "finland":"fi",
+    "romania":"ro",
+    "czech republic":"cz",
+    "slovakia":"sk",
+    "slovenia":"si",
+    "greece":"gr",
+    "ukraine":"ua",
+    "russia":"ru",
+    "japan":"jp",
+    "korea republic":"kr",
+    "south korea":"kr",
+    "china":"cn",
+    "usa":"us",
+    "united states":"us",
+    "canada":"ca",
     "saudi arabia":"sa",
     "egypt":"eg",
     "south africa":"za",
@@ -1960,6 +1994,64 @@ function pickCountryFlag(obj){
     return `https://media.api-sports.io/flags/${iso}.svg`;
   }
   return null;
+}
+
+function isWorldLikeLabel(value){
+  const v = normalize(value);
+  return v === "world" || v === "mundo" || v === "mundial" || v === "global" || v === "international" || v === "internacional";
+}
+
+function flagFallbackIconHTML(kind){
+  if(kind === "globe"){
+    return `<svg viewBox="0 0 24 24" role="img" aria-label="globe" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" role="img" aria-label="flag" focusable="false"><path d="M6 3v18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.5 5h9l-1.8 3 1.8 3h-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+}
+
+function countryFlagHTML(countryName, flagUrl){
+  const fallbackKind = isWorldLikeLabel(countryName) ? "globe" : "neutral";
+  const fallbackCls = fallbackKind === "globe" ? "is-globe" : "is-neutral";
+  const fallbackIcon = flagFallbackIconHTML(fallbackKind);
+
+  if(!flagUrl){
+    return `<span class="rt-cal-country-flag rt-cal-country-flag-fallback ${fallbackCls}" aria-hidden="true"><span class="rt-cal-country-flag-icon">${fallbackIcon}</span></span>`;
+  }
+  const alt = escAttr(countryName || "");
+  const src = escAttr(flagUrl);
+  return `<span class="rt-cal-country-flag ${fallbackCls}" aria-hidden="true"><img class="rt-cal-country-flag-img" src="${src}" alt="${alt}" loading="lazy" onerror="this.onerror=null;this.classList.add('is-hidden');this.parentElement.classList.add('is-missing-flag');" /><span class="rt-cal-country-flag-icon">${fallbackIcon}</span></span>`;
+}
+
+function detectCompetitionRegionLabel(competitionName){
+  const n = normalize(competitionName);
+  if(!n) return "";
+  if(n.includes("fifa club world cup") || n.includes("intercontinental")) return "Mundo";
+  if(n.includes("uefa")) return "Europa";
+  if(n.includes("conmebol")) return "América do Sul";
+  if(n.includes("concacaf")) return "América do Norte";
+  if(n.includes("afc")) return "Ásia";
+  if(n.includes("caf")) return "África";
+  return "";
+}
+
+function countryDisplayLabel(countryName, competitions){
+  const raw = String(countryName || "").trim() || "—";
+  if(!isWorldLikeLabel(raw)) return raw;
+
+  const labels = new Set();
+  const groups = Array.isArray(competitions) ? competitions : [];
+  for(const group of groups){
+    const compLabel = detectCompetitionRegionLabel(group?.competition);
+    if(compLabel) labels.add(compLabel);
+    const ms = Array.isArray(group?.matches) ? group.matches : [];
+    for(const m of ms){
+      const matchLabel = detectCompetitionRegionLabel(m?.competition);
+      if(matchLabel) labels.add(matchLabel);
+    }
+  }
+
+  if(labels.size === 1) return [...labels][0];
+  if(labels.has("Mundo")) return "Mundo";
+  return raw === "—" ? raw : "Mundo";
 }
 
 function tinyImgHTML(src, alt, cls){
@@ -2062,31 +2154,121 @@ function initTooltips(){
   });
 }
 
-function setNav(lang, t){
-  const map = {
-    today: `/${lang}/radar/day/#hero_section`,
-    tomorrow: `/${lang}/radar/day/#calendar_section`,
-    leagues: `/${lang}/country/`,
-    stats: `/${lang}/calendar/`
-  };
-
-  const labels = {
-    today: "Hoje",
-    tomorrow: "Amanhã",
-    leagues: "Ligas",
-    stats: "Estatísticas"
-  };
-
-  qsa("[data-nav]").forEach(a=>{
-    const k=a.getAttribute("data-nav");
-    if(!map[k]){
-      a.style.display = "none";
-      return;
+function localeCopy(lang){
+  const L = String(lang || LANG || "en").toLowerCase();
+  const M = {
+    en: {
+      today: "Today",
+      tomorrow: "Tomorrow",
+      leagues: "Leagues",
+      calendar: "Calendar",
+      daySignals: "Signals of the Day",
+      openMatchRadar: "Open Match Radar",
+      bestUnder: "Best Under",
+      balancedMatch: "Most Balanced Match",
+      balancedDetail: "Form gap: {value}",
+      strongSignalEmpty: "No strong signal available today",
+      underStrong: "STRONG UNDER",
+      balanced: "BALANCED",
+      balancedTip: "Balanced recent scoring form between both teams"
+      ,noMatchesToday: "No matches for today"
+      ,noMatchesTomorrow: "No matches for tomorrow"
+      ,emptyList: "No matches found"
+      ,emptyHint: "Try another day or adjust your search"
+      ,rankTip: "Radar ranking (highlight order)"
+      ,riskTip: "Risk level for this suggestion"
+    },
+    pt: {
+      today: "Hoje",
+      tomorrow: "Amanhã",
+      leagues: "Ligas",
+      calendar: "Calendário",
+      daySignals: "Sinais do Dia",
+      openMatchRadar: "Abrir Match Radar",
+      bestUnder: "Melhor Under",
+      balancedMatch: "Jogo Mais Equilibrado",
+      balancedDetail: "Diferença de forma: {value}",
+      strongSignalEmpty: "Sem sinal forte disponível hoje",
+      underStrong: "UNDER FORTE",
+      balanced: "EQUILIBRADO",
+      balancedTip: "Forma recente equilibrada entre as equipes"
+      ,noMatchesToday: "Sem jogos para hoje"
+      ,noMatchesTomorrow: "Sem jogos para amanhã"
+      ,emptyList: "Nenhum jogo encontrado"
+      ,emptyHint: "Tente outro dia ou ajuste a busca"
+      ,rankTip: "Ranking do Radar (ordem de destaque)"
+      ,riskTip: "Nível de risco da sugestão"
+    },
+    es: {
+      today: "Hoy",
+      tomorrow: "Mañana",
+      leagues: "Ligas",
+      calendar: "Calendario",
+      daySignals: "Señales del Día",
+      openMatchRadar: "Abrir Match Radar",
+      bestUnder: "Mejor Under",
+      balancedMatch: "Partido Más Equilibrado",
+      balancedDetail: "Diferencia de forma: {value}",
+      strongSignalEmpty: "No hay señal fuerte disponible hoy",
+      underStrong: "UNDER FUERTE",
+      balanced: "EQUILIBRADO",
+      balancedTip: "Forma reciente equilibrada entre ambos equipos"
+      ,noMatchesToday: "Sin partidos para hoy"
+      ,noMatchesTomorrow: "Sin partidos para mañana"
+      ,emptyList: "No se encontraron partidos"
+      ,emptyHint: "Prueba otro día o ajusta la búsqueda"
+      ,rankTip: "Ranking del Radar (orden de destaque)"
+      ,riskTip: "Nivel de riesgo de la sugerencia"
+    },
+    fr: {
+      today: "Aujourd'hui",
+      tomorrow: "Demain",
+      leagues: "Ligues",
+      calendar: "Calendrier",
+      daySignals: "Signaux du Jour",
+      openMatchRadar: "Ouvrir Match Radar",
+      bestUnder: "Meilleur Under",
+      balancedMatch: "Match le Plus Équilibré",
+      balancedDetail: "Écart de forme: {value}",
+      strongSignalEmpty: "Aucun signal fort disponible aujourd'hui",
+      underStrong: "UNDER FORT",
+      balanced: "ÉQUILIBRÉ",
+      balancedTip: "Forme récente équilibrée entre les deux équipes"
+      ,noMatchesToday: "Aucun match pour aujourd'hui"
+      ,noMatchesTomorrow: "Aucun match pour demain"
+      ,emptyList: "Aucun match trouvé"
+      ,emptyHint: "Essayez un autre jour ou ajustez la recherche"
+      ,rankTip: "Classement Radar (ordre de priorité)"
+      ,riskTip: "Niveau de risque de cette suggestion"
+    },
+    de: {
+      today: "Heute",
+      tomorrow: "Morgen",
+      leagues: "Ligen",
+      calendar: "Kalender",
+      daySignals: "Signale des Tages",
+      openMatchRadar: "Match Radar öffnen",
+      bestUnder: "Bestes Under",
+      balancedMatch: "Ausgeglichenstes Spiel",
+      balancedDetail: "Formdifferenz: {value}",
+      strongSignalEmpty: "Heute kein starkes Signal verfügbar",
+      underStrong: "STARKES UNDER",
+      balanced: "AUSGEGLICHEN",
+      balancedTip: "Ausgeglichene jüngste Form beider Teams"
+      ,noMatchesToday: "Keine Spiele für heute"
+      ,noMatchesTomorrow: "Keine Spiele für morgen"
+      ,emptyList: "Keine Spiele gefunden"
+      ,emptyHint: "Anderen Tag wählen oder Suche anpassen"
+      ,rankTip: "Radar-Rangfolge (Prioritätsreihenfolge)"
+      ,riskTip: "Risikostufe für diesen Vorschlag"
     }
-    a.href = map[k];
-    a.textContent = labels[k] || "";
-    a.setAttribute("data-tip", a.textContent);
-    a.title = a.textContent;
+  };
+  return M[L] || M.en;
+}
+
+function setNav(lang, t){
+  qsa("[data-nav]").forEach(a=>{
+    a.remove();
   });
 
   syncTopNavActiveTab();
@@ -2126,6 +2308,45 @@ function bindTopNavActions(){
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     });
+  });
+}
+
+function ensureHeroDayControls(t){
+  const heroHeader = qs(".hero .hero-header");
+  if(!heroHeader) return;
+  if(qs("#rt_hero_day_tabs")) return;
+
+  const copy = localeCopy(LANG);
+  const tabs = document.createElement("div");
+  tabs.id = "rt_hero_day_tabs";
+  tabs.className = "rt-hero-day-tabs";
+  tabs.innerHTML = `
+    <button type="button" class="rt-hero-day-tab is-active" data-hero-tab="today" aria-pressed="true">${escAttr(t.tab_today || copy.today)}</button>
+    <button type="button" class="rt-hero-day-tab" data-hero-tab="tomorrow" aria-pressed="false">${escAttr(t.tab_tomorrow || copy.tomorrow)}</button>
+  `;
+
+  heroHeader.appendChild(tabs);
+
+  tabs.addEventListener("click", (e)=>{
+    const btn = e.target.closest("[data-hero-tab]");
+    if(!btn) return;
+    e.preventDefault();
+    const next = String(btn.getAttribute("data-hero-tab") || "today");
+    if(next !== "today" && next !== "tomorrow") return;
+    HERO_ACTIVE_TAB = next;
+    if(typeof window.__RERENDER_HERO__ === "function") window.__RERENDER_HERO__();
+  });
+}
+
+function syncHeroDayControls(t){
+  const copy = localeCopy(LANG);
+  qsa("#rt_hero_day_tabs [data-hero-tab]").forEach((btn)=>{
+    const key = String(btn.getAttribute("data-hero-tab") || "today");
+    const isActive = key === (HERO_ACTIVE_TAB || "today");
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    if(key === "today") btn.textContent = t.tab_today || copy.today;
+    if(key === "tomorrow") btn.textContent = t.tab_tomorrow || copy.tomorrow;
   });
 }
 
@@ -2209,6 +2430,7 @@ function oddFromMatch(item){
 }
 
 function matchSignalBadges(item){
+  const copy = localeCopy(LANG);
   const badges = [];
   const suggestionRaw = String(item?.suggestion_free || "").toLowerCase();
   const confidence = Math.round(confidenceFromMatch(item));
@@ -2218,16 +2440,10 @@ function matchSignalBadges(item){
   const hasGoals = Number.isFinite(gfHome) && Number.isFinite(gfAway);
 
   if(/under/.test(suggestionRaw) && confidence >= 70){
-    badges.push({ label: "UNDER FORTE", tone: "under", heat });
-  }
-  if(/btts|both teams|ambas/.test(suggestionRaw) && confidence >= 70){
-    badges.push({ label: "BTTS FORTE", tone: "btts", heat });
-  }
-  if(hasGoals && (gfHome + gfAway) >= 4){
-    badges.push({ label: "RITMO ALTO", tone: "tempo", heat });
+    badges.push({ label: copy.underStrong, tone: "under", heat });
   }
   if(hasGoals && Math.abs(gfHome - gfAway) <= 0.8){
-    badges.push({ label: "EQUILIBRADO", tone: "balanced", heat });
+    badges.push({ label: copy.balanced, tone: "balanced", heat, tip: copy.balancedTip });
   }
 
   return badges.slice(0, 2);
@@ -2258,12 +2474,12 @@ function insightFromMatch(item, t){
   const totalDefense = gaHome + gaAway;
 
   if(Number.isFinite(totalAttack) && totalAttack >= 4){
-    return t.hero_quick_insight_high_scoring || "Ataques com boa producao recente de gols.";
+    return t.hero_quick_insight_high_scoring || "Strong recent attacking output from both teams.";
   }
   if(Number.isFinite(totalDefense) && totalDefense <= 2){
-    return t.hero_quick_insight_low_concede || "Defesas consistentes nas ultimas partidas.";
+    return t.hero_quick_insight_low_concede || "Consistent defensive profile in recent matches.";
   }
-  return t.hero_quick_insight_default || "Leitura equilibrada para o mercado sugerido.";
+  return t.hero_quick_insight_default || "Balanced read for the suggested market.";
 }
 
 function ensurePremiumDayScaffold(t){
@@ -2274,13 +2490,15 @@ function ensurePremiumDayScaffold(t){
 }
 
 function renderPremiumDayPanels(t, matches, highlights, activeTab){
-  const subtitle = activeTab === "tomorrow"
+  const subtitleRaw = activeTab === "tomorrow"
     ? (t.hero_sub_tomorrow || "Leitura prioritária do dia selecionado")
     : (t.hero_sub_day || "Leitura prioritária do dia selecionado");
+  const subtitle = String(subtitleRaw).replace(/\s*\([^)]*free[^)]*\)\.?/ig, "").trim();
   setText("hero_sub", subtitle);
 }
 
 function renderTop3(t, data){
+  const copy = localeCopy(LANG);
   const slots = data.highlights || [];
   const cards = qsa(".card[data-slot]");
 
@@ -2295,8 +2513,8 @@ function renderTop3(t, data){
 
     top.className = "badge top rank";
     top.textContent = `#${idx+1}`;
-    top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
-    top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
+    top.setAttribute("title", t.rank_tooltip || copy.rankTip);
+    top.setAttribute("data-tip", t.rank_tooltip || copy.rankTip);
 
     const tone = riskTone(item?.risk);
     const heatLevel = confidenceHeatLevel(item);
@@ -2305,16 +2523,10 @@ function renderTop3(t, data){
     card.classList.add(`heat-${heatLevel}`);
 
     if (badge) {
-      badge.style.display = "inline-flex";
-      badge.classList.remove("low", "med", "high");
-      badge.classList.add(tone === "high" ? "low" : tone === "medium" ? "med" : "high");
-      badge.textContent = tone === "high"
-        ? (t.risk_low || "Risco baixo")
-        : tone === "medium"
-          ? (t.risk_medium || "Risco medio")
-          : (t.risk_high || "Risco alto");
-      badge.setAttribute("title", t.risk_tooltip || "Nivel de risco da sugestao");
-      badge.setAttribute("data-tip", t.risk_tooltip || "Nivel de risco da sugestao");
+      badge.style.display = "none";
+      badge.textContent = "";
+      badge.removeAttribute("title");
+      badge.removeAttribute("data-tip");
     }
 
     if(!item){
@@ -2786,6 +2998,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   console.log('   First today:', todayMatches[0] ? `${todayMatches[0].home} vs ${todayMatches[0].away}` : 'none');
   
   const root = qs("#calendar");
+  const copy = localeCopy(LANG);
   if(!root) return;
   root.classList.add("rt-cal-root");
   root.innerHTML = "";
@@ -2829,6 +3042,8 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   });
 
   // Format date labels (DD/MM)
+  const localeByLang = { pt: "pt-BR", en: "en-GB", es: "es-ES", fr: "fr-FR", de: "de-DE" };
+  const dateLocale = localeByLang[LANG] || "en-GB";
   function formatTabDate(offset, baseDate = meta?.today_key || meta?.today || new Date()) {
     const parts = typeof baseDate === 'string' ? baseDate.split('-') : [];
     if (parts.length === 3) {
@@ -2836,17 +3051,17 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       const [year, month, day] = parts;
       const d = new Date(year, Number(month) - 1, Number(day));
       if (offset === 1) d.setDate(d.getDate() + 1);
-      return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+      return new Intl.DateTimeFormat(dateLocale, {day:"2-digit", month:"2-digit"}).format(d);
     } else {
       // Fallback to local calculation
       const d = new Date();
       d.setDate(d.getDate() + offset);
-      return new Intl.DateTimeFormat("pt-BR", {day:"2-digit", month:"2-digit"}).format(d);
+      return new Intl.DateTimeFormat(dateLocale, {day:"2-digit", month:"2-digit"}).format(d);
     }
   }
 
-  const todayLabel = t.tab_today || "Hoje";
-  const tomorrowLabel = t.tab_tomorrow || "Amanhã";
+  const todayLabel = t.tab_today || copy.today;
+  const tomorrowLabel = t.tab_tomorrow || copy.tomorrow;
   const todayDate = formatTabDate(0);
   const tomorrowDate = formatTabDate(1);
 
@@ -2910,34 +3125,20 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
 
   const bySuggestion = (rx)=> (matchesForTab || []).find((m)=> rx.test(String(m?.suggestion_free || "")));
   const bestUnder = bySuggestion(/under/i);
-  const bestBTTS = bySuggestion(/btts|both teams|ambas/i);
-  const highestTempo = (matchesForTab || [])
-    .filter((m)=> Number.isFinite(Number(m?.gf_home ?? null)) && Number.isFinite(Number(m?.gf_away ?? null)))
-    .sort((a,b)=> (Number(b?.gf_home ?? 0) + Number(b?.gf_away ?? 0)) - (Number(a?.gf_home ?? 0) + Number(a?.gf_away ?? 0)))[0];
   const mostBalanced = (matchesForTab || [])
     .filter((m)=> Number.isFinite(Number(m?.gf_home ?? null)) && Number.isFinite(Number(m?.gf_away ?? null)))
     .sort((a,b)=> Math.abs(Number(a?.gf_home ?? 0) - Number(a?.gf_away ?? 0)) - Math.abs(Number(b?.gf_home ?? 0) - Number(b?.gf_away ?? 0)))[0];
 
   const signalsItems = [
-    signalCard("Best Under", bestUnder, (m)=> {
+    signalCard(copy.bestUnder, bestUnder, (m)=> {
       const c = Math.round(confidenceFromMatch(m));
       if(c < 70) return "";
       return localizeMarket(m?.suggestion_free, t) || "";
     }, "under"),
-    signalCard("Best BTTS", bestBTTS, (m)=> {
-      const c = Math.round(confidenceFromMatch(m));
-      if(c < 70) return "";
-      return localizeMarket(m?.suggestion_free, t) || "";
-    }, "btts"),
-    signalCard("Highest Tempo", highestTempo, (m)=> {
-      const total = Number(m?.gf_home ?? 0) + Number(m?.gf_away ?? 0);
-      if(!Number.isFinite(total) || total < 3.8) return "";
-      return `Média ofensiva combinada: ${total.toFixed(1)}`;
-    }, "tempo"),
-    signalCard("Most Balanced Match", mostBalanced, (m)=> {
+    signalCard(copy.balancedMatch, mostBalanced, (m)=> {
       const diff = Math.abs(Number(m?.gf_home ?? 0) - Number(m?.gf_away ?? 0));
       if(!Number.isFinite(diff) || diff > 0.8) return "";
-      return `Diferença de forma: ${diff.toFixed(1)}`;
+      return copy.balancedDetail.replace("{value}", diff.toFixed(1));
     }, "balanced")
   ].filter(Boolean);
 
@@ -2956,12 +3157,12 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   }).filter(Boolean);
 
   signalsColumn.innerHTML = `
-    <div class="rt-day-signals-head"><h3>Sinais do Dia</h3></div>
+    <div class="rt-day-signals-head"><h3>${escAttr(t.day_signals_title || copy.daySignals)}</h3></div>
     ${signalsHtml.length ? `<div class="rt-day-signals-list">${signalsHtml.join("")}</div>` : ""}
   `;
 
   if(!signalsHtml.length){
-    signalsColumn.innerHTML += `<p class="rt-day-signals-empty">Sem sinal forte disponível hoje</p>`;
+    signalsColumn.innerHTML += `<p class="rt-day-signals-empty">${escAttr(copy.strongSignalEmpty)}</p>`;
   }
 
   // Render content based on selected tab
@@ -2972,13 +3173,13 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     if (!hasAnyMatches) {
       // No matches for this tab
       title = active === "today" 
-        ? (t.no_matches_today || "Sem jogos para hoje")
-        : (t.no_matches_tomorrow || "Sem jogos para amanhã");
-      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
+        ? (t.no_matches_today || copy.noMatchesToday)
+        : (t.no_matches_tomorrow || copy.noMatchesTomorrow);
+      subtitle = t.calendar_empty_hint || copy.emptyHint;
     } else {
       // Matches exist but search filtered to zero
-      title = t.empty_list || "Nenhum jogo encontrado.";
-      subtitle = t.calendar_empty_hint || "Tente outro dia ou ajuste a busca.";
+      title = t.empty_list || copy.emptyList;
+      subtitle = t.calendar_empty_hint || copy.emptyHint;
     }
     
     listColumn.innerHTML = `
@@ -3025,7 +3226,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const scoreClass = `rt-match-score${isNotStarted ? " is-not-started" : ""}${isLive ? " is-live" : ""}`;
 
     const market = localizeMarket(m.suggestion_free, t) || "—";
-    const moreTitle = `Match Radar: ${homeName} vs ${awayName}`;
+    const moreTitle = `${copy.openMatchRadar}: ${homeName} vs ${awayName}`;
     const moreAttrs = fixtureId
       ? `data-fixture-id="${escAttr(fixtureId)}" data-sugg="${escAttr(String(m.suggestion_free || ""))}"`
       : `disabled aria-disabled="true"`;
@@ -3033,7 +3234,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const summary = insightFromMatch(m, t);
     const badges = matchSignalBadges(m);
     const badgesHtml = badges.length
-      ? `<div class="rt-cal-signal-badges">${badges.map((b)=> `<span class="rt-cal-signal-badge tone-${escAttr(b.tone)} heat-${escAttr(b.heat || "neutral")}">${escAttr(b.label)}</span>`).join("")}</div>`
+      ? `<div class="rt-cal-signal-badges">${badges.map((b)=> `<span class="rt-cal-signal-badge tone-${escAttr(b.tone)} heat-${escAttr(b.heat || "neutral")}" ${b.tip ? tipAttr(b.tip) : ""}>${escAttr(b.label)}</span>`).join("")}</div>`
       : "";
 
     row.innerHTML = `
@@ -3049,7 +3250,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
       </div>
       <div class="rt-cal-actions">
         <div class="rt-match-market rt-cal-market" ${tipAttr(t.suggestion_tooltip || "")}><span class="rt-match-suggestion">${escAttr(market)}</span></div>
-        <button class="rt-match-more-btn rt-cal-more" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>Abrir Match Radar</button>
+        <button class="rt-match-more-btn rt-cal-more" type="button" title="${escAttr(moreTitle)}" aria-label="${escAttr(moreTitle)}" ${moreAttrs}>${escAttr(copy.openMatchRadar)}</button>
       </div>
     `;
 
@@ -3088,19 +3289,18 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     const countryBox = document.createElement("div");
     countryBox.className = "rt-cal-country-accordion";
     const countryName = String(cg.country || "—");
+    const displayCountryName = countryDisplayLabel(countryName, cg.competitions);
     const totalMatches = cg.competitions.reduce((acc, comp)=> acc + (Array.isArray(comp.matches) ? comp.matches.length : 0), 0);
     const isCollapsed = collapsedSet.has(countryName);
     countryBox.classList.toggle("rt-cal-country-collapsed", isCollapsed);
 
-    const countryFlag = pickCountryFlag({ country: cg.country }) || "";
-    const countryFlagHtml = countryFlag
-      ? `<img class="rt-cal-country-flag-img" src="${escAttr(countryFlag)}" alt="${escAttr(cg.country)}" loading="lazy" />`
-      : "";
+    const countryFlag = pickCountryFlag({ country: displayCountryName }) || "";
+    const countryFlagHtml = countryFlagHTML(displayCountryName, countryFlag);
 
     countryBox.innerHTML = `
       <div class="rt-cal-country-head">
         <button class="rt-cal-country-toggle ${isCollapsed ? "" : "is-open"}" data-country="${escAttr(countryName)}" type="button" aria-expanded="${isCollapsed ? "false" : "true"}" aria-label="${escAttr(countryName)}">
-          <div class="rt-cal-country-title">${countryFlagHtml}<span class="rt-cal-country-label">${escAttr(countryName)} (${totalMatches})</span></div>
+          <div class="rt-cal-country-title">${countryFlagHtml}<span class="rt-cal-country-label">${escAttr(displayCountryName)} (${totalMatches})</span></div>
           <span class="rt-cal-country-chevron" aria-hidden="true">▾</span>
         </button>
       </div>
@@ -3134,6 +3334,7 @@ let LANG = null;
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
 let CAL_ACTIVE_TAB = "today";
+let HERO_ACTIVE_TAB = "today";
 let CAL_DATA = { today: [], tomorrow: [] };
 let DEBUG_CALENDAR = false;
 
@@ -4351,7 +4552,7 @@ function initThemeToggle(t){
   if(btn && !btn.dataset.bound){
     btn.dataset.bound = "1";
     btn.addEventListener("click", ()=>{
-      const cur = document.body.dataset.theme || "light";
+      const cur = document.documentElement.dataset.theme || document.body.dataset.theme || "dark";
       const next = (cur === "dark") ? "light" : "dark";
       try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
       setTheme(next, t);
@@ -4598,13 +4799,16 @@ async function init(){
 
   setNav(LANG, T);
   bindTopNavActions();
+  initThemeToggle(T);
+  ensureHeroDayControls(T);
   decorateLangPills(LANG);
   initTooltips();
   injectPatchStyles();
 
   const p = pageType();
-  setText("hero_title", "TOP 3 ENTRADAS DO DIA");
-  setText("hero_sub", "Leitura prioritária do dia selecionado");
+  setText("hero_title", T.hero_title_day || "Daily Radar");
+  const baseHeroSub = String(T.hero_sub_day || "").replace(/\s*\([^)]*free[^)]*\)\.?/ig, "").trim();
+  setText("hero_sub", baseHeroSub || "Leitura prioritária do dia selecionado");
 
   const radar = await loadRadarDay();
   const cal2d = await loadCalendar2D();
@@ -4618,9 +4822,10 @@ async function init(){
   console.log('Calendar today count:', Array.isArray(cal2d?.today) ? cal2d.today.length : 0);
   console.log('Calendar tomorrow count:', Array.isArray(cal2d?.tomorrow) ? cal2d.tomorrow.length : 0);
 
-  const initialTop3 = getRadarTop3ForTab(cal2d, 'today', radar);
+  const initialTop3 = getRadarTop3ForTab(cal2d, HERO_ACTIVE_TAB, radar);
   renderTop3(T, { highlights: initialTop3 });
-  renderPremiumDayPanels(T, getCalendarBucketForTab(cal2d, 'today'), initialTop3, 'today');
+  renderPremiumDayPanels(T, getCalendarBucketForTab(cal2d, HERO_ACTIVE_TAB), initialTop3, HERO_ACTIVE_TAB);
+  syncHeroDayControls(T);
 
   setText("calendar_title", "");
   setText("calendar_sub", "");
@@ -4664,15 +4869,30 @@ async function init(){
     const todayMatches = getCalendarBucketForTab(cal2d, 'today');
     const tomorrowMatches = getCalendarBucketForTab(cal2d, 'tomorrow');
     const activeTab = CAL_ACTIVE_TAB || 'today';
-    const highlights = getRadarTop3ForTab(cal2d, activeTab, radar);
-    const activeMatches = activeTab === 'tomorrow' ? tomorrowMatches : todayMatches;
-    setText("hero_sub", "Leitura prioritária do dia selecionado");
+    const heroTab = HERO_ACTIVE_TAB || 'today';
+    const highlights = getRadarTop3ForTab(cal2d, heroTab, radar);
+    const activeMatches = heroTab === 'tomorrow' ? tomorrowMatches : todayMatches;
+    const heroSub = String(T.hero_sub_day || "").replace(/\s*\([^)]*free[^)]*\)\.?/ig, "").trim();
+    setText("hero_sub", heroSub || "Leitura prioritária do dia selecionado");
     renderTop3(T, { highlights });
-    renderPremiumDayPanels(T, activeMatches, highlights, activeTab);
+    renderPremiumDayPanels(T, activeMatches, highlights, heroTab);
+    syncHeroDayControls(T);
     console.log('📅 renderCalendar day_key buckets:', todayMatches.length, 'today and', tomorrowMatches.length, 'tomorrow', 'active=', activeTab);
     renderCalendar(T, todayMatches, tomorrowMatches, cal2d.meta, "time", "", activeTab);
     bindOpenHandlers();
   }
+
+  window.__RERENDER_HERO__ = function(){
+    const todayMatches = getCalendarBucketForTab(cal2d, 'today');
+    const tomorrowMatches = getCalendarBucketForTab(cal2d, 'tomorrow');
+    const heroTab = HERO_ACTIVE_TAB || 'today';
+    const highlights = getRadarTop3ForTab(cal2d, heroTab, radar);
+    const activeMatches = heroTab === 'tomorrow' ? tomorrowMatches : todayMatches;
+    renderTop3(T, { highlights });
+    renderPremiumDayPanels(T, activeMatches, highlights, heroTab);
+    syncHeroDayControls(T);
+    bindOpenHandlers();
+  };
 
   function bindOpenHandlers(){
     const prefetchFn = typeof window.prefetchMatchRadarV2 === 'function' ? window.prefetchMatchRadarV2 : null;
