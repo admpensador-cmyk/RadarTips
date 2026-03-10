@@ -84,12 +84,32 @@ function cardX(t) {
 
 function top3Card(m, t) {
   const time = m.kickoff_utc ? `${fmtDate(m.kickoff_utc)} • ${fmtTime(m.kickoff_utc)}` : "";
+  // Determine crests (logos) for home and away teams. If the snapshot includes
+  // `home_logo`/`away_logo` fields, prefer those. Otherwise, fall back to
+  // API-Football CDN based on team IDs (`home_id`/`away_id`) when available.
+  const homeCrest = m.home_logo || (m.home_id ? `https://media.api-sports.io/football/teams/${m.home_id}.png` : "");
+  const awayCrest = m.away_logo || (m.away_id ? `https://media.api-sports.io/football/teams/${m.away_id}.png` : "");
+  // Determine scoreboard values. If not provided, default to "0" for each side.
+  const scoreHome = (m.score_home !== undefined && m.score_home !== null) ? m.score_home : 0;
+  const scoreAway = (m.score_away !== undefined && m.score_away !== null) ? m.score_away : 0;
+  const minute = m.minute ? `${m.minute}'` : "";
   return `
     <div class="card">
-      <div class="card-title">${m.home} <span class="muted">x</span> ${m.away}</div>
+      <div class="card-title teams-line">
+        ${homeCrest ? `<img src="${homeCrest}" alt="${m.home} logo" class="crest">` : ""}
+        <span class="team-name">${m.home}</span>
+        <span class="muted">x</span>
+        <span class="team-name">${m.away}</span>
+        ${awayCrest ? `<img src="${awayCrest}" alt="${m.away} logo" class="crest">` : ""}
+      </div>
       <div class="card-sub">${time}${m.league ? ` • ${m.league}` : ""}</div>
       <div class="card-sub"><strong>${m.pick}</strong></div>
-
+      <div class="scoreline">
+        <span class="score">${scoreHome}</span>
+        <span class="muted">-</span>
+        <span class="score">${scoreAway}</span>
+        ${minute ? `<span class="minute">${minute}</span>` : ""}
+      </div>
       <div class="row2">
         <div class="risk ${riskClass(m.risk)}">${t.risk[riskClass(m.risk)] || m.risk}</div>
         <div class="lock">🔒 ${t.locked}</div>
@@ -103,16 +123,35 @@ function listItem(m, t) {
   const stats = m.stats || {};
   const hs = stats.home || {};
   const as = stats.away || {};
-
+  // Determine crests (logos) for home and away teams. If the snapshot includes
+  // `home_logo`/`away_logo` fields, prefer those. Otherwise, fall back to
+  // API-Football CDN based on team IDs when available.
+  const homeCrest = m.home_logo || (m.home_id ? `https://media.api-sports.io/football/teams/${m.home_id}.png` : "");
+  const awayCrest = m.away_logo || (m.away_id ? `https://media.api-sports.io/football/teams/${m.away_id}.png` : "");
+  // Score and minute for each item. Default to 0-0 if not available.
+  const scoreHome = (m.score_home !== undefined && m.score_home !== null) ? m.score_home : 0;
+  const scoreAway = (m.score_away !== undefined && m.score_away !== null) ? m.score_away : 0;
+  const minute = m.minute ? `${m.minute}'` : "";
   return `
     <div class="item">
-      <div>
+      <div class="time-col">
         <div class="time">${time}</div>
         ${statusBadge(m.status, t)}
       </div>
-
-      <div>
-        <div class="teams">${m.home} <span class="muted">x</span> ${m.away}</div>
+      <div class="main-col">
+        <div class="teams-line">
+          ${homeCrest ? `<img src="${homeCrest}" alt="${m.home} logo" class="crest">` : ""}
+          <span class="team-name">${m.home}</span>
+          <span class="muted">x</span>
+          <span class="team-name">${m.away}</span>
+          ${awayCrest ? `<img src="${awayCrest}" alt="${m.away} logo" class="crest">` : ""}
+        </div>
+        <div class="scoreline">
+          <span class="score">${scoreHome}</span>
+          <span class="muted">-</span>
+          <span class="score">${scoreAway}</span>
+          ${minute ? `<span class="minute">${minute}</span>` : ""}
+        </div>
         <div class="small"><strong>${m.pick}</strong> • <span class="risk ${riskClass(m.risk)}">${t.risk[riskClass(m.risk)] || m.risk}</span></div>
         <div class="badges">
           ${formSquares(hs.form5, t)}
@@ -122,8 +161,7 @@ function listItem(m, t) {
           ${gLine(as.g5?.gf, as.g5?.ga, t)}
         </div>
       </div>
-
-      <div class="small">
+      <div class="small side-col">
         ${m.league ? `<div><strong>${m.league}</strong></div>` : ""}
         <div class="lock">🔒 ${t.locked}</div>
       </div>
