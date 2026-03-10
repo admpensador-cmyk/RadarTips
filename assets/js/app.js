@@ -15,7 +15,6 @@
   let MATCH_RADAR_BOOT = null;
   let MATCH_RADAR_BOOT_LOADING = null;
 
-
   // Simple i18n helper (fallback to English if t() not available)
   function t(key, defaultValue){
     try{
@@ -2992,169 +2991,6 @@ function renderStats(match){
 }
 
 
-let CAL_ACTIVE_COMPETITION_KEY = "";
-const CAL_SIDEBAR_EXPANDED_CONTINENTS = new Set();
-const CAL_SIDEBAR_EXPANDED_COUNTRIES = new Set();
-
-function sidebarNorm(v){
-  return String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-}
-
-function detectSidebarContinent(match){
-  const country = sidebarNorm(match?.country);
-  const southAmerica = new Set(["brazil","argentina","chile","uruguay","paraguay","colombia","ecuador","peru","bolivia","venezuela"]);
-  const europe = new Set(["spain","italy","france","england","germany","portugal","netherlands","belgium","scotland","turkey","switzerland","austria"]);
-  const northAmerica = new Set(["usa","united states","canada","mexico","costa rica","honduras"]);
-  const asia = new Set(["japan","china","saudi arabia","qatar","south korea","korea republic"]);
-  const africa = new Set(["morocco","nigeria","egypt","south africa","algeria","tunisia"]);
-  const oceania = new Set(["australia","new zealand"]);
-  if(southAmerica.has(country)) return "South America";
-  if(europe.has(country)) return "Europe";
-  if(northAmerica.has(country)) return "North America";
-  if(asia.has(country)) return "Asia";
-  if(africa.has(country)) return "Africa";
-  if(oceania.has(country)) return "Oceania";
-  return "Other";
-}
-
-function continentIcon(continent){
-  const map = {
-    "Europe": "🌍",
-    "South America": "🌎",
-    "North America": "🌎",
-    "Asia": "🌏",
-    "Africa": "🌍",
-    "Oceania": "🌏",
-    "Other": "🌐"
-  };
-  return map[continent] || "🌐";
-}
-
-function countryFlag(countryName){
-  const map = {
-    "spain": "🇪🇸",
-    "france": "🇫🇷",
-    "italy": "🇮🇹",
-    "england": "🏴",
-    "germany": "🇩🇪",
-    "portugal": "🇵🇹",
-    "brazil": "🇧🇷",
-    "argentina": "🇦🇷",
-    "chile": "🇨🇱",
-    "usa": "🇺🇸",
-    "united states": "🇺🇸",
-    "mexico": "🇲🇽",
-    "japan": "🇯🇵",
-    "australia": "🇦🇺"
-  };
-  return map[sidebarNorm(countryName)] || "🏳️";
-}
-
-function sidebarCompetitionRef(match){
-  const country = String(match?.country || "Unknown").trim() || "Unknown";
-  const competition = String(match?.competition || "Unknown").trim() || "Unknown";
-  const compId = String(competitionValue(match) || "").trim();
-  const key = compId ? `id:${compId}` : `name:${sidebarNorm(country)}|${sidebarNorm(competition)}`;
-  return { key, country, competition };
-}
-
-function buildSidebarModel(matches){
-  const continentsMap = new Map();
-  for(const m of (matches || [])){
-    const continent = detectSidebarContinent(m);
-    const compRef = sidebarCompetitionRef(m);
-    if(!continentsMap.has(continent)){
-      continentsMap.set(continent, { name: continent, icon: continentIcon(continent), count: 0, countries: new Map() });
-    }
-    const c = continentsMap.get(continent);
-    c.count += 1;
-
-    if(!c.countries.has(compRef.country)){
-      c.countries.set(compRef.country, { name: compRef.country, flag: countryFlag(compRef.country), count: 0, competitions: new Map() });
-    }
-    const country = c.countries.get(compRef.country);
-    country.count += 1;
-
-    if(!country.competitions.has(compRef.key)){
-      country.competitions.set(compRef.key, { key: compRef.key, competition: compRef.competition, count: 0 });
-    }
-    country.competitions.get(compRef.key).count += 1;
-  }
-
-  const continents = [...continentsMap.values()].map((continent)=>({
-    name: continent.name,
-    icon: continent.icon,
-    count: continent.count,
-    countries: [...continent.countries.values()].map((country)=>({
-      name: country.name,
-      flag: country.flag,
-      count: country.count,
-      competitions: [...country.competitions.values()].sort((a,b)=> a.competition.localeCompare(b.competition))
-    })).sort((a,b)=> a.name.localeCompare(b.name))
-  })).sort((a,b)=> a.name.localeCompare(b.name));
-
-  return { totalMatches: (matches || []).length, continents };
-}
-
-function renderSidebar(model, t){
-  const title = "Ligas";
-  const clearLabel = String(t?.clear_filters || "Limpar filtro");
-  const activeKey = CAL_ACTIVE_COMPETITION_KEY;
-
-  const validCompKeys = new Set();
-  (model?.continents || []).forEach((continent)=>{
-    (continent?.countries || []).forEach((country)=>{
-      (country?.competitions || []).forEach((competition)=> validCompKeys.add(competition.key));
-    });
-  });
-  if(activeKey && !validCompKeys.has(activeKey)) CAL_ACTIVE_COMPETITION_KEY = "";
-
-  const sections = (model?.continents || []).map((continent)=>{
-    const continentOpen = CAL_SIDEBAR_EXPANDED_CONTINENTS.has(continent.name);
-    const countriesHtml = (continent.countries || []).map((country)=>{
-      const countryKey = `${continent.name}::${country.name}`;
-      const countryOpen = CAL_SIDEBAR_EXPANDED_COUNTRIES.has(countryKey);
-      const competitionsHtml = (country.competitions || []).map((competition)=>{
-        const activeCls = competition.key === CAL_ACTIVE_COMPETITION_KEY ? "is-active" : "";
-        return `<button class="rt-side-competition ${activeCls}" type="button" data-side-action="select-competition" data-comp-key="${escAttr(competition.key)}" aria-pressed="${competition.key === CAL_ACTIVE_COMPETITION_KEY ? "true" : "false"}">${escAttr(competition.competition)} <span class="rt-side-count">(${Number(competition.count)})</span></button>`;
-      }).join("");
-
-      return `
-        <section class="rt-side-country ${countryOpen ? "is-open" : ""}">
-          <button class="rt-side-toggle rt-side-toggle-country" type="button" data-side-action="toggle-country" data-continent="${escAttr(continent.name)}" data-country="${escAttr(country.name)}" aria-expanded="${countryOpen ? "true" : "false"}">
-            <span class="rt-side-chevron" aria-hidden="true">▸</span>
-            <span class="rt-side-label"><span class="rt-side-flag" aria-hidden="true">${escAttr(country.flag)}</span>${escAttr(country.name)}</span>
-            <span class="rt-side-count">(${Number(country.count)})</span>
-          </button>
-          <div class="rt-side-competitions" ${countryOpen ? "" : "hidden"}>${competitionsHtml}</div>
-        </section>
-      `;
-    }).join("");
-
-    return `
-      <section class="rt-side-continent ${continentOpen ? "is-open" : ""}">
-        <button class="rt-side-toggle rt-side-toggle-continent" type="button" data-side-action="toggle-continent" data-continent="${escAttr(continent.name)}" aria-expanded="${continentOpen ? "true" : "false"}">
-          <span class="rt-side-chevron" aria-hidden="true">▸</span>
-          <span class="rt-side-label"><span class="rt-side-icon" aria-hidden="true">${escAttr(continent.icon)}</span>${escAttr(continent.name)}</span>
-          <span class="rt-side-count">(${Number(continent.count)})</span>
-        </button>
-        <div class="rt-side-countries" ${continentOpen ? "" : "hidden"}>${countriesHtml}</div>
-      </section>
-    `;
-  }).join("");
-
-  return `
-    <div class="rt-side-shell">
-      <div class="rt-side-head">
-        <h3>${escAttr(title)}</h3>
-        <button class="rt-side-clear" type="button" data-side-action="clear-competition">${escAttr(clearLabel)}</button>
-      </div>
-      <div class="rt-side-total">${Number(model?.totalMatches || 0)}</div>
-      <div class="rt-side-tree">${sections || `<div class="rt-side-empty">${escAttr(t?.empty_list || "Sem jogos")}</div>`}</div>
-    </div>
-  `;
-}
-
 function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query, activeTabType){
   console.log('📅 renderCalendar called:');
   console.log('   Today:', todayMatches.length, 'matches');
@@ -3189,39 +3025,6 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     });
   }
 
-  if(!root.__rtSidebarDelegationBound){
-    root.__rtSidebarDelegationBound = true;
-    root.addEventListener("click", (e)=>{
-      const actionTarget = e.target.closest("[data-side-action]");
-      if(!actionTarget || !root.contains(actionTarget)) return;
-      const action = String(actionTarget.getAttribute("data-side-action") || "");
-      if(!action) return;
-      e.preventDefault();
-
-      if(action === "toggle-continent"){
-        const continent = String(actionTarget.getAttribute("data-continent") || "");
-        if(!continent) return;
-        if(CAL_SIDEBAR_EXPANDED_CONTINENTS.has(continent)) CAL_SIDEBAR_EXPANDED_CONTINENTS.delete(continent);
-        else CAL_SIDEBAR_EXPANDED_CONTINENTS.add(continent);
-      }else if(action === "toggle-country"){
-        const continent = String(actionTarget.getAttribute("data-continent") || "");
-        const country = String(actionTarget.getAttribute("data-country") || "");
-        const key = `${continent}::${country}`;
-        if(CAL_SIDEBAR_EXPANDED_COUNTRIES.has(key)) CAL_SIDEBAR_EXPANDED_COUNTRIES.delete(key);
-        else {
-          CAL_SIDEBAR_EXPANDED_COUNTRIES.add(key);
-          if(continent) CAL_SIDEBAR_EXPANDED_CONTINENTS.add(continent);
-        }
-      }else if(action === "select-competition"){
-        CAL_ACTIVE_COMPETITION_KEY = String(actionTarget.getAttribute("data-comp-key") || "");
-      }else if(action === "clear-competition"){
-        CAL_ACTIVE_COMPETITION_KEY = "";
-      }
-
-      if(typeof window.__RERENDER_CALENDAR__ === "function") window.__RERENDER_CALENDAR__();
-    });
-  }
-
   const q = normalize(query);
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
@@ -3233,10 +3036,6 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   const matchesForTab = active === "today" ? todayMatches : tomorrowMatches;
 
   const filtered = (matchesForTab || []).filter(m=>{
-    if(CAL_ACTIVE_COMPETITION_KEY){
-      const ref = sidebarCompetitionRef(m);
-      if(ref.key !== CAL_ACTIVE_COMPETITION_KEY) return false;
-    }
     if(!q) return true;
     const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
     return blob.includes(q);
@@ -3294,12 +3093,6 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   const mainGrid = document.createElement("div");
   mainGrid.className = "rt-day-main-grid";
   root.appendChild(mainGrid);
-
-  const sidebarColumn = document.createElement("aside");
-  sidebarColumn.className = "rt-day-sidebar";
-  const sidebarModel = buildSidebarModel(matchesForTab);
-  sidebarColumn.innerHTML = renderSidebar(sidebarModel, t);
-  mainGrid.appendChild(sidebarColumn);
 
   const listColumn = document.createElement("div");
   listColumn.className = "rt-day-main-list";
