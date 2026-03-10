@@ -2,14 +2,6 @@ import { setTimeout as sleep } from "node:timers/promises";
 
 const BASE_URL = "https://v3.football.api-sports.io"; // API-FOOTBALL v3 host
 
-function hasApiErrors(json) {
-  const e = json?.errors;
-  if (!e) return false;
-  if (Array.isArray(e)) return e.length > 0;
-  if (typeof e === "object") return Object.keys(e).length > 0;
-  return Boolean(e);
-}
-
 export class ApiFootballClient {
   /**
    * @param {{ apiKey: string, minIntervalMs?: number, retries?: number }} opts
@@ -38,42 +30,27 @@ export class ApiFootballClient {
 
     for (let attempt = 0; attempt <= this.retries; attempt++) {
       await this._throttle();
-
-      let res;
-      try {
-        res = await fetch(url, {
-          method: "GET",
-          headers: {
-            "x-apisports-key": this.apiKey
-          }
-        });
-      } catch (err) {
-        if (attempt < this.retries) {
-          await sleep(800 * (attempt + 1));
-          continue;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "x-apisports-key": this.apiKey
         }
-        throw err;
-      }
+      });
 
       const txt = await res.text();
       let json;
-      try {
-        json = JSON.parse(txt);
-      } catch {
-        json = { raw: txt };
-      }
+      try { json = JSON.parse(txt); } catch { json = { raw: txt }; }
 
-      // API-FOOTBALL às vezes devolve HTTP 200 com errors no JSON
-      if (res.ok && json && !hasApiErrors(json)) return json;
+      if (res.ok && json && !json.errors?.length) return json;
 
+      // Retry on 429/5xx
       const retriable = res.status === 429 || (res.status >= 500 && res.status <= 599);
       if (attempt < this.retries && retriable) {
         await sleep(800 * (attempt + 1));
         continue;
       }
 
-      const errPayload = json?.errors ?? json;
-      const msg = `API-FOOTBALL error (HTTP ${res.status}) ${url.toString()} :: ${JSON.stringify(errPayload)}`;
+      const msg = `API-FOOTBALL error (${res.status}) ${url.toString()} :: ${JSON.stringify(json?.errors ?? json)}`;
       throw new Error(msg);
     }
   }

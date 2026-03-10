@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="rtFavGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2F80FF"/>
-      <stop offset="100%" stop-color="#56CCF2"/>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#2b6ff2"/>
+      <stop offset="1" stop-color="#7aa7ff"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="6" width="52" height="52" rx="14" fill="#0B1220"/>
-  <path d="M17 49V15h17.5c8.8 0 13.8 4.8 13.8 12.3 0 5.8-2.8 9.8-7.8 11.8L48 49h-9.2l-6.9-9.5H26V49h-9zM26 31.8h7.6c3.8 0 6-1.9 6-4.9 0-3-2.2-4.9-6-4.9H26v9.8z" fill="url(#rtFavGrad)"/>
-  <circle cx="42" cy="22" r="2" fill="#56CCF2"/>
-  <path d="M34 22a8 8 0 0 1 8-8" fill="none" stroke="#56CCF2" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M30.2 22A11.8 11.8 0 0 1 42 10.2" fill="none" stroke="#2F80FF" stroke-width="2.1" stroke-linecap="round" opacity=".95"/>
+  <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
+  <path d="M18 40c9-18 19-18 28 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="32" cy="28" r="6" fill="#fff"/>
 </svg>

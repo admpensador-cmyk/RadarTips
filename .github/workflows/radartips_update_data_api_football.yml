@@ -3,22 +3,15 @@ name: Update RadarTips data (API-FOOTBALL)
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "10 11 * * *" # 08:10 BRT (UTC-3) ~= 11:10 UTC
+    # 08:10 BRT (UTC-3) ~= 11:10 UTC
+    - cron: "10 11 * * *"
 
 permissions:
   contents: write
 
-concurrency:
-  group: radartips-data-daily
-  cancel-in-progress: true
-
 jobs:
   build-data:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - uses: actions/checkout@v4
 
@@ -26,68 +19,20 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Verify no calendar_7d regressions
-        run: npm run verify:no-7d
-
-      - name: Generate calendar snapshot (API-FOOTBALL, frequent, low quota)
+      - name: Generate JSON (API-FOOTBALL)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
-          set -euo pipefail
-          node tools/update-data-api-football.mjs --calendar
+          node tools/update-data-api-football.mjs
 
-          test -f "data/v1/calendar_day.json"
-          test -f "data/v1/calendar_2d.json"
-          test -f "data/v1/radar_day.json"
-          test -f "data/v1/radar_week.json"
-
-      - name: Seed team-window-5 snapshots
+      - name: Commit & push if changed
         run: |
-          set -euo pipefail
-          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
-          node tools/seed-team-window-5.mjs
-          echo "✅ Seed complete"
-
-      - name: Smoke test team-window-5
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          echo "🧪 Running smoke tests..."
-          node tools/smoke-test-team-window-5.mjs
-          echo "✅ Smoke tests passed"
-
-      - name: Healthcheck match-stats endpoint
-        run: |
-          set -euo pipefail
-          echo "🏥 Healthcheck: verifying match-stats data..."
-          node tools/healthcheck-match-stats.mjs
-          echo "✅ Healthcheck passed"
-
-      - name: Upload snapshots to R2 (optional, no rebuild)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          R2_BUCKET_NAME: radartips-data
-        run: |
-          set -euo pipefail
-
-          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "Skipping R2 upload (missing Cloudflare secrets)."
-            exit 0
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "radartips-bot"
+            git config user.email "radartips-bot@users.noreply.github.com"
+            git add data/v1/*.json
+            git commit -m "data: update radar (api-football)"
+            git push
+          else
+            echo "No changes."
           fi
-
-          echo "R2_BUCKET_NAME=${R2_BUCKET_NAME}"
-
-          test -f "data/v1/calendar_2d.json"
-          npm i -g wrangler@4.62.0
-          wrangler --version
-
-          node upload-calendar-to-r2.mjs
-
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_2d.json" --file "/tmp/r2_calendar_2d_uploaded.json"
-
-          echo "=== R2 uploaded object verification ==="
-          node -e 'const fs=require("fs"); const p="/tmp/r2_calendar_2d_uploaded.json"; const s=fs.statSync(p); const j=JSON.parse(fs.readFileSync(p,"utf8")); console.log("size="+s.size); console.log("sha256="+require("crypto").createHash("sha256").update(fs.readFileSync(p)).digest("hex")); console.log("meta.generated_at_utc="+(j?.meta?.generated_at_utc||"")); console.log("meta.leagues_source="+(j?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(j?.meta?.leagues_count||""));'
