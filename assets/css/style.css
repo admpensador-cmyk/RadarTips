@@ -1127,6 +1127,26 @@ input::placeholder{
   white-space:nowrap;
 }
 
+.rt-side-node{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+
+.rt-side-icon{
+  width:16px;
+  text-align:center;
+  flex:0 0 16px;
+}
+
+.rt-side-text{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
 .rt-side-count{
   font-size:11px;
   border-radius:999px;
@@ -1144,8 +1164,14 @@ input::placeholder{
 }
 
 .rt-side-continent > .rt-side-toggle{
-  font-size:12px;
+  font-size:13px;
   font-weight:900;
+}
+
+.rt-side-continent > .rt-side-toggle .rt-side-icon{
+  width:18px;
+  flex:0 0 18px;
+  font-size:15px;
 }
 
 .rt-side-country{
@@ -1157,8 +1183,14 @@ input::placeholder{
   font-weight:800;
 }
 
+.rt-side-country > .rt-side-toggle .rt-side-icon{
+  font-size:14px;
+}
+
 .rt-side-competition{
   margin-left:22px;
+  font-size:11px;
+  font-weight:700;
 }
 
 .rt-side-competition.is-active{
