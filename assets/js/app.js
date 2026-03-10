@@ -3025,6 +3025,16 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     });
   }
 
+  if(!root.__rtCompetitionFilterBound){
+    root.__rtCompetitionFilterBound = true;
+    root.addEventListener("change", (e)=>{
+      const select = e.target.closest("[data-cal-competition-filter]");
+      if(!select || !root.contains(select)) return;
+      CAL_ACTIVE_COMPETITION = String(select.value || "");
+      if(typeof window.__RERENDER_CALENDAR__ === "function") window.__RERENDER_CALENDAR__();
+    });
+  }
+
   const q = normalize(query);
 
   // Determine active tab (default to "today" if both have matches, else to whichever has matches)
@@ -3035,7 +3045,23 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   // Get matches for the active tab
   const matchesForTab = active === "today" ? todayMatches : tomorrowMatches;
 
+  const competitionMap = new Map();
+  (matchesForTab || []).forEach((m)=>{
+    const comp = String(m?.competition || "").trim();
+    if(!comp) return;
+    const key = normalize(comp);
+    if(!competitionMap.has(key)) competitionMap.set(key, comp);
+  });
+  const competitionOptions = [...competitionMap.values()].sort((a,b)=> a.localeCompare(b));
+  if(CAL_ACTIVE_COMPETITION && !competitionMap.has(normalize(CAL_ACTIVE_COMPETITION))) {
+    CAL_ACTIVE_COMPETITION = "";
+  }
+
   const filtered = (matchesForTab || []).filter(m=>{
+    if(CAL_ACTIVE_COMPETITION){
+      const currentComp = normalize(String(m?.competition || ""));
+      if(currentComp !== normalize(CAL_ACTIVE_COMPETITION)) return false;
+    }
     if(!q) return true;
     const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
     return blob.includes(q);
@@ -3089,6 +3115,29 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
   header.appendChild(makeTabButton(tomorrowLabel, tomorrowDate, "tomorrow", active === "tomorrow", tomorrowMatches.length));
 
   root.appendChild(header);
+
+  const labelsByLang = {
+    pt: { label: "Competição", all: "Todas as competições" },
+    en: { label: "Competition", all: "All competitions" },
+    es: { label: "Competición", all: "Todas las competiciones" },
+    fr: { label: "Compétition", all: "Toutes les compétitions" },
+    de: { label: "Wettbewerb", all: "Alle Wettbewerbe" }
+  };
+  const uiText = labelsByLang[LANG] || labelsByLang.en;
+  const filterWrap = document.createElement("div");
+  filterWrap.className = "rt-cal-filters";
+  const selectOptions = competitionOptions.map((comp)=>{
+    const selected = normalize(comp) === normalize(CAL_ACTIVE_COMPETITION) ? ' selected' : "";
+    return `<option value="${escAttr(comp)}"${selected}>${escAttr(comp)}</option>`;
+  }).join("");
+  filterWrap.innerHTML = `
+    <label class="rt-cal-filter-label" for="rt-cal-competition-select">${escAttr(uiText.label)}</label>
+    <select id="rt-cal-competition-select" class="rt-cal-filter-select" data-cal-competition-filter>
+      <option value="">${escAttr(uiText.all)}</option>
+      ${selectOptions}
+    </select>
+  `;
+  root.appendChild(filterWrap);
 
   const mainGrid = document.createElement("div");
   mainGrid.className = "rt-day-main-grid";
@@ -3334,6 +3383,7 @@ let LANG = null;
 let CAL_MATCHES = [];
 let CAL_META = { form_window: 5, goals_window: 5 };
 let CAL_ACTIVE_TAB = "today";
+let CAL_ACTIVE_COMPETITION = "";
 let HERO_ACTIVE_TAB = "today";
 let CAL_DATA = { today: [], tomorrow: [] };
 let DEBUG_CALENDAR = false;
@@ -3353,6 +3403,7 @@ function setupCalendarTabDelegation(){
     if(DEBUG_CALENDAR) console.log("[calendar] tab click ->", newTab, "today:", CAL_DATA.today?.length, "tomorrow:", CAL_DATA.tomorrow?.length);
     
     CAL_ACTIVE_TAB = newTab;
+    CAL_ACTIVE_COMPETITION = "";
     syncTopNavActiveTab();
     if(typeof window.__RERENDER_CALENDAR__ === "function"){
       window.__RERENDER_CALENDAR__();
