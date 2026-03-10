@@ -2870,65 +2870,6 @@ function detectContinentFromMatch(match){
   return "Other";
 }
 
-function continentSidebarIcon(continentName){
-  const key = normalize(continentName);
-  if(key === "europe") return "🌍";
-  if(key === "south america") return "🌎";
-  if(key === "north america") return "🌎";
-  if(key === "asia") return "🌏";
-  if(key === "africa") return "🌍";
-  if(key === "world") return "🌐";
-  return "🌐";
-}
-
-function countrySidebarFlag(countryName){
-  const key = normalize(countryName);
-  const MAP = {
-    "argentina": "🇦🇷",
-    "australia": "🇦🇺",
-    "austria": "🇦🇹",
-    "belgium": "🇧🇪",
-    "brazil": "🇧🇷",
-    "canada": "🇨🇦",
-    "chile": "🇨🇱",
-    "china": "🇨🇳",
-    "colombia": "🇨🇴",
-    "denmark": "🇩🇰",
-    "ecuador": "🇪🇨",
-    "egypt": "🇪🇬",
-    "england": "🏴",
-    "france": "🇫🇷",
-    "germany": "🇩🇪",
-    "italy": "🇮🇹",
-    "japan": "🇯🇵",
-    "mexico": "🇲🇽",
-    "morocco": "🇲🇦",
-    "netherlands": "🇳🇱",
-    "nigeria": "🇳🇬",
-    "norway": "🇳🇴",
-    "paraguay": "🇵🇾",
-    "peru": "🇵🇪",
-    "poland": "🇵🇱",
-    "portugal": "🇵🇹",
-    "russia": "🇷🇺",
-    "saudi arabia": "🇸🇦",
-    "saudi-arabia": "🇸🇦",
-    "scotland": "🏴",
-    "south africa": "🇿🇦",
-    "south korea": "🇰🇷",
-    "spain": "🇪🇸",
-    "sweden": "🇸🇪",
-    "switzerland": "🇨🇭",
-    "turkey": "🇹🇷",
-    "ukraine": "🇺🇦",
-    "united states": "🇺🇸",
-    "uruguay": "🇺🇾",
-    "usa": "🇺🇸",
-    "wales": "🏴"
-  };
-  return MAP[key] || "🏳️";
-}
-
 function sidebarCompetitionRef(match){
   const country = String(countryDisplayLabel(match?.country, [{ competition: match?.competition, matches: [match] }]) || "—").trim() || "—";
   const competition = String(competitionDisplay(match?.competition, match?.country, LANG) || "—").trim() || "—";
@@ -2954,13 +2895,13 @@ function buildLeagueSidebarModel(matches){
     const compRef = sidebarCompetitionRef(m);
 
     if(!byContinent.has(continentName)){
-      byContinent.set(continentName, { name: continentName, icon: continentSidebarIcon(continentName), count: 0, countries: new Map() });
+      byContinent.set(continentName, { name: continentName, count: 0, countries: new Map() });
     }
     const continentNode = byContinent.get(continentName);
     continentNode.count += 1;
 
     if(!continentNode.countries.has(compRef.country)){
-      continentNode.countries.set(compRef.country, { name: compRef.country, flag: countrySidebarFlag(compRef.country), count: 0, competitions: new Map() });
+      continentNode.countries.set(compRef.country, { name: compRef.country, count: 0, competitions: new Map() });
     }
     const countryNode = continentNode.countries.get(compRef.country);
     countryNode.count += 1;
@@ -2981,7 +2922,6 @@ function buildLeagueSidebarModel(matches){
         .sort((a,b)=> (Number(b.count) - Number(a.count)) || String(a.competition).localeCompare(String(b.competition), undefined, { sensitivity: "base" }));
       return {
         name: countryNode.name,
-        flag: countryNode.flag,
         count: countryNode.count,
         competitions
       };
@@ -2989,7 +2929,6 @@ function buildLeagueSidebarModel(matches){
 
     return {
       name: continentNode.name,
-      icon: continentNode.icon,
       count: continentNode.count,
       countries
     };
@@ -3056,7 +2995,7 @@ function renderLeagueSidebar(target, model, activeKey, t){
         <section class="rt-side-country ${countryOpen ? "is-open" : ""}">
           <button class="rt-side-toggle rt-side-toggle-country" type="button" data-side-action="toggle-country" data-continent="${escAttr(continent.name)}" data-country="${escAttr(country.name)}" aria-expanded="${countryOpen ? "true" : "false"}">
             <span class="rt-side-chevron" aria-hidden="true">▸</span>
-            <span class="rt-side-label"><span class="rt-side-node"><span class="rt-side-icon rt-side-country-flag" aria-hidden="true">${escAttr(country.flag || "🏳️")}</span><span class="rt-side-text">${escAttr(country.name)}</span></span></span>
+            <span class="rt-side-label">${escAttr(country.name)}</span>
             <span class="rt-side-count">(${Number(country.count)})</span>
           </button>
           <div class="rt-side-competitions" ${countryOpen ? "" : "hidden"}>${competitionsHtml}</div>
@@ -3068,7 +3007,7 @@ function renderLeagueSidebar(target, model, activeKey, t){
       <section class="rt-side-continent ${continentOpen ? "is-open" : ""}">
         <button class="rt-side-toggle rt-side-toggle-continent" type="button" data-side-action="toggle-continent" data-continent="${escAttr(continent.name)}" aria-expanded="${continentOpen ? "true" : "false"}">
           <span class="rt-side-chevron" aria-hidden="true">▸</span>
-          <span class="rt-side-label"><span class="rt-side-node"><span class="rt-side-icon rt-side-continent-icon" aria-hidden="true">${escAttr(continent.icon || "🌐")}</span><span class="rt-side-text">${escAttr(continent.name)}</span></span></span>
+          <span class="rt-side-label">${escAttr(continent.name)}</span>
           <span class="rt-side-count">(${Number(continent.count)})</span>
         </button>
         <div class="rt-side-countries" ${continentOpen ? "" : "hidden"}>${countriesHtml}</div>
