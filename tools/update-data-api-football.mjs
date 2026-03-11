@@ -169,7 +169,7 @@ function isValidIsoDate(ymd) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""));
 }
 
-function resolveBaseDateUtc() {
+function resolveBaseDateInTimezone(timezone) {
   const override = String(process.env.CAL_BASE_DATE || "").trim();
   if (override) {
     if (!isValidIsoDate(override)) {
@@ -177,7 +177,12 @@ function resolveBaseDateUtc() {
     }
     return override;
   }
-  return new Date().toISOString().slice(0, 10);
+
+  try {
+    return isoDateOnlyInTimezone(new Date(), timezone);
+  } catch (err) {
+    throw new Error(`[CALENDAR] Failed resolving base date for timezone=${timezone}: ${err?.message || err}`);
+  }
 }
 
 function toIso(dt) {
@@ -819,6 +824,7 @@ function mapFixtureToMatchRow(fx, enrich) {
   return {
     kickoff_utc: kickoffUtc || null,
     api_date: apiDate,
+    season: league?.season ?? null,
     country: league?.country ?? "",
     competition: league?.name ?? "",
     competition_id: league?.id ?? null,
@@ -948,11 +954,11 @@ function parseArgs() {
 
 async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
-  const baseDate = resolveBaseDateUtc();
+  const baseDate = resolveBaseDateInTimezone(timezone);
   const from = baseDate;
   const to = addDaysToIsoDate(baseDate, daysAhead);
 
-  console.log("[CALENDAR] base_date_utc=", baseDate, "from=", from, "to=", to, "tz(fetch)=", timezone);
+  console.log("[CALENDAR] base_date_local=", baseDate, "from=", from, "to=", to, "tz(fetch)=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
@@ -1085,6 +1091,8 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
+      generated_for_timezone: timezone,
+      generated_for_local_date: baseDate,
       form_window: formWindow,
       goals_window: goalsWindow,
       source: "calendar_2d",
@@ -1187,11 +1195,15 @@ async function main() {
   const flags = parseArgs();
   ensureDir(OUT_DIR);
 
-  const timezone = String(cfg.timezone || "UTC");
+  const timezone = "America/Bahia";
   const daysAhead = Number(cfg.days_ahead || 7);
   const formWindow = Number(cfg.form_window || 5);
   const goalsWindow = Number(cfg.goals_window || 5);
   const includeStatsInCalendar = Boolean(flags.stats || flags.all);
+
+  if (String(cfg.timezone || "").trim() && String(cfg.timezone).trim() !== timezone) {
+    console.warn(`[WARN] Ignoring cfg.timezone=${cfg.timezone}; enforced timezone=${timezone}`);
+  }
 
   console.log("\\n╔═══════════════════════════════════════════════════════╗");
   console.log("║    RadarTips API-FOOTBALL Update Pipeline              ║");

@@ -251,6 +251,17 @@ function createEmptySnapshotV2({ teamId, teamName, leagueId, season }) {
   };
 }
 
+function writeSnapshotToDisk(snapshot, outputDir, leagueId, season) {
+  const dirPath = path.join(outputDir, String(leagueId), String(season));
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  const filePath = path.join(dirPath, `${snapshot.meta.team_id}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
+  console.log(`[team-window-5] Saved snapshot: ${filePath}`);
+}
+
 function buildSnapshotV2({ existingSnapshot, teamId, teamName, leagueId, season, newFixtureRef, fixtureStatsCache }) {
   const teamRefsFromCache = collectTeamFixtureRefsFromCache(teamId, fixtureStatsCache);
   const allTeamRefs = appendFixtureRef(teamRefsFromCache, newFixtureRef);
@@ -624,12 +635,37 @@ export async function generateFromCalendarMatch(options) {
     const existingAway = loadTeamWindow5Snapshot(awayTeamId, leagueId, season, outputDir);
 
     if (!isFinishedMatch(match)) {
-      console.log(`[team-window-5] Skipping fixture ${fixtureId}: not finished (${getFixtureStatus(match) || 'unknown'})`);
+      const homeForm = Array.isArray(match.form_home_details) ? match.form_home_details : [];
+      const awayForm = Array.isArray(match.form_away_details) ? match.form_away_details : [];
+
+      if (homeForm.length === 0 || awayForm.length === 0) {
+        throw new Error(`Fixture ${fixtureId} is not finished and missing form details required for team-window-5 generation`);
+      }
+
+      const homeSnapshot = generateSnapshotFromForm({
+        teamId: homeTeamId,
+        teamName: match.home,
+        leagueId,
+        season,
+        formDetails: homeForm
+      });
+
+      const awaySnapshot = generateSnapshotFromForm({
+        teamId: awayTeamId,
+        teamName: match.away,
+        leagueId,
+        season,
+        formDetails: awayForm
+      });
+
+      writeSnapshotToDisk(homeSnapshot, outputDir, leagueId, season);
+      writeSnapshotToDisk(awaySnapshot, outputDir, leagueId, season);
+
       return {
-        home: existingHome || createEmptySnapshotV2({ teamId: homeTeamId, teamName: match.home, leagueId, season }),
-        away: existingAway || createEmptySnapshotV2({ teamId: awayTeamId, teamName: match.away, leagueId, season }),
-        updated: false,
-        reason: 'not_finished'
+        home: homeSnapshot,
+        away: awaySnapshot,
+        updated: true,
+        reason: 'form_details'
       };
     }
 
@@ -704,15 +740,7 @@ export async function generateFromCalendarMatch(options) {
     for (const snapshot of [homeSnapshot, awaySnapshot]) {
       const changed = Number(snapshot?.meta?.team_id) === Number(homeTeamId) ? homeChanged : awayChanged;
       if (!changed) continue;
-
-      const dirPath = path.join(outputDir, String(leagueId), String(season));
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-      }
-
-      const filePath = path.join(dirPath, `${snapshot.meta.team_id}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
-      console.log(`[team-window-5] Saved snapshot: ${filePath}`);
+      writeSnapshotToDisk(snapshot, outputDir, leagueId, season);
     }
 
     return {
@@ -771,6 +799,7 @@ function generateSnapshotFromForm(options) {
   );
 
   return {
+    schema_version: SCHEMA_VERSION,
     windows: {
       total_last5: totalStats,
       home_last5: homeStats,
@@ -784,6 +813,11 @@ function generateSnapshotFromForm(options) {
       games_used_total: total.length,
       games_used_home: home.length,
       games_used_away: away.length,
+      fixtures_used_total: [],
+      fixtures_used_home: [],
+      fixtures_used_away: [],
+      partial_home: home.length < TARGET_WINDOW_SIZE,
+      partial_away: away.length < TARGET_WINDOW_SIZE,
       last_updated: new Date().toISOString()
     }
   };

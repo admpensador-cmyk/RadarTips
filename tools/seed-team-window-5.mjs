@@ -22,6 +22,37 @@ const verbose = process.argv.includes('--verbose');
 const CACHE_DIR = path.join(rootDir, 'data', 'v1');
 const OUTPUT_DIR = path.join(rootDir, 'data', 'v1', 'team-window-5');
 
+function getCalendarMatches() {
+  const calendarFile = path.join(CACHE_DIR, 'calendar_2d.json');
+  if (!fs.existsSync(calendarFile)) {
+    throw new Error('calendar_2d.json not found');
+  }
+
+  const calendarData = JSON.parse(fs.readFileSync(calendarFile, 'utf8'));
+  const matches = [
+    ...(Array.isArray(calendarData?.today) ? calendarData.today : []),
+    ...(Array.isArray(calendarData?.tomorrow) ? calendarData.tomorrow : [])
+  ].filter((match) => match?.competition_id && match?.home_id && match?.away_id);
+
+  return { calendarFile, matches };
+}
+
+function countSnapshotFiles(dirPath) {
+  if (!fs.existsSync(dirPath)) return 0;
+
+  let total = 0;
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      total += countSnapshotFiles(fullPath);
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      total += 1;
+    }
+  }
+
+  return total;
+}
+
 function log(msg) {
   console.log(`[seed] ${msg}`);
 }
@@ -34,18 +65,16 @@ async function main() {
   log('Starting economi team-window-5 seed...');
   
   const startTime = Date.now();
-  
-  // Load calendar
-  const calendarFile = path.join(CACHE_DIR, 'calendar_7d.json');
-  if (!fs.existsSync(calendarFile)) {
-    log('ERROR: calendar_7d.json not found');
+
+  const { calendarFile, matches } = getCalendarMatches();
+  const initialSnapshotFiles = countSnapshotFiles(OUTPUT_DIR);
+
+  log(`Loaded calendar ${path.basename(calendarFile)} with ${matches.length} matches`);
+
+  if (matches.length === 0) {
+    log('ERROR: calendar_2d.json has zero matches to seed');
     process.exit(1);
   }
-
-  const calendarData = JSON.parse(fs.readFileSync(calendarFile, 'utf8'));
-  const matches = calendarData.matches || [];
-
-  log(`Loaded calendar with ${matches.length} matches`);
 
   // Group by league and season to process
   const byLeagueSeason = {};
@@ -67,13 +96,14 @@ async function main() {
   let failed = 0;
   const errors = [];
   const teamsProcessed = new Set();
+  let updatedSnapshots = 0;
 
   for (let i = 0; i < matches.length; i++) {
     const match = matches[i];
-    const season = 2026;
+    const season = Number(match.season) || 2026;
     
     try {
-      await generateFromCalendarMatch({
+      const result = await generateFromCalendarMatch({
         match,
         leagueId: match.competition_id,
         season,
@@ -81,6 +111,9 @@ async function main() {
       });
 
       successful++;
+      if (result?.updated) {
+        updatedSnapshots += 2;
+      }
       teamsProcessed.add(`${match.home_id}:${match.competition_id}:${season}`);
       teamsProcessed.add(`${match.away_id}:${match.competition_id}:${season}`);
 
@@ -110,11 +143,20 @@ async function main() {
   log(`  Successful: ${successful}`);
   log(`  Failed: ${failed}`);
 
+  const finalSnapshotFiles = countSnapshotFiles(OUTPUT_DIR);
+  log(`  Snapshot files present: ${finalSnapshotFiles}`);
+  log(`  Snapshot files created/updated: ${Math.max(updatedSnapshots, finalSnapshotFiles - initialSnapshotFiles)}`);
+
   if (failed > 0) {
     log(`\nFailed matches:`);
     errors.forEach(e => {
       log(`  ✗ ${e.fixture}: ${e.error}`);
     });
+  }
+
+  if (finalSnapshotFiles === 0) {
+    log('\nERROR: seed produced zero team-window-5 snapshot files');
+    process.exit(1);
   }
 
   process.exit(failed > 0 ? 1 : 0);

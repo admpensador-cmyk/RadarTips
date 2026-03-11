@@ -34,6 +34,21 @@ const verbose = process.argv.includes('--verbose');
 const CACHE_DIR = path.join(rootDir, 'data', 'v1');
 const OUTPUT_DIR = path.join(rootDir, 'data', 'v1', 'team-window-5');
 
+function loadCalendarMatches() {
+  const calendarFile = path.join(CACHE_DIR, 'calendar_2d.json');
+  if (!fs.existsSync(calendarFile)) {
+    throw new Error('calendar_2d.json not found. Cannot run smoke test.');
+  }
+
+  const calendarData = JSON.parse(fs.readFileSync(calendarFile, 'utf8'));
+  const matches = [
+    ...(Array.isArray(calendarData?.today) ? calendarData.today : []),
+    ...(Array.isArray(calendarData?.tomorrow) ? calendarData.tomorrow : [])
+  ].filter((match) => match?.fixture_id && match?.competition_id && match?.home_id && match?.away_id);
+
+  return { calendarFile, matches };
+}
+
 let testsRun = 0;
 let testsPassed = 0;
 let testsFailed = 0;
@@ -145,18 +160,10 @@ function renderValue(val) {
 async function main() {
   log('Starting smoke tests for team-window-5...\n');
 
-  // Load calendar to pick a fixture
-  const calendarFile = path.join(CACHE_DIR, 'calendar_7d.json');
-  if (!fs.existsSync(calendarFile)) {
-    log('ERROR: calendar_7d.json not found. Cannot run smoke test.');
-    process.exit(1);
-  }
-
-  const calendarData = JSON.parse(fs.readFileSync(calendarFile, 'utf8'));
-  const matches = calendarData.matches || [];
+  const { calendarFile, matches } = loadCalendarMatches();
 
   if (matches.length === 0) {
-    log('ERROR: No matches in calendar. Cannot run smoke test.');
+    log(`ERROR: No matches in ${path.basename(calendarFile)}. Cannot run smoke test.`);
     process.exit(1);
   }
 
@@ -175,8 +182,10 @@ async function main() {
     fixtureData = matches[0];
   }
 
+  const season = Number(fixtureData.season) || 2026;
+
   log(`Testing with fixture ${fixtureData.fixture_id}: ${fixtureData.home} vs ${fixtureData.away}`);
-  log(`League ${fixtureData.competition_id}, Season 2026\n`);
+  log(`League ${fixtureData.competition_id}, Season ${season}\n`);
 
   // Test 1: Generate snapshots
   log('TEST 1: Generate snapshots');
@@ -188,7 +197,7 @@ async function main() {
     const result = await generateFromCalendarMatch({
       match: fixtureData,
       leagueId: fixtureData.competition_id,
-      season: 2026,
+      season,
       outputDir: OUTPUT_DIR
     });
     homeSnapshot = result.home;
@@ -218,7 +227,7 @@ async function main() {
   const loadedHome = loadTeamWindow5Snapshot(
     fixtureData.home_id,
     fixtureData.competition_id,
-    2026,
+    season,
     OUTPUT_DIR
   );
   assert(loadedHome, `${fixtureData.home} snapshot loads from disk`);
@@ -226,7 +235,7 @@ async function main() {
   const loadedAway = loadTeamWindow5Snapshot(
     fixtureData.away_id,
     fixtureData.competition_id,
-    2026,
+    season,
     OUTPUT_DIR
   );
   assert(loadedAway, `${fixtureData.away} snapshot loads from disk`);
@@ -253,7 +262,7 @@ async function main() {
       cached_at: new Date().toISOString(),
       source: 'snapshots',
       league_id: fixtureData.competition_id,
-      season: 2026
+      season
     }
   };
 

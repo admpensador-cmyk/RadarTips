@@ -33,7 +33,7 @@ jobs:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -euo pipefail
-          node tools/update-data-api-football.mjs --calendar
+          node tools/update-data-api-football.mjs --calendar --stats
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
@@ -48,7 +48,6 @@ jobs:
           echo "✅ Seed complete"
 
       - name: Smoke test team-window-5
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "🧪 Running smoke tests..."

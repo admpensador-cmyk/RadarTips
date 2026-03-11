@@ -11,11 +11,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
+import { loadTeamWindow5Snapshot } from './lib/team-window-5-generator.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
-const CALENDAR_PATH = path.join(ROOT, 'data', 'v1', 'calendar_7d.json');
+const CALENDAR_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'team-window-5');
 
 // Configuration
@@ -32,53 +33,36 @@ function loadCalendar() {
   }
 }
 
-/**
- * Check if team-window-5 snapshot data exists
- * Returns true if ANY valid snapshots are present
- */
-function hasTeamWindow5Data() {
-  try {
-    if (!fs.existsSync(SNAPSHOTS_DIR)) {
-      return false;
+function getCalendarMatches(calendar) {
+  return [
+    ...(Array.isArray(calendar?.today) ? calendar.today : []),
+    ...(Array.isArray(calendar?.tomorrow) ? calendar.tomorrow : [])
+  ].filter((match) => match?.competition_id && match?.home_id && match?.away_id);
+}
+
+function isValidSnapshot(snapshot) {
+  return Boolean(snapshot?.windows?.total_last5 && snapshot?.windows?.home_last5 && snapshot?.windows?.away_last5 && snapshot?.meta);
+}
+
+function validateSampleMatches(matches) {
+  const sample = matches.slice(0, SAMPLE_SIZE);
+  let passed = 0;
+
+  for (const match of sample) {
+    const season = Number(match.season) || 2026;
+    const homeSnapshot = loadTeamWindow5Snapshot(match.home_id, match.competition_id, season, SNAPSHOTS_DIR);
+    const awaySnapshot = loadTeamWindow5Snapshot(match.away_id, match.competition_id, season, SNAPSHOTS_DIR);
+
+    if (isValidSnapshot(homeSnapshot) && isValidSnapshot(awaySnapshot)) {
+      passed += 1;
     }
-    
-    const dirs = fs.readdirSync(SNAPSHOTS_DIR);
-    
-    for (const leagueDir of dirs) {
-      const leaguePath = path.join(SNAPSHOTS_DIR, leagueDir);
-      if (!fs.statSync(leaguePath).isDirectory()) continue;
-      
-      const seasonDirs = fs.readdirSync(leaguePath);
-      for (const seasonDir of seasonDirs) {
-        const seasonPath = path.join(leaguePath, seasonDir);
-        if (!fs.statSync(seasonPath).isDirectory()) continue;
-        
-        const files = fs.readdirSync(seasonPath).filter(f => f.endsWith('.json'));
-        
-        // If any JSON file exists in the structure, we have data
-        if (files.length > 0) {
-          // Validate at least one snapshot
-          for (const file of files) {
-            try {
-              const snapshot = JSON.parse(
-                fs.readFileSync(path.join(seasonPath, file), 'utf-8')
-              );
-              
-              if (snapshot && snapshot.windows) {
-                return true;
-              }
-            } catch (e) {
-              continue;
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    // Silently continue
   }
-  
-  return false;
+
+  return {
+    sampleSize: sample.length,
+    passed,
+    passRate: sample.length > 0 ? passed / sample.length : 0
+  };
 }
 
 async function main() {
@@ -88,24 +72,33 @@ async function main() {
 
   // Load calendar
   const calendar = loadCalendar();
-  if (!calendar || !Array.isArray(calendar.matches) || calendar.matches.length === 0) {
+  const matches = getCalendarMatches(calendar);
+  if (!calendar || matches.length === 0) {
     console.error('❌ Calendar is empty or invalid');
     process.exit(1);
   }
 
-  console.log(`📊 Calendar loaded: ${calendar.matches.length} matches`);
+  console.log(`📊 Calendar loaded: ${matches.length} matches`);
 
-  // Check if team-window-5 data exists
-  const hasData = hasTeamWindow5Data();
+  if (!fs.existsSync(SNAPSHOTS_DIR)) {
+    console.log(`\n⚠️  Team-window-5 snapshots directory not found`);
+    console.log(`📁 Expected location: ${SNAPSHOTS_DIR}`);
+    console.error('\n❌ HEALTHCHECK FAILED - No snapshot data available\n');
+    process.exit(1);
+  }
 
-  if (hasData) {
+  const result = validateSampleMatches(matches);
+
+  if (result.sampleSize > 0 && result.passRate >= MIN_PASS_RATE) {
     console.log(`\n✅ Team-window-5 snapshots found and valid`);
     console.log(`📁 Location: ${SNAPSHOTS_DIR}`);
+    console.log(`📈 Sample pass rate: ${result.passed}/${result.sampleSize} (${Math.round(result.passRate * 100)}%)`);
     console.log('\n✅ HEALTHCHECK PASSED\n');
     process.exit(0);
   } else {
     console.log(`\n⚠️  Team-window-5 snapshots not found or invalid`);
     console.log(`📁 Expected location: ${SNAPSHOTS_DIR}`);
+    console.log(`📈 Sample pass rate: ${result.passed}/${result.sampleSize} (${Math.round(result.passRate * 100)}%)`);
     console.error('\n❌ HEALTHCHECK FAILED - No snapshot data available\n');
     console.error('   Fix: Run seed-team-window-5.mjs to populate snapshot data');
     process.exit(1);
