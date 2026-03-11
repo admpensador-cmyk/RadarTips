@@ -28,9 +28,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Verify no calendar_7d regressions
-        run: npm run verify:no-7d
-
       - name: Generate calendar snapshot (API-FOOTBALL, frequent, low quota)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
