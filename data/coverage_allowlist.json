@@ -1,0 +1,197 @@
+{
+  "generated_at": "2026-02-28T15:50:30.978Z",
+  "leagues": [
+    {
+      "region": "Africa",
+      "country": "South Africa",
+      "league_id": 288,
+      "display_name": "South Africa - Premiership",
+      "type": "league",
+      "tier": 1
+    },
+    {
+      "region": "Asia",
+      "country": "Japan",
+      "league_id": 98,
+      "display_name": "J1 League",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "Asia",
+      "country": "Japan",
+      "league_id": 99,
+      "display_name": "J2 League",
+      "type": "League",
+      "tier": 2
+    },
+    {
+      "region": "Asia",
+      "country": "Saudi Arabia",
+      "league_id": 307,
+      "display_name": "Saudi Pro League",
+      "type": "league",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "France",
+      "league_id": 61,
+      "display_name": "Ligue 1",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "France",
+      "league_id": 62,
+      "display_name": "Ligue 2",
+      "type": "League",
+      "tier": 2
+    },
+    {
+      "region": "Europe",
+      "country": "Germany",
+      "league_id": 79,
+      "display_name": "2. Bundesliga",
+      "type": "League",
+      "tier": 2
+    },
+    {
+      "region": "Europe",
+      "country": "Italy",
+      "league_id": 135,
+      "display_name": "Serie A",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "Italy",
+      "league_id": 136,
+      "display_name": "Serie B",
+      "type": "League",
+      "tier": 2
+    },
+    {
+      "region": "Europe",
+      "country": "Portugal",
+      "league_id": 94,
+      "display_name": "Primeira Liga",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "Spain",
+      "league_id": 140,
+      "display_name": "La Liga",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "Spain",
+      "league_id": 141,
+      "display_name": "Segunda División",
+      "type": "League",
+      "tier": 2
+    },
+    {
+      "region": "Europe",
+      "country": "World",
+      "league_id": 2,
+      "display_name": "UEFA Champions League",
+      "type": "Cup",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "World",
+      "league_id": 848,
+      "display_name": "UEFA Europa Conference League",
+      "type": "Cup",
+      "tier": 1
+    },
+    {
+      "region": "Europe",
+      "country": "World",
+      "league_id": 3,
+      "display_name": "UEFA Europa League",
+      "type": "Cup",
+      "tier": 1
+    },
+    {
+      "region": "Oceania",
+      "country": "Australia",
+      "league_id": 188,
+      "display_name": "A-League",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Argentina",
+      "league_id": 128,
+      "display_name": "Primera División",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 602,
+      "display_name": "Campeonato Baiano",
+      "type": "league",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 624,
+      "display_name": "Campeonato Carioca",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 477,
+      "display_name": "Campeonato Gaúcho",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 629,
+      "display_name": "Campeonato Mineiro",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 475,
+      "display_name": "Campeonato Paulista",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 612,
+      "display_name": "Copa do Nordeste",
+      "type": "Cup",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Chile",
+      "league_id": 265,
+      "display_name": "Primera División",
+      "type": "League",
+      "tier": 1
+    }
+  ]
+}
