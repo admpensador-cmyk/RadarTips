@@ -2350,6 +2350,34 @@ function syncHeroDayControls(t){
   });
 }
 
+function upsertHeaderCompetitionFilter(uiText, competitionOptions){
+  const topbarNav = qs(".topbar .nav");
+  const topbar = qs(".topbar");
+  const host = topbarNav || topbar;
+  if(!host) return;
+
+  let filterWrap = qs("#rt-topbar-competition-filter");
+  if(!filterWrap){
+    filterWrap = document.createElement("div");
+    filterWrap.id = "rt-topbar-competition-filter";
+    filterWrap.className = "rt-cal-filters rt-topbar-filter";
+    host.insertAdjacentElement("beforeend", filterWrap);
+  }
+
+  const selectOptions = (competitionOptions || []).map((comp)=>{
+    const selected = normalize(comp) === normalize(CAL_ACTIVE_COMPETITION) ? ' selected' : "";
+    return `<option value="${escAttr(comp)}"${selected}>${escAttr(comp)}</option>`;
+  }).join("");
+
+  filterWrap.innerHTML = `
+    <label class="rt-cal-filter-label" for="rt-cal-competition-select">${escAttr(uiText.label)}</label>
+    <select id="rt-cal-competition-select" class="rt-cal-filter-select" data-cal-competition-filter>
+      <option value="">${escAttr(uiText.all)}</option>
+      ${selectOptions}
+    </select>
+  `;
+}
+
 function matchKey(m){
   return encodeURIComponent(`${m.kickoff_utc}|${m.home}|${m.away}`);
 }
@@ -3053,11 +3081,11 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     });
   }
 
-  if(!root.__rtCompetitionFilterBound){
-    root.__rtCompetitionFilterBound = true;
-    root.addEventListener("change", (e)=>{
+  if(!window.__rtCompetitionFilterBound){
+    window.__rtCompetitionFilterBound = true;
+    document.addEventListener("change", (e)=>{
       const select = e.target.closest("[data-cal-competition-filter]");
-      if(!select || !root.contains(select)) return;
+      if(!select) return;
       CAL_ACTIVE_COMPETITION = String(select.value || "");
       if(typeof window.__RERENDER_CALENDAR__ === "function") window.__RERENDER_CALENDAR__();
     });
@@ -3152,20 +3180,7 @@ function renderCalendar(t, todayMatches, tomorrowMatches, meta, viewMode, query,
     de: { label: "Wettbewerb", all: "Alle Wettbewerbe" }
   };
   const uiText = labelsByLang[LANG] || labelsByLang.en;
-  const filterWrap = document.createElement("div");
-  filterWrap.className = "rt-cal-filters";
-  const selectOptions = competitionOptions.map((comp)=>{
-    const selected = normalize(comp) === normalize(CAL_ACTIVE_COMPETITION) ? ' selected' : "";
-    return `<option value="${escAttr(comp)}"${selected}>${escAttr(comp)}</option>`;
-  }).join("");
-  filterWrap.innerHTML = `
-    <label class="rt-cal-filter-label" for="rt-cal-competition-select">${escAttr(uiText.label)}</label>
-    <select id="rt-cal-competition-select" class="rt-cal-filter-select" data-cal-competition-filter>
-      <option value="">${escAttr(uiText.all)}</option>
-      ${selectOptions}
-    </select>
-  `;
-  root.appendChild(filterWrap);
+  upsertHeaderCompetitionFilter(uiText, competitionOptions);
 
   const mainGrid = document.createElement("div");
   mainGrid.className = "rt-day-main-grid";
