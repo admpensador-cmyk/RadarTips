@@ -275,6 +275,21 @@ function matchKey(m){
 }
 
 function renderTop3(t, data){
+  const topSection = qs("#top3_section");
+  if(topSection && !topSection.querySelector(".grid")){
+    topSection.innerHTML = `
+      <div class="rt-day-block__head">
+        <h2>${escAttr(t.top3_title || "Top picks")}</h2>
+        <p>${escAttr(t.top3_sub || "Selecao principal do dia")}</p>
+      </div>
+      <div class="grid">
+        <div class="card" data-slot="1"><div class="row"><span class="badge risk low">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 1</span></div><h3>—</h3><div class="meta"></div><div class="lock"></div></div>
+        <div class="card" data-slot="2"><div class="row"><span class="badge risk med">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 2</span></div><h3>—</h3><div class="meta"></div><div class="lock"></div></div>
+        <div class="card" data-slot="3"><div class="row"><span class="badge risk high">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 3</span></div><h3>—</h3><div class="meta"></div><div class="lock"></div></div>
+      </div>
+    `;
+  }
+
   const slots = data.highlights || [];
   const cards = qsa(".card[data-slot]");
 
@@ -355,6 +370,223 @@ function renderTop3(t, data){
         </div>
       </div>
     `;
+  });
+}
+
+function renderTopPicks(t, data){
+  renderTop3(t, data);
+}
+
+function dayTabLabels(lang){
+  const map = {
+    pt: { today: "Hoje", tomorrow: "Amanha" },
+    en: { today: "Today", tomorrow: "Tomorrow" },
+    es: { today: "Hoy", tomorrow: "Manana" },
+    fr: { today: "Aujourdhui", tomorrow: "Demain" },
+    de: { today: "Heute", tomorrow: "Morgen" }
+  };
+  return map[lang] || map.en;
+}
+
+function renderTabs(lang, activeKey){
+  const root = qs("#day_tabs");
+  if(!root) return;
+  const labels = dayTabLabels(lang);
+  root.innerHTML = `
+    <button type="button" class="rt-day-tab ${activeKey === "today" ? "active" : ""}" data-day="today">${escAttr(labels.today)}</button>
+    <button type="button" class="rt-day-tab ${activeKey === "tomorrow" ? "active" : ""}" data-day="tomorrow">${escAttr(labels.tomorrow)}</button>
+  `;
+}
+
+function toDateKey(dateObj){
+  return new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(dateObj);
+}
+
+function normalizeMatches(matches){
+  const out = (matches || []).map((m)=>{
+    const competition = String(m.competition || m.league_name || m.league || "").trim();
+    const competitionId = m.competition_id ?? m.league_id ?? m.competitionId ?? null;
+    const country = String(m.country || m.country_name || "").trim();
+    return {
+      ...m,
+      competition,
+      competition_id: competitionId,
+      country,
+      home: String(m.home || "").trim(),
+      away: String(m.away || "").trim()
+    };
+  }).filter((m)=> m.kickoff_utc && m.home && m.away);
+
+  const missing = out.filter((m)=> !m.competition || !m.country || m.competition_id === null || m.competition_id === undefined);
+  if(missing.length){
+    console.warn("[RadarDay] matches missing required fields:", missing.length);
+  }
+
+  return out.map((m)=>({
+    ...m,
+    competition: m.competition || `League ${m.competition_id || "N/A"}`,
+    country: m.country || "International"
+  }));
+}
+
+function competitionDisplay(m){
+  const comp = String(m.competition || "").trim();
+  if(comp) return comp;
+  if(m.competition_id !== null && m.competition_id !== undefined) return `League ${m.competition_id}`;
+  return "Unknown competition";
+}
+
+function groupByCountryCompetition(matches){
+  const map = new Map();
+  for(const m of matches){
+    const country = String(m.country || "International").trim() || "International";
+    const competition = competitionDisplay(m);
+    const key = `${country}||${competition}`;
+    if(!map.has(key)) map.set(key, { country, competition, matches: [] });
+    map.get(key).matches.push(m);
+  }
+
+  return [...map.values()]
+    .map((g)=>({
+      ...g,
+      matches: g.matches.sort((a,b)=> new Date(a.kickoff_utc) - new Date(b.kickoff_utc))
+    }))
+    .sort((a,b)=> `${a.country} ${a.competition}`.localeCompare(`${b.country} ${b.competition}`));
+}
+
+async function loadCalendar(){
+  return await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+}
+
+function renderLeagues(t, matches, state){
+  const section = qs("#calendar_section");
+  if(!section) return;
+
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+
+  const targetDateKey = state.activeDay === "tomorrow" ? toDateKey(tomorrow) : toDateKey(now);
+  const query = normalize(state.query || "");
+
+  const filtered = matches.filter((m)=>{
+    if(localDateKey(m.kickoff_utc) !== targetDateKey) return false;
+    if(!query) return true;
+    const blob = `${m.country} ${competitionDisplay(m)} ${m.home} ${m.away}`.toLowerCase();
+    return blob.includes(query);
+  });
+
+  const groups = groupByCountryCompetition(filtered);
+
+  section.innerHTML = `
+    <div class="rt-day-block__head">
+      <h2>${escAttr(t.calendar_title || "Ligas e jogos")}</h2>
+      <p>${escAttr(t.calendar_sub || "Partidas agrupadas por pais e liga")}</p>
+    </div>
+    <div class="controls">
+      <input class="input" id="day_search" type="text" value="${escAttr(state.query || "")}" placeholder="${escAttr(t.search_placeholder || "Search")}" />
+    </div>
+    <div class="cal" id="calendar"></div>
+  `;
+
+  const root = qs("#calendar");
+  if(!root) return;
+
+  if(!groups.length){
+    root.innerHTML = `<div class="group"><div class="smallnote">${escAttr(t.empty_list || "Sem jogos encontrados.")}</div></div>`;
+    return;
+  }
+
+  for(const g of groups){
+    const box = document.createElement("div");
+    box.className = "group";
+
+    box.innerHTML = `
+      <div class="group-head">
+        <div class="group-title"><span class="flag"></span><span>${escAttr(g.country)} · ${escAttr(g.competition)}</span></div>
+        <div class="group-actions">
+          <span class="chip" data-open="competition" data-value="${escAttr(g.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${escAttr(t.competition_radar || "Competicao")}</span>
+          <span class="chip" data-open="country" data-value="${escAttr(g.country)}" ${tipAttr(t.country_radar_tip || "")}>${escAttr(t.country_radar || "Pais")}</span>
+        </div>
+      </div>
+      <div class="matches"></div>
+    `;
+
+    const list = box.querySelector(".matches");
+    for(const m of g.matches){
+      const row = document.createElement("div");
+      row.className = "match";
+      row.setAttribute("data-open","match");
+      row.setAttribute("data-key", matchKey(m));
+      row.setAttribute("role","button");
+      row.setAttribute("tabindex","0");
+
+      const formHome = buildFormSquares(t, m.form_home_details, CAL_META.form_window);
+      const formAway = buildFormSquares(t, m.form_away_details, CAL_META.form_window);
+      const riskText = (m.risk==="low") ? t.risk_low : (m.risk==="high") ? t.risk_high : t.risk_med;
+      const suggestion = localizeMarket(m.suggestion_free, t) || "—";
+      const goalsTip = t.goals_tooltip || "Goals for/goals against";
+
+      row.innerHTML = `
+        <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
+        <div>
+          <div class="teams">
+            <div class="teamline">${crestHTML(m.home)}<span>${escAttr(m.home)}</span></div>
+            <div class="teamline">${crestHTML(m.away)}<span>${escAttr(m.away)}</span></div>
+          </div>
+          <div class="subline">
+            <div class="form" ${tipAttr(t.form_tooltip || t.form_label || "Forma")}>${formHome}${formAway}</div>
+            <div class="goals" ${tipAttr(goalsTip)}>
+              <span class="goal-pill"><span class="tag">${escAttr(t.goals_label || "G")}</span><span class="gf">${escAttr(m.gf_home ?? 0)}</span>/<span class="ga">${escAttr(m.ga_home ?? 0)}</span></span>
+              <span class="goal-pill"><span class="tag">${escAttr(t.goals_label || "G")}</span><span class="gf">${escAttr(m.gf_away ?? 0)}</span>/<span class="ga">${escAttr(m.ga_away ?? 0)}</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)} · ${escAttr(riskText || "")}</div>
+      `;
+
+      list.appendChild(row);
+    }
+
+    root.appendChild(box);
+  }
+
+  bindOpenHandlers();
+}
+
+function bindOpenHandlers(){
+  qsa("[data-open]").forEach(el=>{
+    if(el.dataset.boundOpen === "1") return;
+    el.dataset.boundOpen = "1";
+    el.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const type = el.getAttribute("data-open");
+      const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
+      openModal(type, val);
+    });
+  });
+
+  qsa(".match[role='button']").forEach(el=>{
+    if(el.dataset.boundKey === "1") return;
+    el.dataset.boundKey = "1";
+    el.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        el.click();
+      }
+    });
+  });
+
+  qsa(".card[data-open='match']").forEach(el=>{
+    if(el.dataset.boundCardKey === "1") return;
+    el.dataset.boundCardKey = "1";
+    el.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        el.click();
+      }
+    });
   });
 }
 
@@ -978,9 +1210,44 @@ async function init(){
   if(p==="day"){
     setText("hero_title", T.hero_title_day);
     setText("hero_sub", T.hero_sub_day);
-    renderPitch();
+    let activeDay = "today";
+    let q = "";
+
+    renderTabs(LANG, activeDay);
+
     const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[]});
-    renderTop3(T, radar);
+    renderTopPicks(T, radar);
+
+    const data = await loadCalendar();
+    CAL_MATCHES = normalizeMatches(data.matches || []);
+    CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
+
+    const rerenderDay = ()=>{
+      renderTabs(LANG, activeDay);
+      renderLeagues(T, CAL_MATCHES, { activeDay, query: q });
+    };
+
+    const tabsRoot = qs("#day_tabs");
+    if(tabsRoot){
+      tabsRoot.addEventListener("click", (e)=>{
+        const btn = e.target.closest("button[data-day]");
+        if(!btn) return;
+        activeDay = btn.getAttribute("data-day") || "today";
+        rerenderDay();
+      });
+    }
+
+    const calendarSection = qs("#calendar_section");
+    if(calendarSection){
+      calendarSection.addEventListener("input", (e)=>{
+        const input = e.target.closest("#day_search");
+        if(!input) return;
+        q = input.value || "";
+        rerenderDay();
+      });
+    }
+
+    rerenderDay();
   } else if(p==="week"){
     setText("hero_title", T.hero_title_week);
     setText("hero_sub", T.hero_sub_week);
@@ -991,103 +1258,6 @@ async function init(){
     setText("hero_sub", T.hero_sub_cal);
     renderPitch();
     renderTop3(T, {highlights:[]});
-  }
-
-  // Calendar controls always available
-  setText("calendar_title", T.calendar_title);
-  setText("calendar_sub", T.calendar_sub);
-  qs("#search").setAttribute("placeholder", T.search_placeholder);
-  qs("#btn_time").textContent = T.view_by_time;
-  qs("#btn_country").textContent = T.view_by_country;
-
-  let viewMode = "time";
-  let q = "";
-  const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
-  CAL_MATCHES = data.matches || [];
-  CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
-
-  // Date strip
-  const strip = ensureDateStrip(T);
-  const days = build7Days();
-  let activeDate = "7d"; // default: next 7 days
-
-  function renderStrip(){
-    if(!strip) return;
-
-    const chips = [];
-
-    // 7d chip (range)
-    chips.push({key:"7d", label:(T.next7_label || "7D"), tip:(T.next7_tooltip || "Próximos 7 dias")});
-
-    for(const d of days){
-      const key = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
-      chips.push({
-        key,
-        label: fmtDateShortDDMM(d),
-        tip: fmtDateLong(d, LANG)
-      });
-    }
-
-    strip.innerHTML = chips.map(c=>{
-      const cls = (c.key === activeDate) ? "date-chip active" : "date-chip";
-      return `<button class="${cls}" type="button" data-date="${c.key}" ${tipAttr(c.tip)}>${escAttr(c.label)}</button>`;
-    }).join("");
-  }
-
-  function rerender(){
-    qs("#btn_time").classList.toggle("active", viewMode==="time");
-    qs("#btn_country").classList.toggle("active", viewMode==="country");
-    renderCalendar(T, CAL_MATCHES, viewMode, q, activeDate);
-
-    // bind open handlers after each render
-    bindOpenHandlers();
-  }
-
-  function bindOpenHandlers(){
-    // any [data-open] outside modal (cards, chips, matches)
-    qsa("[data-open]").forEach(el=>{
-      el.addEventListener("click", (e)=>{
-        // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
-        e.stopPropagation();
-        const type = el.getAttribute("data-open");
-        const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
-        openModal(type, val);
-      }, {once:true});
-    });
-
-    // keyboard on match rows
-    qsa(".match[role='button']").forEach(el=>{
-      el.addEventListener("keydown", (e)=>{
-        if(e.key === "Enter" || e.key === " "){
-          e.preventDefault();
-          el.click();
-        }
-      }, {once:true});
-    });
-
-    // cards as buttons
-    qsa(".card[data-open='match']").forEach(el=>{
-      el.addEventListener("keydown", (e)=>{
-        if(e.key === "Enter" || e.key === " "){
-          e.preventDefault();
-          el.click();
-        }
-      }, {once:true});
-    });
-  }
-
-  qs("#btn_time").addEventListener("click", ()=>{ viewMode="time"; rerender(); });
-  qs("#btn_country").addEventListener("click", ()=>{ viewMode="country"; rerender(); });
-  qs("#search").addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
-
-  if(strip){
-    strip.addEventListener("click", (e)=>{
-      const btn = e.target.closest("button[data-date]");
-      if(!btn) return;
-      activeDate = btn.getAttribute("data-date");
-      renderStrip();
-      rerender();
-    });
   }
 
   qs("#modal_close").addEventListener("click", closeModal);
@@ -1102,17 +1272,11 @@ async function init(){
     });
   });
 
-<<<<<<< HEAD
-=======
-  // compliance footer
-  renderComplianceFooter(lang);
+  renderComplianceFooter(LANG);
 
->>>>>>> c62aa79 (Melhorias UI)
   // year
   setText("year", String(new Date().getFullYear()));
 
-  renderStrip();
-  rerender();
   bindOpenHandlers();
 }
 

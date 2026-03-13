@@ -103,24 +103,15 @@
         <input class="input" id="search" type="text" placeholder="—" />
       </div>
 
-      <div class="cal" id="calendar"></div>
-    </div>
+      <section class="rt-day-top">
+        <div class="rt-day-top__head">
+          <h1 id="hero_title">Radar del Dia</h1>
+          <p id="hero_sub">Mejores oportunidades de hoy</p>
+        </div>
+        <div class="rt-day-tabs" id="day_tabs"></div>
+      </section>
 
-    <div class="footer">
-      © <span id="year"></span> RadarTips
-    </div>
-  </div>
+      <section class="rt-day-picks" id="top3_section"></section>
 
-  <div class="modal-backdrop" id="modal_backdrop" role="dialog" aria-modal="true">
-    <div class="modal">
-      <div class="modal-head">
+      <section class="rt-day-leagues section" id="calendar_section"></section>
         <div class="modal-title" id="modal_title">Radar</div>
-        <button class="btn" id="modal_close" type="button">×</button>
-      </div>
-      <div class="modal-body" id="modal_body"></div>
-    </div>
-  </div>
-
-  <script src="/assets/js/app.js?v=8"></script>
-</body>
-</html>
