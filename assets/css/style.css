@@ -1022,46 +1022,6 @@ input::placeholder{
   box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.rt-cal-filters{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin:0 0 10px;
-  flex-wrap:wrap;
-  position:sticky;
-  top:10px;
-  z-index:12;
-  padding:8px 10px;
-  border:1px solid color-mix(in srgb, var(--border-soft) 78%, transparent);
-  border-radius:12px;
-  background:color-mix(in srgb, var(--bg-surface) 92%, transparent);
-  backdrop-filter:blur(6px);
-}
-
-.rt-cal-filter-label{
-  font-size:12px;
-  font-weight:900;
-  letter-spacing:.02em;
-  color:var(--text-main);
-}
-
-.rt-cal-filter-select{
-  border:1px solid color-mix(in srgb, var(--accent) 34%, var(--border-soft));
-  background:color-mix(in srgb, var(--bg-surface) 96%, transparent);
-  color:var(--text-main);
-  border-radius:10px;
-  padding:8px 10px;
-  font-size:12px;
-  font-weight:800;
-  min-width:220px;
-  max-width:100%;
-}
-
-.rt-cal-filter-select:focus-visible{
-  outline:none;
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 42%, transparent);
-}
-
 .rt-day-main-grid{
   display:grid;
   grid-template-columns:minmax(0, 1.75fr) minmax(280px, 0.95fr);
@@ -1281,9 +1241,6 @@ input::placeholder{
   .hero.rt-hero-radar-day .hero-header h1{font-size:30px;line-height:1.12}
   .rt-day-main-grid{gap:12px}
   .rt-cal-tabs-header{grid-template-columns:1fr}
-  .rt-cal-filters{align-items:stretch}
-  .rt-cal-filter-label{width:100%}
-  .rt-cal-filter-select{width:100%;min-width:0}
   .rt-cal-match{grid-template-columns:1fr;gap:8px}
   .rt-cal-more{width:100%;min-width:0}
 }
