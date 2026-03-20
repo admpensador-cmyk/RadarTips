@@ -40,27 +40,6 @@ jobs:
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
 
-      - name: Seed team-window-5 snapshots
-        run: |
-          set -euo pipefail
-          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
-          node tools/seed-team-window-5.mjs
-          echo "✅ Seed complete"
-
-      - name: Smoke test team-window-5
-        run: |
-          set -euo pipefail
-          echo "🧪 Running smoke tests..."
-          node tools/smoke-test-team-window-5.mjs
-          echo "✅ Smoke tests passed"
-
-      - name: Healthcheck match-stats endpoint
-        run: |
-          set -euo pipefail
-          echo "🏥 Healthcheck: verifying match-stats data..."
-          node tools/healthcheck-match-stats.mjs
-          echo "✅ Healthcheck passed"
-
       - name: Publish snapshots to R2 (mandatory)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -86,3 +65,32 @@ jobs:
 
           echo "=== R2 published snapshot validation (fail-closed) ==="
           node -e 'const fs=require("fs"); const crypto=require("crypto"); const localPath="data/v1/calendar_2d.json"; const remotePath="/tmp/r2_calendar_2d_uploaded.json"; const localRaw=fs.readFileSync(localPath,"utf8"); const remoteRaw=fs.readFileSync(remotePath,"utf8"); let local; let remote; try{ local=JSON.parse(localRaw); }catch(e){ console.error("[FATAL] Local JSON invalid:",e.message); process.exit(1);} try{ remote=JSON.parse(remoteRaw); }catch(e){ console.error("[FATAL] Remote JSON invalid:",e.message); process.exit(1);} const req=["generated_at_utc","base_date","today","tomorrow","tz"]; for(const f of req){ if(!remote?.meta?.[f]){ console.error(`[FATAL] remote.meta.${f} missing`); process.exit(1);} } const iso=/^\d{4}-\d{2}-\d{2}$/; if(!iso.test(String(remote.meta.base_date))||!iso.test(String(remote.meta.today))||!iso.test(String(remote.meta.tomorrow))){ console.error("[FATAL] Invalid date format in remote meta. Expected YYYY-MM-DD"); process.exit(1);} const plusOne=(d)=>{const [y,m,dd]=String(d).split("-").map(Number);const dt=new Date(Date.UTC(y,m-1,dd));dt.setUTCDate(dt.getUTCDate()+1);return dt.toISOString().slice(0,10);}; if(String(remote.meta.today)!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.today must equal remote.meta.base_date"); process.exit(1);} if(String(remote.meta.tomorrow)!==plusOne(remote.meta.base_date)){ console.error("[FATAL] remote.meta.tomorrow is inconsistent with base_date + 1 day"); process.exit(1);} if(String(remote.meta.tz)!=="America/Bahia"){ console.error("[FATAL] remote.meta.tz must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_timezone||"")!=="America/Bahia"){ console.error("[FATAL] remote.meta.generated_for_timezone must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_local_date||"")!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.generated_for_local_date must equal base_date"); process.exit(1);} if(String(remote.meta.generated_at_utc)!==String(local?.meta?.generated_at_utc)){ console.error("[FATAL] Published snapshot mismatch: generated_at_utc differs from local artifact"); process.exit(1);} const localHash=crypto.createHash("sha256").update(localRaw).digest("hex"); const remoteHash=crypto.createHash("sha256").update(remoteRaw).digest("hex"); console.log("local_sha256="+localHash); console.log("remote_sha256="+remoteHash); console.log("meta.generated_at_utc="+remote.meta.generated_at_utc); console.log("meta.base_date="+remote.meta.base_date); console.log("meta.today="+remote.meta.today); console.log("meta.tomorrow="+remote.meta.tomorrow); console.log("meta.tz="+remote.meta.tz); console.log("meta.leagues_source="+(remote?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(remote?.meta?.leagues_count||"")); console.log("[OK] Published snapshot validation passed.");'
+
+      - name: Verify production calendar sync (fail-closed)
+        env:
+          RADARTIPS_BASE_URL: https://radartips.com
+          RADARTIPS_EXPECTED_CALENDAR_PATH: data/v1/calendar_2d.json
+        run: |
+          set -euo pipefail
+          node tools/verify-production-calendar-sync.mjs
+
+      - name: Seed team-window-5 snapshots
+        run: |
+          set -euo pipefail
+          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
+          node tools/seed-team-window-5.mjs
+          echo "✅ Seed complete"
+
+      - name: Smoke test team-window-5
+        run: |
+          set -euo pipefail
+          echo "🧪 Running smoke tests..."
+          node tools/smoke-test-team-window-5.mjs
+          echo "✅ Smoke tests passed"
+
+      - name: Healthcheck match-stats endpoint
+        run: |
+          set -euo pipefail
+          echo "🏥 Healthcheck: verifying match-stats data..."
+          node tools/healthcheck-match-stats.mjs
+          echo "✅ Healthcheck passed"

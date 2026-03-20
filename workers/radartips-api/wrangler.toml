@@ -1,0 +1,23 @@
+name = "radartips-api"
+main = "src/index.js"
+compatibility_date = "2026-03-15"
+
+routes = [
+	{ pattern = "radartips.com/api/v1/*", zone_name = "radartips.com" },
+	{ pattern = "www.radartips.com/api/v1/*", zone_name = "radartips.com" }
+]
+
+[triggers]
+crons = ["0 */3 * * *"]
+
+[[r2_buckets]]
+binding = "RADARTIPS_DATA"
+bucket_name = "radartips-data"
+
+[vars]
+SNAPSHOT_MAX_AGE = "12"
+WORKER_VERSION = "2026.03.15"
+# Cron stale refresh dispatch metadata
+GITHUB_REPOSITORY = "admpensador-cmyk/RadarTips"
+GITHUB_WORKFLOW_FILE = "radartips_update_data_api_football.yml"
+GITHUB_WORKFLOW_REF = "main"
