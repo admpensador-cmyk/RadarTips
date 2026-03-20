@@ -12,12 +12,12 @@ function renderComplianceFooter(lang){
   if(!foot) return;
   const p = LEGAL_PATHS[lang] || LEGAL_PATHS.en;
   const labels = {
-    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content â€¢ We are not a bookmaker â€¢ 18+"},
-    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo responsÃ¡vel",note:"ConteÃºdo informativo â€¢ NÃ£o somos casa de apostas â€¢ +18"},
-    es:{how:"CÃ³mo funciona",about:"Sobre",contact:"Contacto",terms:"TÃ©rminos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo â€¢ No somos casa de apuestas â€¢ 18+"},
-    fr:{how:"Comment Ã§a marche",about:"Ã€ propos",contact:"Contact",terms:"Conditions",privacy:"ConfidentialitÃ©",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif â€¢ Pas un bookmaker â€¢ 18+"},
-    de:{how:"So funktioniert es",about:"Ãœber uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt â€¢ Kein Buchmacher â€¢ 18+"}
-  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content â€¢ We are not a bookmaker â€¢ 18+"};
+    en:{how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content ÔÇó We are not a bookmaker ÔÇó 18+"},
+    pt:{how:"Como funciona",about:"Sobre",contact:"Contato",terms:"Termos",privacy:"Privacidade",aff:"Afiliados",rg:"Jogo respons+ível",note:"Conte+¦do informativo ÔÇó N+úo somos casa de apostas ÔÇó +18"},
+    es:{how:"C+¦mo funciona",about:"Sobre",contact:"Contacto",terms:"T+®rminos",privacy:"Privacidad",aff:"Afiliados",rg:"Juego responsable",note:"Contenido informativo ÔÇó No somos casa de apuestas ÔÇó 18+"},
+    fr:{how:"Comment +ºa marche",about:"+Ç propos",contact:"Contact",terms:"Conditions",privacy:"Confidentialit+®",aff:"Affiliation",rg:"Jeu responsable",note:"Contenu informatif ÔÇó Pas un bookmaker ÔÇó 18+"},
+    de:{how:"So funktioniert es",about:"+£ber uns",contact:"Kontakt",terms:"Bedingungen",privacy:"Datenschutz",aff:"Affiliate",rg:"Verantwortungsvoll",note:"Info-Inhalt ÔÇó Kein Buchmacher ÔÇó 18+"}
+  }[lang] || {how:"How it works",about:"About",contact:"Contact",terms:"Terms",privacy:"Privacy",aff:"Affiliates",rg:"Responsible",note:"Informational content ÔÇó We are not a bookmaker ÔÇó 18+"};
 
   foot.innerHTML = `
     <div class="foot-wrap">
@@ -32,7 +32,7 @@ function renderComplianceFooter(lang){
       </div>
       <div class="foot-meta">
         <span>${labels.note}</span>
-        <span>Â© <span id="year"></span> RadarTips</span>
+        <span>-® <span id="year"></span> RadarTips</span>
       </div>
     </div>
   `;
@@ -283,9 +283,9 @@ function renderTop3(t, data){
         <p>${escAttr(t.top3_sub || "Selecao principal do dia")}</p>
       </div>
       <div class="grid">
-        <div class="card" data-slot="1"><div class="row"><span class="badge risk low">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 1</span></div><h3>â€”</h3><div class="meta"></div><div class="lock"></div></div>
-        <div class="card" data-slot="2"><div class="row"><span class="badge risk med">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 2</span></div><h3>â€”</h3><div class="meta"></div><div class="lock"></div></div>
-        <div class="card" data-slot="3"><div class="row"><span class="badge risk high">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 3</span></div><h3>â€”</h3><div class="meta"></div><div class="lock"></div></div>
+        <div class="card" data-slot="1"><div class="row"><span class="badge risk low">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 1</span></div><h3>ÔÇö</h3><div class="meta"></div><div class="lock"></div></div>
+        <div class="card" data-slot="2"><div class="row"><span class="badge risk med">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 2</span></div><h3>ÔÇö</h3><div class="meta"></div><div class="lock"></div></div>
+        <div class="card" data-slot="3"><div class="row"><span class="badge risk high">${escAttr(LANG || "")}</span><span class="badge top" style="opacity:.75">TOP 3</span></div><h3>ÔÇö</h3><div class="meta"></div><div class="lock"></div></div>
       </div>
     `;
   }
@@ -354,11 +354,11 @@ function renderTop3(t, data){
     card.setAttribute("tabindex","0");
     card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
 
-    const suggestion = localizeMarket(item.suggestion_free, t) || "â€”";
+    const suggestion = localizeMarket(item.suggestion_free, t) || "ÔÇö";
     lock.innerHTML = `
       <div class="callout">
         <div class="callout-top">
-          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "SugestÃ£o do Radar")}</span></span>
+          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugest+úo do Radar")}</span></span>
           <span class="callout-value" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)}</span>
         </div>
         <div class="callout-sub">
@@ -504,7 +504,7 @@ function renderLeagues(t, matches, state){
 
     box.innerHTML = `
       <div class="group-head">
-        <div class="group-title"><span class="flag"></span><span>${escAttr(g.country)} Â· ${escAttr(g.competition)}</span></div>
+        <div class="group-title"><span class="flag"></span><span>${escAttr(g.country)} -À ${escAttr(g.competition)}</span></div>
         <div class="group-actions">
           <span class="chip" data-open="competition" data-value="${escAttr(g.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${escAttr(t.competition_radar || "Competicao")}</span>
           <span class="chip" data-open="country" data-value="${escAttr(g.country)}" ${tipAttr(t.country_radar_tip || "")}>${escAttr(t.country_radar || "Pais")}</span>
@@ -525,7 +525,7 @@ function renderLeagues(t, matches, state){
       const formHome = buildFormSquares(t, m.form_home_details, CAL_META.form_window);
       const formAway = buildFormSquares(t, m.form_away_details, CAL_META.form_window);
       const riskText = (m.risk==="low") ? t.risk_low : (m.risk==="high") ? t.risk_high : t.risk_med;
-      const suggestion = localizeMarket(m.suggestion_free, t) || "â€”";
+      const suggestion = localizeMarket(m.suggestion_free, t) || "ÔÇö";
       const goalsTip = t.goals_tooltip || "Goals for/goals against";
 
       row.innerHTML = `
@@ -543,7 +543,7 @@ function renderLeagues(t, matches, state){
             </div>
           </div>
         </div>
-        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)} Â· ${escAttr(riskText || "")}</div>
+        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)} -À ${escAttr(riskText || "")}</div>
       `;
 
       list.appendChild(row);
@@ -654,7 +654,7 @@ function groupByCountry(matches){
 }
 
 function resultLabel(ch, t){
-  if(ch==="W") return t.result_green || "VitÃ³ria";
+  if(ch==="W") return t.result_green || "Vit+¦ria";
   if(ch==="D") return t.result_pending || "Empate";
   return t.result_red || "Derrota";
 }
@@ -681,11 +681,11 @@ function buildFormSquares(t, details, windowN){
     return details.slice(0, n).map(d=>{
       const r = String(d.result || "D").toUpperCase();
       const v = venueLabel(d.venue, t);
-      const opp = d.opp || "â€”";
-      const score = d.score || "â€”";
+      const opp = d.opp || "ÔÇö";
+      const score = d.score || "ÔÇö";
       const dateIso = d.date_utc || d.kickoff_utc || d.date || "";
       const ddmm = dateIso ? fmtDDMM(dateIso) : "";
-      const tip = `${v ? (v + " ") : ""}vs ${opp} â€¢ ${score}${ddmm ? (" â€¢ " + ddmm) : ""}`;
+      const tip = `${v ? (v + " ") : ""}vs ${opp} ÔÇó ${score}${ddmm ? (" ÔÇó " + ddmm) : ""}`;
       return `<span class="dot ${squareFor(r)}" ${tipAttr(tip)}></span>`;
     }).join("");
   }
@@ -755,18 +755,18 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
       const goalsHTML = `
         <div class="goals" ${tipAttr(goalsTip)}>
-          <span class="goal-pill" ${tipAttr(`${goalsTip} â€¢ ${t.home_label || "CASA"}`)}>
+          <span class="goal-pill" ${tipAttr(`${goalsTip} ÔÇó ${t.home_label || "CASA"}`)}>
             <span class="tag">${t.goals_label} ${t.home_label || "CASA"}</span>
             <span class="gf">${escAttr(ghf)}</span>/<span class="ga">${escAttr(gha)}</span>
           </span>
-          <span class="goal-pill" ${tipAttr(`${goalsTip} â€¢ ${t.away_label || "FORA"}`)}>
+          <span class="goal-pill" ${tipAttr(`${goalsTip} ÔÇó ${t.away_label || "FORA"}`)}>
             <span class="tag">${t.goals_label} ${t.away_label || "FORA"}</span>
             <span class="gf">${escAttr(gaf)}</span>/<span class="ga">${escAttr(gaa)}</span>
           </span>
         </div>
       `;
 
-      const formTip = t.form_tooltip || (t.form_label || "Ãšltimos 5");
+      const formTip = t.form_tooltip || (t.form_label || "+Ültimos 5");
 
       row.innerHTML = `
         <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
@@ -793,7 +793,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
             </div>
           </div>
         </div>
-        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "â€”")} â€¢ ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
+        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "ÔÇö")} ÔÇó ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
       `;
 
       list.appendChild(row);
@@ -823,9 +823,9 @@ function openModal(type, value){
         <div style="padding:12px 12px;border:1px solid rgba(43,111,242,.20);border-radius:16px;background:rgba(43,111,242,.06)">
           <div style="font-weight:950;margin-bottom:8px">${escAttr(T.about_steps_title || "")}</div>
           <div style="display:flex;flex-direction:column;gap:6px;color:#163261;font-weight:800">
-            <div>â€¢ ${escAttr(T.about_step1 || "")}</div>
-            <div>â€¢ ${escAttr(T.about_step2 || "")}</div>
-            <div>â€¢ ${escAttr(T.about_step3 || "")}</div>
+            <div>ÔÇó ${escAttr(T.about_step1 || "")}</div>
+            <div>ÔÇó ${escAttr(T.about_step2 || "")}</div>
+            <div>ÔÇó ${escAttr(T.about_step3 || "")}</div>
           </div>
         </div>
 
@@ -849,12 +849,12 @@ function openModal(type, value){
 
     const m = CAL_MATCHES.find(x => (`${x.kickoff_utc}|${x.home}|${x.away}`) === decoded) || null;
 
-    const mCountry = m?.country || "â€”";
-    const mComp = m?.competition || "â€”";
-    const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "â€”";
+    const mCountry = m?.country || "ÔÇö";
+    const mComp = m?.competition || "ÔÇö";
+    const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "ÔÇö";
     const riskCls = m ? riskClass(m.risk) : "med";
     const kickoff = m ? fmtTime(m.kickoff_utc) : "--:--";
-    const suggestion = localizeMarket(m?.suggestion_free, T) || "â€”";
+    const suggestion = localizeMarket(m?.suggestion_free, T) || "ÔÇö";
 
     title.textContent = `${home} vs ${away}`;
 
@@ -866,10 +866,10 @@ function openModal(type, value){
     body.innerHTML = `
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="font-weight:950;color:#11244b">${escAttr(mComp)} â€¢ ${escAttr(mCountry)} â€¢ <span ${tipAttr(T.kickoff_tooltip || "")}>${kickoff}</span></div>
+          <div style="font-weight:950;color:#11244b">${escAttr(mComp)} ÔÇó ${escAttr(mCountry)} ÔÇó <span ${tipAttr(T.kickoff_tooltip || "")}>${kickoff}</span></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <span class="badge risk ${riskCls}" ${tipAttr(T.risk_tooltip || "")}>${riskText}</span>
-            <span class="badge" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "SugestÃ£o"}: <b>${escAttr(suggestion)}</b></span>
+            <span class="badge" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugest+úo"}: <b>${escAttr(suggestion)}</b></span>
           </div>
         </div>
         <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${T.cta_pro}</button>
@@ -893,11 +893,11 @@ function openModal(type, value){
         <div style="padding:12px;border:1px solid rgba(215,227,246,.9);border-radius:16px;background:rgba(255,255,255,.65)">
           <div style="font-weight:950;margin-bottom:8px" ${tipAttr(goalsTip)}>${T.goals_title || "Gols"}</div>
           <div class="goals">
-            <span class="goal-pill" ${tipAttr(`${goalsTip} â€¢ ${T.home_label || "CASA"}`)}>
+            <span class="goal-pill" ${tipAttr(`${goalsTip} ÔÇó ${T.home_label || "CASA"}`)}>
               <span class="tag">${T.goals_label} ${T.home_label || "CASA"}</span>
               <span class="gf">${escAttr(m?.gf_home ?? 0)}</span>/<span class="ga">${escAttr(m?.ga_home ?? 0)}</span>
             </span>
-            <span class="goal-pill" ${tipAttr(`${goalsTip} â€¢ ${T.away_label || "FORA"}`)}>
+            <span class="goal-pill" ${tipAttr(`${goalsTip} ÔÇó ${T.away_label || "FORA"}`)}>
               <span class="tag">${T.goals_label} ${T.away_label || "FORA"}</span>
               <span class="gf">${escAttr(m?.gf_away ?? 0)}</span>/<span class="ga">${escAttr(m?.ga_away ?? 0)}</span>
             </span>
@@ -911,8 +911,8 @@ function openModal(type, value){
       </div>
 
       <div style="margin-top:14px;padding:12px;border:1px dashed rgba(43,111,242,.35);border-radius:16px;background:rgba(43,111,242,.06);font-weight:800;color:#163261">
-        ${T.free_includes || "FREE: sugestÃ£o + risco + forma + gols."}<br/>
-        <span style="opacity:.85">${T.pro_includes || "PRO: probabilidades, EV, odds e estatÃ­sticas avanÃ§adas."}</span>
+        ${T.free_includes || "FREE: sugest+úo + risco + forma + gols."}<br/>
+        <span style="opacity:.85">${T.pro_includes || "PRO: probabilidades, EV, odds e estat+¡sticas avan+ºadas."}</span>
       </div>
     `;
 
@@ -939,7 +939,7 @@ function openModal(type, value){
           <div class="time">${fmtTime(m.kickoff_utc)}</div>
           <div>
             <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "SugestÃ£o"}: <b>${escAttr(localizeMarket(m.suggestion_free, t) || "â€”")}</b> â€¢ ${riskText}</div>
+            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugest+úo"}: <b>${escAttr(localizeMarket(m.suggestion_free, t) || "ÔÇö")}</b> ÔÇó ${riskText}</div>
           </div>
         </div>
       `;
@@ -947,12 +947,12 @@ function openModal(type, value){
 
   body.innerHTML = `
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-      <div style="font-weight:900">${T.upcoming_matches || "PrÃ³ximos jogos"}</div>
+      <div style="font-weight:900">${T.upcoming_matches || "Pr+¦ximos jogos"}</div>
       <button class="btn primary" type="button" ${tipAttr(T.pro_includes || "")}>${T.cta_pro}</button>
     </div>
 
     <div style="margin-top:12px;color:rgba(74,88,110,.95);font-weight:650">
-      ${T.free_includes || "FREE: sugestÃ£o + risco + forma + gols."}
+      ${T.free_includes || "FREE: sugest+úo + risco + forma + gols."}
     </div>
 
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
@@ -960,7 +960,7 @@ function openModal(type, value){
     </div>
 
     <div style="margin-top:14px;padding:12px;border:1px dashed rgba(43,111,242,.35);border-radius:16px;background:rgba(43,111,242,.06);font-weight:800;color:#163261">
-      <span style="opacity:.85">${T.pro_includes || "PRO: probabilidades, EV, odds e estatÃ­sticas avanÃ§adas."}</span>
+      <span style="opacity:.85">${T.pro_includes || "PRO: probabilidades, EV, odds e estat+¡sticas avan+ºadas."}</span>
     </div>
   `;
 

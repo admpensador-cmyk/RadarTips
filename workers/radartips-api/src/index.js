@@ -174,6 +174,55 @@ function calendarPayload(snapshot, evaluation, sourceKey) {
   };
 }
 
+function extractLeagueIdFromCalendarMatch(match) {
+  const raw = match?.league_id ?? match?.competition_id ?? null;
+  const id = Number(raw);
+  return Number.isFinite(id) ? id : null;
+}
+
+function collectCalendarMatches(snapshot) {
+  if (Array.isArray(snapshot?.matches)) return snapshot.matches;
+  const out = [];
+  if (Array.isArray(snapshot?.today)) out.push(...snapshot.today);
+  if (Array.isArray(snapshot?.tomorrow)) out.push(...snapshot.tomorrow);
+  return out;
+}
+
+function validateCalendarAllowlist(snapshot) {
+  const allowlist = Array.isArray(snapshot?.meta?.allowlist_league_ids)
+    ? snapshot.meta.allowlist_league_ids
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id))
+    : [];
+  if (!allowlist.length) {
+    return {
+      ok: false,
+      code: "missing_allowlist_metadata",
+      leakedLeagueIds: []
+    };
+  }
+
+  const allowSet = new Set(allowlist);
+  const leaked = new Set();
+  const matches = collectCalendarMatches(snapshot);
+
+  for (const m of matches) {
+    const leagueId = extractLeagueIdFromCalendarMatch(m);
+    if (!Number.isFinite(leagueId)) continue;
+    if (!allowSet.has(leagueId)) leaked.add(leagueId);
+  }
+
+  if (leaked.size > 0) {
+    return {
+      ok: false,
+      code: "out_of_allowlist_competitions",
+      leakedLeagueIds: Array.from(leaked).sort((a, b) => a - b)
+    };
+  }
+
+  return { ok: true, code: "ok", leakedLeagueIds: [] };
+}
+
 function calendarCacheKey(request) {
   const u = new URL(request.url);
   u.pathname = "/api/v1/calendar_2d";
@@ -270,6 +319,20 @@ async function buildCalendarResponse(env) {
       status,
       body: {
         error: code,
+        key,
+        pipeline_status: "critical"
+      },
+      cacheable: false
+    };
+  }
+
+  const allowlistValidation = validateCalendarAllowlist(snapshot);
+  if (!allowlistValidation.ok) {
+    return {
+      status: 503,
+      body: {
+        error: allowlistValidation.code,
+        leaked_league_ids: allowlistValidation.leakedLeagueIds,
         key,
         pipeline_status: "critical"
       },

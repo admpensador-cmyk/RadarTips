@@ -25,6 +25,7 @@ const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
+const OUT_COVERAGE_REPORT = path.join(OUT_DIR, "calendar_coverage_report.json");
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
@@ -229,6 +230,91 @@ function extractLeagueIdFromMatch(match) {
   const raw = match?.league_id ?? match?.competition_id ?? null;
   const leagueId = Number(raw);
   return Number.isFinite(leagueId) ? leagueId : null;
+}
+
+function splitCalendar2dByUtcDate(matches, baseDateUtc) {
+  const today = baseDateUtc;
+  const tomorrow = addDaysToIsoDate(baseDateUtc, 1);
+
+  const dayMatches = [];
+  const todayMatches = [];
+  const tomorrowMatches = [];
+
+  for (const m of Array.isArray(matches) ? matches : []) {
+    const kickoffUtc = String(m?.kickoff_utc || "");
+    const dayKey = isValidIsoDate(kickoffUtc.slice(0, 10)) ? kickoffUtc.slice(0, 10) : null;
+    if (!dayKey) continue;
+    if (dayKey === today) {
+      todayMatches.push(m);
+      dayMatches.push(m);
+    } else if (dayKey === tomorrow) {
+      tomorrowMatches.push(m);
+      dayMatches.push(m);
+    }
+  }
+
+  return { today, tomorrow, dayMatches, todayMatches, tomorrowMatches };
+}
+
+function makeCoverageReport(expectedLeagueIds, collectedFixtures, finalMatches) {
+  const expected = new Set((Array.isArray(expectedLeagueIds) ? expectedLeagueIds : [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id)));
+
+  const collectedByLeague = new Map();
+  for (const fx of Array.isArray(collectedFixtures) ? collectedFixtures : []) {
+    const id = Number(fx?.league?.id);
+    if (!Number.isFinite(id)) continue;
+    collectedByLeague.set(id, (collectedByLeague.get(id) || 0) + 1);
+  }
+
+  const finalByLeague = new Map();
+  for (const m of Array.isArray(finalMatches) ? finalMatches : []) {
+    const id = extractLeagueIdFromMatch(m);
+    if (!Number.isFinite(id)) continue;
+    finalByLeague.set(id, (finalByLeague.get(id) || 0) + 1);
+  }
+
+  const vanished = [];
+  for (const [leagueId, collectedCount] of collectedByLeague.entries()) {
+    const finalCount = finalByLeague.get(leagueId) || 0;
+    if (collectedCount > 0 && finalCount === 0) {
+      vanished.push({ league_id: leagueId, collected_count: collectedCount, final_count: finalCount });
+    }
+  }
+
+  const leaked = [];
+  for (const [leagueId, finalCount] of finalByLeague.entries()) {
+    if (!expected.has(leagueId)) {
+      leaked.push({ league_id: leagueId, final_count: finalCount });
+    }
+  }
+
+  vanished.sort((a, b) => a.league_id - b.league_id);
+  leaked.sort((a, b) => a.league_id - b.league_id);
+
+  return {
+    summary: {
+      expected_leagues: expected.size,
+      collected_fixtures: Array.isArray(collectedFixtures) ? collectedFixtures.length : 0,
+      final_matches: Array.isArray(finalMatches) ? finalMatches.length : 0,
+      vanished_leagues: vanished.length,
+      leaked_leagues: leaked.length
+    },
+    vanished,
+    leaked
+  };
+}
+
+function assertCoverageReportClean(report) {
+  const vanished = Array.isArray(report?.vanished) ? report.vanished : [];
+  const leaked = Array.isArray(report?.leaked) ? report.leaked : [];
+  if (vanished.length || leaked.length) {
+    throw new Error(
+      `[FAIL-CLOSED] calendar coverage gate failed: vanished=${vanished.length} leaked=${leaked.length} ` +
+      `vanished_sample=${JSON.stringify(vanished.slice(0, 10))} leaked_sample=${JSON.stringify(leaked.slice(0, 10))}`
+    );
+  }
 }
 
 function assertCalendarMatchesWithinAllowlist(matches, allowlistLeagueIds, contextLabel) {
@@ -829,6 +915,7 @@ function mapFixtureToMatchRow(fx, enrich) {
     season: league?.season ?? null,
     country: league?.country ?? "",
     competition: league?.name ?? "",
+    league_id: league?.id ?? null,
     competition_id: league?.id ?? null,
     fixture_id: fixture?.id ?? null,
 
@@ -956,11 +1043,11 @@ function parseArgs() {
 
 async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
-  const baseDate = resolveBaseDateInTimezone(timezone);
-  const from = baseDate;
-  const to = addDaysToIsoDate(baseDate, daysAhead);
+  const baseDateUtc = resolveBaseDateInTimezone("UTC");
+  const from = baseDateUtc;
+  const to = addDaysToIsoDate(baseDateUtc, daysAhead);
 
-  console.log("[CALENDAR] base_date_local=", baseDate, "from=", from, "to=", to, "tz(fetch)=", timezone);
+  console.log("[CALENDAR] base_date_utc=", baseDateUtc, "from=", from, "to=", to, "tz(fetch)=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
@@ -1074,9 +1161,17 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const generatedAtUtc = nowIso();
 
-  const split = splitCalendar2dByApiDate(sorted, baseDate);
+  const split = splitCalendar2dByUtcDate(sorted, baseDateUtc);
   assertCalendarMatchesWithinAllowlist(split.todayMatches, allowlistLeagueIds, "calendar_2d today");
   assertCalendarMatchesWithinAllowlist(split.tomorrowMatches, allowlistLeagueIds, "calendar_2d tomorrow");
+
+  const coverageReport = makeCoverageReport(
+    Array.from(allowlistLeagueIds),
+    fixtures,
+    sorted
+  );
+  assertCoverageReportClean(coverageReport);
+
   const calendarDayOut = {
     generated_at_utc: generatedAtUtc,
     form_window: formWindow,
@@ -1093,14 +1188,17 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
+      generated_for_date_basis: "utc",
       generated_for_timezone: timezone,
-      generated_for_local_date: baseDate,
+      generated_for_local_date: baseDateUtc,
       form_window: formWindow,
       goals_window: goalsWindow,
       source: "calendar_2d",
       leagues_source: leaguesSource,
-      leagues_count: leaguesCount
+      leagues_count: leaguesCount,
+      allowlist_league_ids: Array.from(allowlistLeagueIds).sort((a, b) => a - b)
     },
+    matches: sorted,
     today: split.todayMatches,
     tomorrow: split.tomorrowMatches
   };
@@ -1120,6 +1218,24 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
   console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
+
+  const coverageReportOut = {
+    meta: {
+      generated_at_utc: generatedAtUtc,
+      source: "calendar_coverage_report",
+      base_date_utc: baseDateUtc,
+      from,
+      to,
+      leagues_source: leaguesSource,
+      leagues_count: leaguesCount
+    },
+    ...coverageReport
+  };
+  writeJsonAtomic(OUT_COVERAGE_REPORT, coverageReportOut);
+  console.log(
+    `[CALENDAR] Wrote ${OUT_COVERAGE_REPORT.replace(process.cwd(), ".")} ` +
+    `vanished=${coverageReport.summary.vanished_leagues} leaked=${coverageReport.summary.leaked_leagues}`
+  );
 
   // Write radar_day.json
   const radarDayOut = {
@@ -1197,7 +1313,7 @@ async function main() {
   const flags = parseArgs();
   ensureDir(OUT_DIR);
 
-  const timezone = "America/Bahia";
+  const timezone = "UTC";
   const daysAhead = Number(cfg.days_ahead || 7);
   const formWindow = Number(cfg.form_window || 5);
   const goalsWindow = Number(cfg.goals_window || 5);
