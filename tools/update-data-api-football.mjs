@@ -1184,7 +1184,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   const calendar2dOut = {
     meta: {
       tz: timezone,
-      base_date: baseDate,
+      base_date: baseDateUtc,
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
