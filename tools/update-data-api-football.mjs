@@ -1183,13 +1183,13 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const calendar2dOut = {
     meta: {
-      tz: timezone,
+      tz: "America/Bahia",
       base_date: baseDateUtc,
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
       generated_for_date_basis: "utc",
-      generated_for_timezone: timezone,
+      generated_for_timezone: "America/Bahia",
       generated_for_local_date: baseDateUtc,
       form_window: formWindow,
       goals_window: goalsWindow,
