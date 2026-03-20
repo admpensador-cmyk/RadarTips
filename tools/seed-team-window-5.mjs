@@ -61,6 +61,11 @@ function vlog(msg) {
   if (verbose) console.log(`[seed] ${msg}`);
 }
 
+function isSkippablePreMatchError(errorMessage) {
+  return typeof errorMessage === 'string'
+    && errorMessage.includes('is not finished and missing form details required for team-window-5 generation');
+}
+
 async function main() {
   log('Starting economi team-window-5 seed...');
   
@@ -94,7 +99,9 @@ async function main() {
   
   let successful = 0;
   let failed = 0;
+  let skipped = 0;
   const errors = [];
+  const skippedFixtures = [];
   const teamsProcessed = new Set();
   let updatedSnapshots = 0;
 
@@ -122,11 +129,19 @@ async function main() {
         vlog(`[${progress}%] ${match.home} vs ${match.away}`);
       }
     } catch (error) {
-      failed++;
-      errors.push({
-        fixture: `${match.home} vs ${match.away}`,
-        error: error.message
-      });
+      if (isSkippablePreMatchError(error?.message)) {
+        skipped++;
+        skippedFixtures.push({
+          fixture: `${match.home} vs ${match.away}`,
+          error: error.message
+        });
+      } else {
+        failed++;
+        errors.push({
+          fixture: `${match.home} vs ${match.away}`,
+          error: error.message
+        });
+      }
       
       if (verbose) {
         console.error(`[seed] ERROR: fixture ${match.fixture_id}: ${error.message}`);
@@ -141,22 +156,34 @@ async function main() {
   log(`  Total matches processed: ${matches.length}`);
   log(`  Unique teams: ${teamsProcessed.size}`);
   log(`  Successful: ${successful}`);
+  log(`  Skipped (pre-match without form details): ${skipped}`);
   log(`  Failed: ${failed}`);
 
   const finalSnapshotFiles = countSnapshotFiles(OUTPUT_DIR);
   log(`  Snapshot files present: ${finalSnapshotFiles}`);
   log(`  Snapshot files created/updated: ${Math.max(updatedSnapshots, finalSnapshotFiles - initialSnapshotFiles)}`);
 
+  if (skipped > 0) {
+    log(`\nSkipped matches:`);
+    skippedFixtures.forEach(e => {
+      log(`  - ${e.fixture}: ${e.error}`);
+    });
+  }
+
   if (failed > 0) {
-    log(`\nFailed matches:`);
+    log(`\nFailed matches (unexpected errors):`);
     errors.forEach(e => {
       log(`  ✗ ${e.fixture}: ${e.error}`);
     });
   }
 
-  if (finalSnapshotFiles === 0) {
+  if (finalSnapshotFiles === 0 && skipped === 0) {
     log('\nERROR: seed produced zero team-window-5 snapshot files');
     process.exit(1);
+  }
+
+  if (finalSnapshotFiles === 0 && skipped > 0 && failed === 0) {
+    log('\nWARN: no snapshots produced because all fixtures were pre-match without form details');
   }
 
   process.exit(failed > 0 ? 1 : 0);
