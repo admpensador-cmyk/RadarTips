@@ -21,7 +21,7 @@ function json(env, data, status = 200, extraHeaders = {}) {
 }
 
 function parseGeneratedAt(snapshot) {
-  const raw = snapshot?.meta?.generated_at_utc;
+  const raw = snapshot?.meta?.generated_at_utc || snapshot?.generated_at_utc;
   if (!raw) return null;
   const ms = Date.parse(raw);
   return Number.isFinite(ms) ? ms : null;
@@ -97,32 +97,70 @@ function evaluateSnapshot(snapshot, env, nowMs = Date.now()) {
 }
 
 async function readCalendarSnapshot(env) {
+  let parseErrorKey = null;
+  let parseErrorRaw = null;
+  const candidates = [];
+
   for (const key of SNAPSHOT_KEYS) {
     const obj = await env.RADARTIPS_DATA.get(key);
     if (!obj) continue;
     const raw = await obj.text();
     try {
       const snapshot = JSON.parse(raw);
-      return { snapshot, raw, key };
+      const generatedMs = parseGeneratedAt(snapshot);
+      candidates.push({ snapshot, raw, key, generatedMs: Number.isFinite(generatedMs) ? generatedMs : -1 });
     } catch {
-      return { snapshot: null, raw, key, parse_error: true };
+      if (!parseErrorKey) {
+        parseErrorKey = key;
+        parseErrorRaw = raw;
+      }
     }
   }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.generatedMs - a.generatedMs);
+    const freshest = candidates[0];
+    return { snapshot: freshest.snapshot, raw: freshest.raw, key: freshest.key };
+  }
+
+  if (parseErrorKey) {
+    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
+  }
+
   return { snapshot: null, raw: null, key: null };
 }
 
 async function readRadarDaySnapshot(env) {
+  let parseErrorKey = null;
+  let parseErrorRaw = null;
+  const candidates = [];
+
   for (const key of RADAR_DAY_KEYS) {
     const obj = await env.RADARTIPS_DATA.get(key);
     if (!obj) continue;
     const raw = await obj.text();
     try {
       const snapshot = JSON.parse(raw);
-      return { snapshot, raw, key };
+      const generatedMs = parseGeneratedAt(snapshot);
+      candidates.push({ snapshot, raw, key, generatedMs: Number.isFinite(generatedMs) ? generatedMs : -1 });
     } catch {
-      return { snapshot: null, raw, key, parse_error: true };
+      if (!parseErrorKey) {
+        parseErrorKey = key;
+        parseErrorRaw = raw;
+      }
     }
   }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.generatedMs - a.generatedMs);
+    const freshest = candidates[0];
+    return { snapshot: freshest.snapshot, raw: freshest.raw, key: freshest.key };
+  }
+
+  if (parseErrorKey) {
+    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
+  }
+
   return { snapshot: null, raw: null, key: null };
 }
 

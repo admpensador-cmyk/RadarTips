@@ -5,6 +5,8 @@ import process from "node:process";
 
 const baseUrl = String(process.env.RADARTIPS_BASE_URL || "https://radartips.com").replace(/\/+$/g, "");
 const expectedPath = path.resolve(process.cwd(), process.env.RADARTIPS_EXPECTED_CALENDAR_PATH || "data/v1/calendar_2d.json");
+const maxAttempts = Number.parseInt(process.env.RADARTIPS_VERIFY_ATTEMPTS || "24", 10);
+const retryDelayMs = Number.parseInt(process.env.RADARTIPS_VERIFY_DELAY_MS || "5000", 10);
 
 function fail(msg) {
   console.error(`[FAIL] ${msg}`);
@@ -23,6 +25,10 @@ function parseJson(text, label) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 if (!fs.existsSync(expectedPath)) {
   fail(`expected_calendar_missing: ${expectedPath}`);
 }
@@ -33,32 +39,53 @@ if (!expectedGeneratedAt) {
   fail("expected_calendar_missing_meta.generated_at_utc");
 }
 
-const res = await fetch(`${baseUrl}/api/v1/calendar_2d`, {
-  headers: { "cache-control": "no-cache" }
-});
+let lastHttpStatus = null;
+let lastLiveGeneratedAt = "";
+let lastBody = null;
 
-if (!res.ok) {
-  fail(`production_calendar_http_${res.status}`);
+for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  const nonce = Date.now();
+  const res = await fetch(`${baseUrl}/api/v1/calendar_2d?verify_sync=${nonce}`, {
+    headers: {
+      "cache-control": "no-cache, no-store, max-age=0",
+      pragma: "no-cache"
+    }
+  });
+
+  lastHttpStatus = res.status;
+  if (res.ok) {
+    const live = parseJson(await res.text(), "production_calendar");
+    lastBody = live;
+    const liveGeneratedAt = String(live?.meta?.generated_at_utc || "").trim();
+    lastLiveGeneratedAt = liveGeneratedAt;
+
+    console.log(`attempt=${attempt} expected_generated_at=${expectedGeneratedAt}`);
+    console.log(`attempt=${attempt} live_generated_at=${liveGeneratedAt || "missing"}`);
+
+    const hasShape = Array.isArray(live?.today) && Array.isArray(live?.tomorrow);
+    if (liveGeneratedAt === expectedGeneratedAt && hasShape) {
+      console.log(`live_today_count=${live.today.length}`);
+      console.log(`live_tomorrow_count=${live.tomorrow.length}`);
+      ok("production calendar matches generated snapshot");
+      process.exit(0);
+    }
+  }
+
+  if (attempt < maxAttempts) {
+    await sleep(retryDelayMs);
+  }
 }
 
-const live = parseJson(await res.text(), "production_calendar");
-const liveGeneratedAt = String(live?.meta?.generated_at_utc || "").trim();
+if (lastHttpStatus && lastHttpStatus >= 400) {
+  fail(`production_calendar_http_${lastHttpStatus}`);
+}
 
-console.log(`expected_generated_at=${expectedGeneratedAt}`);
-console.log(`live_generated_at=${liveGeneratedAt || "missing"}`);
-console.log(`live_today_count=${Array.isArray(live?.today) ? live.today.length : -1}`);
-console.log(`live_tomorrow_count=${Array.isArray(live?.tomorrow) ? live.tomorrow.length : -1}`);
-
-if (!liveGeneratedAt) {
+if (!lastLiveGeneratedAt) {
   fail("production_calendar_missing_meta.generated_at_utc");
 }
 
-if (liveGeneratedAt !== expectedGeneratedAt) {
-  fail(`production_drift_detected expected=${expectedGeneratedAt} live=${liveGeneratedAt}`);
-}
-
-if (!Array.isArray(live?.today) || !Array.isArray(live?.tomorrow)) {
+if (!Array.isArray(lastBody?.today) || !Array.isArray(lastBody?.tomorrow)) {
   fail("production_calendar_invalid_shape_today_tomorrow");
 }
 
-ok("production calendar matches generated snapshot");
+fail(`production_drift_detected expected=${expectedGeneratedAt} live=${lastLiveGeneratedAt}`);
