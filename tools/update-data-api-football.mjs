@@ -18,20 +18,13 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
-import { pLimit } from "./lib/p-limit.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
-const OUT_CAL_2D_LATEST = path.join(OUT_DIR, "latest_calendar_2d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
-const OUT_PIPELINE_WATCHDOG = path.join(OUT_DIR, "pipeline_watchdog.json");
-
-const CONCURRENCY_POOL = Number.parseInt(process.env.RADARTIPS_POOL_SIZE || "5", 10);
-const DELTA_HOURS = Number.parseInt(process.env.RADARTIPS_DELTA_HOURS || "48", 10);
-const DELTA_START_HOURS = Number.parseInt(process.env.RADARTIPS_DELTA_START_HOURS || "-12", 10);
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
@@ -65,8 +58,7 @@ const REQUEST_METRICS = {
   endpoints: new Map(),
   cache: {
     teamLast5: { hits: 0, misses: 0, avoided: 0 },
-    fixtureStats: { hits: 0, misses: 0, avoided: 0 },
-    competitionRecentFixtures: { hits: 0, misses: 0, avoided: 0 }
+    fixtureStats: { hits: 0, misses: 0, avoided: 0 }
   }
 };
 
@@ -89,9 +81,9 @@ function printRequestMetricsSummary() {
   const sortedEndpoints = Array.from(REQUEST_METRICS.endpoints.entries())
     .sort((a, b) => b[1] - a[1]);
 
-  const cacheHits = REQUEST_METRICS.cache.teamLast5.hits + REQUEST_METRICS.cache.fixtureStats.hits + REQUEST_METRICS.cache.competitionRecentFixtures.hits;
-  const cacheMisses = REQUEST_METRICS.cache.teamLast5.misses + REQUEST_METRICS.cache.fixtureStats.misses + REQUEST_METRICS.cache.competitionRecentFixtures.misses;
-  const avoidedByCache = REQUEST_METRICS.cache.teamLast5.avoided + REQUEST_METRICS.cache.fixtureStats.avoided + REQUEST_METRICS.cache.competitionRecentFixtures.avoided;
+  const cacheHits = REQUEST_METRICS.cache.teamLast5.hits + REQUEST_METRICS.cache.fixtureStats.hits;
+  const cacheMisses = REQUEST_METRICS.cache.teamLast5.misses + REQUEST_METRICS.cache.fixtureStats.misses;
+  const avoidedByCache = REQUEST_METRICS.cache.teamLast5.avoided + REQUEST_METRICS.cache.fixtureStats.avoided;
 
   console.log("\n[REQ-SUMMARY] API request usage");
   console.log(`[REQ-SUMMARY] TOTAL_REQUESTS=${REQUEST_METRICS.totalRequests}`);
@@ -113,9 +105,6 @@ function printRequestMetricsSummary() {
   );
   console.log(
     `[REQ-SUMMARY] cache.fixture_stats hit=${REQUEST_METRICS.cache.fixtureStats.hits} miss=${REQUEST_METRICS.cache.fixtureStats.misses} avoided=${REQUEST_METRICS.cache.fixtureStats.avoided}`
-  );
-  console.log(
-    `[REQ-SUMMARY] cache.competition_recent_fixtures hit=${REQUEST_METRICS.cache.competitionRecentFixtures.hits} miss=${REQUEST_METRICS.cache.competitionRecentFixtures.misses} avoided=${REQUEST_METRICS.cache.competitionRecentFixtures.avoided}`
   );
 }
 
@@ -400,9 +389,9 @@ async function resolveLeagueById(entry) {
 }
 
 async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone }) {
-  // /fixtures (api-football v3) rejeita parâmetro desconhecido `page` com:
+  // /fixtures (api-football v3) rejeita par+�metro desconhecido `page` com:
   //   { "page": "The Page field do not exist." }
-  // Portanto: 1 chamada para o range (nossa janela é pequena: 7 dias).
+  // Portanto: 1 chamada para o range (nossa janela +� pequena: 7 dias).
   const json = await trackedApiGet("/fixtures", {
     league: league_id,
     season,
@@ -451,7 +440,6 @@ async function fixtureHasValidStatistics(fixtureId) {
 async function detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds) {
   const fixtureIdsByLeague = new Map();
   const knownFixtureLeagueById = new Map();
-  const recentFixtureIdsByCompetition = new Map();
   for (const fx of fixtures) {
     const leagueId = Number(fx?.league?.id);
     const fixtureId = Number(fx?.fixture?.id);
@@ -472,24 +460,15 @@ async function detectStatsSupportByCompetition(resolved, fixtures, timezone, all
     let candidateFixtureIds = (fixtureIdsByLeague.get(leagueId) || []).slice(0, 5);
 
     if (!candidateFixtureIds.length && Number.isFinite(league?.season)) {
-      if (recentFixtureIdsByCompetition.has(leagueId)) {
-        REQUEST_METRICS.cache.competitionRecentFixtures.hits += 1;
-        REQUEST_METRICS.cache.competitionRecentFixtures.avoided += 1;
-        candidateFixtureIds = recentFixtureIdsByCompetition.get(leagueId) || [];
-      } else {
-        REQUEST_METRICS.cache.competitionRecentFixtures.misses += 1;
-        try {
-          candidateFixtureIds = await fetchRecentFixtureIdsForLeague({
-            league_id: leagueId,
-            season: league.season,
-            last: 10,
-            timezone
-          });
-        } catch (err) {
-          console.warn(`[WARN] Failed to fetch recent fixtures for league_id=${leagueId}: ${err?.message || err}`);
-          candidateFixtureIds = [];
-        }
-        recentFixtureIdsByCompetition.set(leagueId, candidateFixtureIds);
+      try {
+        candidateFixtureIds = await fetchRecentFixtureIdsForLeague({
+          league_id: leagueId,
+          season: league.season,
+          last: 10,
+          timezone
+        });
+      } catch (err) {
+        console.warn(`[WARN] Failed to fetch recent fixtures for league_id=${leagueId}: ${err?.message || err}`);
       }
     }
 
@@ -533,24 +512,20 @@ async function fetchTeamLastFinished(teamId, lastN, timezone, cache) {
   if (cache.has(key)) {
     REQUEST_METRICS.cache.teamLast5.hits += 1;
     REQUEST_METRICS.cache.teamLast5.avoided += 1;
-    return await cache.get(key);
+    return cache.get(key);
   }
   REQUEST_METRICS.cache.teamLast5.misses += 1;
 
-  const requestPromise = trackedApiGet("/fixtures", {
+  const json = await trackedApiGet("/fixtures", {
     team: teamId,
     last: lastN,
     status: "FT",
     timezone
-  }, "teamLast5")
-    .then((json) => json?.response || [])
-    .catch((err) => {
-      cache.delete(key);
-      throw err;
-    });
+  }, "teamLast5");
 
-  cache.set(key, requestPromise);
-  return await requestPromise;
+  const resp = json?.response || [];
+  cache.set(key, resp);
+  return resp;
 }
 
 function resultFromFixtureForTeam(fx, teamId) {
@@ -575,8 +550,8 @@ function buildFormDetails(teamId, fixtures, limitN) {
   for (const fx of fixtures.slice(0, limitN)) {
     const homeId = fx?.teams?.home?.id ?? null;
     const awayId = fx?.teams?.away?.id ?? null;
-    const homeName = fx?.teams?.home?.name ?? "—";
-    const awayName = fx?.teams?.away?.name ?? "—";
+    const homeName = fx?.teams?.home?.name ?? "���";
+    const awayName = fx?.teams?.away?.name ?? "���";
     const gH = fx?.goals?.home;
     const gA = fx?.goals?.away;
 
@@ -591,7 +566,7 @@ function buildFormDetails(teamId, fixtures, limitN) {
       ? (isHome ? Number(gA) : Number(gH))
       : null;
 
-    const score = (gf !== null && ga !== null) ? `${gf}-${ga}` : "—";
+    const score = (gf !== null && ga !== null) ? `${gf}-${ga}` : "���";
     const result = resultFromFixtureForTeam(fx, teamId);
 
     out.push({
@@ -679,26 +654,26 @@ function riskLabelFrom(volScore){
 }
 
 function buildRationale(kind, risk){
-  const r = (risk==="low") ? "baixo" : (risk==="med") ? "médio" : (risk==="high") ? "alto" : "volátil";
+  const r = (risk==="low") ? "baixo" : (risk==="med") ? "m+�dio" : (risk==="high") ? "alto" : "vol+�til";
   if(kind==="goals_over"){
-    return `Tendência de gols acima da média, mas risco ${r} por variação recente.`;
+    return `Tend+�ncia de gols acima da m+�dia, mas risco ${r} por varia+�+�o recente.`;
   }
   if(kind==="goals_under"){
-    return `Perfil mais controlado de gols, mas risco ${r} por oscilações e contexto.`;
+    return `Perfil mais controlado de gols, mas risco ${r} por oscila+�+�es e contexto.`;
   }
   if(kind==="btts_yes"){
-    return `Ambas costumam marcar e conceder, mas risco ${r} pela dependência de eficiência.`;
+    return `Ambas costumam marcar e conceder, mas risco ${r} pela depend+�ncia de efici+�ncia.`;
   }
   if(kind==="btts_no"){
     return `Um lado tende a segurar ou o outro cria pouco, mas risco ${r} por detalhes de jogo.`;
   }
   if(kind==="double_chance"){
-    return `Força relativa e forma favorecem proteção, mas risco ${r} por imprevisibilidade do resultado.`;
+    return `For+�a relativa e forma favorecem prote+�+�o, mas risco ${r} por imprevisibilidade do resultado.`;
   }
   if(kind==="dnb"){
-    return `Favoritismo leve com proteção do empate, mas risco ${r} por margem curta.`;
+    return `Favoritismo leve com prote+�+�o do empate, mas risco ${r} por margem curta.`;
   }
-  return `Cenário provável com risco ${r}.`;
+  return `Cen+�rio prov+�vel com risco ${r}.`;
 }
 
 function mkMarket({key, market, entry, risk, confidence, rationale}){
@@ -743,7 +718,7 @@ function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetail
       entry: "Under 3.5",
       risk: (vol > 1.2 ? "med" : "low"),
       confidence: clamp01(under35Conf + 0.05),
-      rationale: "Proteção contra placar muito elástico."
+      rationale: "Prote+�+�o contra placar muito el+�stico."
     }));
   }else{
     const r = (baseRisk==="high" ? "high" : baseRisk);
@@ -761,7 +736,7 @@ function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetail
       entry: "Over 1.5",
       risk: "med",
       confidence: clamp01(0.58 + (combined - 2.0) * 0.10),
-      rationale: "Se houver gol cedo, a linha tende a ficar viva (risco médio)."
+      rationale: "Se houver gol cedo, a linha tende a ficar viva (risco m+�dio)."
     }));
   }
 
@@ -782,7 +757,7 @@ function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetail
     markets.push(mkMarket({
       key: "btts",
       market: "Ambas marcam",
-      entry: "Não",
+      entry: "N+�o",
       risk: r,
       confidence: clamp01(0.54 + (1.1 - Math.min(h.gfpm, a.gfpm)) * 0.08),
       rationale: buildRationale("btts_no", r)
@@ -883,15 +858,9 @@ function pickRadarHighlights(matches) {
   const now = Date.now();
   const horizon = now + 36 * 60 * 60 * 1000;
 
-  const terminalStatuses = new Set(["FT","AET","PEN","AWD","WO","CANC","ABD","SUSP","INT"]);
-  const startedStatuses  = new Set(["1H","HT","2H","ET","BT","P","LIVE"]);
-
   const eligible = matches.filter((m) => {
     const t = Date.parse(m?.kickoff_utc || "");
-    if (!Number.isFinite(t) || t <= now || t > horizon) return false;
-    const s = String(m?.status_short || "").trim().toUpperCase();
-    if (terminalStatuses.has(s) || startedStatuses.has(s)) return false;
-    return true;
+    return Number.isFinite(t) && t >= now - 3 * 60 * 60 * 1000 && t <= horizon;
   });
 
   const riskRank = { low: 0, med: 1, high: 2 };
@@ -987,27 +956,11 @@ function parseArgs() {
 
 async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
-  const runStartedMs = Date.now();
-  const stageDurationsMs = {};
-  async function runStage(stageName, fn) {
-    const startedMs = Date.now();
-    const result = await fn();
-    const durationMs = Date.now() - startedMs;
-    stageDurationsMs[stageName] = durationMs;
-    console.log(`[PERF] stage=${stageName} duration_ms=${durationMs}`);
-    return result;
-  }
-
   const baseDate = resolveBaseDateInTimezone(timezone);
-  const deltaStartDays = Math.floor(DELTA_START_HOURS / 24);
-  const deltaEndDays = Math.max(1, Math.ceil(DELTA_HOURS / 24));
-  const from = addDaysToIsoDate(baseDate, deltaStartDays);
-  const to = addDaysToIsoDate(baseDate, deltaEndDays);
-  const poolSize = Number.isFinite(CONCURRENCY_POOL) && CONCURRENCY_POOL > 0 ? CONCURRENCY_POOL : 5;
-  const limit = pLimit(poolSize);
+  const from = baseDate;
+  const to = addDaysToIsoDate(baseDate, daysAhead);
 
-  console.log("[CALENDAR] base_date_local=", baseDate, "from=", from, "to=", to, "tz(fetch)=", timezone, "pool=", poolSize);
-  console.log(`[CALENDAR] delta_window start_hours=${DELTA_START_HOURS} end_hours=${DELTA_HOURS}`);
+  console.log("[CALENDAR] base_date_local=", baseDate, "from=", from, "to=", to, "tz(fetch)=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
@@ -1017,24 +970,22 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   }
 
   // Fetch fixtures per league
-  const fixtureChunks = await runStage("fetch_fixtures", async () => Promise.all(
-    resolved.map((r) => limit(async () => {
-      if (!Number.isFinite(r.season)) {
-        console.warn(`[WARN] Missing season for league_id=${r.league_id} (${r.league_name}). Skipping fixtures.`);
-        return [];
-      }
-      const fx = await fetchFixturesLeagueRange({
-        league_id: r.league_id,
-        season: r.season,
-        from,
-        to,
-        timezone
-      });
-      console.log(`  [OK] league_id=${r.league_id} count=${fx.length}`);
-      return fx;
-    }))
-  ));
-  const rawFixtures = fixtureChunks.flat();
+  const rawFixtures = [];
+  for (const r of resolved) {
+    if (!Number.isFinite(r.season)) {
+      console.warn(`[WARN] Missing season for league_id=${r.league_id} (${r.league_name}). Skipping fixtures.`);
+      continue;
+    }
+    const fx = await fetchFixturesLeagueRange({
+      league_id: r.league_id,
+      season: r.season,
+      from,
+      to,
+      timezone
+    });
+    console.log(`  [OK] league_id=${r.league_id} count=${fx.length}`);
+    rawFixtures.push(...fx);
+  }
 
   // Dedup fixtures
   const seen = new Set();
@@ -1056,54 +1007,54 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     throw new Error("[FAIL-CLOSED] Allowlist is empty after league resolution. Aborting calendar publication.");
   }
 
-  const statsSupportedMap = await runStage("detect_stats_support", async () => detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds));
+  const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
 
   // Enrich: form + goals (optional in frequent runs)
   const teamCache = new Map();
-  const mappedMatches = await runStage("enrich_matches", async () => Promise.all(
-    fixtures.map((fx) => limit(async () => {
-      const homeId = fx?.teams?.home?.id ?? null;
-      const awayId = fx?.teams?.away?.id ?? null;
-      if (!homeId || !awayId) return null;
+  const matches = [];
 
-      let formHomeDetails = [];
-      let formAwayDetails = [];
-      let homeAgg = { gf: 0, ga: 0, counted: 0 };
-      let awayAgg = { gf: 0, ga: 0, counted: 0 };
-      let analysis = null;
+  for (const fx of fixtures) {
+    const homeId = fx?.teams?.home?.id ?? null;
+    const awayId = fx?.teams?.away?.id ?? null;
+    if (!homeId || !awayId) continue;
 
-      if (includeStatsInCalendar) {
-        const [homeLast, awayLast] = await Promise.all([
-          fetchTeamLastFinished(homeId, Math.max(formWindow, goalsWindow), timezone, teamCache),
-          fetchTeamLastFinished(awayId, Math.max(formWindow, goalsWindow), timezone, teamCache)
-        ]);
+    let formHomeDetails = [];
+    let formAwayDetails = [];
+    let homeAgg = { gf: 0, ga: 0, counted: 0 };
+    let awayAgg = { gf: 0, ga: 0, counted: 0 };
+    let analysis = null;
 
-        formHomeDetails = buildFormDetails(homeId, homeLast, formWindow);
-        formAwayDetails = buildFormDetails(awayId, awayLast, formWindow);
+    if (includeStatsInCalendar) {
+      const homeLast = await fetchTeamLastFinished(homeId, Math.max(formWindow, goalsWindow), timezone, teamCache);
+      const awayLast = await fetchTeamLastFinished(awayId, Math.max(formWindow, goalsWindow), timezone, teamCache);
 
-        homeAgg = sumGoalsForAgainst(homeId, homeLast, goalsWindow);
-        awayAgg = sumGoalsForAgainst(awayId, awayLast, goalsWindow);
+      formHomeDetails = buildFormDetails(homeId, homeLast, formWindow);
+      formAwayDetails = buildFormDetails(awayId, awayLast, formWindow);
 
-        const volHome = volatilityFromFixtures(homeLast, homeId, goalsWindow);
-        const volAway = volatilityFromFixtures(awayLast, awayId, goalsWindow);
-        const vol = (volHome + volAway) / 2;
-        const baseRisk = riskLabelFrom(vol);
+      homeAgg = sumGoalsForAgainst(homeId, homeLast, goalsWindow);
+      awayAgg = sumGoalsForAgainst(awayId, awayLast, goalsWindow);
 
-        const markets = buildMarketsForMatch({
-          homeAgg,
-          awayAgg,
-          formHomeDetails,
-          formAwayDetails,
-          vol,
-          baseRisk
-        });
+      const volHome = volatilityFromFixtures(homeLast, homeId, goalsWindow);
+      const volAway = volatilityFromFixtures(awayLast, awayId, goalsWindow);
+      const vol = (volHome + volAway) / 2;
+      const baseRisk = riskLabelFrom(vol);
 
-        analysis = { markets, volatility: vol };
-      }
+      const markets = buildMarketsForMatch({
+        homeAgg,
+        awayAgg,
+        formHomeDetails,
+        formAwayDetails,
+        vol,
+        baseRisk
+      });
 
-      const { suggestion_free, risk } = pickSuggestionAndRisk(homeAgg, awayAgg);
+      analysis = { markets, volatility: vol };
+    }
 
-      return mapFixtureToMatchRow(fx, {
+    const { suggestion_free, risk } = pickSuggestionAndRisk(homeAgg, awayAgg);
+
+    matches.push(
+      mapFixtureToMatchRow(fx, {
         suggestion_free,
         risk,
         form_home_details: formHomeDetails,
@@ -1112,11 +1063,11 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
         ga_home: homeAgg.ga,
         gf_away: awayAgg.gf,
         ga_away: awayAgg.ga,
+
         analysis
-      });
-    }))
-  ));
-  const matches = mappedMatches.filter(Boolean);
+      })
+    );
+  }
 
   const sorted = sortByKickoff(matches);
   assertCalendarMatchesWithinAllowlist(sorted, allowlistLeagueIds, "calendar generation");
@@ -1126,102 +1077,74 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   const split = splitCalendar2dByApiDate(sorted, baseDate);
   assertCalendarMatchesWithinAllowlist(split.todayMatches, allowlistLeagueIds, "calendar_2d today");
   assertCalendarMatchesWithinAllowlist(split.tomorrowMatches, allowlistLeagueIds, "calendar_2d tomorrow");
-  await runStage("write_outputs", async () => {
-    const calendarDayOut = {
+  const calendarDayOut = {
+    generated_at_utc: generatedAtUtc,
+    form_window: formWindow,
+    goals_window: goalsWindow,
+    matches: split.dayMatches
+  };
+  writeJsonAtomic(OUT_CAL_DAY, calendarDayOut);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${split.dayMatches.length}`);
+
+  const calendar2dOut = {
+    meta: {
+      tz: timezone,
+      base_date: baseDate,
+      today: split.today,
+      tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
+      generated_for_timezone: timezone,
+      generated_for_local_date: baseDate,
       form_window: formWindow,
       goals_window: goalsWindow,
-      matches: split.dayMatches
-    };
-    writeJsonAtomic(OUT_CAL_DAY, calendarDayOut);
-    console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${split.dayMatches.length}`);
+      source: "calendar_2d",
+      leagues_source: leaguesSource,
+      leagues_count: leaguesCount
+    },
+    today: split.todayMatches,
+    tomorrow: split.tomorrowMatches
+  };
 
-    const calendar2dOut = {
-      meta: {
-        tz: timezone,
-        base_date: baseDate,
-        today: split.today,
-        tomorrow: split.tomorrow,
-        generated_at_utc: generatedAtUtc,
-        generated_for_timezone: timezone,
-        generated_for_local_date: baseDate,
-        form_window: formWindow,
-        goals_window: goalsWindow,
-        source: "calendar_2d",
-        leagues_source: leaguesSource,
-        leagues_count: leaguesCount
-      },
-      today: split.todayMatches,
-      tomorrow: split.tomorrowMatches
-    };
-
-    const forensicToday20Bahia = {};
-    for (const m of (calendar2dOut.today || []).slice(0, 20)) {
-      const dayKey = String(m?.api_date || "");
-      if (!dayKey) continue;
-      forensicToday20Bahia[dayKey] = (forensicToday20Bahia[dayKey] || 0) + 1;
-    }
-    console.log(
-      "[CALENDAR][FORENSIC] dayKey_Bahia_today20=",
-      JSON.stringify(forensicToday20Bahia),
-      "meta.today=",
-      calendar2dOut.meta.today
-    );
-
-    const versionTag = `${baseDate}_${generatedAtUtc.replace(/[:.]/g, "-")}`;
-    const outCal2dVersioned = path.join(OUT_DIR, `calendar_2d_${versionTag}.json`);
-    writeJsonAtomic(outCal2dVersioned, calendar2dOut);
-    writeJsonAtomic(OUT_CAL_2D_LATEST, calendar2dOut);
-    writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
-    console.log(`[CALENDAR] Wrote ${outCal2dVersioned.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
-    console.log(`[CALENDAR] Wrote ${OUT_CAL_2D_LATEST.replace(process.cwd(), ".")} pointer=latest`);
-    console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} compatibility=legacy`);
-
-    // Write radar_day.json
-    const radarDayOut = {
-      generated_at_utc: generatedAtUtc,
-      highlights: pickRadarHighlights(sorted)
-    };
-    writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
-    console.log(`[CALENDAR] Wrote ${OUT_RADAR_DAY.replace(process.cwd(), ".")} highlights=${radarDayOut.highlights.length}`);
-
-    // Write radar_week.json (safe placeholder)
-    writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: generatedAtUtc, highlights: [] });
-    console.log(`[CALENDAR] Wrote ${OUT_RADAR_WEEK.replace(process.cwd(), ".")}`);
-
-    const statsSupportedOut = {
-      meta: {
-        generated_at_utc: generatedAtUtc,
-        source: "stats_supported",
-        criteria: "at_least_one_fixture_with_valid_statistics",
-        leagues_source: leaguesSource,
-        leagues_count: leaguesCount
-      },
-      competitions: statsSupportedMap
-    };
-    writeJsonAtomic(OUT_STATS_SUPPORTED, statsSupportedOut);
-    console.log(`[CALENDAR] Wrote ${OUT_STATS_SUPPORTED.replace(process.cwd(), ".")} competitions=${Object.keys(statsSupportedMap).length}`);
-
-    writeJsonAtomic(OUT_PIPELINE_WATCHDOG, {
-      generated_at_utc: generatedAtUtc,
-      status: "ok",
-      snapshot_age_hours: 0,
-      stale_warn_hours: Number(cfg.snapshot_max_age_hours || 12),
-      stale_hard_hours: 24,
-      snapshot_key_latest: path.basename(OUT_CAL_2D_LATEST),
-      snapshot_key_versioned: path.basename(outCal2dVersioned)
-    });
-    console.log(`[CALENDAR] Wrote ${OUT_PIPELINE_WATCHDOG.replace(process.cwd(), ".")}`);
-  });
-
-  const totalDurationMs = Date.now() - runStartedMs;
+  const forensicToday20Bahia = {};
+  for (const m of (calendar2dOut.today || []).slice(0, 20)) {
+    const dayKey = String(m?.api_date || "");
+    if (!dayKey) continue;
+    forensicToday20Bahia[dayKey] = (forensicToday20Bahia[dayKey] || 0) + 1;
+  }
   console.log(
-    `[PERF] fixtures raw=${rawFixtures.length} dedup=${fixtures.length} processed=${matches.length} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`
+    "[CALENDAR][FORENSIC] dayKey_Bahia_today20=",
+    JSON.stringify(forensicToday20Bahia),
+    "meta.today=",
+    calendar2dOut.meta.today
   );
-  console.log(
-    `[PERF] external_calls_total=${REQUEST_METRICS.totalRequests} categories=${JSON.stringify(REQUEST_METRICS.categories)}`
-  );
-  console.log(`[PERF] total_duration_ms=${totalDurationMs} stages=${JSON.stringify(stageDurationsMs)}`);
+
+  writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
+
+  // Write radar_day.json
+  const radarDayOut = {
+    generated_at_utc: generatedAtUtc,
+    highlights: pickRadarHighlights(sorted)
+  };
+  writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
+  console.log(`[CALENDAR] Wrote ${OUT_RADAR_DAY.replace(process.cwd(), ".")} highlights=${radarDayOut.highlights.length}`);
+
+  // Write radar_week.json (safe placeholder)
+  writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: generatedAtUtc, highlights: [] });
+  console.log(`[CALENDAR] Wrote ${OUT_RADAR_WEEK.replace(process.cwd(), ".")}`);
+
+  const statsSupportedOut = {
+    meta: {
+      generated_at_utc: generatedAtUtc,
+      source: "stats_supported",
+      criteria: "at_least_one_fixture_with_valid_statistics",
+      leagues_source: leaguesSource,
+      leagues_count: leaguesCount
+    },
+    competitions: statsSupportedMap
+  };
+  writeJsonAtomic(OUT_STATS_SUPPORTED, statsSupportedOut);
+  console.log(`[CALENDAR] Wrote ${OUT_STATS_SUPPORTED.replace(process.cwd(), ".")} competitions=${Object.keys(statsSupportedMap).length}`);
 }
 
 async function generateStats(flags) {
@@ -1275,7 +1198,7 @@ async function main() {
   ensureDir(OUT_DIR);
 
   const timezone = "America/Bahia";
-  const daysAhead = Number(cfg.days_ahead || 2);
+  const daysAhead = Number(cfg.days_ahead || 7);
   const formWindow = Number(cfg.form_window || 5);
   const goalsWindow = Number(cfg.goals_window || 5);
   const includeStatsInCalendar = Boolean(flags.stats || flags.all);
@@ -1284,9 +1207,9 @@ async function main() {
     console.warn(`[WARN] Ignoring cfg.timezone=${cfg.timezone}; enforced timezone=${timezone}`);
   }
 
-  console.log("\\n╔═══════════════════════════════════════════════════════╗");
-  console.log("║    RadarTips API-FOOTBALL Update Pipeline              ║");
-  console.log("╚═══════════════════════════════════════════════════════╝");
+  console.log("\\n���������������������������������������������������������������������������������������������������������������������������������������������������������������������������");
+  console.log("���    RadarTips API-FOOTBALL Update Pipeline              ���");
+  console.log("���������������������������������������������������������������������������������������������������������������������������������������������������������������������������");
   console.log(`Timezone: ${timezone}`);
   console.log(`API min interval: ${api.minIntervalMs}ms`);
   console.log(`Windows: form=${formWindow} goals=${goalsWindow}`);
@@ -1305,12 +1228,10 @@ async function main() {
   let resolved = [];
   if (flags.calendar) {
     console.log("\n[LEAGUES] Resolving coverage allowlist leagues...");
-    const poolSize = Number.isFinite(CONCURRENCY_POOL) && CONCURRENCY_POOL > 0 ? CONCURRENCY_POOL : 5;
-    const limit = pLimit(poolSize);
-    const resolvedRaw = await Promise.all(
-      coverageLeagues.map((entry) => limit(() => resolveLeagueById(entry)))
-    );
-    resolved = resolvedRaw.filter((r) => r?.league_id);
+    for (const entry of coverageLeagues) {
+      const r = await resolveLeagueById(entry);
+      if (r?.league_id) resolved.push(r);
+    }
     if (!resolved.length) {
       throw new Error("No leagues resolved from data/coverage_allowlist.json.");
     }

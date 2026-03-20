@@ -33,7 +33,7 @@ jobs:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -euo pipefail
-          node tools/update-data-api-football.mjs --calendar --stats
+          node tools/update-data-api-football.mjs --calendar
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
