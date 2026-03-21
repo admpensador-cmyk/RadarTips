@@ -140,6 +140,22 @@
     {
       "region": "South America",
       "country": "Brazil",
+      "league_id": 71,
+      "display_name": "Serie A",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
+      "league_id": 72,
+      "display_name": "Serie B",
+      "type": "League",
+      "tier": 2
+    },
+    {
+      "region": "South America",
+      "country": "Brazil",
       "league_id": 602,
       "display_name": "Campeonato Baiano",
       "type": "league",
@@ -187,11 +203,27 @@
     },
     {
       "region": "South America",
+      "country": "Colombia",
+      "league_id": 239,
+      "display_name": "Primera A",
+      "type": "League",
+      "tier": 1
+    },
+    {
+      "region": "South America",
       "country": "Chile",
       "league_id": 265,
       "display_name": "Primera División",
       "type": "League",
       "tier": 1
+    },
+    {
+      "region": "South America",
+      "country": "Chile",
+      "league_id": 266,
+      "display_name": "Primera B",
+      "type": "League",
+      "tier": 2
     }
   ]
 }
