@@ -256,6 +256,33 @@ function splitCalendar2dByUtcDate(matches, baseDateUtc) {
   return { today, tomorrow, dayMatches, todayMatches, tomorrowMatches };
 }
 
+function splitCalendar2dByLocalDate(matches, baseDateLocal, timezone) {
+  const today = baseDateLocal;
+  const tomorrow = addDaysToIsoDate(baseDateLocal, 1);
+
+  const todayMatches = [];
+  const tomorrowMatches = [];
+
+  for (const m of Array.isArray(matches) ? matches : []) {
+    const kickoffUtc = String(m?.kickoff_utc || "");
+    const localDate = localDateInTimezone(kickoffUtc, timezone);
+    if (!localDate) continue;
+
+    if (localDate === today) {
+      todayMatches.push(m);
+    } else if (localDate === tomorrow) {
+      tomorrowMatches.push(m);
+    }
+  }
+
+  return {
+    today,
+    tomorrow,
+    todayMatches,
+    tomorrowMatches
+  };
+}
+
 function makeCoverageReport(expectedLeagueIds, collectedFixtures, finalMatches) {
   const expected = new Set((Array.isArray(expectedLeagueIds) ? expectedLeagueIds : [])
     .map((id) => Number(id))
@@ -1043,11 +1070,12 @@ function parseArgs() {
 
 async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
   console.log("\n[CALENDAR] Starting calendar generation...");
+  const baseDateBahia = resolveBaseDateInTimezone("America/Bahia");
   const baseDateUtc = resolveBaseDateInTimezone("UTC");
-  const from = baseDateUtc;
-  const to = addDaysToIsoDate(baseDateUtc, daysAhead);
+  const from = baseDateBahia;
+  const to = addDaysToIsoDate(baseDateBahia, daysAhead);
 
-  console.log("[CALENDAR] base_date_utc=", baseDateUtc, "from=", from, "to=", to, "tz(fetch)=", timezone);
+  console.log("[CALENDAR] base_date_bahia=", baseDateBahia, "from=", from, "to=", to, "tz(fetch)=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
@@ -1161,7 +1189,12 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const generatedAtUtc = nowIso();
 
-  const split = splitCalendar2dByUtcDate(sorted, baseDateUtc);
+  const split = splitCalendar2dByLocalDate(
+    sorted,
+    baseDateBahia,
+    "America/Bahia"
+  );
+  const dayMatches = [...split.todayMatches, ...split.tomorrowMatches];
   assertCalendarMatchesWithinAllowlist(split.todayMatches, allowlistLeagueIds, "calendar_2d today");
   assertCalendarMatchesWithinAllowlist(split.tomorrowMatches, allowlistLeagueIds, "calendar_2d tomorrow");
 
@@ -1176,21 +1209,21 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     generated_at_utc: generatedAtUtc,
     form_window: formWindow,
     goals_window: goalsWindow,
-    matches: split.dayMatches
+    matches: dayMatches
   };
   writeJsonAtomic(OUT_CAL_DAY, calendarDayOut);
-  console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${split.dayMatches.length}`);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${dayMatches.length}`);
 
   const calendar2dOut = {
     meta: {
       tz: "America/Bahia",
-      base_date: baseDateUtc,
+      base_date: baseDateBahia,
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
-      generated_for_date_basis: "utc",
+      generated_for_date_basis: "local",
       generated_for_timezone: "America/Bahia",
-      generated_for_local_date: baseDateUtc,
+      generated_for_local_date: baseDateBahia,
       form_window: formWindow,
       goals_window: goalsWindow,
       source: "calendar_2d",
