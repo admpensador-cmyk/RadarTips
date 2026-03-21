@@ -74,9 +74,23 @@ jobs:
           set -euo pipefail
           node tools/verify-production-calendar-sync.mjs
 
+      - name: Verify production data consistency (fail-closed)
+        env:
+          RADARTIPS_BASE_URL: https://radartips.com
+        run: |
+          set -euo pipefail
+          node tools/verify-production-data-consistency.mjs
+
+      - name: Publish gates passed (calendar + allowlist)
+        run: |
+          set -euo pipefail
+          echo "[OK] Critical publish gates passed: R2 publish + production calendar sync + production consistency"
+
       - name: Seed team-window-5 snapshots
         run: |
           set -euo pipefail
+          echo "=== SECONDARY POST-PUBLISH CHECKS START ==="
+          echo "[INFO] Entering secondary checks after critical publish gates passed"
           echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
           node tools/seed-team-window-5.mjs
           echo "✅ Seed complete"
@@ -85,7 +99,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "🧪 Running smoke tests..."
-          node tools/smoke-test-team-window-5.mjs
+          if ! node tools/smoke-test-team-window-5.mjs; then
+            echo "[POST-PUBLISH-SECONDARY-FAIL] team-window-5 smoke test failed after successful publish and production consistency gates"
+            exit 1
+          fi
           echo "✅ Smoke tests passed"
 
       - name: Healthcheck match-stats endpoint
