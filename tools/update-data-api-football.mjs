@@ -489,6 +489,61 @@ async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone 
   return json?.response || [];
 }
 
+async function logTomorrowSourceCoverageDiagnostics(timezone, allowlistLeagueIds) {
+  const baseDateUtc = resolveBaseDateInTimezone("UTC");
+  const tomorrowUtc = addDaysToIsoDate(baseDateUtc, 1);
+
+  console.log(`[DIAG][SOURCE] probing upstream fixtures for tomorrow=${tomorrowUtc} tz=${timezone}`);
+
+  let resp = [];
+  try {
+    const js = await trackedApiGet("/fixtures", {
+      date: tomorrowUtc,
+      timezone
+    }, "fixtures");
+    resp = Array.isArray(js?.response) ? js.response : [];
+  } catch (err) {
+    console.warn(`[DIAG][SOURCE] probe failed for date=${tomorrowUtc}: ${err?.message || err}`);
+    return;
+  }
+
+  const targetCountries = new Set(["brazil", "colombia", "chile"]);
+  const byLeague = new Map();
+
+  for (const fx of resp) {
+    const country = String(fx?.league?.country || "").trim();
+    const countryKey = country.toLowerCase();
+    if (!targetCountries.has(countryKey)) continue;
+
+    const leagueId = Number(fx?.league?.id);
+    if (!Number.isFinite(leagueId)) continue;
+
+    const key = `${country}|${leagueId}|${String(fx?.league?.name || "")}`;
+    const prev = byLeague.get(key) || 0;
+    byLeague.set(key, prev + 1);
+  }
+
+  const rows = Array.from(byLeague.entries())
+    .map(([key, count]) => {
+      const [country, leagueIdRaw, leagueName] = key.split("|");
+      const leagueId = Number(leagueIdRaw);
+      return {
+        country,
+        league_id: leagueId,
+        league_name: leagueName,
+        fixtures_on_tomorrow: count,
+        in_allowlist: allowlistLeagueIds.has(leagueId)
+      };
+    })
+    .sort((a, b) => {
+      const c = a.country.localeCompare(b.country);
+      if (c !== 0) return c;
+      return a.league_id - b.league_id;
+    });
+
+  console.log(`[DIAG][SOURCE] tomorrow fixtures in target countries: ${rows.length ? JSON.stringify(rows) : "[]"}`);
+}
+
 async function fetchRecentFixtureIdsForLeague({ league_id, season, last = 10, timezone }) {
   const json = await trackedApiGet("/fixtures", {
     league: league_id,
@@ -1093,6 +1148,8 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   if (!allowlistLeagueIds.size) {
     throw new Error("[FAIL-CLOSED] Allowlist is empty after league resolution. Aborting calendar publication.");
   }
+
+  await logTomorrowSourceCoverageDiagnostics(timezone, allowlistLeagueIds);
 
   const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
 
