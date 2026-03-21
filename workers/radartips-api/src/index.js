@@ -1,5 +1,6 @@
 const SNAPSHOT_KEYS = ["snapshots/latest_calendar_2d.json", "snapshots/calendar_2d.json"];
 const RADAR_DAY_KEYS = ["snapshots/latest_radar_day.json", "snapshots/radar_day.json"];
+const ALLOWLIST_KEY = "data/coverage_allowlist.json";
 const CACHE_MAX_AGE_SECONDS = 60;
 const CACHE_STALE_WHILE_REVALIDATE_SECONDS = 120;
 const HARD_STALE_HOURS = 24;
@@ -419,6 +420,22 @@ async function serveCalendar(request, env, ctx) {
   return response;
 }
 
+async function serveAllowlist(env) {
+  const obj = await env.RADARTIPS_DATA.get(ALLOWLIST_KEY);
+  if (!obj) {
+    return json(env, { error: "allowlist_not_found", key: ALLOWLIST_KEY }, 404);
+  }
+  const raw = await obj.text();
+  return new Response(raw, {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": `public, max-age=300, stale-while-revalidate=600`,
+      "x-radartips-worker-version": workerVersion(env)
+    }
+  });
+}
+
 async function revalidateCalendarCache(key, env) {
   const built = await buildCalendarResponse(env);
   if (!built.cacheable) return;
@@ -511,6 +528,10 @@ export default {
     if (p === "/api/v1/cron_refresh") {
       const result = await refreshSnapshotIfStale(env, ctx);
       return json(env, result, 200);
+    }
+
+    if (p === "/data/coverage_allowlist.json") {
+      return serveAllowlist(env);
     }
 
     return json(env, { error: "not_found", path: p }, 404);

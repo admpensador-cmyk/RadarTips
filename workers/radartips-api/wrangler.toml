@@ -4,7 +4,9 @@ compatibility_date = "2026-03-15"
 
 routes = [
 	{ pattern = "radartips.com/api/v1/*", zone_name = "radartips.com" },
-	{ pattern = "www.radartips.com/api/v1/*", zone_name = "radartips.com" }
+	{ pattern = "www.radartips.com/api/v1/*", zone_name = "radartips.com" },
+	{ pattern = "radartips.com/data/coverage_allowlist.json", zone_name = "radartips.com" },
+	{ pattern = "www.radartips.com/data/coverage_allowlist.json", zone_name = "radartips.com" }
 ]
 
 [triggers]

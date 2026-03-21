@@ -146,7 +146,8 @@ const uploadTargets = [
   { local: SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_calendar_2d.json' },
   { local: versionedPath, remote: versionedKey },
   { local: RADAR_DAY_SNAPSHOT_PATH, remote: 'snapshots/radar_day.json' },
-  { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_radar_day.json' }
+  { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_radar_day.json' },
+  { local: COVERAGE_ALLOWLIST_PATH, remote: 'data/coverage_allowlist.json' }
 ];
 
 async function uploadTarget(target) {
@@ -233,6 +234,7 @@ async function verifyMainSnapshot() {
     console.log(`   - ${versionedKey}`);
     console.log(`   - snapshots/radar_day.json`);
     console.log(`   - snapshots/latest_radar_day.json`);
+    console.log(`   - data/coverage_allowlist.json`);
     console.log(`   Size(main): ${size} bytes`);
     console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
     console.log(`   radar_day.generated_at_utc: ${radarDay?.generated_at_utc || 'n/a'}`);
