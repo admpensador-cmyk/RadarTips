@@ -1,6 +1,9 @@
 const SNAPSHOT_KEYS = ["snapshots/latest_calendar_2d.json", "snapshots/calendar_2d.json"];
 const RADAR_DAY_KEYS = ["snapshots/latest_radar_day.json", "snapshots/radar_day.json"];
 const ALLOWLIST_KEY = "data/coverage_allowlist.json";
+const LEAGUE_SNAPSHOT_KEYS = {
+  "premier-league": ["snapshots/leagues/premier-league.json"]
+};
 const CACHE_MAX_AGE_SECONDS = 60;
 const CACHE_STALE_WHILE_REVALIDATE_SECONDS = 120;
 const HARD_STALE_HOURS = 24;
@@ -163,6 +166,55 @@ async function readRadarDaySnapshot(env) {
   }
 
   return { snapshot: null, raw: null, key: null };
+}
+
+async function readLeagueSnapshot(env, slug) {
+  const keys = LEAGUE_SNAPSHOT_KEYS[String(slug || "")] || null;
+  if (!keys) {
+    return { snapshot: null, raw: null, key: null, unsupported: true };
+  }
+
+  let parseErrorKey = null;
+  let parseErrorRaw = null;
+  for (const key of keys) {
+    const obj = await env.RADARTIPS_DATA.get(key);
+    if (!obj) continue;
+    const raw = await obj.text();
+    try {
+      return { snapshot: JSON.parse(raw), raw, key };
+    } catch {
+      if (!parseErrorKey) {
+        parseErrorKey = key;
+        parseErrorRaw = raw;
+      }
+    }
+  }
+
+  if (parseErrorKey) {
+    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
+  }
+
+  return { snapshot: null, raw: null, key: null };
+}
+
+async function serveLeagueSnapshot(env, slug) {
+  const { snapshot, key, parse_error, unsupported } = await readLeagueSnapshot(env, slug);
+  if (unsupported) {
+    return json(env, { error: "unsupported_league_snapshot", slug }, 404);
+  }
+  if (!snapshot) {
+    return json(env, {
+      error: parse_error ? "snapshot_invalid_json" : "snapshot_not_found",
+      slug,
+      snapshot_source_key: key
+    }, 404);
+  }
+  return json(env, {
+    ...snapshot,
+    snapshot_source_key: key
+  }, 200, {
+    "cache-control": `public, max-age=${CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${CACHE_STALE_WHILE_REVALIDATE_SECONDS}`
+  });
 }
 
 function calendarPayload(snapshot, evaluation, sourceKey) {
@@ -497,6 +549,10 @@ export default {
 
     if (p === "/api/v1/radar_day" || p === "/api/v1/radar_day.json") {
       return serveRadarDay(env);
+    }
+
+    if (p === "/api/v1/leagues/premier-league" || p === "/api/v1/leagues/premier-league.json") {
+      return serveLeagueSnapshot(env, "premier-league");
     }
 
     if (p === "/api/v1/calendar_health" || p === "/api/v1/health") {

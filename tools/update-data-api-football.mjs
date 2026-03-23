@@ -18,14 +18,17 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
+import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot } from "./lib/league-v1-snapshot.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
+const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
 const OUT_COVERAGE_REPORT = path.join(OUT_DIR, "calendar_coverage_report.json");
+const OUT_PREMIER_LEAGUE_V1 = path.join(OUT_LEAGUES_DIR, `${PREMIER_LEAGUE_V1.slug}.json`);
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
@@ -527,6 +530,27 @@ async function fetchRecentFixtureIdsForLeague({ league_id, season, last = 10, ti
   return resp
     .map((fx) => Number(fx?.fixture?.id))
     .filter((id) => Number.isFinite(id));
+}
+
+async function fetchAllFixturesForLeagueSeason({ league_id, season, timezone }) {
+  const json = await trackedApiGet("/fixtures", {
+    league: league_id,
+    season,
+    timezone
+  }, "fixtures");
+  return Array.isArray(json?.response) ? json.response : [];
+}
+
+async function fetchStandingsForLeagueSeason({ league_id, season }) {
+  const json = await trackedApiGet("/standings", {
+    league: league_id,
+    season
+  }, "others");
+  const response = Array.isArray(json?.response) ? json.response : [];
+  if (!response.length) {
+    throw new Error(`No standings data returned for league_id=${league_id} season=${season}`);
+  }
+  return json;
 }
 
 async function fixtureHasValidStatistics(fixtureId) {
@@ -1318,7 +1342,7 @@ async function generateStats(flags) {
   console.log("[FUTURE] stats generation placeholder (not implemented yet)");
 }
 
-async function generateStandings(flags) {
+async function generateStandings(flags, resolved, timezone) {
   const cfg = readConfig();
   const mode = String(cfg.standings_mode || "daily");
   const manual = flags.standings || flags.all;
@@ -1337,7 +1361,49 @@ async function generateStandings(flags) {
     return;
   }
 
-  console.log("[FUTURE] standings generation placeholder (not implemented yet)");
+  const resolvedLeagues = Array.isArray(resolved) ? resolved : [];
+  let premierLeague = resolvedLeagues.find((entry) => Number(entry?.league_id) === PREMIER_LEAGUE_V1.leagueId) || null;
+
+  if (!premierLeague) {
+    premierLeague = await resolveLeagueById({
+      league_id: PREMIER_LEAGUE_V1.leagueId,
+      country: PREMIER_LEAGUE_V1.defaultCountry,
+      display_name: PREMIER_LEAGUE_V1.defaultName,
+      type: "league"
+    });
+  }
+
+  if (!premierLeague?.league_id || !Number.isFinite(premierLeague?.season)) {
+    throw new Error(`[LEAGUE-V1] Failed resolving ${PREMIER_LEAGUE_V1.defaultName} season.`);
+  }
+
+  console.log(`\n[LEAGUE-V1] Generating official snapshot for ${PREMIER_LEAGUE_V1.defaultName}...`);
+  console.log(`[LEAGUE-V1] league_id=${premierLeague.league_id} season=${premierLeague.season}`);
+
+  const [standingsPayload, fixturesPayload] = await Promise.all([
+    fetchStandingsForLeagueSeason({
+      league_id: premierLeague.league_id,
+      season: premierLeague.season
+    }),
+    fetchAllFixturesForLeagueSeason({
+      league_id: premierLeague.league_id,
+      season: premierLeague.season,
+      timezone
+    })
+  ]);
+
+  const generatedAtUtc = nowIso();
+  const snapshot = buildPremierLeagueV1Snapshot({
+    standingsPayload,
+    fixturesPayload,
+    generatedAtUtc
+  });
+
+  writeJsonAtomic(OUT_PREMIER_LEAGUE_V1, snapshot);
+  console.log(
+    `[LEAGUE-V1] Wrote ${OUT_PREMIER_LEAGUE_V1.replace(process.cwd(), ".")} ` +
+    `standings=${snapshot.standings.length} upcoming=${snapshot.fixtures.upcoming.length} recent=${snapshot.fixtures.recent.length}`
+  );
 }
 
 async function main() {
@@ -1411,9 +1477,9 @@ async function main() {
   }
 
   if (flags.standings) {
-    await generateStandings(flags);
+    await generateStandings(flags, resolved, timezone);
   } else {
-    await generateStandings(flags);
+    await generateStandings(flags, resolved, timezone);
   }
 
   printRequestMetricsSummary();

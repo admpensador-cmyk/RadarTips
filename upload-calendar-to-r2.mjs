@@ -17,6 +17,8 @@ const R2_BUCKET = process.env.R2_BUCKET_NAME || 'radartips-data';
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
 const RADAR_DAY_PATH = path.join(ROOT, 'data', 'v1', 'radar_day.json');
 const COVERAGE_ALLOWLIST_PATH = path.join(ROOT, 'data', 'coverage_allowlist.json');
+const LEAGUES_DIR = path.join(ROOT, 'data', 'v1', 'leagues');
+const PREMIER_LEAGUE_SNAPSHOT_PATH = path.join(LEAGUES_DIR, 'premier-league.json');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
 const SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'calendar_2d.json');
 const SNAPSHOT_LATEST_PATH = path.join(SNAPSHOTS_DIR, 'latest_calendar_2d.json');
@@ -107,6 +109,15 @@ if (!Array.isArray(radarDay?.highlights)) {
   throw new Error('[FAIL-CLOSED] Invalid radar_day shape: expected highlights array');
 }
 
+if (!fs.existsSync(PREMIER_LEAGUE_SNAPSHOT_PATH)) {
+  throw new Error(`[FAIL-CLOSED] Missing league snapshot file: ${PREMIER_LEAGUE_SNAPSHOT_PATH}`);
+}
+
+const premierLeagueSnapshot = JSON.parse(fs.readFileSync(PREMIER_LEAGUE_SNAPSHOT_PATH, 'utf8'));
+if (!Array.isArray(premierLeagueSnapshot?.standings) || !premierLeagueSnapshot?.competition?.slug) {
+  throw new Error('[FAIL-CLOSED] Invalid premier-league snapshot shape');
+}
+
 assertAllowed(calendar, allowlistIds);
 console.log(`✓ Fail-closed allowlist check passed (${allowlistIds.size} leagues in allowlist)`);
 
@@ -147,6 +158,7 @@ const uploadTargets = [
   { local: versionedPath, remote: versionedKey },
   { local: RADAR_DAY_SNAPSHOT_PATH, remote: 'snapshots/radar_day.json' },
   { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_radar_day.json' },
+  { local: PREMIER_LEAGUE_SNAPSHOT_PATH, remote: 'snapshots/leagues/premier-league.json' },
   { local: COVERAGE_ALLOWLIST_PATH, remote: 'data/coverage_allowlist.json' }
 ];
 
@@ -234,10 +246,12 @@ async function verifyMainSnapshot() {
     console.log(`   - ${versionedKey}`);
     console.log(`   - snapshots/radar_day.json`);
     console.log(`   - snapshots/latest_radar_day.json`);
+    console.log(`   - snapshots/leagues/premier-league.json`);
     console.log(`   - data/coverage_allowlist.json`);
     console.log(`   Size(main): ${size} bytes`);
     console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
     console.log(`   radar_day.generated_at_utc: ${radarDay?.generated_at_utc || 'n/a'}`);
+    console.log(`   premier_league.generated_at_utc: ${premierLeagueSnapshot?.meta?.generated_at_utc || 'n/a'}`);
     process.exit(0);
   } catch (err) {
     console.error(`\n❌ Upload failed: ${err.message}`);

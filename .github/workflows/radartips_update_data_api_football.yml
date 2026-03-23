@@ -28,17 +28,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate calendar snapshot (API-FOOTBALL, frequent, low quota)
+      - name: Generate calendar + Premier League snapshot (API-FOOTBALL, frequent, low quota)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -euo pipefail
-          node tools/update-data-api-football.mjs --calendar
+          node tools/update-data-api-football.mjs --calendar --standings
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
+          test -f "data/v1/leagues/premier-league.json"
 
       - name: Publish snapshots to R2 (mandatory)
         env:
