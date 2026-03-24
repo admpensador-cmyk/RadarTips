@@ -40,6 +40,31 @@ function getCalendarMatches(calendar) {
   ].filter((match) => match?.competition_id && match?.home_id && match?.away_id);
 }
 
+function isFinishedMatch(match) {
+  const status = String(match?.status_short || match?.status || '').trim().toUpperCase();
+  return status === 'FT' || status === 'AET' || status === 'PEN';
+}
+
+function hasFormDetails(match) {
+  return Array.isArray(match?.form_home_details)
+    && match.form_home_details.length > 0
+    && Array.isArray(match?.form_away_details)
+    && match.form_away_details.length > 0;
+}
+
+function summarizeSeedability(matches) {
+  const finishedCount = matches.filter((match) => isFinishedMatch(match)).length;
+  const formDetailsCount = matches.filter((match) => hasFormDetails(match)).length;
+  const seedableCount = matches.filter((match) => isFinishedMatch(match) || hasFormDetails(match)).length;
+
+  return {
+    finishedCount,
+    formDetailsCount,
+    seedableCount,
+    allPreMatchWithoutForm: matches.length > 0 && seedableCount === 0
+  };
+}
+
 function isValidSnapshot(snapshot) {
   return Boolean(snapshot?.windows?.total_last5 && snapshot?.windows?.home_last5 && snapshot?.windows?.away_last5 && snapshot?.meta);
 }
@@ -78,7 +103,17 @@ async function main() {
     process.exit(1);
   }
 
+  const seedability = summarizeSeedability(matches);
+
   console.log(`📊 Calendar loaded: ${matches.length} matches`);
+  console.log(`📌 Seedability: finished=${seedability.finishedCount}, with_form_details=${seedability.formDetailsCount}, seedable=${seedability.seedableCount}`);
+
+  if (seedability.allPreMatchWithoutForm) {
+    console.log('\n⚠️  Calendar contains only pre-match fixtures without form details');
+    console.log('ℹ️  No team-window-5 snapshots can be generated from this calendar state');
+    console.log('✅ HEALTHCHECK SKIPPED - Expected condition for all-pre-match calendar\n');
+    process.exit(0);
+  }
 
   if (!fs.existsSync(SNAPSHOTS_DIR)) {
     console.log(`\n⚠️  Team-window-5 snapshots directory not found`);
