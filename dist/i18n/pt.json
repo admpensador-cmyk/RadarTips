@@ -1,0 +1,35 @@
+{
+  "radar_day": "Radar do Dia",
+  "radar_week": "Radar da Semana",
+  "radar_country": "Radar do País",
+  "radar_league": "Radar da Competição",
+  "radar_match": "Radar da Partida",
+  "updated": "Edição atualizada",
+  "fixed_today": "Fixo hoje",
+  "timezone": "Seu fuso",
+  "next": "Próximo",
+  "round": "Rodada",
+  "locked": "Ativar PRO",
+  "no_slot": "Sem Radar disponível",
+  "risk": {
+    "low": "Baixo",
+    "medium": "Médio",
+    "high": "Alto"
+  },
+  "status": {
+    "pending": "Pendente",
+    "won": "Green",
+    "lost": "Red",
+    "void": "Anulado"
+  },
+  "g": "G",
+  "markets_title": "Mercados analisados",
+  "markets_tooltip": "Outros mercados sugeridos para a partida (com risco e justificativa).",
+  "market_col": "Mercado",
+  "entry_col": "Entrada sugerida",
+  "risk_col": "Risco",
+  "just_col": "Justificativa",
+  "confidence_label": "Confiança",
+  "risk_volatile": "Volátil",
+  "no_markets": "Sem mercados suficientes para esta partida."
+}

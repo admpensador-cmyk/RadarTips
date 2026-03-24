@@ -1,0 +1,35 @@
+{
+  "radar_day": "Radar of the Day",
+  "radar_week": "Radar of the Week",
+  "radar_country": "Country Radar",
+  "radar_league": "Competition Radar",
+  "radar_match": "Match Radar",
+  "updated": "Edition updated",
+  "fixed_today": "Fixed for today",
+  "timezone": "Your timezone",
+  "next": "Next",
+  "round": "Round",
+  "locked": "Unlock PRO",
+  "no_slot": "No Radar available",
+  "risk": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "status": {
+    "pending": "Pending",
+    "won": "Won",
+    "lost": "Lost",
+    "void": "Void"
+  },
+  "g": "G",
+  "markets_title": "Analyzed markets",
+  "markets_tooltip": "Other suggested markets for this match (with risk and a short justification).",
+  "market_col": "Market",
+  "entry_col": "Suggested entry",
+  "risk_col": "Risk",
+  "just_col": "Justification",
+  "confidence_label": "Confidence",
+  "risk_volatile": "Volatile",
+  "no_markets": "Not enough markets for this match."
+}

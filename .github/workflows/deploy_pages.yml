@@ -1,0 +1,71 @@
+name: Deploy RadarTips Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      pages_project_name:
+        description: Cloudflare Pages project name
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: radartips-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy-pages:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Cloudflare Pages configuration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ github.event.inputs.pages_project_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" || -z "${CLOUDFLARE_PAGES_PROJECT_NAME:-}" ]]; then
+            echo "[FATAL] Missing required Cloudflare Pages secrets."
+            echo "[FATAL] Required: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_PAGES_PROJECT_NAME"
+            exit 1
+          fi
+
+      - name: Build canonical dist
+        run: |
+          set -euo pipefail
+          node tools/clean-bundles.mjs
+          node tools/build-static.mjs
+
+          test -f "dist/pt/radar/day/index.html"
+          test -f "dist/assets/js/app.$(git rev-parse --short HEAD).js"
+
+      - name: Deploy dist to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ github.event.inputs.pages_project_name }}
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.62.0 pages deploy dist --project-name "${CLOUDFLARE_PAGES_PROJECT_NAME}" --branch main
+
+      - name: Verify live runtime after deploy
+        env:
+          RADARTIPS_BASE_URL: https://radartips.com
+          RADARTIPS_EXPECTED_BUILD: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          export RADARTIPS_EXPECTED_BUILD="$(git rev-parse --short HEAD)"
+          node tools/check-production-day-runtime.mjs

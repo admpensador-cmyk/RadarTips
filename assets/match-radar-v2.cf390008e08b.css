@@ -1,0 +1,24 @@
+.mr-v2-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:2147483646}
+.mr-v2-box{width:min(920px,94%);max-height:90vh;overflow:auto;background:#0f1720;color:#e6eef8;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.6);}
+.mr-v2-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.03)}
+.mr-v2-title{font-weight:600}
+.mr-v2-close{background:transparent;border:0;color:inherit;font-size:20px;cursor:pointer;padding:6px}
+.mr-v2-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.02)}
+.mr-v2-tab{padding:10px 14px;background:transparent;border:0;color:inherit;cursor:pointer}
+.mr-v2-tab-active{border-bottom:2px solid #38bdf8}
+.mr-v2-body{padding:12px}
+.mr-table-wrap{overflow:auto}
+.mr-table{width:100%;border-collapse:collapse;font-size:14px}
+.mr-table th,.mr-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);text-align:left}
+.mr-market{font-weight:600}
+.mr-note{color:#9fb0c9}
+.mr-v2-empty{padding:18px;text-align:center;color:#9fb0c9}
+.mr-stat-row{display:block;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.02)}
+.mr-left{float:left;width:60px}
+.mr-right{float:right;width:60px;text-align:right}
+.mr-label{margin:0 70px;text-align:center;color:#cfe6fb}
+.mr-bar{clear:both;height:10px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden;margin-top:8px}
+.mr-bar-left{height:100%;background:linear-gradient(90deg,#38bdf8,#06b6d4)}
+.mr-bar-right{height:100%;background:rgba(255,255,255,.08)}
+.mr-table-wrap::-webkit-scrollbar{height:8px}
+.mr-table-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:8px}

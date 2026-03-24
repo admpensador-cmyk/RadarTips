@@ -1,0 +1,531 @@
+.rt-hero-radar-day{
+  isolation:auto;
+}
+
+.rt-hero-radar-day-grid{
+  isolation:auto;
+}
+
+.rt-cal-root{
+  margin-top:16px;
+  padding:16px;
+  background:rgba(0,0,0,.15);
+  border-radius:12px;
+}
+
+.rt-cal-tabs-header{
+  display:flex;
+  gap:10px;
+  padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  margin-bottom:16px;
+}
+
+.rt-cal-tab{
+  flex:1;
+  padding:11px 12px;
+  background:transparent;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;
+  color:#9fb0c9;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:700;
+  transition:all .2s ease;
+  white-space:nowrap;
+}
+
+.rt-cal-tab.is-active,
+.rt-cal-tab-active{
+  background:rgba(56,189,248,.1);
+  border-color:#38bdf8;
+  color:#38bdf8;
+  font-weight:800;
+}
+
+.rt-cal-tab-inner{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.rt-cal-empty-state{
+  text-align:center;
+  padding:32px 16px;
+  color:#9fb0c9;
+}
+
+.rt-cal-empty-title{
+  font-size:16px;
+  margin-bottom:8px;
+}
+
+.rt-cal-empty-sub{
+  font-size:14px;
+}
+
+.rt-cal-country-accordion{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  background:rgba(0,0,0,.20);
+  overflow:hidden;
+}
+
+.rt-cal-country-head{
+  margin:0;
+}
+
+.rt-cal-country-toggle{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  border:none;
+  background:rgba(0,0,0,.25);
+  cursor:pointer;
+  color:rgba(255,255,255,.92);
+  text-align:left;
+  transition:background .15s ease, color .15s ease;
+}
+
+.rt-cal-country-toggle:hover{
+  background:rgba(255,255,255,.12);
+}
+
+.rt-cal-country-toggle:focus-visible{
+  outline:2px solid rgba(60,130,246,.45);
+  outline-offset:-2px;
+}
+
+.rt-cal-country-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:950;
+}
+
+.rt-cal-country-flag-img{
+  width:16px;
+  height:16px;
+  border-radius:3px;
+  object-fit:cover;
+  box-shadow:0 2px 8px rgba(12,32,70,.2);
+}
+
+.rt-cal-country-chevron{
+  font-size:14px;
+  font-weight:900;
+  color:rgba(255,255,255,.78);
+  transition:transform .15s ease;
+}
+
+.rt-cal-country-toggle.is-open .rt-cal-country-chevron{
+  transform:rotate(0deg);
+}
+
+.rt-cal-country-toggle:not(.is-open) .rt-cal-country-chevron{
+  transform:rotate(-90deg);
+}
+
+.rt-cal-competition-groups{
+  padding:0 14px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.rt-cal-country-body.is-collapsed{
+  display:none;
+}
+
+.rt-cal-competition-group{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:rgba(0,0,0,.15);
+}
+
+.rt-cal-competition-head{
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.25);
+}
+
+.rt-cal-competition-title{
+  font-weight:900;
+  color:rgba(255,255,255,.70);
+  font-size:13px;
+}
+
+.rt-cal-match-list{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+
+.rt-cal-match,
+.rt-match-card{
+  display:grid;
+  grid-template-columns:80px 1fr auto;
+  gap:14px;
+  align-items:center;
+  padding:12px 14px;
+  min-height:74px;
+  border-radius:0;
+  border:0;
+  border-top:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.05);
+  cursor:pointer;
+  transition:background .15s ease, transform .15s ease;
+  line-height:1;
+}
+
+.rt-cal-match-list .rt-match-card:first-child{
+  border-top:none;
+}
+
+.rt-cal-match:hover,
+.rt-match-card:hover{
+  background:rgba(255,255,255,.12);
+  transform:translateY(-1px);
+}
+
+.rt-cal-match:focus-visible,
+.rt-match-card:focus-visible{
+  outline:2px solid rgba(60,130,246,.60);
+  outline-offset:-2px;
+}
+
+.rt-cal-when{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+
+.rt-cal-time,
+.rt-match-time{
+  font-weight:800;
+  color:#ffffff;
+  font-size:14px;
+  white-space:nowrap;
+  line-height:1;
+  margin:0;
+  padding:0;
+}
+
+.rt-cal-score,
+.rt-match-score{
+  font-weight:700;
+  opacity:.65;
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.2px;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.rt-cal-score.is-not-started,
+.rt-match-score.is-not-started{
+  opacity:.5;
+}
+
+.rt-cal-score.is-live,
+.rt-match-score.is-live{
+  color:#7dd3fc;
+  opacity:.95;
+}
+
+.rt-cal-teams{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0;
+}
+
+.rt-cal-teamrow,
+.rt-team-home,
+.rt-team-away{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  margin:0;
+  padding:0;
+  justify-content:flex-start;
+  text-align:left;
+}
+
+.rt-cal-teamrow .name,
+.rt-team-home .name,
+.rt-team-away .name{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:100%;
+  min-width:0;
+  font-weight:900;
+  font-size:13px;
+  line-height:1.2;
+}
+
+.rt-cal-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.rt-match-market,
+.rt-cal-market{
+  min-width:140px;
+}
+
+.rt-match-suggestion{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-width:140px;
+  font-weight:900;
+  color:#ffffff;
+  padding:0 14px;
+  height:44px;
+  border-radius:8px;
+  border:1.5px solid rgba(100,180,255,.55);
+  background:linear-gradient(135deg, rgba(80,160,255,.35), rgba(60,130,255,.30));
+  text-align:center;
+  font-size:13px;
+  white-space:nowrap;
+  line-height:1;
+  margin:0;
+}
+
+.rt-match-more-btn,
+.rt-cal-more{
+  width:44px;
+  height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  border:1px solid rgba(130,154,196,.35);
+  background:rgba(20,32,52,.7);
+  color:#f3f7ff;
+  font-size:18px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+
+.rt-match-more-btn:hover{
+  background:rgba(30,48,78,.85);
+  border-color:rgba(120,167,255,.55);
+}
+
+.rt-match-more-btn:focus-visible{
+  outline:2px solid rgba(60,130,246,.60);
+  outline-offset:1px;
+}
+
+.rt-match-more-btn[disabled]{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.rt-cal-match .crest,
+.rt-cal-match .crest.crest--img,
+.rt-match-card .crest,
+.rt-match-card .crest.crest--img{
+  width:22px;
+  height:22px;
+  flex:0 0 22px;
+}
+
+/* ===== MOBILE SAFE OVERRIDES (<=768px) - preserva desktop ===== */
+@media (max-width:768px){
+  
+  /* D) TEMA DARK CONSISTENTE NO CALENDÁRIO */
+  .rt-cal-root,
+  .rt-cal-country-accordion,
+  .rt-cal-competition-group,
+  .rt-cal-match,
+  .rt-match-card{
+    background:rgba(10,14,22,.92);
+    color:rgba(255,255,255,.92);
+  }
+
+  .rt-cal-competition-title,
+  .rt-cal-country-title,
+  .rt-cal-teamrow .name,
+  .rt-team-home .name,
+  .rt-team-away .name,
+  .rt-cal-time,
+  .rt-cal-score,
+  .rt-match-time,
+  .rt-match-score{
+    color:rgba(255,255,255,.92);
+  }
+
+  /* E) BANDEIRAS: NUNCA GIGANTES */
+  .rt-cal-country-flag-img{
+    width:18px !important;
+    height:18px !important;
+    object-fit:cover;
+    flex:0 0 auto;
+  }
+
+  .rt-cal-country-accordion img{
+    max-width:100%;
+    height:auto;
+  }
+
+  /* F) TABS TODAY/TOMORROW: COMPACTAS */
+  .rt-cal-tabs-header{
+    gap:8px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+
+  .rt-cal-tabs-header::-webkit-scrollbar{
+    display:none;
+  }
+
+  .rt-cal-tab{
+    height:32px;
+    padding:0 12px;
+    border-radius:999px;
+    font-size:13px;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+
+  /* G) ACCORDION HEADER */
+  .rt-cal-country-toggle{
+    padding:12px 12px;
+  }
+
+  .rt-cal-country-title{
+    font-size:15px;
+  }
+
+  /* H) MATCH CARDS TIPO FLASHSCORE: GARANTIR NOMES SEMPRE VISÍVEIS */
+  .rt-cal-match,
+  .rt-match-card{
+    display:grid;
+    grid-template-columns:72px minmax(0,1fr) 44px;
+    grid-template-areas:
+      "when teams more"
+      "when actions more";
+    align-items:center;
+    gap:8px 10px;
+    padding:10px 10px;
+    border-radius:14px;
+    width:100%;
+    min-height:auto;
+  }
+
+  /* WHEN: horário + placar */
+  .rt-cal-when{
+    grid-area:when;
+  }
+
+  /* TEAMS: garantir nomes aparecem (2 linhas) */
+  .rt-cal-teams{
+    grid-area:teams;
+    gap:8px;
+    min-width:0;
+  }
+
+  .rt-cal-teamrow,
+  .rt-team-home,
+  .rt-team-away{
+    min-width:0;
+  }
+
+  /* Nomes: 2 linhas, sem truncamento agressivo */
+  .rt-cal-teamrow .name,
+  .rt-team-home .name,
+  .rt-team-away .name{
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    font-size:14px;
+    line-height:1.2;
+    color:rgba(255,255,255,.92);
+    min-width:0;
+  }
+
+  /* Escudos: consistentes */
+  .rt-cal-match .crest,
+  .rt-cal-match .crest.crest--img,
+  .rt-match-card .crest,
+  .rt-match-card .crest.crest--img{
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
+  }
+
+  /* ACTIONS: chip compacto abaixo dos times */
+  .rt-cal-actions{
+    grid-area:actions;
+    gap:10px;
+    min-width:0;
+  }
+
+  /* Chip da sugestão: menor, não empurra times */
+  .rt-match-suggestion{
+    height:32px;
+    padding:0 12px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:800;
+    white-space:nowrap;
+    max-width:70vw;
+    min-width:auto;
+  }
+
+  /* Botão +: coluna fixa, sem sobrepor */
+  .rt-match-more-btn,
+  .rt-cal-more{
+    grid-area:more;
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    font-size:16px;
+    justify-self:end;
+    align-self:center;
+  }
+
+  .rt-cal-time,
+  .rt-match-time{
+    font-size:13px;
+  }
+
+  .rt-cal-teams{
+    gap:8px;
+  }
+
+  .rt-cal-score,
+  .rt-match-score{
+    font-size:13px;
+    grid-template-columns:68px 1fr auto;
+    gap:8px;
+    min-height:66px;
+  }
+
+  .rt-cal-time,
+  .rt-match-time{
+    font-size:13px;
+  }
+
+  .rt-cal-actions{
+    gap:8px;
+  }
+}

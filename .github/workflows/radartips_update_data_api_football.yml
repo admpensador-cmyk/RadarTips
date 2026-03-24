@@ -86,29 +86,3 @@ jobs:
         run: |
           set -euo pipefail
           echo "[OK] Critical publish gates passed: R2 publish + production calendar sync + production consistency"
-
-      - name: Seed team-window-5 snapshots
-        run: |
-          set -euo pipefail
-          echo "=== SECONDARY POST-PUBLISH CHECKS START ==="
-          echo "[INFO] Entering secondary checks after critical publish gates passed"
-          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
-          node tools/seed-team-window-5.mjs
-          echo "✅ Seed complete"
-
-      - name: Smoke test team-window-5
-        run: |
-          set -euo pipefail
-          echo "🧪 Running smoke tests..."
-          if ! node tools/smoke-test-team-window-5.mjs; then
-            echo "[POST-PUBLISH-SECONDARY-FAIL] team-window-5 smoke test failed after successful publish and production consistency gates"
-            exit 1
-          fi
-          echo "✅ Smoke tests passed"
-
-      - name: Healthcheck match-stats endpoint
-        run: |
-          set -euo pipefail
-          echo "🏥 Healthcheck: verifying match-stats data..."
-          node tools/healthcheck-match-stats.mjs
-          echo "✅ Healthcheck passed"

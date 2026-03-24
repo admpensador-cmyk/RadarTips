@@ -1,34 +1,37 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ME07NV3W8Y"></script>
+  <script>window.dataLayer=window.dataLayer||[]; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-ME07NV3W8Y', { anonymize_ip: true });</script>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips - Radar</title>
+  <title>RadarTips • Daily Radar</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=11" />
 </head>
-<body data-page="day">
+<body data-theme="dark" data-page="day">
   <div class="container">
     <div class="topbar">
       <div class="brand">
         <div class="brandline">
           <div class="logo">
             <span id="brand">RadarTips</span>
-            <span class="badge-mini" id="disclaimer">-</span>
+            <span class="badge-mini" id="disclaimer">—</span>
           </div>
         </div>
         <div class="mini" id="subtitle"></div>
       </div>
 
       <div class="nav">
-        <a class="pill" data-nav="day" href="#">-</a>
-        <a class="pill" data-nav="week" href="#">-</a>
-        <a class="pill" data-nav="calendar" href="#">-</a>
+        <a class="pill" data-nav="day" href="#">—</a>
 
         <span style="width:10px"></span>
 
-        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">Dark</button>
+        
+        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
+
         <span class="lang" data-lang="en">EN</span>
         <span class="lang" data-lang="pt">PT</span>
         <span class="lang" data-lang="es">ES</span>
@@ -37,33 +40,76 @@
       </div>
     </div>
 
-    <section class="rt-day-hero">
-      <div class="rt-day-hero__head">
-        <h1 id="hero_title">Radar Day</h1>
-        <p id="hero_sub">Best opportunities for today</p>
+    <div class="hero">
+      <div class="hero-header">
+        <h1 id="hero_title">Radar</h1>
+        <p id="hero_sub">—</p>
       </div>
-      <div id="day_tabs" class="rt-day-tabs"></div>
-    </section>
 
-    <section id="top3_section" class="rt-day-top3"></section>
+      <div class="grid">
+        <div class="card" data-slot="1">
+          <div class="row">
+            <span class="badge risk low">pt</span>
+            <span class="badge top" style="opacity:.75">TOP 1</span>
+          </div>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
+          <div class="meta"></div>
+          <div class="suggestion-highlight">—</div>
+          <div class="lock"></div>
+        </div>
 
-    <section id="calendar_section" class="rt-day-leagues"></section>
+        <div class="card" data-slot="2">
+          <div class="row">
+            <span class="badge risk med">pt</span>
+            <span class="badge top" style="opacity:.75">TOP 2</span>
+          </div>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
+          <div class="meta"></div>
+          <div class="suggestion-highlight">—</div>
+          <div class="lock"></div>
+        </div>
+
+        <div class="card" data-slot="3">
+          <div class="row">
+            <span class="badge risk high">pt</span>
+            <span class="badge top" style="opacity:.75">TOP 3</span>
+          </div>
+          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
+          <div class="meta"></div>
+          <div class="suggestion-highlight">—</div>
+          <div class="lock"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="calendar_section">
+      <h2 id="calendar_title">—</h2>
+      <div class="sub" id="calendar_sub">—</div>
+
+      <div class="controls">
+        <div class="toggle">
+          <button class="pill" id="btn_time" type="button">—</button>
+          <button class="pill" id="btn_country" type="button">—</button>
+        </div>
+        <input class="input" id="search" type="text" placeholder="—" />
+      </div>
+
+      <div class="cal" id="calendar"></div>
+    </div>
 
     <div class="footer">
-      Copyright <span id="year"></span> RadarTips
+      © <span id="year"></span> RadarTips
     </div>
   </div>
 
-  <div class="modal-backdrop" id="modal_backdrop" role="dialog" aria-modal="true">
-    <div class="modal">
-      <div class="modal-head">
-        <div class="modal-title" id="modal_title">Radar</div>
-        <button class="btn" id="modal_close" type="button">X</button>
-      </div>
-      <div class="modal-body" id="modal_body"></div>
-    </div>
-  </div>
+  <script>
+    window.RT_LOCALE = "en";
+  </script>
+  <script src="/assets/js/app.b6507b815961.js?v=b6507b81"></script>
+  <link rel="stylesheet" href="/assets/match-radar-v2.0baab1022371.css" />
 
-  <script src="/assets/js/app.js?v=8"></script>
+<!-- build-badge -->
+<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.b6507b815961.js | 2026-02-25 23:48</div>
+<!-- /build-badge -->
 </body>
 </html>

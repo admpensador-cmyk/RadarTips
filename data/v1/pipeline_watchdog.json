@@ -1,0 +1,9 @@
+{
+  "generated_at_utc": "2026-03-17T03:57:37.646Z",
+  "status": "ok",
+  "snapshot_age_hours": 0,
+  "stale_warn_hours": 12,
+  "stale_hard_hours": 24,
+  "snapshot_key_latest": "latest_calendar_2d.json",
+  "snapshot_key_versioned": "calendar_2d_2026-03-17_2026-03-17T03-57-37-646Z.json"
+}

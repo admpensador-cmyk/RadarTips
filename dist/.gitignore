@@ -1,0 +1,28 @@
+# OpenNext / Workers build output
+.worker-next
+.open-next
+
+# block zip artifacts
+dist/*.zip
+**/*.zip
+
+# Local snapshot artifacts
+data/v1/*.json
+# Team window snapshots are artifacts (do not commit)
+data/v1/team-window-5/**
+# Exception: calendar_2d.json is a static fallback for the calendar feature
+!data/v1/calendar_2d.json
+
+# Wrangler local config
+.wrangler/
+
+# Build output - REMOVED from .gitignore because dist/ MUST stay in sync with source
+# dist/ is now committed to ensure production bundles are always up-to-date
+# (See scripts/verify-bundle-sync.sh for validation)
+
+# Dependencies
+node_modules/
+
+# Wrangler cache artifacts
+wrangler-account.json
+cf.json

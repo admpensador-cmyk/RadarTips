@@ -1,0 +1,11 @@
+name = "radartips-web"
+main = ".worker-next/index.mjs"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+assets = { directory = ".worker-next/assets", binding = "ASSETS" }
+
+# Optional: if you enable Next.js incremental cache in R2, add this binding:
+# [[r2_buckets]]
+# binding = "NEXT_INC_CACHE_R2_BUCKET"
+# bucket_name = "radartips-next-cache"

@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-03-17T03:57:37.646Z",
+    "source": "stats_supported",
+    "criteria": "at_least_one_fixture_with_valid_statistics",
+    "leagues_source": "data/coverage_allowlist.json",
+    "leagues_count": 24
+  },
+  "competitions": {
+    "2": false,
+    "3": false,
+    "61": false,
+    "62": true,
+    "79": false,
+    "94": false,
+    "98": false,
+    "99": false,
+    "128": true,
+    "135": true,
+    "136": false,
+    "140": true,
+    "141": true,
+    "188": false,
+    "265": true,
+    "288": false,
+    "307": false,
+    "475": false,
+    "477": false,
+    "602": false,
+    "612": false,
+    "624": false,
+    "629": false,
+    "848": false
+  }
+}

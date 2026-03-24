@@ -1,12 +1,13 @@
 ﻿#!/usr/bin/env node
 // RadarTips build-static.mjs
-// Production output hardening: serve commit-SHA versioned app bundle.
+// Production output hardening: serve content-hash versioned app bundle.
 
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +31,11 @@ function copyRecursive(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    if (entry.isFile() && entry.name.toLowerCase() === "calendar_7d.json") {
+    if (entry.isFile() && ["calendar_7d.json", "radar_day.json"].includes(entry.name.toLowerCase())) {
+      continue;
+    }
+
+    if (entry.isFile() && entry.name.toLowerCase().endsWith(".bak")) {
       continue;
     }
 
@@ -46,14 +51,8 @@ function copyRecursive(src, dest) {
 
 copyRecursive(root, dist);
 
-// Ensure dist/assets/js/app.js is a direct copy of assets/js/app.js (no wrappers)
 const srcApp = path.join(root, 'assets', 'js', 'app.js');
 const distAppDir = path.join(dist, 'assets', 'js');
-const distApp = path.join(distAppDir, 'app.js');
-if (fs.existsSync(srcApp)) {
-  fs.mkdirSync(distAppDir, { recursive: true });
-  fs.copyFileSync(srcApp, distApp);
-}
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -62,6 +61,26 @@ function walk(dir, out = []) {
     else out.push(p);
   }
   return out;
+}
+
+function removeLegacyPath(targetPath) {
+  if (!fs.existsSync(targetPath)) return;
+
+  try {
+    fs.rmSync(targetPath, { recursive: true, force: true });
+    return;
+  } catch (error) {
+    if (error?.code !== "EPERM") throw error;
+  }
+
+  const stat = fs.statSync(targetPath);
+  fs.chmodSync(targetPath, 0o666);
+
+  if (stat.isDirectory()) {
+    fs.rmSync(targetPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  } else {
+    fs.unlinkSync(targetPath);
+  }
 }
 
 const htmlFiles = walk(dist).filter((f) => f.endsWith(".html"));
@@ -99,11 +118,15 @@ function ensureBuildMetaTag(html, buildId) {
 
 const commitShort = getGitCommitShort();
 const stamp = nowStamp();
-const buildAssetName = `app.${commitShort}.js`;
+const srcHash = fs.existsSync(srcApp)
+  ? createHash("sha1").update(fs.readFileSync(srcApp)).digest("hex").slice(0, 12)
+  : createHash("sha1").update(String(commitShort || "unknown")).digest("hex").slice(0, 12);
+const buildAssetName = `app.${srcHash}.js`;
 const buildAssetPath = `/assets/js/${buildAssetName}`;
 
 const distAppHashed = path.join(distAppDir, buildAssetName);
 if (fs.existsSync(srcApp)) {
+  fs.mkdirSync(distAppDir, { recursive: true });
   fs.copyFileSync(srcApp, distAppHashed);
 }
 
@@ -120,7 +143,7 @@ for (const file of htmlFiles) {
     .replace(/assets\/app\.[a-f0-9]{7,40}\.js(\?[^"' ]*)?/gi, `assets/js/${buildAssetName}`)
     .replace(/assets\/app\.js(\?[^"' ]*)?/gi, `assets/js/${buildAssetName}`);
 
-  html = ensureBuildMetaTag(html, commitShort);
+  html = ensureBuildMetaTag(html, srcHash);
 
   // Replace build badge content
   html = html.replace(
@@ -129,6 +152,14 @@ for (const file of htmlFiles) {
   );
 
   fs.writeFileSync(file, html, "utf8");
+}
+
+for (const legacyPath of [
+  path.join(dist, 'assets', 'js', 'app.js'),
+  path.join(dist, 'assets', 'app.js'),
+  path.join(dist, 'data', 'v1', 'radar_day.json')
+]) {
+  removeLegacyPath(legacyPath);
 }
 
 console.log(`Build complete. Using versioned bundle ${buildAssetPath}.`);

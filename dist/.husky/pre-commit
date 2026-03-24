@@ -1,0 +1,29 @@
+#!/bin/sh
+# Pre-commit hook: Ensure dist/ is always in sync with source when deploying
+
+set -e
+
+# Check if assets/js/app.js was modified
+if git diff --cached --name-only | grep -q "assets/js/app\.js"; then
+  echo "⚠️  Detected changes to assets/js/app.js"
+  echo "🔄 Regenerating dist/ to ensure production bundle is updated..."
+  
+  # Delete old bundle to force new hash
+  rm -f assets/js/app.*.js 2>/dev/null || true
+  
+  # Rebuild
+  node tools/build-static.mjs
+  
+  # Add dist/ to this commit
+  git add dist/
+  
+  echo "✅ dist/ regenerated and added to commit"
+fi
+
+# Check if any OTHER files in assets/js were modified (excluding app.js)
+if git diff --cached --name-only | grep -q "assets/js/" | grep -v "assets/js/app\.js"; then
+  echo "⚠️  Detected other JS changes in assets/js/"
+  echo "💡 Run 'node tools/build-static.mjs' to regenerate dist/ if needed"
+fi
+
+exit 0
