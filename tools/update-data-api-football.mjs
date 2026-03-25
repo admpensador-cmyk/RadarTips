@@ -1048,7 +1048,9 @@ function parseArgs() {
     stats: false,
     standings: false,
     all: false,
-    mode: "default" // legacy: --mode=daily | --mode=weekly
+    mode: "default", // legacy: --mode=daily | --mode=weekly
+    leagueIds: [],   // --league-id=39 or --league-ids=39,71,...
+    detectStats: false // --detect-stats
   };
 
   // Handle --mode=X (legacy)
@@ -1064,6 +1066,11 @@ function parseArgs() {
     if (arg === "--stats") flags.stats = true;
     if (arg === "--standings") flags.standings = true;
     if (arg === "--all") flags.all = true;
+    if (arg === "--detect-stats") flags.detectStats = true;
+    if (arg.startsWith("--league-id=") || arg.startsWith("--league-ids=")) {
+      const raw = arg.split("=").slice(1).join("=");
+      flags.leagueIds = raw.split(",").map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0);
+    }
   }
 
   // Legacy mode: --mode=daily means run everything
@@ -1092,7 +1099,7 @@ function parseArgs() {
   return flags;
 }
 
-async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
+async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount, detectStatsSupport = false) {
   console.log("\n[CALENDAR] Starting calendar generation...");
   const baseDateBahia = resolveBaseDateInTimezone("America/Bahia");
   const baseDateUtc = resolveBaseDateInTimezone("UTC");
@@ -1146,7 +1153,12 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     throw new Error("[FAIL-CLOSED] Allowlist is empty after league resolution. Aborting calendar publication.");
   }
 
-  const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
+  let statsSupportedMap = {};
+  if (detectStatsSupport) {
+    statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
+  } else {
+    console.log("[SKIP] detectStatsSupportByCompetition skipped (use --detect-stats to enable)");
+  }
 
   // Enrich: form + goals (optional in frequent runs)
   const teamCache = new Map();
@@ -1442,15 +1454,28 @@ async function main() {
   // Resolve leagues (calendar source of truth = coverage allowlist)
   let resolved = [];
   if (flags.calendar) {
-    console.log("\n[LEAGUES] Resolving coverage allowlist leagues...");
-    for (const entry of coverageLeagues) {
+    const leagueIdFilter = new Set(flags.leagueIds);
+    const filteredLeagues = leagueIdFilter.size > 0
+      ? coverageLeagues.filter((e) => leagueIdFilter.has(Number(e?.league_id)))
+      : coverageLeagues;
+
+    if (leagueIdFilter.size > 0) {
+      console.log(`\n[LEAGUES] Filtering allowlist to league_ids: ${Array.from(leagueIdFilter).join(", ")} (${filteredLeagues.length}/${coverageLeagues.length} entries)`);
+      if (!filteredLeagues.length) {
+        throw new Error(`[LEAGUE-FILTER] None of the requested league_ids (${Array.from(leagueIdFilter).join(", ")}) found in coverage_allowlist.json.`);
+      }
+    } else {
+      console.log("\n[LEAGUES] Resolving coverage allowlist leagues...");
+    }
+
+    for (const entry of filteredLeagues) {
       const r = await resolveLeagueById(entry);
       if (r?.league_id) resolved.push(r);
     }
     if (!resolved.length) {
       throw new Error("No leagues resolved from data/coverage_allowlist.json.");
     }
-    console.log(`[OK] Resolved ${resolved.length}/${coverageLeagues.length} leagues from coverage allowlist`);
+    console.log(`[OK] Resolved ${resolved.length}/${filteredLeagues.length} leagues from coverage allowlist`);
   }
 
   // Execute requested tasks
@@ -1464,7 +1489,8 @@ async function main() {
       goalsWindow,
       includeStatsInCalendar,
       "data/coverage_allowlist.json",
-      coverageLeagues.length
+      coverageLeagues.length,
+      flags.detectStats
     );
   } else {
     console.log("[SKIP] calendar not requested");
