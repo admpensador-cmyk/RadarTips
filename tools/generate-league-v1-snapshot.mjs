@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
-import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot } from "./lib/league-v1-snapshot.mjs";
+import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot, enforceLeagueV1StatisticsContract } from "./lib/league-v1-snapshot.mjs";
 
 const KEY =
   (process.env.APIFOOTBALL_KEY && String(process.env.APIFOOTBALL_KEY).trim()) ||
@@ -59,11 +59,11 @@ async function main() {
     api.get("/fixtures", { league: PREMIER_LEAGUE_V1.leagueId, season, timezone: "UTC" })
   ]);
 
-  const snapshot = buildPremierLeagueV1Snapshot({
+  const snapshot = enforceLeagueV1StatisticsContract(buildPremierLeagueV1Snapshot({
     standingsPayload,
     fixturesPayload,
     generatedAtUtc: new Date().toISOString()
-  });
+  }));
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.writeFileSync(OUT_FILE, JSON.stringify(snapshot, null, 2), "utf8");

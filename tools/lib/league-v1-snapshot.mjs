@@ -450,6 +450,118 @@ function deriveCurrentRound(fixtures) {
   return fixtures.recent[0]?.round || "Matchday";
 }
 
+function rankingRowsFromTeams(teams, selector, descending = true) {
+  const source = Array.isArray(teams) ? teams.slice() : [];
+  source.sort((a, b) => {
+    const av = Number(selector(a) || 0);
+    const bv = Number(selector(b) || 0);
+    return descending ? bv - av : av - bv;
+  });
+  return source.map((row) => ({
+    team_id: Number.isFinite(Number(row?.team_id)) ? Number(row.team_id) : null,
+    team: String(row?.team || "").trim(),
+    value: Number(selector(row) || 0),
+    matches: Number(row?.played || row?.matches || 0)
+  }));
+}
+
+export function enforceLeagueV1StatisticsContract(snapshot) {
+  const out = snapshot && typeof snapshot === "object" ? snapshot : {};
+  const statistics = out.statistics && typeof out.statistics === "object" ? out.statistics : {};
+  const standings = Array.isArray(out.standings) ? out.standings : [];
+
+  const standingsByTeam = new Map();
+  for (const row of standings) {
+    const key = teamKey(row?.team);
+    if (!key) continue;
+    standingsByTeam.set(key, row);
+  }
+
+  const legacyRankings = Array.isArray(statistics.team_rankings)
+    ? statistics.team_rankings
+    : Array.isArray(statistics.team_rankings_legacy)
+      ? statistics.team_rankings_legacy
+      : [];
+
+  let teams = Array.isArray(statistics.teams) ? statistics.teams.slice() : [];
+  if (!teams.length && legacyRankings.length) {
+    teams = legacyRankings.map((row) => {
+      const name = String(row?.team || "").trim();
+      const standingRow = standingsByTeam.get(teamKey(name)) || null;
+      const played = Number(standingRow?.played || 0);
+      const goalsFor = Number(row?.goals_for ?? row?.goals_scored ?? 0);
+      const goalsAgainst = Number(row?.goals_against ?? row?.goals_conceded ?? 0);
+      return {
+        team_id: Number.isFinite(Number(standingRow?.team_id)) ? Number(standingRow.team_id) : null,
+        team: name,
+        played,
+        matches: played,
+        goals_for: goalsFor,
+        goals_against: goalsAgainst,
+        goals_for_per_game: played ? Number((goalsFor / played).toFixed(3)) : 0,
+        goals_against_per_game: played ? Number((goalsAgainst / played).toFixed(3)) : 0,
+        over_15_pct: Number(row?.over_15_pct ?? 0),
+        over_25_pct: Number(row?.over_25_pct ?? 0),
+        over_35_pct: Number(row?.over_35_pct ?? 0),
+        btts_pct: Number(row?.btts_pct ?? 0),
+        clean_sheets_pct: Number(row?.clean_sheets_pct ?? 0),
+        failed_to_score_pct: Number(row?.failed_to_score_pct ?? 0),
+        goals_scored: goalsFor,
+        goals_conceded: goalsAgainst
+      };
+    });
+  }
+
+  const teamRankings = statistics.team_rankings && !Array.isArray(statistics.team_rankings)
+    ? statistics.team_rankings
+    : {
+        by_goals_for: rankingRowsFromTeams(teams, (row) => row?.goals_for ?? row?.goals_scored ?? 0, true),
+        by_goals_against: rankingRowsFromTeams(teams, (row) => row?.goals_against ?? row?.goals_conceded ?? 0, false),
+        by_btts_pct: rankingRowsFromTeams(teams, (row) => row?.btts_pct ?? 0, true),
+        by_over_25_pct: rankingRowsFromTeams(teams, (row) => row?.over_25_pct ?? 0, true),
+        by_clean_sheets_pct: rankingRowsFromTeams(teams, (row) => row?.clean_sheets_pct ?? 0, true)
+      };
+
+  const splitsIn = statistics.home_away_splits && typeof statistics.home_away_splits === "object"
+    ? statistics.home_away_splits
+    : {};
+  const home = splitsIn.home && typeof splitsIn.home === "object"
+    ? splitsIn.home
+    : {
+        goals_avg: Number(splitsIn.home_goals_avg ?? 0),
+        btts_pct: Number(splitsIn.home_btts_pct ?? splitsIn.btts_home_pct ?? 0),
+        over_25_pct: Number(splitsIn.home_over_25_pct ?? splitsIn.over_25_home_pct ?? 0),
+        clean_sheets_pct: Number(splitsIn.home_clean_sheets_pct ?? splitsIn.clean_sheets_home_pct ?? 0)
+      };
+  const away = splitsIn.away && typeof splitsIn.away === "object"
+    ? splitsIn.away
+    : {
+        goals_avg: Number(splitsIn.away_goals_avg ?? 0),
+        btts_pct: Number(splitsIn.away_btts_pct ?? splitsIn.btts_away_pct ?? 0),
+        over_25_pct: Number(splitsIn.away_over_25_pct ?? splitsIn.over_25_away_pct ?? 0),
+        clean_sheets_pct: Number(splitsIn.away_clean_sheets_pct ?? splitsIn.clean_sheets_away_pct ?? 0)
+      };
+
+  out.statistics = {
+    ...statistics,
+    teams,
+    team_rankings: {
+      by_goals_for: Array.isArray(teamRankings.by_goals_for) ? teamRankings.by_goals_for : [],
+      by_goals_against: Array.isArray(teamRankings.by_goals_against) ? teamRankings.by_goals_against : [],
+      by_btts_pct: Array.isArray(teamRankings.by_btts_pct) ? teamRankings.by_btts_pct : [],
+      by_over_25_pct: Array.isArray(teamRankings.by_over_25_pct) ? teamRankings.by_over_25_pct : [],
+      by_clean_sheets_pct: Array.isArray(teamRankings.by_clean_sheets_pct) ? teamRankings.by_clean_sheets_pct : []
+    },
+    home_away_splits: {
+      ...splitsIn,
+      home,
+      away
+    }
+  };
+
+  return out;
+}
+
 export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload, generatedAtUtc = new Date().toISOString() }) {
   const standingsRows = mapStandingsRows(standingsPayload);
   const fixtures = buildFixtures(fixturesPayload);
@@ -482,7 +594,7 @@ export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload
     generated_at_utc: generatedAtUtc
   };
 
-  return {
+  const snapshot = {
     competition,
     summary,
     standings: standingsRows,
@@ -548,4 +660,6 @@ export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload
       schema: 1
     }
   };
+
+  return enforceLeagueV1StatisticsContract(snapshot);
 }
