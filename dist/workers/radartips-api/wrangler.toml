@@ -1,28 +1,25 @@
-name = "radartips"
+name = "radartips-api"
 main = "src/index.js"
-compatibility_date = "2026-02-03"
+compatibility_date = "2026-03-15"
+
+routes = [
+	{ pattern = "radartips.com/api/v1/*", zone_name = "radartips.com" },
+	{ pattern = "www.radartips.com/api/v1/*", zone_name = "radartips.com" },
+	{ pattern = "radartips.com/data/coverage_allowlist.json", zone_name = "radartips.com" },
+	{ pattern = "www.radartips.com/data/coverage_allowlist.json", zone_name = "radartips.com" }
+]
 
 [triggers]
-crons = ["* * * * *"]
-
-# Environment Variables (set via: wrangler secret put <NAME>)
-# LIVE_ENABLED: "true" to enable live score fetching (default: false to avoid API quota)
-# APIFOOTBALL_KEY: API key for api-football.com
-# LIVE_LEAGUE_IDS: Comma-separated league IDs for live filtering (optional)
-
-[[kv_namespaces]]
-binding = "RADARTIPS_LIVE"
-id = "7985bdade9df416690cfd0226ebd78d2"
+crons = ["0 */3 * * *"]
 
 [[r2_buckets]]
-binding = "R2"
+binding = "RADARTIPS_DATA"
 bucket_name = "radartips-data"
 
-# Route configuration: mount Worker at /api/* on custom domain
-[[routes]]
-pattern = "radartips.com/api/*"
-zone_name = "radartips.com"
-
-[[routes]]
-pattern = "www.radartips.com/api/*"
-zone_name = "radartips.com"
+[vars]
+SNAPSHOT_MAX_AGE = "12"
+WORKER_VERSION = "2026.03.15"
+# Cron stale refresh dispatch metadata
+GITHUB_REPOSITORY = "admpensador-cmyk/RadarTips"
+GITHUB_WORKFLOW_FILE = "radartips_update_data_api_football.yml"
+GITHUB_WORKFLOW_REF = "main"

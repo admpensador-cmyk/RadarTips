@@ -1,6 +1,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
 const BASE_URL = "https://v3.football.api-sports.io"; // API-FOOTBALL v3 host
+const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 
 function hasApiErrors(json) {
   const e = json?.errors;
@@ -19,6 +20,7 @@ export class ApiFootballClient {
     this.apiKey = opts.apiKey;
     this.minIntervalMs = opts.minIntervalMs ?? 250; // gentle pacing
     this.retries = opts.retries ?? 2;
+    this.requestTimeoutMs = opts.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     this._last = 0;
   }
 
@@ -40,20 +42,28 @@ export class ApiFootballClient {
       await this._throttle();
 
       let res;
+      const controller = new AbortController();
+      const timeoutMs = Number.isFinite(this.requestTimeoutMs) && this.requestTimeoutMs > 0
+        ? this.requestTimeoutMs
+        : DEFAULT_REQUEST_TIMEOUT_MS;
+      const timeoutId = setTimeout(() => controller.abort(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs);
       try {
         res = await fetch(url, {
           method: "GET",
+          signal: controller.signal,
           headers: {
             "x-apisports-key": this.apiKey
           }
         });
       } catch (err) {
+        clearTimeout(timeoutId);
         if (attempt < this.retries) {
           await sleep(800 * (attempt + 1));
           continue;
         }
         throw err;
       }
+      clearTimeout(timeoutId);
 
       const txt = await res.text();
       let json;

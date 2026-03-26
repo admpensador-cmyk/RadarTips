@@ -15,9 +15,15 @@ const ROOT = __dirname;
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'radartips-data';
 
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
+const RADAR_DAY_PATH = path.join(ROOT, 'data', 'v1', 'radar_day.json');
 const COVERAGE_ALLOWLIST_PATH = path.join(ROOT, 'data', 'coverage_allowlist.json');
+const LEAGUES_DIR = path.join(ROOT, 'data', 'v1', 'leagues');
+const PREMIER_LEAGUE_SNAPSHOT_PATH = path.join(LEAGUES_DIR, 'premier-league.json');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
 const SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'calendar_2d.json');
+const SNAPSHOT_LATEST_PATH = path.join(SNAPSHOTS_DIR, 'latest_calendar_2d.json');
+const RADAR_DAY_SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'radar_day.json');
+const RADAR_DAY_SNAPSHOT_LATEST_PATH = path.join(SNAPSHOTS_DIR, 'latest_radar_day.json');
 const BLOCKED_7D_PATTERN = /calendar_7d/i;
 
 function assertNotBlocked7D(value, context) {
@@ -92,18 +98,47 @@ if (!fs.existsSync(SNAPSHOTS_DIR)) {
 
 // Read calendar_2d.json
 const calendar = JSON.parse(fs.readFileSync(CALENDAR_2D_PATH, 'utf8'));
+const radarDay = JSON.parse(fs.readFileSync(RADAR_DAY_PATH, 'utf8'));
 const allowlistIds = readAllowlistLeagueIds();
 
 if (!Array.isArray(calendar?.today) || !Array.isArray(calendar?.tomorrow)) {
   throw new Error('[FAIL-CLOSED] Invalid calendar_2d shape: expected today/tomorrow arrays');
 }
 
+if (!Array.isArray(radarDay?.highlights)) {
+  throw new Error('[FAIL-CLOSED] Invalid radar_day shape: expected highlights array');
+}
+
+if (!fs.existsSync(PREMIER_LEAGUE_SNAPSHOT_PATH)) {
+  throw new Error(`[FAIL-CLOSED] Missing league snapshot file: ${PREMIER_LEAGUE_SNAPSHOT_PATH}`);
+}
+
+const premierLeagueSnapshot = JSON.parse(fs.readFileSync(PREMIER_LEAGUE_SNAPSHOT_PATH, 'utf8'));
+if (!Array.isArray(premierLeagueSnapshot?.standings) || !premierLeagueSnapshot?.competition?.slug) {
+  throw new Error('[FAIL-CLOSED] Invalid premier-league snapshot shape');
+}
+
 assertAllowed(calendar, allowlistIds);
 console.log(`✓ Fail-closed allowlist check passed (${allowlistIds.size} leagues in allowlist)`);
 
-// Write como calendar_2d.json snapshot
+const generatedAtUtc = String(calendar?.meta?.generated_at_utc || new Date().toISOString());
+const baseDate = String(calendar?.meta?.base_date || '').trim();
+const safeGenerated = generatedAtUtc.replace(/[:.]/g, '-');
+const versionSuffix = `${baseDate || 'unknown'}_${safeGenerated}`;
+const versionedKey = `snapshots/calendar_2d_${versionSuffix}.json`;
+const versionedPath = path.join(SNAPSHOTS_DIR, `calendar_2d_${versionSuffix}.json`);
+
+// Write snapshots locally before upload
 fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(calendar, null, 2), 'utf8');
+fs.writeFileSync(SNAPSHOT_LATEST_PATH, JSON.stringify(calendar, null, 2), 'utf8');
+fs.writeFileSync(versionedPath, JSON.stringify(calendar, null, 2), 'utf8');
+fs.writeFileSync(RADAR_DAY_SNAPSHOT_PATH, JSON.stringify(radarDay, null, 2), 'utf8');
+fs.writeFileSync(RADAR_DAY_SNAPSHOT_LATEST_PATH, JSON.stringify(radarDay, null, 2), 'utf8');
 console.log(`✓ Wrote snapshot to: ${SNAPSHOT_PATH}`);
+console.log(`✓ Wrote latest pointer to: ${SNAPSHOT_LATEST_PATH}`);
+console.log(`✓ Wrote versioned snapshot to: ${versionedPath}`);
+console.log(`✓ Wrote radar snapshot to: ${RADAR_DAY_SNAPSHOT_PATH}`);
+console.log(`✓ Wrote radar latest pointer to: ${RADAR_DAY_SNAPSHOT_LATEST_PATH}`);
 
 // Show stats
 const today = calendar.today || [];
@@ -117,82 +152,113 @@ if (today.length > 0) {
 // Now upload to R2 using wrangler
 console.log(`\n📤 Uploading to R2 using wrangler...`);
 
-const wranglerArgs = [
-  'wrangler',
-  'r2',
-  'object',
-  'put',
-  '--remote',
-  `${R2_BUCKET}/snapshots/calendar_2d.json`,
-  '--file',
-  SNAPSHOT_PATH,
-  '--content-type',
-  'application/json'
+const uploadTargets = [
+  { local: SNAPSHOT_PATH, remote: 'snapshots/calendar_2d.json' },
+  { local: SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_calendar_2d.json' },
+  { local: versionedPath, remote: versionedKey },
+  { local: RADAR_DAY_SNAPSHOT_PATH, remote: 'snapshots/radar_day.json' },
+  { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_radar_day.json' },
+  { local: PREMIER_LEAGUE_SNAPSHOT_PATH, remote: 'snapshots/leagues/premier-league.json' },
+  { local: COVERAGE_ALLOWLIST_PATH, remote: 'data/coverage_allowlist.json' }
 ];
 
-assertNotBlocked7D(SNAPSHOT_PATH, 'snapshot_file');
-assertNotBlocked7D(`${R2_BUCKET}/snapshots/calendar_2d.json`, 'remote_key');
-for (const arg of wranglerArgs) {
-  assertNotBlocked7D(arg, 'wrangler_arg');
+async function uploadTarget(target) {
+  const wranglerArgs = [
+    'wrangler',
+    'r2',
+    'object',
+    'put',
+    '--remote',
+    `${R2_BUCKET}/${target.remote}`,
+    '--file',
+    target.local,
+    '--content-type',
+    'application/json'
+  ];
+
+  assertNotBlocked7D(target.local, 'snapshot_file');
+  assertNotBlocked7D(`${R2_BUCKET}/${target.remote}`, 'remote_key');
+  for (const arg of wranglerArgs) {
+    assertNotBlocked7D(arg, 'wrangler_arg');
+  }
+
+  await new Promise((resolve, reject) => {
+    const proc = spawn('npx', wranglerArgs, {
+      cwd: ROOT,
+      stdio: 'inherit',
+      env: process.env,
+      shell: true,
+    });
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`upload_failed remote=${target.remote} code=${code}`));
+      }
+    });
+  });
 }
 
-const proc = spawn('npx', wranglerArgs, {
-  cwd: ROOT,
-  stdio: 'inherit',
-  env: process.env,
-  shell: true,
-});
+async function verifyMainSnapshot() {
+  const verifyArgs = [
+    'wrangler',
+    'r2',
+    'object',
+    'get',
+    '--remote',
+    `${R2_BUCKET}/snapshots/calendar_2d.json`,
+    '--file',
+    'tmp_r2_calendar_2d_verify.json'
+  ];
 
-proc.on('close', (code) => {
-  if (code === 0) {
-    const verifyArgs = [
-      'wrangler',
-      'r2',
-      'object',
-      'get',
-      '--remote',
-      `${R2_BUCKET}/snapshots/calendar_2d.json`,
-      '--file',
-      'tmp_r2_calendar_2d_verify.json'
-    ];
+  for (const arg of verifyArgs) {
+    assertNotBlocked7D(arg, 'verify_arg');
+  }
 
-    for (const arg of verifyArgs) {
-      assertNotBlocked7D(arg, 'verify_arg');
-    }
-
+  await new Promise((resolve, reject) => {
     const verify = spawn('npx', verifyArgs, {
       cwd: ROOT,
       stdio: 'inherit',
       env: process.env,
       shell: true,
     });
-
     verify.on('close', (verifyCode) => {
-      if (verifyCode !== 0) {
-        console.error(`\n❌ Upload succeeded, but verification download failed with code ${verifyCode}`);
-        process.exit(verifyCode);
-      }
-
-      try {
-        const downloaded = JSON.parse(fs.readFileSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json'), 'utf8'));
-        const size = fs.statSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json')).size;
-        console.log(`\n✅ Calendar snapshot uploaded to R2!`);
-        console.log(`   Bucket: ${R2_BUCKET}`);
-        console.log(`   Key: snapshots/calendar_2d.json`);
-        console.log(`   Size: ${size} bytes`);
-        console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
-      } catch (err) {
-        console.error(`\n❌ Verification parse failed: ${err.message}`);
-        process.exit(1);
-      }
-      process.exit(0);
+      if (verifyCode === 0) resolve();
+      else reject(new Error(`verify_failed code=${verifyCode}`));
     });
-  } else {
-    console.error(`\n❌ Upload failed with code ${code}`);
-    console.error(`Make sure you have:`);
-    console.error(`   - npx/wrangler available`);
-    console.error(`   - CLOUDFLARE_ACCOUNT_ID environment variable set`);
-    console.error(`   - Proper R2 perms with API token (via .env.local or env var)`);
-    process.exit(code);
+  });
+}
+
+(async () => {
+  try {
+    for (const target of uploadTargets) {
+      await uploadTarget(target);
+    }
+
+    await verifyMainSnapshot();
+    const downloaded = JSON.parse(fs.readFileSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json'), 'utf8'));
+    const size = fs.statSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json')).size;
+    console.log(`\n✅ Calendar snapshots uploaded to R2!`);
+    console.log(`   Bucket: ${R2_BUCKET}`);
+    console.log(`   Keys:`);
+    console.log(`   - snapshots/calendar_2d.json`);
+    console.log(`   - snapshots/latest_calendar_2d.json`);
+    console.log(`   - ${versionedKey}`);
+    console.log(`   - snapshots/radar_day.json`);
+    console.log(`   - snapshots/latest_radar_day.json`);
+    console.log(`   - snapshots/leagues/premier-league.json`);
+    console.log(`   - data/coverage_allowlist.json`);
+    console.log(`   Size(main): ${size} bytes`);
+    console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
+    console.log(`   radar_day.generated_at_utc: ${radarDay?.generated_at_utc || 'n/a'}`);
+    console.log(`   premier_league.generated_at_utc: ${premierLeagueSnapshot?.meta?.generated_at_utc || 'n/a'}`);
+    process.exit(0);
+  } catch (err) {
+    console.error(`\n❌ Upload failed: ${err.message}`);
+    console.error('Make sure you have:');
+    console.error('   - npx/wrangler available');
+    console.error('   - CLOUDFLARE_ACCOUNT_ID environment variable set');
+    console.error('   - Proper R2 perms with API token (via .env.local or env var)');
+    process.exit(1);
   }
-});
+})();

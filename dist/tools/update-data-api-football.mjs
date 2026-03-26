@@ -18,13 +18,17 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
+import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot } from "./lib/league-v1-snapshot.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
+const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
+const OUT_COVERAGE_REPORT = path.join(OUT_DIR, "calendar_coverage_report.json");
+const OUT_PREMIER_LEAGUE_V1 = path.join(OUT_LEAGUES_DIR, `${PREMIER_LEAGUE_V1.slug}.json`);
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
@@ -154,11 +158,35 @@ function isoDateOnlyInTimezone(date, timezone) {
   return `${y}-${m}-${d}`;
 }
 
+function nowInTimezone(timezone) {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: timezone }));
+}
+
 function addDaysToIsoDate(isoDate, days) {
   const [y, m, d] = String(isoDate).split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
   dt.setUTCDate(dt.getUTCDate() + days);
   return isoDateOnlyUTC(dt);
+}
+
+function isValidIsoDate(ymd) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ""));
+}
+
+function resolveBaseDateInTimezone(timezone) {
+  const override = String(process.env.CAL_BASE_DATE || "").trim();
+  if (override) {
+    if (!isValidIsoDate(override)) {
+      throw new Error(`[CALENDAR] Invalid CAL_BASE_DATE value: ${override}. Expected YYYY-MM-DD.`);
+    }
+    return override;
+  }
+
+  try {
+    return isoDateOnlyInTimezone(new Date(), timezone);
+  } catch (err) {
+    throw new Error(`[CALENDAR] Failed resolving base date for timezone=${timezone}: ${err?.message || err}`);
+  }
 }
 
 function toIso(dt) {
@@ -205,6 +233,118 @@ function extractLeagueIdFromMatch(match) {
   const raw = match?.league_id ?? match?.competition_id ?? null;
   const leagueId = Number(raw);
   return Number.isFinite(leagueId) ? leagueId : null;
+}
+
+function splitCalendar2dByUtcDate(matches, baseDateUtc) {
+  const today = baseDateUtc;
+  const tomorrow = addDaysToIsoDate(baseDateUtc, 1);
+
+  const dayMatches = [];
+  const todayMatches = [];
+  const tomorrowMatches = [];
+
+  for (const m of Array.isArray(matches) ? matches : []) {
+    const kickoffUtc = String(m?.kickoff_utc || "");
+    const dayKey = isValidIsoDate(kickoffUtc.slice(0, 10)) ? kickoffUtc.slice(0, 10) : null;
+    if (!dayKey) continue;
+    if (dayKey === today) {
+      todayMatches.push(m);
+      dayMatches.push(m);
+    } else if (dayKey === tomorrow) {
+      tomorrowMatches.push(m);
+      dayMatches.push(m);
+    }
+  }
+
+  return { today, tomorrow, dayMatches, todayMatches, tomorrowMatches };
+}
+
+function splitCalendar2dByLocalDate(matches, baseDateLocal, timezone) {
+  const today = baseDateLocal;
+  const tomorrow = addDaysToIsoDate(baseDateLocal, 1);
+
+  const todayMatches = [];
+  const tomorrowMatches = [];
+
+  for (const m of Array.isArray(matches) ? matches : []) {
+    const kickoffUtc = String(m?.kickoff_utc || "");
+    const localDate = localDateInTimezone(kickoffUtc, timezone);
+    if (!localDate) continue;
+
+    if (localDate === today) {
+      todayMatches.push(m);
+    } else if (localDate === tomorrow) {
+      tomorrowMatches.push(m);
+    }
+  }
+
+  return {
+    today,
+    tomorrow,
+    todayMatches,
+    tomorrowMatches
+  };
+}
+
+function makeCoverageReport(expectedLeagueIds, collectedFixtures, finalMatches) {
+  const expected = new Set((Array.isArray(expectedLeagueIds) ? expectedLeagueIds : [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id)));
+
+  const collectedByLeague = new Map();
+  for (const fx of Array.isArray(collectedFixtures) ? collectedFixtures : []) {
+    const id = Number(fx?.league?.id);
+    if (!Number.isFinite(id)) continue;
+    collectedByLeague.set(id, (collectedByLeague.get(id) || 0) + 1);
+  }
+
+  const finalByLeague = new Map();
+  for (const m of Array.isArray(finalMatches) ? finalMatches : []) {
+    const id = extractLeagueIdFromMatch(m);
+    if (!Number.isFinite(id)) continue;
+    finalByLeague.set(id, (finalByLeague.get(id) || 0) + 1);
+  }
+
+  const vanished = [];
+  for (const [leagueId, collectedCount] of collectedByLeague.entries()) {
+    const finalCount = finalByLeague.get(leagueId) || 0;
+    if (collectedCount > 0 && finalCount === 0) {
+      vanished.push({ league_id: leagueId, collected_count: collectedCount, final_count: finalCount });
+    }
+  }
+
+  const leaked = [];
+  for (const [leagueId, finalCount] of finalByLeague.entries()) {
+    if (!expected.has(leagueId)) {
+      leaked.push({ league_id: leagueId, final_count: finalCount });
+    }
+  }
+
+  vanished.sort((a, b) => a.league_id - b.league_id);
+  leaked.sort((a, b) => a.league_id - b.league_id);
+
+  return {
+    summary: {
+      expected_leagues: expected.size,
+      collected_fixtures: Array.isArray(collectedFixtures) ? collectedFixtures.length : 0,
+      final_matches: Array.isArray(finalMatches) ? finalMatches.length : 0,
+      vanished_leagues: vanished.length,
+      leaked_leagues: leaked.length
+    },
+    vanished,
+    leaked
+  };
+}
+
+function assertCoverageReportClean(report) {
+  const vanished = Array.isArray(report?.vanished) ? report.vanished : [];
+  const leaked = Array.isArray(report?.leaked) ? report.leaked : [];
+  if (vanished.length || leaked.length) {
+    throw new Error(
+      `[FAIL-CLOSED] calendar coverage gate failed: vanished=${vanished.length} leaked=${leaked.length} ` +
+      `vanished_sample=${JSON.stringify(vanished.slice(0, 10))} leaked_sample=${JSON.stringify(leaked.slice(0, 10))}`
+    );
+  }
 }
 
 function assertCalendarMatchesWithinAllowlist(matches, allowlistLeagueIds, contextLabel) {
@@ -365,9 +505,9 @@ async function resolveLeagueById(entry) {
 }
 
 async function fetchFixturesLeagueRange({ league_id, season, from, to, timezone }) {
-  // /fixtures (api-football v3) rejeita parâmetro desconhecido `page` com:
+  // /fixtures (api-football v3) rejeita par+�metro desconhecido `page` com:
   //   { "page": "The Page field do not exist." }
-  // Portanto: 1 chamada para o range (nossa janela é pequena: 7 dias).
+  // Portanto: 1 chamada para o range (nossa janela +� pequena: 7 dias).
   const json = await trackedApiGet("/fixtures", {
     league: league_id,
     season,
@@ -390,6 +530,27 @@ async function fetchRecentFixtureIdsForLeague({ league_id, season, last = 10, ti
   return resp
     .map((fx) => Number(fx?.fixture?.id))
     .filter((id) => Number.isFinite(id));
+}
+
+async function fetchAllFixturesForLeagueSeason({ league_id, season, timezone }) {
+  const json = await trackedApiGet("/fixtures", {
+    league: league_id,
+    season,
+    timezone
+  }, "fixtures");
+  return Array.isArray(json?.response) ? json.response : [];
+}
+
+async function fetchStandingsForLeagueSeason({ league_id, season }) {
+  const json = await trackedApiGet("/standings", {
+    league: league_id,
+    season
+  }, "others");
+  const response = Array.isArray(json?.response) ? json.response : [];
+  if (!response.length) {
+    throw new Error(`No standings data returned for league_id=${league_id} season=${season}`);
+  }
+  return json;
 }
 
 async function fixtureHasValidStatistics(fixtureId) {
@@ -526,8 +687,8 @@ function buildFormDetails(teamId, fixtures, limitN) {
   for (const fx of fixtures.slice(0, limitN)) {
     const homeId = fx?.teams?.home?.id ?? null;
     const awayId = fx?.teams?.away?.id ?? null;
-    const homeName = fx?.teams?.home?.name ?? "—";
-    const awayName = fx?.teams?.away?.name ?? "—";
+    const homeName = fx?.teams?.home?.name ?? "���";
+    const awayName = fx?.teams?.away?.name ?? "���";
     const gH = fx?.goals?.home;
     const gA = fx?.goals?.away;
 
@@ -542,7 +703,7 @@ function buildFormDetails(teamId, fixtures, limitN) {
       ? (isHome ? Number(gA) : Number(gH))
       : null;
 
-    const score = (gf !== null && ga !== null) ? `${gf}-${ga}` : "—";
+    const score = (gf !== null && ga !== null) ? `${gf}-${ga}` : "���";
     const result = resultFromFixtureForTeam(fx, teamId);
 
     out.push({
@@ -630,26 +791,26 @@ function riskLabelFrom(volScore){
 }
 
 function buildRationale(kind, risk){
-  const r = (risk==="low") ? "baixo" : (risk==="med") ? "médio" : (risk==="high") ? "alto" : "volátil";
+  const r = (risk==="low") ? "baixo" : (risk==="med") ? "m+�dio" : (risk==="high") ? "alto" : "vol+�til";
   if(kind==="goals_over"){
-    return `Tendência de gols acima da média, mas risco ${r} por variação recente.`;
+    return `Tend+�ncia de gols acima da m+�dia, mas risco ${r} por varia+�+�o recente.`;
   }
   if(kind==="goals_under"){
-    return `Perfil mais controlado de gols, mas risco ${r} por oscilações e contexto.`;
+    return `Perfil mais controlado de gols, mas risco ${r} por oscila+�+�es e contexto.`;
   }
   if(kind==="btts_yes"){
-    return `Ambas costumam marcar e conceder, mas risco ${r} pela dependência de eficiência.`;
+    return `Ambas costumam marcar e conceder, mas risco ${r} pela depend+�ncia de efici+�ncia.`;
   }
   if(kind==="btts_no"){
     return `Um lado tende a segurar ou o outro cria pouco, mas risco ${r} por detalhes de jogo.`;
   }
   if(kind==="double_chance"){
-    return `Força relativa e forma favorecem proteção, mas risco ${r} por imprevisibilidade do resultado.`;
+    return `For+�a relativa e forma favorecem prote+�+�o, mas risco ${r} por imprevisibilidade do resultado.`;
   }
   if(kind==="dnb"){
-    return `Favoritismo leve com proteção do empate, mas risco ${r} por margem curta.`;
+    return `Favoritismo leve com prote+�+�o do empate, mas risco ${r} por margem curta.`;
   }
-  return `Cenário provável com risco ${r}.`;
+  return `Cen+�rio prov+�vel com risco ${r}.`;
 }
 
 function mkMarket({key, market, entry, risk, confidence, rationale}){
@@ -694,7 +855,7 @@ function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetail
       entry: "Under 3.5",
       risk: (vol > 1.2 ? "med" : "low"),
       confidence: clamp01(under35Conf + 0.05),
-      rationale: "Proteção contra placar muito elástico."
+      rationale: "Prote+�+�o contra placar muito el+�stico."
     }));
   }else{
     const r = (baseRisk==="high" ? "high" : baseRisk);
@@ -712,7 +873,7 @@ function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetail
       entry: "Over 1.5",
       risk: "med",
       confidence: clamp01(0.58 + (combined - 2.0) * 0.10),
-      rationale: "Se houver gol cedo, a linha tende a ficar viva (risco médio)."
+      rationale: "Se houver gol cedo, a linha tende a ficar viva (risco m+�dio)."
     }));
   }
 
@@ -733,7 +894,7 @@ function buildMarketsForMatch({homeAgg, awayAgg, formHomeDetails, formAwayDetail
     markets.push(mkMarket({
       key: "btts",
       market: "Ambas marcam",
-      entry: "Não",
+      entry: "N+�o",
       risk: r,
       confidence: clamp01(0.54 + (1.1 - Math.min(h.gfpm, a.gfpm)) * 0.08),
       rationale: buildRationale("btts_no", r)
@@ -789,11 +950,23 @@ function mapFixtureToMatchRow(fx, enrich) {
   const league = fx?.league || {};
   const fixture = fx?.fixture || {};
   const teams = fx?.teams || {};
+  const ts = Number(fx?.fixture?.timestamp);
+  const kickoffUtc = Number.isFinite(ts) ? new Date(ts * 1000).toISOString() : toIso(fx?.fixture?.date);
+  const apiDateFromField = String(fixture?.date || "").slice(0, 10);
+  const apiDateFromTimestamp = Number.isFinite(ts) ? new Date(ts * 1000).toISOString().slice(0, 10) : "";
+  const apiDate = isValidIsoDate(apiDateFromField)
+    ? apiDateFromField
+    : (isValidIsoDate(apiDateFromTimestamp) ? apiDateFromTimestamp : null);
 
   return {
-    kickoff_utc: toIso(fixture?.date) || null,
+    kickoff_utc: kickoffUtc || null,
+    api_date: apiDate,
+    status_short: String(fx?.fixture?.status?.short || "").trim().toUpperCase() || null,
+    status_long: String(fx?.fixture?.status?.long || "").trim() || null,
+    season: league?.season ?? null,
     country: league?.country ?? "",
     competition: league?.name ?? "",
+    league_id: league?.id ?? null,
     competition_id: league?.id ?? null,
     fixture_id: fixture?.id ?? null,
 
@@ -845,16 +1018,16 @@ function localDateInTimezone(isoUtc, timezone) {
   return isoDateOnlyInTimezone(new Date(t), timezone);
 }
 
-function splitCalendar2d(matches, timezone) {
-  const today = isoDateOnlyInTimezone(new Date(), timezone);
-  const tomorrow = addDaysToIsoDate(today, 1);
+function splitCalendar2dByApiDate(matches, baseDate) {
+  const today = baseDate;
+  const tomorrow = addDaysToIsoDate(baseDate, 1);
 
   const dayMatches = [];
   const todayMatches = [];
   const tomorrowMatches = [];
 
   for (const m of matches) {
-    const ymd = localDateInTimezone(m?.kickoff_utc, timezone);
+    const ymd = String(m?.api_date || "");
     if (!ymd) continue;
     if (ymd === today) {
       todayMatches.push(m);
@@ -875,7 +1048,9 @@ function parseArgs() {
     stats: false,
     standings: false,
     all: false,
-    mode: "default" // legacy: --mode=daily | --mode=weekly
+    mode: "default", // legacy: --mode=daily | --mode=weekly
+    leagueIds: [],   // --league-id=39 or --league-ids=39,71,...
+    detectStats: false // --detect-stats
   };
 
   // Handle --mode=X (legacy)
@@ -891,6 +1066,11 @@ function parseArgs() {
     if (arg === "--stats") flags.stats = true;
     if (arg === "--standings") flags.standings = true;
     if (arg === "--all") flags.all = true;
+    if (arg === "--detect-stats") flags.detectStats = true;
+    if (arg.startsWith("--league-id=") || arg.startsWith("--league-ids=")) {
+      const raw = arg.split("=").slice(1).join("=");
+      flags.leagueIds = raw.split(",").map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0);
+    }
   }
 
   // Legacy mode: --mode=daily means run everything
@@ -919,10 +1099,14 @@ function parseArgs() {
   return flags;
 }
 
-async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount) {
+async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, goalsWindow, includeStatsInCalendar, leaguesSource, leaguesCount, detectStatsSupport = false) {
   console.log("\n[CALENDAR] Starting calendar generation...");
-  const from = isoDateOnlyInTimezone(new Date(), timezone);
-  const to = addDaysToIsoDate(from, daysAhead);
+  const baseDateBahia = resolveBaseDateInTimezone("America/Bahia");
+  const baseDateUtc = resolveBaseDateInTimezone("UTC");
+  const from = baseDateBahia;
+  const to = addDaysToIsoDate(baseDateBahia, daysAhead);
+
+  console.log("[CALENDAR] base_date_bahia=", baseDateBahia, "from=", from, "to=", to, "tz(fetch)=", timezone);
 
   console.log(`  Range: ${from} -> ${to}`);
   console.log(`[REQ-EST] calendar.resolve_leagues=${resolved.length} calendar.fixtures=${resolved.length}`);
@@ -969,7 +1153,12 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     throw new Error("[FAIL-CLOSED] Allowlist is empty after league resolution. Aborting calendar publication.");
   }
 
-  const statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
+  let statsSupportedMap = {};
+  if (detectStatsSupport) {
+    statsSupportedMap = await detectStatsSupportByCompetition(resolved, fixtures, timezone, allowlistLeagueIds);
+  } else {
+    console.log("[SKIP] detectStatsSupportByCompetition skipped (use --detect-stats to enable)");
+  }
 
   // Enrich: form + goals (optional in frequent runs)
   const teamCache = new Map();
@@ -1036,35 +1225,86 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
 
   const generatedAtUtc = nowIso();
 
-  const split = splitCalendar2d(sorted, timezone);
+  const split = splitCalendar2dByLocalDate(
+    sorted,
+    baseDateBahia,
+    "America/Bahia"
+  );
+  const dayMatches = [...split.todayMatches, ...split.tomorrowMatches];
   assertCalendarMatchesWithinAllowlist(split.todayMatches, allowlistLeagueIds, "calendar_2d today");
   assertCalendarMatchesWithinAllowlist(split.tomorrowMatches, allowlistLeagueIds, "calendar_2d tomorrow");
+
+  const coverageReport = makeCoverageReport(
+    Array.from(allowlistLeagueIds),
+    fixtures,
+    sorted
+  );
+  assertCoverageReportClean(coverageReport);
+
   const calendarDayOut = {
     generated_at_utc: generatedAtUtc,
     form_window: formWindow,
     goals_window: goalsWindow,
-    matches: split.dayMatches
+    matches: dayMatches
   };
   writeJsonAtomic(OUT_CAL_DAY, calendarDayOut);
-  console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${split.dayMatches.length}`);
+  console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${dayMatches.length}`);
 
   const calendar2dOut = {
     meta: {
-      tz: timezone,
+      tz: "America/Bahia",
+      base_date: baseDateBahia,
       today: split.today,
       tomorrow: split.tomorrow,
       generated_at_utc: generatedAtUtc,
+      generated_for_date_basis: "local",
+      generated_for_timezone: "America/Bahia",
+      generated_for_local_date: baseDateBahia,
       form_window: formWindow,
       goals_window: goalsWindow,
       source: "calendar_2d",
       leagues_source: leaguesSource,
-      leagues_count: leaguesCount
+      leagues_count: leaguesCount,
+      allowlist_league_ids: Array.from(allowlistLeagueIds).sort((a, b) => a - b)
     },
+    matches: sorted,
     today: split.todayMatches,
     tomorrow: split.tomorrowMatches
   };
+
+  const forensicToday20Bahia = {};
+  for (const m of (calendar2dOut.today || []).slice(0, 20)) {
+    const dayKey = String(m?.api_date || "");
+    if (!dayKey) continue;
+    forensicToday20Bahia[dayKey] = (forensicToday20Bahia[dayKey] || 0) + 1;
+  }
+  console.log(
+    "[CALENDAR][FORENSIC] dayKey_Bahia_today20=",
+    JSON.stringify(forensicToday20Bahia),
+    "meta.today=",
+    calendar2dOut.meta.today
+  );
+
   writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
   console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
+
+  const coverageReportOut = {
+    meta: {
+      generated_at_utc: generatedAtUtc,
+      source: "calendar_coverage_report",
+      base_date_utc: baseDateUtc,
+      from,
+      to,
+      leagues_source: leaguesSource,
+      leagues_count: leaguesCount
+    },
+    ...coverageReport
+  };
+  writeJsonAtomic(OUT_COVERAGE_REPORT, coverageReportOut);
+  console.log(
+    `[CALENDAR] Wrote ${OUT_COVERAGE_REPORT.replace(process.cwd(), ".")} ` +
+    `vanished=${coverageReport.summary.vanished_leagues} leaked=${coverageReport.summary.leaked_leagues}`
+  );
 
   // Write radar_day.json
   const radarDayOut = {
@@ -1114,7 +1354,7 @@ async function generateStats(flags) {
   console.log("[FUTURE] stats generation placeholder (not implemented yet)");
 }
 
-async function generateStandings(flags) {
+async function generateStandings(flags, resolved, timezone) {
   const cfg = readConfig();
   const mode = String(cfg.standings_mode || "daily");
   const manual = flags.standings || flags.all;
@@ -1133,7 +1373,49 @@ async function generateStandings(flags) {
     return;
   }
 
-  console.log("[FUTURE] standings generation placeholder (not implemented yet)");
+  const resolvedLeagues = Array.isArray(resolved) ? resolved : [];
+  let premierLeague = resolvedLeagues.find((entry) => Number(entry?.league_id) === PREMIER_LEAGUE_V1.leagueId) || null;
+
+  if (!premierLeague) {
+    premierLeague = await resolveLeagueById({
+      league_id: PREMIER_LEAGUE_V1.leagueId,
+      country: PREMIER_LEAGUE_V1.defaultCountry,
+      display_name: PREMIER_LEAGUE_V1.defaultName,
+      type: "league"
+    });
+  }
+
+  if (!premierLeague?.league_id || !Number.isFinite(premierLeague?.season)) {
+    throw new Error(`[LEAGUE-V1] Failed resolving ${PREMIER_LEAGUE_V1.defaultName} season.`);
+  }
+
+  console.log(`\n[LEAGUE-V1] Generating official snapshot for ${PREMIER_LEAGUE_V1.defaultName}...`);
+  console.log(`[LEAGUE-V1] league_id=${premierLeague.league_id} season=${premierLeague.season}`);
+
+  const [standingsPayload, fixturesPayload] = await Promise.all([
+    fetchStandingsForLeagueSeason({
+      league_id: premierLeague.league_id,
+      season: premierLeague.season
+    }),
+    fetchAllFixturesForLeagueSeason({
+      league_id: premierLeague.league_id,
+      season: premierLeague.season,
+      timezone
+    })
+  ]);
+
+  const generatedAtUtc = nowIso();
+  const snapshot = buildPremierLeagueV1Snapshot({
+    standingsPayload,
+    fixturesPayload,
+    generatedAtUtc
+  });
+
+  writeJsonAtomic(OUT_PREMIER_LEAGUE_V1, snapshot);
+  console.log(
+    `[LEAGUE-V1] Wrote ${OUT_PREMIER_LEAGUE_V1.replace(process.cwd(), ".")} ` +
+    `standings=${snapshot.standings.length} upcoming=${snapshot.fixtures.upcoming.length} recent=${snapshot.fixtures.recent.length}`
+  );
 }
 
 async function main() {
@@ -1142,15 +1424,19 @@ async function main() {
   const flags = parseArgs();
   ensureDir(OUT_DIR);
 
-  const timezone = String(cfg.timezone || "UTC");
+  const timezone = "UTC";
   const daysAhead = Number(cfg.days_ahead || 7);
   const formWindow = Number(cfg.form_window || 5);
   const goalsWindow = Number(cfg.goals_window || 5);
   const includeStatsInCalendar = Boolean(flags.stats || flags.all);
 
-  console.log("\\n╔═══════════════════════════════════════════════════════╗");
-  console.log("║    RadarTips API-FOOTBALL Update Pipeline              ║");
-  console.log("╚═══════════════════════════════════════════════════════╝");
+  if (String(cfg.timezone || "").trim() && String(cfg.timezone).trim() !== timezone) {
+    console.warn(`[WARN] Ignoring cfg.timezone=${cfg.timezone}; enforced timezone=${timezone}`);
+  }
+
+  console.log("\\n���������������������������������������������������������������������������������������������������������������������������������������������������������������������������");
+  console.log("���    RadarTips API-FOOTBALL Update Pipeline              ���");
+  console.log("���������������������������������������������������������������������������������������������������������������������������������������������������������������������������");
   console.log(`Timezone: ${timezone}`);
   console.log(`API min interval: ${api.minIntervalMs}ms`);
   console.log(`Windows: form=${formWindow} goals=${goalsWindow}`);
@@ -1168,15 +1454,28 @@ async function main() {
   // Resolve leagues (calendar source of truth = coverage allowlist)
   let resolved = [];
   if (flags.calendar) {
-    console.log("\n[LEAGUES] Resolving coverage allowlist leagues...");
-    for (const entry of coverageLeagues) {
+    const leagueIdFilter = new Set(flags.leagueIds);
+    const filteredLeagues = leagueIdFilter.size > 0
+      ? coverageLeagues.filter((e) => leagueIdFilter.has(Number(e?.league_id)))
+      : coverageLeagues;
+
+    if (leagueIdFilter.size > 0) {
+      console.log(`\n[LEAGUES] Filtering allowlist to league_ids: ${Array.from(leagueIdFilter).join(", ")} (${filteredLeagues.length}/${coverageLeagues.length} entries)`);
+      if (!filteredLeagues.length) {
+        throw new Error(`[LEAGUE-FILTER] None of the requested league_ids (${Array.from(leagueIdFilter).join(", ")}) found in coverage_allowlist.json.`);
+      }
+    } else {
+      console.log("\n[LEAGUES] Resolving coverage allowlist leagues...");
+    }
+
+    for (const entry of filteredLeagues) {
       const r = await resolveLeagueById(entry);
       if (r?.league_id) resolved.push(r);
     }
     if (!resolved.length) {
       throw new Error("No leagues resolved from data/coverage_allowlist.json.");
     }
-    console.log(`[OK] Resolved ${resolved.length}/${coverageLeagues.length} leagues from coverage allowlist`);
+    console.log(`[OK] Resolved ${resolved.length}/${filteredLeagues.length} leagues from coverage allowlist`);
   }
 
   // Execute requested tasks
@@ -1190,7 +1489,8 @@ async function main() {
       goalsWindow,
       includeStatsInCalendar,
       "data/coverage_allowlist.json",
-      coverageLeagues.length
+      coverageLeagues.length,
+      flags.detectStats
     );
   } else {
     console.log("[SKIP] calendar not requested");
@@ -1203,9 +1503,9 @@ async function main() {
   }
 
   if (flags.standings) {
-    await generateStandings(flags);
+    await generateStandings(flags, resolved, timezone);
   } else {
-    await generateStandings(flags);
+    await generateStandings(flags, resolved, timezone);
   }
 
   printRequestMetricsSummary();

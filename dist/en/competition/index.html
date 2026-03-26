@@ -1,16 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <script>location.replace("/en/radar/day/");</script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ME07NV3W8Y"></script>
   <script>window.dataLayer=window.dataLayer||[]; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-ME07NV3W8Y', { anonymize_ip: true });</script>
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Radar | RadarTips</title>
+  <title>Competition Hub v1 | RadarTips</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/style.css" />
+  <link rel="stylesheet" href="/assets/css/league-v1.css" />
+  <meta name="radartips-build" content="080f28b44a69">
 </head>
-<body data-theme="dark">
+<body>
   <header class="topbar">
     <div class="wrap row">
       <a class="brand" href="/en/">Radar<span>Tips</span></a>
@@ -24,27 +28,7 @@
     </div>
   </header>
 
-  <main class="wrap">
-    <div class="crumb" id="crumb"></div>
-
-    <section class="hero">
-      <div>
-        <h1 id="title">Radar</h1>
-        <div class="meta" id="meta"></div>
-      </div>
-      <div class="edition" id="edition"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2 id="panelTitle">Radar</h2>
-        <div class="pill" id="tzPill"></div>
-      </div>
-
-      <div class="grid3" id="top3"></div>
-
-      <div class="list" id="list"></div>
-    </section>
+  <main class="league-v1-page" data-league-v1-root>
   </main>
 
   <footer class="footer">
@@ -57,12 +41,12 @@
   <script>
     window.RT_LOCALE = "en";
   </script>
-  <script src="/assets/radar.js"></script>
+  <script src="/assets/js/league-v1-page.js"></script>
 
   <link rel="stylesheet" href="/assets/match-radar-v2.0baab1022371.css" />
 
 <!-- build-badge -->
-<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: dd8e9d03 | 2026-02-28 15:53</div>
+<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.080f28b44a69.js | 2026-03-26 20:39</div>
 <!-- /build-badge -->
 </body>
 </html>

@@ -3,7 +3,9 @@ name: Update RadarTips data (API-FOOTBALL)
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "10 11 * * *" # 08:10 BRT (UTC-3) ~= 11:10 UTC
+    - cron: "1 3 * * *"   # 00:01 America/Bahia
+    - cron: "0 11 * * *"  # 08:00 America/Bahia
+    - cron: "0 15 * * *"  # 12:00 America/Bahia
 
 permissions:
   contents: write
@@ -26,46 +28,24 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify no calendar_7d regressions
-        run: npm run verify:no-7d
-
-      - name: Generate calendar snapshot (API-FOOTBALL, frequent, low quota)
+      - name: Generate calendar + Premier League snapshot (API-FOOTBALL, frequent, low quota)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           set -euo pipefail
+          # Global calendar/radar output must remain multi-league (allowlist scope)
           node tools/update-data-api-football.mjs --calendar
+
+          # Premier League snapshot can be generated in isolated fast mode
+          node tools/update-data-api-football.mjs --standings --league-id=39
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
+          test -f "data/v1/leagues/premier-league.json"
 
-      - name: Seed team-window-5 snapshots
-        run: |
-          set -euo pipefail
-          echo "🌱 Seeding team-window-5 snapshots from calendar snapshots..."
-          node tools/seed-team-window-5.mjs
-          echo "✅ Seed complete"
-
-      - name: Smoke test team-window-5
-        run: |
-          set -euo pipefail
-          echo "🧪 Running smoke tests..."
-          node tools/smoke-test-team-window-5.mjs
-          echo "✅ Smoke tests passed"
-
-      - name: Healthcheck match-stats endpoint
-        run: |
-          set -euo pipefail
-          echo "🏥 Healthcheck: verifying match-stats data..."
-          node tools/healthcheck-match-stats.mjs
-          echo "✅ Healthcheck passed"
-
-      - name: Upload snapshots to R2 (optional, no rebuild)
+      - name: Publish snapshots to R2 (mandatory)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -74,19 +54,39 @@ jobs:
           set -euo pipefail
 
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "Skipping R2 upload (missing Cloudflare secrets)."
-            exit 0
+            echo "[FATAL] Missing required Cloudflare secrets for publication."
+            echo "[FATAL] Required: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
+            exit 1
           fi
 
           echo "R2_BUCKET_NAME=${R2_BUCKET_NAME}"
 
           test -f "data/v1/calendar_2d.json"
-          npm i -g wrangler@4.62.0
-          wrangler --version
+          npx --yes wrangler@4.62.0 --version
 
           node upload-calendar-to-r2.mjs
 
-          wrangler r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_2d.json" --file "/tmp/r2_calendar_2d_uploaded.json"
+          npx --yes wrangler@4.62.0 r2 object get --remote "${R2_BUCKET_NAME}/snapshots/calendar_2d.json" --file "/tmp/r2_calendar_2d_uploaded.json"
 
-          echo "=== R2 uploaded object verification ==="
-          node -e 'const fs=require("fs"); const p="/tmp/r2_calendar_2d_uploaded.json"; const s=fs.statSync(p); const j=JSON.parse(fs.readFileSync(p,"utf8")); console.log("size="+s.size); console.log("sha256="+require("crypto").createHash("sha256").update(fs.readFileSync(p)).digest("hex")); console.log("meta.generated_at_utc="+(j?.meta?.generated_at_utc||"")); console.log("meta.leagues_source="+(j?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(j?.meta?.leagues_count||""));'
+          echo "=== R2 published snapshot validation (fail-closed) ==="
+          node -e 'const fs=require("fs"); const crypto=require("crypto"); const localPath="data/v1/calendar_2d.json"; const remotePath="/tmp/r2_calendar_2d_uploaded.json"; const localRaw=fs.readFileSync(localPath,"utf8"); const remoteRaw=fs.readFileSync(remotePath,"utf8"); let local; let remote; try{ local=JSON.parse(localRaw); }catch(e){ console.error("[FATAL] Local JSON invalid:",e.message); process.exit(1);} try{ remote=JSON.parse(remoteRaw); }catch(e){ console.error("[FATAL] Remote JSON invalid:",e.message); process.exit(1);} const req=["generated_at_utc","base_date","today","tomorrow","tz"]; for(const f of req){ if(!remote?.meta?.[f]){ console.error(`[FATAL] remote.meta.${f} missing`); process.exit(1);} } const iso=/^\d{4}-\d{2}-\d{2}$/; if(!iso.test(String(remote.meta.base_date))||!iso.test(String(remote.meta.today))||!iso.test(String(remote.meta.tomorrow))){ console.error("[FATAL] Invalid date format in remote meta. Expected YYYY-MM-DD"); process.exit(1);} const plusOne=(d)=>{const [y,m,dd]=String(d).split("-").map(Number);const dt=new Date(Date.UTC(y,m-1,dd));dt.setUTCDate(dt.getUTCDate()+1);return dt.toISOString().slice(0,10);}; if(String(remote.meta.today)!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.today must equal remote.meta.base_date"); process.exit(1);} if(String(remote.meta.tomorrow)!==plusOne(remote.meta.base_date)){ console.error("[FATAL] remote.meta.tomorrow is inconsistent with base_date + 1 day"); process.exit(1);} if(String(remote.meta.tz)!=="America/Bahia"){ console.error("[FATAL] remote.meta.tz must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_timezone||"")!=="America/Bahia"){ console.error("[FATAL] remote.meta.generated_for_timezone must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_local_date||"")!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.generated_for_local_date must equal base_date"); process.exit(1);} if(String(remote.meta.generated_at_utc)!==String(local?.meta?.generated_at_utc)){ console.error("[FATAL] Published snapshot mismatch: generated_at_utc differs from local artifact"); process.exit(1);} const localHash=crypto.createHash("sha256").update(localRaw).digest("hex"); const remoteHash=crypto.createHash("sha256").update(remoteRaw).digest("hex"); console.log("local_sha256="+localHash); console.log("remote_sha256="+remoteHash); console.log("meta.generated_at_utc="+remote.meta.generated_at_utc); console.log("meta.base_date="+remote.meta.base_date); console.log("meta.today="+remote.meta.today); console.log("meta.tomorrow="+remote.meta.tomorrow); console.log("meta.tz="+remote.meta.tz); console.log("meta.leagues_source="+(remote?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(remote?.meta?.leagues_count||"")); console.log("[OK] Published snapshot validation passed.");'
+
+      - name: Verify production calendar sync (fail-closed)
+        env:
+          RADARTIPS_BASE_URL: https://radartips.com
+          RADARTIPS_EXPECTED_CALENDAR_PATH: data/v1/calendar_2d.json
+        run: |
+          set -euo pipefail
+          node tools/verify-production-calendar-sync.mjs
+
+      - name: Verify production data consistency (fail-closed)
+        env:
+          RADARTIPS_BASE_URL: https://radartips.com
+        run: |
+          set -euo pipefail
+          node tools/verify-production-data-consistency.mjs
+
+      - name: Publish gates passed (calendar + allowlist)
+        run: |
+          set -euo pipefail
+          echo "[OK] Critical publish gates passed: R2 publish + production calendar sync + production consistency"

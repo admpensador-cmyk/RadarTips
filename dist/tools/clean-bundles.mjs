@@ -3,8 +3,9 @@
  * Clean old hashed bundles before build
  * 
  * Removes all app.<hash>.js files from:
- * - assets/
- * - dist/assets/
+ * - assets/js/
+ * - dist/assets/js/
+ * - legacy assets/ and dist/assets/
  * 
  * Preserves:
  * - assets/js/app.js (source file)
@@ -17,8 +18,10 @@ import { join } from 'path';
 const ROOT = process.cwd();
 
 const TARGETS = [
-  { dir: join(ROOT, 'assets'), label: 'assets/' },
-  { dir: join(ROOT, 'dist', 'assets'), label: 'dist/assets/' }
+  { dir: join(ROOT, 'assets', 'js'), label: 'assets/js/' },
+  { dir: join(ROOT, 'dist', 'assets', 'js'), label: 'dist/assets/js/' },
+  { dir: join(ROOT, 'assets'), label: 'assets/ (legacy)' },
+  { dir: join(ROOT, 'dist', 'assets'), label: 'dist/assets/ (legacy)' }
 ];
 
 async function cleanBundles() {
@@ -33,8 +36,8 @@ async function cleanBundles() {
       const files = await readdir(target.dir).catch(() => []);
       
       for (const file of files) {
-        // Match pattern: app.<hash>.js (12 hex chars)
-        if (/^app\.[a-f0-9]{12}\.js$/.test(file)) {
+        // Match pattern: app.<hash>.js (supports short git SHA or longer hash)
+        if (/^app\.[a-f0-9]{7,40}\.js$/.test(file)) {
           const fullPath = join(target.dir, file);
           await unlink(fullPath);
           removed++;

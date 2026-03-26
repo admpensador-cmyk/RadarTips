@@ -1,849 +1,599 @@
-var __defProp = Object.defineProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-
-// src/index.js
-var JSON_HEADERS = {
-  "content-type": "application/json; charset=utf-8",
-  "cache-control": "no-store"
+const SNAPSHOT_KEYS = ["snapshots/latest_calendar_2d.json", "snapshots/calendar_2d.json"];
+const RADAR_DAY_KEYS = ["snapshots/latest_radar_day.json", "snapshots/radar_day.json"];
+const ALLOWLIST_KEY = "data/coverage_allowlist.json";
+const LEAGUE_SNAPSHOT_KEYS = {
+  "premier-league": ["snapshots/leagues/premier-league.json"]
 };
+const CACHE_MAX_AGE_SECONDS = 60;
+const CACHE_STALE_WHILE_REVALIDATE_SECONDS = 120;
+const HARD_STALE_HOURS = 24;
 
-var BASE_FILES = [
-  "calendar_day.json",
-  "calendar_2d.json",
-  "radar_day.json",
-  "radar_week.json"
-];
-
-var FINAL_STATUSES = new Set(["FT", "AET", "PEN"]);
-var VOID_STATUSES = new Set(["CANC", "PST", "ABD", "SUSP"]);
-
-function nowIso() {
-  return new Date().toISOString();
+function workerVersion(env) {
+  return String(env.WORKER_VERSION || "dev").trim() || "dev";
 }
-__name(nowIso, "nowIso");
 
-function safeJsonParse(text, fallback = null) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return fallback;
-  }
-}
-__name(safeJsonParse, "safeJsonParse");
-
-function hasStructuredStatsData(value) {
-  if (value === null || value === void 0) return false;
-  if (Array.isArray(value)) {
-    return value.some((item) => hasStructuredStatsData(item));
-  }
-  if (typeof value === "object") {
-    const entries = Object.values(value);
-    if (entries.length === 0) return false;
-    return entries.some((item) => hasStructuredStatsData(item));
-  }
-  if (typeof value === "string") {
-    return value.trim().length > 0;
-  }
-  return true;
-}
-__name(hasStructuredStatsData, "hasStructuredStatsData");
-
-  const defaultStatsSupported = () => ({
-    meta: {
-      source: "stats_supported",
-      warning: "stats_supported_unavailable"
-    },
-    competitions: {}
-  });
-function jsonResponse(data, status = 200, headers = {}) {
+function json(env, data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...JSON_HEADERS, ...headers }
-  });
-}
-__name(jsonResponse, "jsonResponse");
-
-function ok(data) {
-  return jsonResponse({ ok: true, ...data });
-}
-__name(ok, "ok");
-
-function dateKeyUtc(date) {
-  return date.toISOString().slice(0, 10);
-}
-__name(dateKeyUtc, "dateKeyUtc");
-
-function buildDailyCalendar(calendar) {
-  if (!calendar || !Array.isArray(calendar.matches)) return null;
-  const todayKey = dateKeyUtc(new Date());
-  const matches = calendar.matches.filter((m) => {
-    const ko = String(m?.kickoff_utc || "");
-    return ko.startsWith(todayKey);
-  });
-  return {
-    generated_at_utc: calendar.generated_at_utc || nowIso(),
-    form_window: calendar.form_window || 5,
-    goals_window: calendar.goals_window || 5,
-    matches
-  };
-}
-__name(buildDailyCalendar, "buildDailyCalendar");
-
-// Validate timezone string using Intl.DateTimeFormat
-function validateTimezone(tz) {
-  if (!tz || typeof tz !== "string" || tz.trim().length === 0) {
-    return { valid: false, error: "missing_tz" };
-  }
-  
-  try {
-    // Try to create a formatter with this timezone
-    // If timezone is invalid, this throws RangeError
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: tz
-    });
-    return { valid: true };
-  } catch (e) {
-    // Invalid timezone
-    return { valid: false, error: "invalid_tz", tz };
-  }
-}
-__name(validateTimezone, "validateTimezone");
-
-// Format date in local timezone to YYYY-MM-DD
-function formatLocalYMD(date, tz = "UTC") {
-  try {
-    const formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: tz,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    });
-    return formatter.format(date);
-  } catch {
-    // Fallback to UTC if timezone is invalid
-    const formatter = new Intl.DateTimeFormat("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    });
-    return formatter.format(date);
-  }
-}
-__name(formatLocalYMD, "formatLocalYMD");
-
-// Get today and tomorrow in YYYY-MM-DD format for a given timezone
-function getTodayTomorrowYMD(tz = "UTC") {
-  const today = formatLocalYMD(new Date(), tz);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowYMD = formatLocalYMD(tomorrow, tz);
-  return { today, tomorrow: tomorrowYMD };
-}
-__name(getTodayTomorrowYMD, "getTodayTomorrowYMD");
-
-// Classify match by local date (today/tomorrow)
-function classifyMatchByLocalDate(kickoffUTC, tz, todayYMD, tomorrowYMD) {
-  try {
-    const d = new Date(kickoffUTC);
-    const matchLocalYMD = formatLocalYMD(d, tz);
-    
-    if (matchLocalYMD === todayYMD) return "today";
-    if (matchLocalYMD === tomorrowYMD) return "tomorrow";
-    return null;
-  } catch {
-    return null;
-  }
-}
-__name(classifyMatchByLocalDate, "classifyMatchByLocalDate");
-
-
-// Check bindings availability without throwing
-function checkBindings(env) {
-  return {
-    kv: !!env?.RADARTIPS_LIVE,
-    r2: !!env?.R2
-  };
-}
-__name(checkBindings, "checkBindings");
-
-function isDebugEnabled(env) {
-  return env?.DEBUG === "true" || env?.DEBUG === "1";
-}
-__name(isDebugEnabled, "isDebugEnabled");
-
-function debugLog(env, message, extra) {
-  if (!isDebugEnabled(env)) return;
-  if (extra !== undefined) {
-    console.log(`[worker] ${message}`, extra);
-    return;
-  }
-  console.log(`[worker] ${message}`);
-}
-__name(debugLog, "debugLog");
-
-function degradedCalendar2D(tz = "UTC", reason = "no_data") {
-  const { today, tomorrow } = getTodayTomorrowYMD(tz);
-  return {
-    meta: {
-      tz,
-      today,
-      tomorrow,
-      generated_at_utc: nowIso(),
-      form_window: 5,
-      goals_window: 5,
-      source: "degraded",
-      warning: reason
-    },
-    today: [],
-    tomorrow: []
-  };
-}
-__name(degradedCalendar2D, "degradedCalendar2D");
-
-function degradedRadarDay(reason = "no_data") {
-  return {
-    meta: {
-      generated_at_utc: nowIso(),
-      warning: reason
-    },
-    highlights: [],
-    matches: []
-  };
-}
-__name(degradedRadarDay, "degradedRadarDay");
-
-function degradedLive(reason = "no_data") {
-  return {
-    generatedAt: nowIso(),
-    ttlSeconds: 60,
-    states: [],
-    meta: {
-      warning: reason
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-radartips-worker-version": workerVersion(env),
+      ...extraHeaders
     }
+  });
+}
+
+function parseGeneratedAt(snapshot) {
+  const raw = snapshot?.meta?.generated_at_utc || snapshot?.generated_at_utc;
+  if (!raw) return null;
+  const ms = Date.parse(raw);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function snapshotAgeHours(snapshot, nowMs = Date.now()) {
+  const generatedMs = parseGeneratedAt(snapshot);
+  if (!Number.isFinite(generatedMs)) return null;
+  const ageMs = Math.max(0, nowMs - generatedMs);
+  return Number((ageMs / 36e5).toFixed(3));
+}
+
+function pipelineStatusFromAge(ageHours, warnHours) {
+  if (!Number.isFinite(ageHours)) return "critical";
+  if (ageHours > HARD_STALE_HOURS) return "critical";
+  if (ageHours >= warnHours) return "warning";
+  return "healthy";
+}
+
+function evaluateSnapshot(snapshot, env, nowMs = Date.now()) {
+  const warnHours = Number.parseFloat(env.SNAPSHOT_MAX_AGE || "12");
+  const staleWarnHours = Number.isFinite(warnHours) && warnHours > 0 ? warnHours : 12;
+  const ageHours = snapshotAgeHours(snapshot, nowMs);
+  const hasToday = Array.isArray(snapshot?.today) && snapshot.today.length > 0;
+  const hasTomorrow = Array.isArray(snapshot?.tomorrow);
+  const pipelineStatus = pipelineStatusFromAge(ageHours, staleWarnHours);
+
+  if (!Number.isFinite(ageHours)) {
+    return {
+      ok: false,
+      httpStatus: 503,
+      code: "calendar_not_generated",
+      snapshot_age_hours: null,
+      status: "CRITICAL",
+      pipeline_status: "critical",
+      stale_warn_hours: staleWarnHours
+    };
+  }
+
+  if (!hasToday || !hasTomorrow) {
+    return {
+      ok: false,
+      httpStatus: 503,
+      code: "calendar_not_generated",
+      snapshot_age_hours: ageHours,
+      status: "CRITICAL",
+      pipeline_status: pipelineStatus,
+      stale_warn_hours: staleWarnHours
+    };
+  }
+
+  if (ageHours > HARD_STALE_HOURS) {
+    return {
+      ok: false,
+      httpStatus: 503,
+      code: "stale_snapshot",
+      snapshot_age_hours: ageHours,
+      status: "CRITICAL",
+      pipeline_status: "critical",
+      stale_warn_hours: staleWarnHours
+    };
+  }
+
+  return {
+    ok: true,
+    httpStatus: 200,
+    code: ageHours >= staleWarnHours ? "stale" : "ok",
+    snapshot_age_hours: ageHours,
+    status: ageHours >= staleWarnHours ? "STALE" : "OK",
+    pipeline_status: pipelineStatus,
+    stale_warn_hours: staleWarnHours
   };
 }
-__name(degradedLive, "degradedLive");
 
-async function kvGetJson(env, key) {
-  if (!env?.RADARTIPS_LIVE) return null;
-  try {
-    const raw = await env.RADARTIPS_LIVE.get(key);
-    if (!raw) return null;
-    return safeJsonParse(raw, null);
-  } catch (e) {
-    debugLog(env, `kvGetJson error for ${key}`, e.message);
-    return null;
+async function readCalendarSnapshot(env) {
+  let parseErrorKey = null;
+  let parseErrorRaw = null;
+  const candidates = [];
+
+  for (const key of SNAPSHOT_KEYS) {
+    const obj = await env.RADARTIPS_DATA.get(key);
+    if (!obj) continue;
+    const raw = await obj.text();
+    try {
+      const snapshot = JSON.parse(raw);
+      const generatedMs = parseGeneratedAt(snapshot);
+      candidates.push({ snapshot, raw, key, generatedMs: Number.isFinite(generatedMs) ? generatedMs : -1 });
+    } catch {
+      if (!parseErrorKey) {
+        parseErrorKey = key;
+        parseErrorRaw = raw;
+      }
+    }
   }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.generatedMs - a.generatedMs);
+    const freshest = candidates[0];
+    return { snapshot: freshest.snapshot, raw: freshest.raw, key: freshest.key };
+  }
+
+  if (parseErrorKey) {
+    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
+  }
+
+  return { snapshot: null, raw: null, key: null };
 }
-__name(kvGetJson, "kvGetJson");
 
-async function kvPutJson(env, key, value, ttlSeconds) {
-  if (!env?.RADARTIPS_LIVE) {
-    debugLog(env, `KV not available, skipping cache for ${key}`);
-    return;
+async function readRadarDaySnapshot(env) {
+  let parseErrorKey = null;
+  let parseErrorRaw = null;
+  const candidates = [];
+
+  for (const key of RADAR_DAY_KEYS) {
+    const obj = await env.RADARTIPS_DATA.get(key);
+    if (!obj) continue;
+    const raw = await obj.text();
+    try {
+      const snapshot = JSON.parse(raw);
+      const generatedMs = parseGeneratedAt(snapshot);
+      candidates.push({ snapshot, raw, key, generatedMs: Number.isFinite(generatedMs) ? generatedMs : -1 });
+    } catch {
+      if (!parseErrorKey) {
+        parseErrorKey = key;
+        parseErrorRaw = raw;
+      }
+    }
   }
-  try {
-    const opts = ttlSeconds ? { expirationTtl: ttlSeconds } : undefined;
-    await env.RADARTIPS_LIVE.put(key, JSON.stringify(value), opts);
-  } catch (e) {
-    debugLog(env, `kvPutJson error for ${key}`, e.message);
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.generatedMs - a.generatedMs);
+    const freshest = candidates[0];
+    return { snapshot: freshest.snapshot, raw: freshest.raw, key: freshest.key };
   }
+
+  if (parseErrorKey) {
+    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
+  }
+
+  return { snapshot: null, raw: null, key: null };
 }
-__name(kvPutJson, "kvPutJson");
 
-async function r2GetJson(env, key) {
-  if (!env?.R2) {
-    debugLog(env, `R2 not available, cannot get ${key}`);
-    return null;
+async function readLeagueSnapshot(env, slug) {
+  const keys = LEAGUE_SNAPSHOT_KEYS[String(slug || "")] || null;
+  if (!keys) {
+    return { snapshot: null, raw: null, key: null, unsupported: true };
   }
-  try {
-    const obj = await env.R2.get(key);
-    if (!obj) return null;
-    return safeJsonParse(await obj.text(), null);
-  } catch (e) {
-    debugLog(env, `r2GetJson error for ${key}`, e.message);
-    return null;
+
+  let parseErrorKey = null;
+  let parseErrorRaw = null;
+  for (const key of keys) {
+    const obj = await env.RADARTIPS_DATA.get(key);
+    if (!obj) continue;
+    const raw = await obj.text();
+    try {
+      return { snapshot: JSON.parse(raw), raw, key };
+    } catch {
+      if (!parseErrorKey) {
+        parseErrorKey = key;
+        parseErrorRaw = raw;
+      }
+    }
   }
+
+  if (parseErrorKey) {
+    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
+  }
+
+  return { snapshot: null, raw: null, key: null };
 }
-__name(r2GetJson, "r2GetJson");
 
-// Fallback fetch from GitHub Pages when R2 fails
-async function fetchFromGitHub(path) {
-  try {
-    const normalizedPath = String(path || "").replace(/^dist\//, "");
-    const url = `https://radartips.com/${normalizedPath}`;
-    const res = await fetch(url, {
-      cf: { cacheTtl: 300, cacheEverything: true }
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    return null;
+async function serveLeagueSnapshot(env, slug) {
+  const { snapshot, key, parse_error, unsupported } = await readLeagueSnapshot(env, slug);
+  if (unsupported) {
+    return json(env, { error: "unsupported_league_snapshot", slug }, 404);
   }
+  if (!snapshot) {
+    return json(env, {
+      error: parse_error ? "snapshot_invalid_json" : "snapshot_not_found",
+      slug,
+      snapshot_source_key: key
+    }, 404);
+  }
+  return json(env, {
+    ...snapshot,
+    snapshot_source_key: key
+  }, 200, {
+    "cache-control": `public, max-age=${CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${CACHE_STALE_WHILE_REVALIDATE_SECONDS}`
+  });
 }
-__name(fetchFromGitHub, "fetchFromGitHub");
 
-async function r2PutJson(env, key, value) {
-  if (!env?.R2) {
-    debugLog(env, `R2 not available, skipping write for ${key}`);
-    return;
-  }
-  try {
-    await env.R2.put(key, JSON.stringify(value), {
-      httpMetadata: { contentType: "application/json; charset=utf-8" }
-    });
-  } catch (e) {
-    debugLog(env, `r2PutJson error for ${key}`, e.message);
-  }
+function calendarPayload(snapshot, evaluation, sourceKey) {
+  return {
+    ...snapshot,
+    calendar_status: evaluation.status,
+    snapshot_age_hours: evaluation.snapshot_age_hours,
+    pipeline_status: evaluation.pipeline_status,
+    snapshot_source_key: sourceKey
+  };
 }
-__name(r2PutJson, "r2PutJson");
 
-async function listBaseFiles(env) {
-  const out = {};
-  for (const file of BASE_FILES) {
-    out[file] = await r2GetJson(env, `snapshots/${file}`);
-  }
+function extractLeagueIdFromCalendarMatch(match) {
+  const raw = match?.league_id ?? match?.competition_id ?? null;
+  const id = Number(raw);
+  return Number.isFinite(id) ? id : null;
+}
+
+function collectCalendarMatches(snapshot) {
+  if (Array.isArray(snapshot?.matches)) return snapshot.matches;
+  const out = [];
+  if (Array.isArray(snapshot?.today)) out.push(...snapshot.today);
+  if (Array.isArray(snapshot?.tomorrow)) out.push(...snapshot.tomorrow);
   return out;
 }
-__name(listBaseFiles, "listBaseFiles");
 
-function getMissingBindings(bindings, required) {
-  const missing = [];
-  if (required.includes("RADARTIPS_LIVE") && !bindings.kv) missing.push("RADARTIPS_LIVE");
-  if (required.includes("R2") && !bindings.r2) missing.push("R2");
-  return missing;
-}
-__name(getMissingBindings, "getMissingBindings");
-
-function missingBindingsResponse(missing) {
-  return jsonResponse({
-    error: "missing_bindings",
-    missing_bindings: missing,
-    ok: false
-  }, 503);
-}
-__name(missingBindingsResponse, "missingBindingsResponse");
-
-async function handleApiV1(env, pathname, requestUrl) {
-  try {
-    const bindings = checkBindings(env);
-
-    if (pathname === "/v1/health") {
-      return ok({ ts: nowIso() });
-    }
-
-    if (pathname === "/v1/base") {
-      const missing = getMissingBindings(bindings, ["R2"]);
-      if (missing.length) return missingBindingsResponse(missing);
-      return ok({ ts: nowIso(), data: await listBaseFiles(env) });
-    }
-
-  // LIVE endpoint used by the frontend (minute-by-minute polling)
-  // Expected shape: { generatedAt, ttlSeconds, states: [...] }
-  if (pathname === "/v1/live") {
-    // Feature flag: LIVE_ENABLED (default: false to avoid API quota exhaustion)
-    const liveEnabled = String(env.LIVE_ENABLED || "false").toLowerCase() === "true";
-    if (!liveEnabled) {
-      const payload = degradedLive("live_disabled");
-      payload.meta.live_enabled = false;
-      return jsonResponse(payload, 200);
-    }
-
-    const missing = getMissingBindings(bindings, ["RADARTIPS_LIVE"]);
-    if (missing.length) {
-      const payload = degradedLive("no_data");
-      payload.meta.missing_bindings = missing;
-      debugLog(env, "Degraded /v1/live due to missing bindings", missing);
-      return jsonResponse(payload, 200);
-    }
-    const states = await kvGetJson(env, "live_states") || [];
-    return jsonResponse({ generatedAt: nowIso(), ttlSeconds: 60, states });
-    }
-
-    if (pathname === "/v1/live/state") {
-      // Feature flag: LIVE_ENABLED (default: false to avoid API quota exhaustion)
-      const liveEnabled = String(env.LIVE_ENABLED || "false").toLowerCase() === "true";
-      if (!liveEnabled) {
-        return jsonResponse({
-          ok: true,
-          ts: nowIso(),
-          state: {},
-          meta: {
-            warning: "live_disabled",
-            live_enabled: false
-          }
-        }, 200);
-      }
-
-      const missing = getMissingBindings(bindings, ["RADARTIPS_LIVE"]);
-      if (missing.length) {
-        debugLog(env, "Degraded /v1/live/state due to missing bindings", missing);
-        return jsonResponse({
-          ok: true,
-          ts: nowIso(),
-          state: {},
-          meta: {
-            warning: "no_data",
-            missing_bindings: missing
-          }
-        }, 200);
-      }
-      return ok({ ts: nowIso(), state: await kvGetJson(env, "live_state") || {} });
-    }
-
-    if (pathname === "/v1/stats_supported") {
-      const data = await r2GetJson(env, "snapshots/stats_supported.json");
-      if (!data) return jsonResponse(defaultStatsSupported(), 200);
-      return jsonResponse(data, 200);
-    }
-
-    // Serve snapshot files (calendar_day, radar_day, radar_week) from R2
-    if (pathname === "/v1/calendar_day") {
-      const data = await r2GetJson(env, "snapshots/calendar_day.json");
-      if (!data || !Array.isArray(data.matches)) {
-        return jsonResponse({
-          generated_at_utc: nowIso(),
-          form_window: 5,
-          goals_window: 5,
-          matches: [],
-          meta: {
-            warning: "no_data",
-            source: "R2:calendar_day",
-            fail_closed: true
-          }
-        }, 200);
-      }
-      return jsonResponse(data);
-    }
-
-    if (pathname === "/v1/calendar_7d") {
-      return jsonResponse({ error: "calendar_7d_deprecated", use: "/api/v1/calendar_2d" }, 410);
-    }
-
-    // Handler para /v1/calendar_2d
-    if (pathname === "/v1/calendar_2d") {
-      const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
-      const defaultTz = "America/Sao_Paulo";
-      const tzParam = String(url.searchParams.get("tz") || "").trim();
-      const tzCandidate = tzParam || defaultTz;
-      const tzValidation = validateTimezone(tzCandidate);
-      const tz = tzValidation.valid ? tzCandidate : defaultTz;
-      const key = "snapshots/calendar_2d.json";
-      const calendar = await r2GetJson(env, key);
-      if (!calendar || !Array.isArray(calendar.today) || !Array.isArray(calendar.tomorrow)) {
-        const payload = degradedCalendar2D(tz, "no_data");
-        payload.meta.status = "no_data";
-        payload.meta.sourceUsed = "R2:calendar_2d";
-        payload.meta.tz_used = tz;
-        return jsonResponse(payload, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
-      }
-      const response = {
-        meta: {
-          tz,
-          tz_used: tz,
-          status: "ok",
-          sourceUsed: "R2:calendar_2d",
-          generated_at_utc: calendar.generated_at_utc || nowIso()
-        },
-        today: calendar.today,
-        tomorrow: calendar.tomorrow
-      };
-      return jsonResponse(response, 200, { "cache-control": "public, max-age=60, s-maxage=120" });
-    }
-
-    if (pathname === "/v1/radar_day") {
-      const missing = getMissingBindings(bindings, ["R2"]);
-      if (missing.length) {
-        const payload = degradedRadarDay("no_data");
-        payload.meta.missing_bindings = missing;
-        debugLog(env, "Degraded /v1/radar_day due to missing bindings", missing);
-        return jsonResponse(payload, 200);
-      }
-      const data = await r2GetJson(env, "snapshots/radar_day.json");
-      if (!data) return jsonResponse(degradedRadarDay("no_data"), 200);
-      return jsonResponse(data);
-    }
-
-    if (pathname === "/v1/radar_week") {
-      const missing = getMissingBindings(bindings, ["R2"]);
-      if (missing.length) return missingBindingsResponse(missing);
-      const data = await r2GetJson(env, "snapshots/radar_week.json");
-      if (!data) return jsonResponse({ error: "Snapshot not available", ok: false }, 404);
-      return jsonResponse(data);
-    }
-
-    return null;
-  } catch (e) {
-    debugLog(env, "handleApiV1 unexpected error", e.message);
-    if (pathname === "/v1/calendar_2d") {
-      const url = new URL(requestUrl || "http://localhost/v1/calendar_2d");
-      const tz = url.searchParams.get("tz") || "UTC";
-      return jsonResponse(degradedCalendar2D(tz, "no_data"), 200);
-    }
-    if (pathname === "/v1/radar_day") return jsonResponse(degradedRadarDay("no_data"), 200);
-    if (pathname === "/v1/live") return jsonResponse(degradedLive("no_data"), 200);
-    return jsonResponse({ error: "Internal server error", message: e.message, ok: false }, 500);
-  }
-}
-__name(handleApiV1, "handleApiV1");
-
-async function handleTeamStats(env, url) {
-  const urlObj = new URL(url);
-  const teamId = urlObj.searchParams.get("team");
-  const leagueId = urlObj.searchParams.get("league");
-  const season = urlObj.searchParams.get("season");
-
-  if (!teamId || !leagueId || !season) {
-    return jsonResponse(
-      { error: "Missing required params: team, league, season", ok: false },
-      400
-    );
+function validateCalendarAllowlist(snapshot) {
+  const allowlist = Array.isArray(snapshot?.meta?.allowlist_league_ids)
+    ? snapshot.meta.allowlist_league_ids
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id))
+    : [];
+  if (!allowlist.length) {
+    return {
+      ok: false,
+      code: "missing_allowlist_metadata",
+      leakedLeagueIds: []
+    };
   }
 
-  // Try KV cache first (TTL: 6-12 hours) - optional if KV not available
-  const cacheKey = `teamstats:${teamId}:${leagueId}:${season}`;
-  const cached = await kvGetJson(env, cacheKey);
-  if (cached) return jsonResponse(cached);
+  const allowSet = new Set(allowlist);
+  const leaked = new Set();
+  const matches = collectCalendarMatches(snapshot);
 
-  // Fetch from API-FOOTBALL
-  if (!env.APIFOOTBALL_KEY) {
-    return jsonResponse(
-      { error: "API key not configured", ok: false },
-      503
-    );
+  for (const m of matches) {
+    const leagueId = extractLeagueIdFromCalendarMatch(m);
+    if (!Number.isFinite(leagueId)) continue;
+    if (!allowSet.has(leagueId)) leaked.add(leagueId);
   }
 
-  try {
-    const res = await fetch(
-      `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&league=${leagueId}&season=${season}`,
-      {
-        headers: { "x-apisports-key": env.APIFOOTBALL_KEY }
-      }
-    );
+  if (leaked.size > 0) {
+    return {
+      ok: false,
+      code: "out_of_allowlist_competitions",
+      leakedLeagueIds: Array.from(leaked).sort((a, b) => a - b)
+    };
+  }
 
+  return { ok: true, code: "ok", leakedLeagueIds: [] };
+}
+
+function calendarCacheKey(request) {
+  const u = new URL(request.url);
+  u.pathname = "/api/v1/calendar_2d";
+  u.search = "";
+  return new Request(u.toString(), { method: "GET" });
+}
+
+function cacheAgeSeconds(resp, nowMs = Date.now()) {
+  const storedAt = Number(resp.headers.get("x-radartips-cache-stored-at") || "0");
+  if (!Number.isFinite(storedAt) || storedAt <= 0) return Number.POSITIVE_INFINITY;
+  return Math.max(0, (nowMs - storedAt) / 1000);
+}
+
+async function dispatchGeneration(env, ctx) {
+  const repo = env.GITHUB_REPOSITORY;
+  const workflowFile = env.GITHUB_WORKFLOW_FILE || "radartips_update_data_api_football.yml";
+  const ref = env.GITHUB_WORKFLOW_REF || "main";
+  const token = env.GITHUB_TOKEN;
+
+  if (!repo || !token) {
+    return { dispatched: false, reason: "missing_github_config" };
+  }
+
+  const url = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/dispatches`;
+  const body = JSON.stringify({ ref });
+
+  const p = fetch(url, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      accept: "application/vnd.github+json",
+      "content-type": "application/json",
+      "user-agent": "radartips-worker-cron"
+    },
+    body
+  }).then(async (res) => {
     if (!res.ok) {
-      return jsonResponse(
-        { error: "Failed to fetch from API-FOOTBALL", ok: false, status: res.status },
-        res.status
-      );
+      const txt = await res.text();
+      throw new Error(`workflow_dispatch_failed status=${res.status} body=${txt}`);
     }
-
-    const json = await res.json();
-    const statsObj = json?.response;
-
-    if (!statsObj) {
-      return jsonResponse(
-        { error: "No statistics found", ok: false },
-        404
-      );
-    }
-
-    // Extract relevant stats
-    const stats = {
-      games: statsObj.fixtures?.played || null,
-      goals_for_total: statsObj.goals?.for?.total || null,
-      goals_for_avg: statsObj.goals?.for?.average || null,
-      goals_against_total: statsObj.goals?.against?.total || null,
-      goals_against_avg: statsObj.goals?.against?.average || null,
-      corners_total: statsObj.corners?.total || null,
-      corners_avg: statsObj.corners?.average || null,
-      cards_total: statsObj.cards?.yellow?.total || null,
-      cards_avg: statsObj.cards?.yellow?.average || null
-    };
-
-    // Remove null values
-    Object.keys(stats).forEach(k => stats[k] === null && delete stats[k]);
-
-    // Cache for 6 hours (21600 seconds)
-    await kvPutJson(env, cacheKey, stats, 21600);
-
-    return jsonResponse(stats);
-  } catch (e) {
-    debugLog(env, "Team stats fetch error", e.message);
-    return jsonResponse(
-      { error: "Internal server error", ok: false },
-      500
-    );
-  }
-}
-__name(handleTeamStats, "handleTeamStats");
-
-async function handleMatchStats(env, url) {
-  const urlObj = new URL(url);
-  const fixtureId = urlObj.searchParams.get("fixture");
-  if (!fixtureId) {
-    // Log motivo, mas responder 200 com shape esperado
-    console.warn(`[match-stats] Fallback: missing fixture parameter`);
-    return jsonResponse({ ok: true, stats: null, warning: "missing_fixture_id" }, 200);
-  }
-
-  // Check KV cache first (TTL: 12 hours)
-  const cacheKey = `matchstats:${fixtureId}`;
-  const cached = await kvGetJson(env, cacheKey);
-  if (cached && cached?.meta?.source !== "fallback") {
-    if (cached.hasStats !== true) {
-      cached.hasStats = hasStructuredStatsData(cached?.home?.stats) || hasStructuredStatsData(cached?.away?.stats);
-    }
-    debugLog(env, `match-stats cache hit for fixture ${fixtureId}`);
-    return jsonResponse(cached);
-  }
-
-  try {
-    // Try to load fixture metadata from calendar snapshots
-    const calendarDay = await r2GetJson(env, "snapshots/calendar_day.json");
-    const calendar2d = await r2GetJson(env, "snapshots/calendar_2d.json");
-    
-    // If R2 fails, try GitHub fallback
-    const calDay = calendarDay || await fetchFromGitHub("data/v1/calendar_day.json");
-    const cal2d = calendar2d || await fetchFromGitHub("data/v1/calendar_2d.json");
-    
-    const calendars = [calDay, cal2d].filter(Boolean);
-    let fixtureData = null;
-    
-    for (const cal of calendars) {
-      const buckets = [];
-      if (Array.isArray(cal?.matches)) buckets.push(cal.matches);
-      if (Array.isArray(cal?.today)) buckets.push(cal.today);
-      if (Array.isArray(cal?.tomorrow)) buckets.push(cal.tomorrow);
-
-      for (const matches of buckets) {
-        const found = matches.find(m => m.fixture_id === parseInt(fixtureId));
-        if (found) {
-          fixtureData = found;
-          break;
-        }
-      }
-      if (fixtureData) break;
-    }
-
-    if (!fixtureData) {
-      return jsonResponse(
-        { error: "Fixture not found", ok: false },
-        404
-      );
-    }
-
-    const homeId = Number(fixtureData.home_id);
-    const awayId = Number(fixtureData.away_id);
-    const leagueId = Number(fixtureData.league_id ?? fixtureData.competition_id);
-    const fallbackSeasonFromKickoff = Number(String(fixtureData.kickoff_utc || "").slice(0, 4));
-    const season = Number(fixtureData.season || fallbackSeasonFromKickoff || new Date().getUTCFullYear());
-
-    // Try to load team-window-5 snapshots for both teams
-    const seasonCandidates = [season, season - 1, season + 1].filter((v, i, arr) => Number.isFinite(v) && arr.indexOf(v) === i);
-    const keyCandidatesForTeam = (teamId, seasonValue) => [
-      `snapshots/team-window-5/${leagueId}/${seasonValue}/${teamId}.json`,
-      `team-window-5/${leagueId}/${seasonValue}/${teamId}.json`
-    ];
-
-    let homeSnapshot = null;
-    let awaySnapshot = null;
-
-    for (const seasonValue of seasonCandidates) {
-      if (!homeSnapshot) {
-        for (const key of keyCandidatesForTeam(homeId, seasonValue)) {
-          homeSnapshot = await r2GetJson(env, key);
-          if (homeSnapshot) break;
-        }
-      }
-      if (!awaySnapshot) {
-        for (const key of keyCandidatesForTeam(awayId, seasonValue)) {
-          awaySnapshot = await r2GetJson(env, key);
-          if (awaySnapshot) break;
-        }
-      }
-      if (homeSnapshot && awaySnapshot) break;
-    }
-
-    // If R2 fails, try GitHub fallback
-    if (!homeSnapshot) {
-      for (const seasonValue of seasonCandidates) {
-        homeSnapshot = await fetchFromGitHub(`data/v1/team-window-5/${leagueId}/${seasonValue}/${homeId}.json`);
-        if (homeSnapshot) break;
-      }
-    }
-    if (!awaySnapshot) {
-      for (const seasonValue of seasonCandidates) {
-        awaySnapshot = await fetchFromGitHub(`data/v1/team-window-5/${leagueId}/${seasonValue}/${awayId}.json`);
-        if (awaySnapshot) break;
-      }
-    }
-
-    debugLog(env, `handleMatchStats home=${homeId} away=${awayId} league=${leagueId} season=${season}`, { homeSnapshot: !!homeSnapshot, awaySnapshot: !!awaySnapshot });
-
-    const payload = {
-      ok: true,
-      fixture_id: parseInt(fixtureId),
-      fixture_status: fixtureData.status || "NS",
-      home: {
-        id: homeId,
-        name: fixtureData.home,
-        stats: homeSnapshot?.windows || {
-          total_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
-          home_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
-          away_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null }
-        },
-        games_used: homeSnapshot?.meta || { games_used_total: 0, games_used_home: 0, games_used_away: 0 }
-      },
-      away: {
-        id: awayId,
-        name: fixtureData.away,
-        stats: awaySnapshot?.windows || {
-          total_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
-          home_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null },
-          away_last5: { gols_marcados: null, gols_sofridos: null, clean_sheets: null, falha_marcar: null, cartoes_amarelos: null, cantos: null, posse_pct: null }
-        },
-        games_used: awaySnapshot?.meta || { games_used_total: 0, games_used_home: 0, games_used_away: 0 }
-      },
-      meta: {
-        cached_at: nowIso(),
-        source: homeSnapshot || awaySnapshot ? "snapshots" : "fallback",
-        league_id: leagueId,
-        season
-      }
-    };
-
-    payload.hasStats = hasStructuredStatsData(payload.home?.stats) || hasStructuredStatsData(payload.away?.stats);
-
-    // Cache for 12 hours (43200 seconds)
-    await kvPutJson(env, cacheKey, payload, 43200);
-    debugLog(env, `match-stats generated and cached for fixture ${fixtureId}`);
-
-    return jsonResponse(payload);
-  } catch (e) {
-    debugLog(env, "Match stats fetch error", e.message);
-    return jsonResponse(
-      { error: "Internal server error", ok: false },
-      500
-    );
-  }
-}
-__name(handleMatchStats, "handleMatchStats");
-
-async function cronUpdateLive(env) {
-  // Feature flag: LIVE_ENABLED (default: false to avoid API quota exhaustion)
-  const liveEnabled = String(env.LIVE_ENABLED || "false").toLowerCase() === "true";
-  if (!liveEnabled) {
-    debugLog(env, "LIVE disabled via LIVE_ENABLED flag - skipping live fetch");
-    return;
-  }
-
-  const bindings = checkBindings(env);
-  if (!bindings.kv) {
-    debugLog(env, "Skipping cronUpdateLive: RADARTIPS_LIVE binding missing");
-    return;
-  }
-
-  // 1 request per minute total: fetch ALL live fixtures, then filter to our leagues.
-  // League allowlist comes from a comma-separated env var.
-  const rawAllow = String(env.LIVE_LEAGUE_IDS || env.ALLOW_LEAGUE_IDS || "");
-  const allowIds = rawAllow
-    .split(",")
-    .map((s) => Number(String(s).trim()))
-    .filter((n) => Number.isFinite(n));
-  const allowSet = new Set(allowIds);
-
-  if (!env.APIFOOTBALL_KEY) {
-    // No key configured: keep LIVE empty and short-lived.
-    await kvPutJson(env, "live_states", [], 120);
-    return;
-  }
-
-  const res = await fetch("https://v3.football.api-sports.io/fixtures?live=all", {
-    headers: { "x-apisports-key": env.APIFOOTBALL_KEY }
   });
-  if (!res.ok) {
-    // Temporary failure: do not corrupt the UI; keep last value if it exists.
-    return;
+
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(p);
+  } else {
+    await p;
   }
 
-  const json = await res.json();
-  const list = json?.response || [];
-  const states = [];
-
-  for (const fx of list) {
-    const leagueId = Number(fx?.league?.id);
-    if (allowSet.size && !allowSet.has(leagueId)) continue;
-
-    const fixtureId = fx?.fixture?.id;
-    const statusShort = String(fx?.fixture?.status?.short || "").toUpperCase();
-    const elapsed = fx?.fixture?.status?.elapsed ?? null;
-
-    states.push({
-      fixture_id: fixtureId,
-      status_short: statusShort,
-      elapsed,
-      goals_home: fx?.goals?.home ?? null,
-      goals_away: fx?.goals?.away ?? null
-    });
-  }
-
-  await kvPutJson(env, "live_states", states, 120);
+  return { dispatched: true, reason: "workflow_dispatch" };
 }
-__name(cronUpdateLive, "cronUpdateLive");
 
-async function cronFinalizeRecent(env) {
-  try {
-    await cronUpdateLive(env);
-  } catch (e) {
-    debugLog(env, "cronFinalizeRecent failed", e.message);
+async function refreshSnapshotIfStale(env, ctx) {
+  const { snapshot, key } = await readCalendarSnapshot(env);
+  if (!snapshot) {
+    const dispatch = await dispatchGeneration(env, ctx);
+    return {
+      refreshed: false,
+      reason: "snapshot_not_found",
+      snapshot_source_key: key,
+      ...dispatch
+    };
   }
-}
-__name(cronFinalizeRecent, "cronFinalizeRecent");
 
-var index_default = {
+  const evaluation = evaluateSnapshot(snapshot, env, Date.now());
+  if (evaluation.code === "ok") {
+    return {
+      refreshed: false,
+      reason: "fresh_snapshot",
+      snapshot_age_hours: evaluation.snapshot_age_hours,
+      snapshot_source_key: key,
+      pipeline_status: evaluation.pipeline_status,
+      status: evaluation.status
+    };
+  }
+
+  const dispatch = await dispatchGeneration(env, ctx);
+  return {
+    refreshed: false,
+    reason: evaluation.code,
+    snapshot_age_hours: evaluation.snapshot_age_hours,
+    snapshot_source_key: key,
+    pipeline_status: evaluation.pipeline_status,
+    status: evaluation.status,
+    ...dispatch
+  };
+}
+
+async function buildCalendarResponse(env) {
+  const { snapshot, key, parse_error } = await readCalendarSnapshot(env);
+  if (!snapshot) {
+    const code = parse_error ? "snapshot_invalid_json" : "snapshot_not_found";
+    const status = parse_error ? 500 : 404;
+    return {
+      status,
+      body: {
+        error: code,
+        key,
+        pipeline_status: "critical"
+      },
+      cacheable: false
+    };
+  }
+
+  const allowlistValidation = validateCalendarAllowlist(snapshot);
+  if (!allowlistValidation.ok) {
+    return {
+      status: 503,
+      body: {
+        error: allowlistValidation.code,
+        leaked_league_ids: allowlistValidation.leakedLeagueIds,
+        key,
+        pipeline_status: "critical"
+      },
+      cacheable: false
+    };
+  }
+
+  const evaluation = evaluateSnapshot(snapshot, env, Date.now());
+  if (!evaluation.ok) {
+    return {
+      status: evaluation.httpStatus,
+      body: {
+        error: evaluation.code,
+        snapshot_date: snapshot?.meta?.generated_at_utc || null,
+        snapshot_age_hours: evaluation.snapshot_age_hours,
+        calendar_status: evaluation.status,
+        pipeline_status: evaluation.pipeline_status,
+        key,
+        stale_warn_hours: evaluation.stale_warn_hours
+      },
+      cacheable: false
+    };
+  }
+
+  return {
+    status: 200,
+    body: calendarPayload(snapshot, evaluation, key),
+    cacheable: true
+  };
+}
+
+async function serveRadarDay(env) {
+  const { snapshot, key, parse_error } = await readRadarDaySnapshot(env);
+  if (!snapshot) {
+    const code = parse_error ? "snapshot_invalid_json" : "snapshot_not_found";
+    const status = parse_error ? 500 : 404;
+    return json(env, { error: code, key, pipeline_status: "critical" }, status);
+  }
+
+  return json(env, {
+    ...snapshot,
+    snapshot_source_key: key,
+    pipeline_status: "healthy"
+  }, 200, {
+    "cache-control": `public, max-age=${CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${CACHE_STALE_WHILE_REVALIDATE_SECONDS}`
+  });
+}
+
+async function serveCalendar(request, env, ctx) {
+  const cache = caches.default;
+  const key = calendarCacheKey(request);
+  const nowMs = Date.now();
+
+  const cached = await cache.match(key);
+  if (cached) {
+    const age = cacheAgeSeconds(cached, nowMs);
+    if (age <= CACHE_MAX_AGE_SECONDS + CACHE_STALE_WHILE_REVALIDATE_SECONDS) {
+      const out = new Response(cached.body, cached);
+      out.headers.set("x-radartips-cache", age <= CACHE_MAX_AGE_SECONDS ? "HIT" : "STALE");
+      out.headers.set("x-radartips-cache-age-seconds", String(Math.floor(age)));
+      out.headers.set("x-radartips-worker-version", workerVersion(env));
+
+      if (age > CACHE_MAX_AGE_SECONDS) {
+        ctx.waitUntil(revalidateCalendarCache(key, env));
+      }
+      return out;
+    }
+  }
+
+  const built = await buildCalendarResponse(env);
+  const response = json(env, built.body, built.status, {
+    "x-radartips-cache": "MISS"
+  });
+
+  if (built.cacheable) {
+    response.headers.set(
+      "cache-control",
+      `public, max-age=${CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${CACHE_STALE_WHILE_REVALIDATE_SECONDS}`
+    );
+    response.headers.set("x-radartips-cache-stored-at", String(nowMs));
+    ctx.waitUntil(cache.put(key, response.clone()));
+  }
+
+  return response;
+}
+
+async function serveAllowlist(env) {
+  const obj = await env.RADARTIPS_DATA.get(ALLOWLIST_KEY);
+  if (!obj) {
+    return json(env, { error: "allowlist_not_found", key: ALLOWLIST_KEY }, 404);
+  }
+  const raw = await obj.text();
+  return new Response(raw, {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": `public, max-age=300, stale-while-revalidate=600`,
+      "x-radartips-worker-version": workerVersion(env)
+    }
+  });
+}
+
+async function revalidateCalendarCache(key, env) {
+  const built = await buildCalendarResponse(env);
+  if (!built.cacheable) return;
+  const response = json(env, built.body, 200, {
+    "cache-control": `public, max-age=${CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${CACHE_STALE_WHILE_REVALIDATE_SECONDS}`,
+    "x-radartips-cache": "REVALIDATED",
+    "x-radartips-cache-stored-at": String(Date.now())
+  });
+  await caches.default.put(key, response);
+}
+
+async function healthPayload(env) {
+  const { snapshot, key, parse_error } = await readCalendarSnapshot(env);
+  if (!snapshot) {
+    return {
+      httpStatus: parse_error ? 500 : 404,
+      body: {
+        status: "CRITICAL",
+        pipeline_status: "critical",
+        snapshot_date: null,
+        snapshot_age_hours: null,
+        error: parse_error ? "snapshot_invalid_json" : "snapshot_not_found",
+        snapshot_source_key: key
+      }
+    };
+  }
+
+  const evaluation = evaluateSnapshot(snapshot, env, Date.now());
+  return {
+    httpStatus: evaluation.httpStatus,
+    body: {
+      status: evaluation.status,
+      pipeline_status: evaluation.pipeline_status,
+      snapshot_date: snapshot?.meta?.generated_at_utc || null,
+      snapshot_age_hours: evaluation.snapshot_age_hours,
+      stale_warn_hours: evaluation.stale_warn_hours,
+      stale_hard_hours: HARD_STALE_HOURS,
+      snapshot_source_key: key,
+      error: evaluation.ok ? null : evaluation.code
+    }
+  };
+}
+
+export default {
   async fetch(request, env, ctx) {
-    const requestUrl = new URL(request.url);
-    let pathname = requestUrl.pathname;
+    const url = new URL(request.url);
+    const p = url.pathname;
 
-    if (pathname === "/calendar_2d.json" || pathname.endsWith("/calendar_2d.json")) {
-      const redirectUrl = new URL("/api/v1/calendar_2d", requestUrl.origin);
-      const tz = requestUrl.searchParams.get("tz");
-      if (tz) redirectUrl.searchParams.set("tz", tz);
-      return Response.redirect(redirectUrl.toString(), 302);
+    if (p === "/api/v1/calendar_7d" || p === "/api/v1/calendar_7d.json") {
+      return json(env, {
+        error: "endpoint_removed",
+        migration: "/api/v1/calendar_2d"
+      }, 410);
     }
 
-    // Handle health check endpoint (no normalization needed)
-    if (pathname === "/api/__health") {
-      return jsonResponse({ ok: true, ts: nowIso() }, 200);
+    if (p === "/api/v1/calendar_2d" || p === "/api/v1/calendar_2d.json") {
+      return serveCalendar(request, env, ctx);
     }
 
-    // Handle team stats endpoint (no normalization needed, parse query params)
-    if (pathname === "/api/team-stats") {
-      return await handleTeamStats(env, request.url);
+    if (p === "/api/v1/radar_day" || p === "/api/v1/radar_day.json") {
+      return serveRadarDay(env);
     }
 
-    // Handle match stats endpoint (unified home+away stats)
-    if (pathname === "/api/match-stats") {
-      return await handleMatchStats(env, request.url);
+    if (p === "/api/v1/leagues/premier-league" || p === "/api/v1/leagues/premier-league.json") {
+      return serveLeagueSnapshot(env, "premier-league");
     }
 
-    // Support both route styles:
-    // - Worker mounted at /api (e.g. https://radartips.com/api)
-    // - Direct /v1 endpoints (e.g. https://<worker>.workers.dev/v1)
-    // And support frontend expectation: /api/v1/live.json
-    // If the Worker route is mounted at /api, the request pathname arrives as /api/...
-    // We normalize it back to /v1/... for routing.
-    if (pathname.startsWith("/api/")) pathname = pathname.slice(4); // drop '/api'
-
-    // Map /v1/*.json -> /v1/*
-    if (pathname.endsWith(".json")) pathname = pathname.slice(0, -5);
-
-    if (pathname.startsWith("/v1/")) {
-      const res = await handleApiV1(env, pathname, request.url);
-      if (res) return res;
+    if (p === "/api/v1/calendar_health" || p === "/api/v1/health") {
+      const health = await healthPayload(env);
+      return json(env, health.body, health.httpStatus);
     }
 
-    return jsonResponse({ error: "Not found", ok: false }, 404);
+    if (p === "/api/v1/version") {
+      return json(env, {
+        worker_version: workerVersion(env),
+        cache_max_age_seconds: CACHE_MAX_AGE_SECONDS,
+        cache_swr_seconds: CACHE_STALE_WHILE_REVALIDATE_SECONDS,
+        stale_hard_hours: HARD_STALE_HOURS
+      }, 200);
+    }
+
+    if (p === "/api/v1/debug") {
+      const health = await healthPayload(env);
+      return json(env, {
+        ...health.body,
+        snapshot_keys: SNAPSHOT_KEYS,
+        cache_policy: {
+          max_age_seconds: CACHE_MAX_AGE_SECONDS,
+          stale_while_revalidate_seconds: CACHE_STALE_WHILE_REVALIDATE_SECONDS
+        }
+      }, health.httpStatus);
+    }
+
+    if (p === "/api/v1/cron_refresh") {
+      const result = await refreshSnapshotIfStale(env, ctx);
+      return json(env, result, 200);
+    }
+
+    if (p === "/data/coverage_allowlist.json") {
+      return serveAllowlist(env);
+    }
+
+    return json(env, { error: "not_found", path: p }, 404);
   },
 
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(
-      cronUpdateLive(env).catch(e =>
-        debugLog(env, "cron error", e.message)
-      )
-    );
+  async scheduled(controller, env, ctx) {
+    await refreshSnapshotIfStale(env, ctx);
   }
 };
-
-export { index_default as default };

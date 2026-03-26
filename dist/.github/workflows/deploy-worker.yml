@@ -5,32 +5,46 @@ on:
     branches: [main]
     paths:
       - 'workers/radartips-api/src/**'
+      - 'workers/radartips-api/wrangler.toml'
       - '.github/workflows/deploy-worker.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: radartips-worker-deploy
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Install wrangler
-        run: npm install -g wrangler@latest
+          node-version: 20
 
       - name: Deploy Worker to Cloudflare
-        run: |
-          cd workers/radartips-api
-          wrangler publish
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Verify deployment
         run: |
+          set -euo pipefail
+          cd workers/radartips-api
+          npx --yes wrangler@4.62.0 deploy
+
+      - name: Verify worker routes are live
+        run: |
+          set -euo pipefail
           sleep 5
-          curl -s "https://radartips.com/api/match-stats?fixture=1492143" | head -100
-        timeout-minutes: 1
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://radartips.com/api/v1/version")
+          if [[ "${STATUS}" != "200" ]]; then
+            echo "[FATAL] Worker version endpoint returned HTTP ${STATUS} after deploy"
+            exit 1
+          fi
+          echo "[OK] Worker is live (HTTP ${STATUS})"
