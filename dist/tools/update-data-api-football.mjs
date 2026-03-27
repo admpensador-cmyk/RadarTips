@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
-import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot } from "./lib/league-v1-snapshot.mjs";
+import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot, enforceLeagueV1StatisticsContract } from "./lib/league-v1-snapshot.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
@@ -1405,11 +1405,11 @@ async function generateStandings(flags, resolved, timezone) {
   ]);
 
   const generatedAtUtc = nowIso();
-  const snapshot = buildPremierLeagueV1Snapshot({
+  const snapshot = enforceLeagueV1StatisticsContract(buildPremierLeagueV1Snapshot({
     standingsPayload,
     fixturesPayload,
     generatedAtUtc
-  });
+  }));
 
   writeJsonAtomic(OUT_PREMIER_LEAGUE_V1, snapshot);
   console.log(

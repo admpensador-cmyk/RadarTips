@@ -8,6 +8,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
+import {
+  assertPremierLeagueSnapshotHasFixtureCoverage,
+  assertPremierLeagueSnapshotUsesApiFootball
+} from './tools/lib/league-v1-snapshot.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,9 +121,12 @@ const premierLeagueSnapshot = JSON.parse(fs.readFileSync(PREMIER_LEAGUE_SNAPSHOT
 if (!Array.isArray(premierLeagueSnapshot?.standings) || !premierLeagueSnapshot?.competition?.slug) {
   throw new Error('[FAIL-CLOSED] Invalid premier-league snapshot shape');
 }
+assertPremierLeagueSnapshotUsesApiFootball(premierLeagueSnapshot);
+assertPremierLeagueSnapshotHasFixtureCoverage(premierLeagueSnapshot);
 
 assertAllowed(calendar, allowlistIds);
 console.log(`✓ Fail-closed allowlist check passed (${allowlistIds.size} leagues in allowlist)`);
+console.log('✓ Fail-closed Premier League snapshot checks passed (provider=api-football, fixtures present)');
 
 const generatedAtUtc = String(calendar?.meta?.generated_at_utc || new Date().toISOString());
 const baseDate = String(calendar?.meta?.base_date || '').trim();
