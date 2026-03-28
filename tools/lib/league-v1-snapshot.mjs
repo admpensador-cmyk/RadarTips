@@ -1,11 +1,45 @@
-export const PREMIER_LEAGUE_V1 = {
-  slug: "premier-league",
-  leagueId: 39,
-  defaultName: "Premier League",
-  defaultCountry: "England"
-};
+export const LEAGUE_PAGE_V1_DEFINITIONS = Object.freeze([
+  {
+    slug: "premier-league",
+    leagueId: 39,
+    defaultName: "Premier League",
+    defaultCountry: "England"
+  },
+  {
+    slug: "la-liga",
+    leagueId: 140,
+    defaultName: "La Liga",
+    defaultCountry: "Spain"
+  },
+  {
+    slug: "serie-a",
+    leagueId: 135,
+    defaultName: "Serie A",
+    defaultCountry: "Italy"
+  },
+  {
+    slug: "bundesliga",
+    leagueId: 78,
+    defaultName: "Bundesliga",
+    defaultCountry: "Germany"
+  },
+  {
+    slug: "ligue-1",
+    leagueId: 61,
+    defaultName: "Ligue 1",
+    defaultCountry: "France"
+  },
+  {
+    slug: "brasileirao",
+    leagueId: 71,
+    defaultName: "Brasileirao",
+    defaultCountry: "Brazil"
+  }
+]);
 
-const REQUIRED_SOURCE_RESOURCES = ["/standings", "/fixtures", "/teams/statistics"];
+export const PREMIER_LEAGUE_V1 = LEAGUE_PAGE_V1_DEFINITIONS.find((entry) => entry.slug === "premier-league");
+
+const REQUIRED_SOURCE_RESOURCES = ["/standings", "/teams/statistics"];
 const FORBIDDEN_SOURCE_TOKENS = [
   "openfootball",
   "football.json",
@@ -13,14 +47,42 @@ const FORBIDDEN_SOURCE_TOKENS = [
   "compstats_39_2025.json"
 ];
 
+export function getLeaguePageDefinitionBySlug(slug) {
+  return LEAGUE_PAGE_V1_DEFINITIONS.find((entry) => entry.slug === String(slug || "").trim()) || null;
+}
+
+export function getLeaguePageDefinitionByLeagueId(leagueId) {
+  const normalizedLeagueId = Number(leagueId);
+  return LEAGUE_PAGE_V1_DEFINITIONS.find((entry) => entry.leagueId === normalizedLeagueId) || null;
+}
+
 function hasForbiddenLegacyToken(value) {
   const text = String(value || "").toLowerCase();
   return FORBIDDEN_SOURCE_TOKENS.some((token) => text.includes(token));
 }
 
-export function assertPremierLeagueSnapshotUsesApiFootball(snapshot) {
+function resolveLeagueDefinitionForSnapshot(snapshot, expectedDefinition = null) {
+  if (expectedDefinition && typeof expectedDefinition === "object") {
+    return expectedDefinition;
+  }
+
+  const competitionId = Number(snapshot?.competition?.competition_id ?? snapshot?.meta?.source?.league_id);
+  if (Number.isFinite(competitionId)) {
+    const byLeagueId = getLeaguePageDefinitionByLeagueId(competitionId);
+    if (byLeagueId) return byLeagueId;
+  }
+
+  return getLeaguePageDefinitionBySlug(snapshot?.competition?.slug);
+}
+
+export function assertLeaguePageSnapshotUsesApiFootball(snapshot, expectedDefinition = null) {
+  const leagueDefinition = resolveLeagueDefinitionForSnapshot(snapshot, expectedDefinition);
+  if (!leagueDefinition) {
+    throw new Error("[LEAGUE-V1] Unable to resolve fixed league definition for snapshot");
+  }
+
   const competitionId = Number(snapshot?.competition?.competition_id);
-  if (competitionId !== PREMIER_LEAGUE_V1.leagueId) {
+  if (competitionId !== leagueDefinition.leagueId) {
     throw new Error(`[LEAGUE-V1] Invalid competition_id in snapshot: ${competitionId}`);
   }
 
@@ -33,7 +95,7 @@ export function assertPremierLeagueSnapshotUsesApiFootball(snapshot) {
     throw new Error(`[LEAGUE-V1] Invalid source provider: ${String(source.provider || "")}`);
   }
 
-  if (Number(source.league_id) !== PREMIER_LEAGUE_V1.leagueId) {
+  if (Number(source.league_id) !== leagueDefinition.leagueId) {
     throw new Error(`[LEAGUE-V1] Invalid source league_id: ${String(source.league_id || "")}`);
   }
 
@@ -52,20 +114,34 @@ export function assertPremierLeagueSnapshotUsesApiFootball(snapshot) {
   return snapshot;
 }
 
-export function assertPremierLeagueSnapshotHasFixtureCoverage(snapshot) {
-  const upcomingCount = Array.isArray(snapshot?.fixtures?.upcoming) ? snapshot.fixtures.upcoming.length : 0;
-  const recentCount = Array.isArray(snapshot?.fixtures?.recent) ? snapshot.fixtures.recent.length : 0;
+export function assertLeaguePageSnapshotHasCoreData(snapshot) {
+  const standingsCount = Array.isArray(snapshot?.standings) ? snapshot.standings.length : 0;
+  const teamsCount = Array.isArray(snapshot?.statistics?.teams) ? snapshot.statistics.teams.length : 0;
   const matchesCount = Number(snapshot?.summary?.matches_count || snapshot?.statistics?.league?.matches_count || 0);
+  const goalsPerGame = Number(snapshot?.summary?.goals_per_game || snapshot?.statistics?.league?.goals_per_game || 0);
 
+  if (standingsCount <= 0) {
+    throw new Error("[LEAGUE-V1] Snapshot has no standings rows");
+  }
   if (matchesCount <= 0) {
     throw new Error(`[LEAGUE-V1] Invalid matches_count in snapshot: ${matchesCount}`);
   }
-
-  if ((upcomingCount + recentCount) <= 0) {
-    throw new Error("[LEAGUE-V1] Snapshot has no upcoming or recent fixtures");
+  if (!Number.isFinite(goalsPerGame) || goalsPerGame <= 0) {
+    throw new Error(`[LEAGUE-V1] Invalid goals_per_game in snapshot: ${String(snapshot?.statistics?.league?.goals_per_game)}`);
+  }
+  if (teamsCount <= 0) {
+    throw new Error("[LEAGUE-V1] Snapshot has no statistics.teams rows");
   }
 
   return snapshot;
+}
+
+export function assertPremierLeagueSnapshotUsesApiFootball(snapshot) {
+  return assertLeaguePageSnapshotUsesApiFootball(snapshot, PREMIER_LEAGUE_V1);
+}
+
+export function assertPremierLeagueSnapshotHasFixtureCoverage(snapshot) {
+  return assertLeaguePageSnapshotHasCoreData(snapshot);
 }
 
 function toNumber(value, fallback = 0) {
@@ -705,7 +781,13 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
   return out;
 }
 
-export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload, teamStatisticsPayloads, generatedAtUtc = new Date().toISOString() }) {
+export function buildLeagueV1Snapshot({
+  leagueDefinition = PREMIER_LEAGUE_V1,
+  standingsPayload,
+  fixturesPayload,
+  teamStatisticsPayloads,
+  generatedAtUtc = new Date().toISOString()
+}) {
   const standingsRows = mapStandingsRows(standingsPayload);
   const fixtures = buildFixtures(fixturesPayload);
   const teamStatsWithSource = (Array.isArray(teamStatisticsPayloads) ? teamStatisticsPayloads : []).map((payload) =>
@@ -734,10 +816,10 @@ export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload
 
   const leagueBlock = extractLeagueBlock(standingsPayload);
   const competition = {
-    slug: PREMIER_LEAGUE_V1.slug,
-    competition_id: PREMIER_LEAGUE_V1.leagueId,
-    name: leagueBlock?.name || PREMIER_LEAGUE_V1.defaultName,
-    country: leagueBlock?.country || PREMIER_LEAGUE_V1.defaultCountry,
+    slug: leagueDefinition.slug,
+    competition_id: leagueDefinition.leagueId,
+    name: leagueBlock?.name || leagueDefinition.defaultName,
+    country: leagueBlock?.country || leagueDefinition.defaultCountry,
     season: String(leagueBlock?.season || ""),
     current_round: deriveCurrentRound(fixtures),
     generated_at_utc: generatedAtUtc
@@ -793,7 +875,7 @@ export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload
       trend_cards: buildTrendCards(summary),
       team_profiles: buildTeamProfiles(standingsRows, teamStats),
       summary_text:
-        `Premier League ${competition.season} shows ${formatNumber(summary.goals_per_game, 2)} goals per game with BTTS at ` +
+        `${competition.name} ${competition.season} shows ${formatNumber(summary.goals_per_game, 2)} goals per game with BTTS at ` +
         `${formatNumber(summary.btts_pct, 1)}%. Over 2.5 sits at ${formatNumber(summary.over_25_pct, 1)}%, while clean-sheet occurrence is ` +
         `${formatNumber(summary.clean_sheets_pct, 1)}%, indicating a mixed attack-defense profile.`
     },
@@ -801,7 +883,7 @@ export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload
       generated_at_utc: generatedAtUtc,
       source: {
         provider: "api-football",
-        league_id: PREMIER_LEAGUE_V1.leagueId,
+        league_id: leagueDefinition.leagueId,
         season: competition.season,
         resources: ["/standings", "/fixtures", "/teams/statistics"]
       },
@@ -810,7 +892,14 @@ export function buildPremierLeagueV1Snapshot({ standingsPayload, fixturesPayload
     }
   };
 
-  return assertPremierLeagueSnapshotHasFixtureCoverage(
-    assertPremierLeagueSnapshotUsesApiFootball(enforceLeagueV1StatisticsContract(snapshot))
+  return assertLeaguePageSnapshotHasCoreData(
+    assertLeaguePageSnapshotUsesApiFootball(enforceLeagueV1StatisticsContract(snapshot), leagueDefinition)
   );
+}
+
+export function buildPremierLeagueV1Snapshot(args) {
+  return buildLeagueV1Snapshot({
+    leagueDefinition: PREMIER_LEAGUE_V1,
+    ...args
+  });
 }
