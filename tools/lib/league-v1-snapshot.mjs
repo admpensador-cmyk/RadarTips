@@ -278,7 +278,9 @@ function buildFixtures(fixturesPayload) {
 }
 
 function valueAtPath(obj, path) {
-  const parts = String(path || "").split(".").filter(Boolean);
+  const parts = Array.isArray(path)
+    ? path.map((part) => String(part)).filter(Boolean)
+    : String(path || "").split(".").filter(Boolean);
   let current = obj;
   for (const part of parts) {
     if (current == null || typeof current !== "object") return null;
@@ -329,22 +331,50 @@ function normalizeOfficialTeamStatistics(payload) {
   const goalsForPerGame = firstFiniteNumber(response, ["goals.for.average.total"]);
   const goalsAgainstPerGame = firstFiniteNumber(response, ["goals.against.average.total"]);
 
-  const over15Pct = firstFinitePercent(response, ["goals.for.over.1.5", "goals.for.over.1_5"]);
-  const over25Pct = firstFinitePercent(response, ["goals.for.over.2.5", "goals.for.over.2_5"]);
-  const over35Pct = firstFinitePercent(response, ["goals.for.over.3.5", "goals.for.over.3_5"]);
-  const under25Pct = firstFinitePercent(response, ["goals.for.under.2.5", "goals.for.under.2_5"]);
-
-  const bttsPct = firstFinitePercent(response, [
-    "fixtures.both_teams_score.percentage",
-    "fixtures.btts.percentage",
-    "fixtures.btts"
+  const over15Pct = firstFinitePercent(response, [
+    ["goals", "for", "under_over", "1.5", "over"],
+    ["goals", "for", "over", "1.5"],
+    ["goals", "for", "over", "1_5"]
+  ]);
+  const over25Pct = firstFinitePercent(response, [
+    ["goals", "for", "under_over", "2.5", "over"],
+    ["goals", "for", "over", "2.5"],
+    ["goals", "for", "over", "2_5"]
+  ]);
+  const over35Pct = firstFinitePercent(response, [
+    ["goals", "for", "under_over", "3.5", "over"],
+    ["goals", "for", "over", "3.5"],
+    ["goals", "for", "over", "3_5"]
+  ]);
+  const under25Pct = firstFinitePercent(response, [
+    ["goals", "for", "under_over", "2.5", "under"],
+    ["goals", "for", "under", "2.5"],
+    ["goals", "for", "under", "2_5"]
   ]);
 
-  const cleanSheetsPct = firstFinitePercent(response, ["clean_sheet.percentage"])
-    ?? percentFromCounts(firstFiniteNumber(response, ["clean_sheet.total"]), played);
+  const bttsPct = firstFinitePercent(response, [
+    ["both_teams_score", "percentage"],
+    ["fixtures", "both_teams_score", "percentage"],
+    ["fixtures", "btts", "percentage"]
+  ]);
 
-  const failedToScorePct = firstFinitePercent(response, ["failed_to_score.percentage"])
-    ?? percentFromCounts(firstFiniteNumber(response, ["failed_to_score.total"]), played);
+  const cleanSheetsPct = firstFinitePercent(response, [
+    ["clean_sheet", "percentage"],
+    ["clean_sheet", "total", "percentage"]
+  ]) ?? percentFromCounts(firstFiniteNumber(response, [
+    ["clean_sheet", "total"],
+    ["clean_sheet", "total", "total"],
+    ["fixtures", "clean_sheet", "total"]
+  ]), played);
+
+  const failedToScorePct = firstFinitePercent(response, [
+    ["failed_to_score", "percentage"],
+    ["failed_to_score", "total", "percentage"]
+  ]) ?? percentFromCounts(firstFiniteNumber(response, [
+    ["failed_to_score", "total"],
+    ["failed_to_score", "total", "total"],
+    ["fixtures", "failed_to_score", "total"]
+  ]), played);
 
   if (!Number.isFinite(played) || played <= 0) {
     throw new Error(`[LEAGUE-V1] Invalid official played count for team=${teamName || teamId}`);
