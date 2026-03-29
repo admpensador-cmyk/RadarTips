@@ -773,7 +773,17 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
       ...(row?.corners_against_avg != null ? { corners_against_avg: row.corners_against_avg } : {}),
       ...(row?.yellow_cards_for_avg != null ? { yellow_cards_for_avg: row.yellow_cards_for_avg } : {}),
       ...(row?.yellow_cards_against_avg != null ? { yellow_cards_against_avg: row.yellow_cards_against_avg } : {}),
-      ...(row?.red_cards_for_total != null ? { red_cards_for_total: row.red_cards_for_total } : {})
+      ...(row?.red_cards_for_total != null ? { red_cards_for_total: row.red_cards_for_total } : {}),
+      ...(row?.red_cards_for_avg != null ? { red_cards_for_avg: row.red_cards_for_avg } : {}),
+      ...(row?.red_cards_against_total != null ? { red_cards_against_total: row.red_cards_against_total } : {}),
+      ...(row?.red_cards_against_avg != null ? { red_cards_against_avg: row.red_cards_against_avg } : {}),
+      ...(row?.shots_for_avg != null ? { shots_for_avg: row.shots_for_avg } : {}),
+      ...(row?.shots_against_avg != null ? { shots_against_avg: row.shots_against_avg } : {}),
+      ...(row?.possession_avg != null ? { possession_avg: row.possession_avg } : {}),
+      ...(row?.fouls_for_avg != null ? { fouls_for_avg: row.fouls_for_avg } : {}),
+      ...(row?.fouls_against_avg != null ? { fouls_against_avg: row.fouls_against_avg } : {}),
+      ...(row?.offsides_for_avg != null ? { offsides_for_avg: row.offsides_for_avg } : {}),
+      ...(row?.offsides_against_avg != null ? { offsides_against_avg: row.offsides_against_avg } : {})
     };
   });
 
@@ -1048,7 +1058,17 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
       corners_against_avg: total.corners_against_avg ?? null,
       yellow_cards_for_avg: total.yellow_cards_for_avg ?? null,
       yellow_cards_against_avg: total.yellow_cards_against_avg ?? null,
-      red_cards_for_total: total.red_cards_for_total ?? null
+      red_cards_for_total: total.red_cards_for_total ?? null,
+      red_cards_for_avg: total.red_cards_for_avg ?? null,
+      red_cards_against_total: total.red_cards_against_total ?? null,
+      red_cards_against_avg: total.red_cards_against_avg ?? null,
+      shots_for_avg: total.shots_for_avg ?? null,
+      shots_against_avg: total.shots_against_avg ?? null,
+      possession_avg: total.possession_avg ?? null,
+      fouls_for_avg: total.fouls_for_avg ?? null,
+      fouls_against_avg: total.fouls_against_avg ?? null,
+      offsides_for_avg: total.offsides_for_avg ?? null,
+      offsides_against_avg: total.offsides_against_avg ?? null
     };
   });
 
@@ -1129,6 +1149,35 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
     ? Number(((totalYellowHome + totalYellowAway) / yellowPlayed).toFixed(2))
     : null;
 
+  // Red cards average (only if bootstrapped)
+  const homeRedAggs = homeAggs.filter((h) => h.red_cards_for_total !== null);
+  const awayRedAggs = awayAggs.filter((a) => a.red_cards_for_total !== null);
+  const totalRedHome = homeRedAggs.reduce((s, h) => s + h.red_cards_for_total, 0);
+  const totalRedAway = awayRedAggs.reduce((s, a) => s + a.red_cards_for_total, 0);
+  const redPlayed = homeRedAggs.reduce((s, h) => s + h.played, 0);
+  const redCardsAvg = redPlayed > 0
+    ? Number(((totalRedHome + totalRedAway) / redPlayed).toFixed(2))
+    : null;
+
+  const homeCornersAvg = totalHomePlayed > 0
+    ? Number((homeCornerAggs.reduce((s, h) => s + h.corners_for_total, 0) / totalHomePlayed).toFixed(2))
+    : null;
+  const awayCornersAvg = totalAwayPlayed > 0
+    ? Number((awayCornerAggs.reduce((s, a) => s + a.corners_for_total, 0) / totalAwayPlayed).toFixed(2))
+    : null;
+  const homeYellowAvg = totalHomePlayed > 0
+    ? Number((homeYellowAggs.reduce((s, h) => s + h.yellow_cards_for_total, 0) / totalHomePlayed).toFixed(2))
+    : null;
+  const awayYellowAvg = totalAwayPlayed > 0
+    ? Number((awayYellowAggs.reduce((s, a) => s + a.yellow_cards_for_total, 0) / totalAwayPlayed).toFixed(2))
+    : null;
+  const homeRedAvg = totalHomePlayed > 0
+    ? Number((homeRedAggs.reduce((s, h) => s + h.red_cards_for_total, 0) / totalHomePlayed).toFixed(2))
+    : null;
+  const awayRedAvg = totalAwayPlayed > 0
+    ? Number((awayRedAggs.reduce((s, a) => s + a.red_cards_for_total, 0) / totalAwayPlayed).toFixed(2))
+    : null;
+
   // ── summary ─────────────────────────────────────────────────────────────
   const summary = {
     matches_count: matchesCount,
@@ -1147,6 +1196,12 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
 
   // ── home/away splits for statistics.home_away_splits ────────────────────
   const splits = {
+    total: {
+      goals_avg: goalsPerGame,
+      btts_pct: leagueBttsPct,
+      over_25_pct: leagueOver25Pct,
+      clean_sheets_pct: leagueCleanSheetsPct
+    },
     home: {
       goals_avg: homeGoalsAvg,
       btts_pct: homeBttsPct,
@@ -1212,8 +1267,47 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
     away_clean_sheets_pct: awayCleanSheetsPct,
     corners_avg: cornersAvg,
     yellow_cards_avg: yellowCardsAvg,
+    red_cards_avg: redCardsAvg,
     shots_avg: null,
     possession_avg: null
+  };
+
+  const advanced = {
+    corners: {
+      total_avg: cornersAvg,
+      home_avg: homeCornersAvg,
+      away_avg: awayCornersAvg,
+      by_team: teamStats
+        .filter((t) => t.corners_for_avg !== null)
+        .map((t) => ({
+          team_id: t.team_id,
+          team: t.team,
+          corners_for_avg: t.corners_for_avg,
+          corners_against_avg: t.corners_against_avg
+        }))
+        .sort((a, b) => Number(b.corners_for_avg || 0) - Number(a.corners_for_avg || 0))
+    },
+    cards: {
+      yellow_avg: yellowCardsAvg,
+      red_avg: redCardsAvg,
+      home_yellow_avg: homeYellowAvg,
+      away_yellow_avg: awayYellowAvg,
+      home_red_avg: homeRedAvg,
+      away_red_avg: awayRedAvg,
+      by_team: teamStats
+        .filter((t) => t.yellow_cards_for_avg !== null || t.red_cards_for_avg !== null)
+        .map((t) => ({
+          team_id: t.team_id,
+          team: t.team,
+          yellow_cards_for_avg: t.yellow_cards_for_avg,
+          yellow_cards_against_avg: t.yellow_cards_against_avg,
+          red_cards_for_avg: t.red_cards_for_avg,
+          red_cards_against_avg: t.red_cards_against_avg,
+          red_cards_for_total: t.red_cards_for_total,
+          red_cards_against_total: t.red_cards_against_total
+        }))
+        .sort((a, b) => Number(b.yellow_cards_for_avg || 0) - Number(a.yellow_cards_for_avg || 0))
+    }
   };
 
   const topTeamRankingRows = teamRankings.by_goals_for.slice(0, 20).map((row) => {
@@ -1246,6 +1340,9 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
       team_rankings_legacy: topTeamRankingRows,
       home_away_splits: splits
     },
+    splits,
+    advanced,
+    rankings: teamRankings,
     trends: {
       trend_cards: buildTrendCards(summary),
       team_profiles: buildTeamProfiles(standingsRows, teamStats),

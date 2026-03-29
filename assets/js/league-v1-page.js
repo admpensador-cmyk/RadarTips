@@ -184,6 +184,7 @@
     var rankings = statistics.team_rankings && !Array.isArray(statistics.team_rankings) ? statistics.team_rankings : null;
     var splits = statistics.home_away_splits || {};
     var trends = snapshot && snapshot.trends ? snapshot.trends : {};
+    var advanced = snapshot && snapshot.advanced && typeof snapshot.advanced === 'object' ? snapshot.advanced : {};
 
     function asRankingRows(rows) {
       return (Array.isArray(rows) ? rows : []).slice(0, 5);
@@ -229,6 +230,9 @@
     if (leagueOver35Pct != null) leagueMetricRows.push({ label: 'Over 3.5', value: asPctOrDash(leagueOver35Pct) });
     if (leagueCleanSheetsPct != null) leagueMetricRows.push({ label: 'Clean sheets', value: asPctOrDash(leagueCleanSheetsPct) });
     if (leagueFailedToScorePct != null) leagueMetricRows.push({ label: 'Failed to score', value: asPctOrDash(leagueFailedToScorePct) });
+    if (numberOrNull(leagueStats.corners_avg) != null) leagueMetricRows.push({ label: 'Corners avg', value: asNumOrDash(leagueStats.corners_avg, 2) });
+    if (numberOrNull(leagueStats.yellow_cards_avg) != null) leagueMetricRows.push({ label: 'Yellow cards avg', value: asNumOrDash(leagueStats.yellow_cards_avg, 2) });
+    if (numberOrNull(leagueStats.red_cards_avg) != null) leagueMetricRows.push({ label: 'Red cards avg', value: asNumOrDash(leagueStats.red_cards_avg, 2) });
 
     function splitMetric(metric, homeValue, awayValue, formatter) {
       var h = numberOrNull(homeValue);
@@ -316,10 +320,20 @@
             over_35_pct: asPctOrDash(row.over_35_pct),
             btts_pct: asPctOrDash(row.btts_pct),
             clean_sheets_pct: asPctOrDash(row.clean_sheets_pct),
-            failed_to_score_pct: asPctOrDash(row.failed_to_score_pct)
+            failed_to_score_pct: asPctOrDash(row.failed_to_score_pct),
+            corners_for_avg: asNumOrDash(row.corners_for_avg, 2),
+            corners_against_avg: asNumOrDash(row.corners_against_avg, 2),
+            yellow_cards_for_avg: asNumOrDash(row.yellow_cards_for_avg, 2),
+            yellow_cards_against_avg: asNumOrDash(row.yellow_cards_against_avg, 2),
+            red_cards_for_avg: asNumOrDash(row.red_cards_for_avg, 2),
+            red_cards_against_avg: asNumOrDash(row.red_cards_against_avg, 2)
           };
         }),
-        splits: splitRows
+        splits: splitRows,
+        advanced: {
+          corners: advanced.corners || null,
+          cards: advanced.cards || null
+        }
       },
       trends: {
         cards: Array.isArray(trends.trend_cards) && trends.trend_cards.length ? trends.trend_cards.map(function (card) {
@@ -511,6 +525,7 @@
     });
     var teamsRows = Array.isArray(safeStatistics.teams) ? safeStatistics.teams : [];
     var splitRowsData = Array.isArray(safeStatistics.splits) ? safeStatistics.splits : [];
+    var advancedStats = safeStatistics.advanced && typeof safeStatistics.advanced === 'object' ? safeStatistics.advanced : {};
 
     var blocks = [];
 
@@ -550,9 +565,36 @@
           '<td>' + esc(valueOrDash(row.btts_pct)) + '</td>' +
           '<td>' + esc(valueOrDash(row.clean_sheets_pct)) + '</td>' +
           '<td>' + esc(valueOrDash(row.failed_to_score_pct)) + '</td>' +
+          '<td>' + esc(valueOrDash(row.corners_for_avg)) + '</td>' +
+          '<td>' + esc(valueOrDash(row.yellow_cards_for_avg)) + '</td>' +
+          '<td>' + esc(valueOrDash(row.red_cards_for_avg)) + '</td>' +
         '</tr>';
       }).join('');
-      blocks.push(section('Team table', '', '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Team</th><th>P</th><th>GF</th><th>GA</th><th>GF/P</th><th>GA/P</th><th>O1.5</th><th>O2.5</th><th>O3.5</th><th>BTTS</th><th>CS</th><th>FTS</th></tr></thead><tbody>' + teamRows + '</tbody></table></div>'));
+      blocks.push(section('Team table', '', '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Team</th><th>P</th><th>GF</th><th>GA</th><th>GF/P</th><th>GA/P</th><th>O1.5</th><th>O2.5</th><th>O3.5</th><th>BTTS</th><th>CS</th><th>FTS</th><th>Corners</th><th>Yellow</th><th>Red</th></tr></thead><tbody>' + teamRows + '</tbody></table></div>'));
+    }
+
+    var advancedCards = [];
+    if (advancedStats.corners && typeof advancedStats.corners === 'object') {
+      if (numberOrNull(advancedStats.corners.total_avg) != null) {
+        advancedCards.push({ label: 'Corners avg (league)', value: asNumOrDash(advancedStats.corners.total_avg, 2) });
+      }
+      if (numberOrNull(advancedStats.corners.home_avg) != null && numberOrNull(advancedStats.corners.away_avg) != null) {
+        advancedCards.push({ label: 'Corners home/away', value: asNumOrDash(advancedStats.corners.home_avg, 2) + ' / ' + asNumOrDash(advancedStats.corners.away_avg, 2) });
+      }
+    }
+    if (advancedStats.cards && typeof advancedStats.cards === 'object') {
+      if (numberOrNull(advancedStats.cards.yellow_avg) != null) {
+        advancedCards.push({ label: 'Yellow cards avg', value: asNumOrDash(advancedStats.cards.yellow_avg, 2) });
+      }
+      if (numberOrNull(advancedStats.cards.red_avg) != null) {
+        advancedCards.push({ label: 'Red cards avg', value: asNumOrDash(advancedStats.cards.red_avg, 2) });
+      }
+    }
+    if (advancedCards.length) {
+      var advancedRows = '<div class="league-v1-grid-4">' + advancedCards.map(function (stat) {
+        return '<article class="league-v1-card"><h4>' + esc(stat.label) + '</h4><p>' + esc(stat.value) + '</p></article>';
+      }).join('') + '</div>';
+      blocks.push(section('Advanced corners and cards', '', advancedRows));
     }
 
     if (splitRowsData.length) {

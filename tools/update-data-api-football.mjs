@@ -30,7 +30,8 @@ import {
 import {
   buildRawFixtureRecord,
   buildAllTeamFacts,
-  buildAllTeamAggregates
+  buildAllTeamAggregates,
+  buildScopedTeamAggregates
 } from "./lib/league-fixtures-model.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
@@ -52,9 +53,19 @@ function getFixtureModelStoragePaths(slug) {
     meta: path.join(leagueDir, "meta.json"),
     rawFixtures: path.join(leagueDir, "raw-fixtures.json"),
     fixtureStats: path.join(leagueDir, "fixture-stats.json"),
+    rawEvents: path.join(leagueDir, "raw-events.json"),
     teamFacts: path.join(leagueDir, "team-facts.json"),
     teamAggregates: path.join(leagueDir, "team-aggregates.json")
   };
+}
+
+function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return null;
+  }
 }
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
@@ -1530,6 +1541,14 @@ async function generateStandings(flags, resolved, timezone) {
         console.log(`[LEAGUE-V1] Using fixture-derived model for ${leagueDefinition.slug}`);
 
         const fixtureModelPaths = getFixtureModelStoragePaths(leagueDefinition.slug);
+        const persistedFixtureStats = readJsonIfExists(fixtureModelPaths.fixtureStats);
+        const persistedRawEvents = readJsonIfExists(fixtureModelPaths.rawEvents);
+        const fixtureStatsMap = persistedFixtureStats?.stats && typeof persistedFixtureStats.stats === "object"
+          ? persistedFixtureStats.stats
+          : {};
+        const fixtureEventsMap = persistedRawEvents?.events && typeof persistedRawEvents.events === "object"
+          ? persistedRawEvents.events
+          : {};
 
         const FINISHED = new Set(["FT", "AET", "PEN"]);
         const finishedRaw = allSeasonFixturesRaw
@@ -1545,10 +1564,13 @@ async function generateStandings(flags, resolved, timezone) {
           throw new Error(`[LEAGUE-V1] No finished fixtures found for ${leagueDefinition.slug} season=${resolvedLeague.season}`);
         }
 
-        const allFacts = buildAllTeamFacts(finishedRaw, {}); // no fixture stats in CI (saves quota)
+        const allFacts = buildAllTeamFacts(finishedRaw, fixtureStatsMap, fixtureEventsMap);
         const teamAggregates = buildAllTeamAggregates(allFacts, resolvedLeague.league_id, resolvedLeague.season);
+        const scopedAggregates = buildScopedTeamAggregates(allFacts, resolvedLeague.season);
         const teamCount = Object.keys(teamAggregates).length;
         const generatedAtUtc = nowIso();
+        const fixtureStatsCount = Object.values(fixtureStatsMap).filter((s) => s && !s.unavailable).length;
+        const fixtureStatsUnavailable = Object.values(fixtureStatsMap).filter((s) => s && s.unavailable).length;
 
         writeJsonAtomic(fixtureModelPaths.meta, {
           league_id: resolvedLeague.league_id,
@@ -1581,12 +1603,27 @@ async function generateStandings(flags, resolved, timezone) {
             season: resolvedLeague.season,
             generated_at_utc: generatedAtUtc,
             total_checked: finishedRaw.length,
-            stats_count: 0,
-            unavailable_count: finishedRaw.length,
-            has_advanced_stats: false,
-            skipped_reason: "daily standings pipeline runs without /fixtures/statistics to save quota"
+            stats_count: fixtureStatsCount,
+            unavailable_count: fixtureStatsUnavailable,
+            has_advanced_stats: fixtureStatsCount > 0,
+            source: fixtureStatsCount > 0
+              ? "persisted_fixture_stats_layer"
+              : "daily standings pipeline without persisted fixture stats"
           },
-          stats: {}
+          stats: fixtureStatsMap
+        });
+
+        writeJsonAtomic(fixtureModelPaths.rawEvents, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            events_count: Object.keys(fixtureEventsMap).length,
+            source: Object.keys(fixtureEventsMap).length > 0
+              ? "persisted_fixture_events_layer"
+              : "daily standings pipeline without persisted fixture events"
+          },
+          events: fixtureEventsMap
         });
 
         writeJsonAtomic(fixtureModelPaths.teamFacts, {
@@ -1596,7 +1633,7 @@ async function generateStandings(flags, resolved, timezone) {
             generated_at_utc: generatedAtUtc,
             fact_count: allFacts.length,
             fixture_count: finishedRaw.length,
-            has_advanced_stats: false
+            has_advanced_stats: fixtureStatsCount > 0 || Object.keys(fixtureEventsMap).length > 0
           },
           facts: allFacts
         });
@@ -1608,9 +1645,10 @@ async function generateStandings(flags, resolved, timezone) {
             generated_at_utc: generatedAtUtc,
             team_count: teamCount,
             fixture_count: finishedRaw.length,
-            has_advanced_stats: false
+            has_advanced_stats: fixtureStatsCount > 0 || Object.keys(fixtureEventsMap).length > 0
           },
-          teams: teamAggregates
+          teams: teamAggregates,
+          scopes: scopedAggregates
         });
 
         console.log(`[LEAGUE-V1] fixture-model: ${finishedRaw.length} finished fixtures, ${teamCount} teams, ${allFacts.length} facts`);

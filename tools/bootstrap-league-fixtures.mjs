@@ -14,6 +14,7 @@
  *   data/v1/leagues/{slug}/meta.json              — bootstrap metadata
  *   data/v1/leagues/{slug}/raw-fixtures.json      — Layer 1: finished fixtures
  *   data/v1/leagues/{slug}/fixture-stats.json     — Layer 1+: per-fixture stats (optional)
+ *   data/v1/leagues/{slug}/raw-events.json        — Layer 1.5: per-fixture events fallback (optional)
  *   data/v1/leagues/{slug}/team-facts.json        — Layer 2: per-fixture team records
  *   data/v1/leagues/{slug}/team-aggregates.json   — Layer 3: per-team aggregates
  *   data/v1/leagues/{slug}.json                   — Layer 4: serving snapshot
@@ -25,6 +26,7 @@
  *   --league-id=39          League ID (default: 39 = Premier League)
  *   --season=2025           Season year (default: current)
  *   --skip-fixture-stats    Skip /fixtures/statistics calls (save quota, corners/cards = null)
+ *   --skip-fixture-events   Skip /fixtures/events fallback for cards when stats are missing
  *   --resume                Re-use existing raw-fixtures.json, only fetch missing stats
  *   --dry-run               Show quota estimate without hitting the API
  *   --limit=N               Only process first N finished fixtures (for testing)
@@ -43,8 +45,10 @@ import { PREMIER_LEAGUE_V1, LEAGUE_PAGE_V1_DEFINITIONS } from "./lib/league-v1-s
 import {
   buildRawFixtureRecord,
   buildFixtureStatsRecord,
+  buildFixtureEventsRecord,
   buildAllTeamFacts,
-  buildAllTeamAggregates
+  buildAllTeamAggregates,
+  buildScopedTeamAggregates
 } from "./lib/league-fixtures-model.mjs";
 import { buildLeagueV1SnapshotFromTeamAggregates, assertLeaguePageSnapshotHasCoreData } from "./lib/league-v1-snapshot.mjs";
 
@@ -83,6 +87,7 @@ function parseBootstrapArgs() {
     leagueId: 39,
     season: null,
     skipFixtureStats: false,
+    skipFixtureEvents: false,
     resume: false,
     dryRun: false,
     limit: null
@@ -92,6 +97,7 @@ function parseBootstrapArgs() {
     if (arg.startsWith("--league-id=")) flags.leagueId = Number(arg.split("=")[1]);
     if (arg.startsWith("--season=")) flags.season = Number(arg.split("=")[1]);
     if (arg === "--skip-fixture-stats") flags.skipFixtureStats = true;
+    if (arg === "--skip-fixture-events") flags.skipFixtureEvents = true;
     if (arg === "--resume") flags.resume = true;
     if (arg === "--dry-run") flags.dryRun = true;
     if (arg.startsWith("--limit=")) flags.limit = Number(arg.split("=")[1]);
@@ -152,15 +158,31 @@ const QUOTA = {
     console.log("");
     if (fixtureCount > 0) {
       const statsRequests = this.byEndpoint.get("/fixtures/statistics") || 0;
+      const eventsRequests = this.byEndpoint.get("/fixtures/events") || 0;
+      const fixturesRequests = this.byEndpoint.get("/fixtures") || 0;
+      const standingsRequests = this.byEndpoint.get("/standings") || 0;
       console.log(`  Finished fixtures    : ${fixtureCount}`);
       if (statsRequests > 0) {
         console.log(`  Req / fixture (stats): ${(statsRequests / fixtureCount).toFixed(2)}`);
       }
+      if (eventsRequests > 0) {
+        console.log(`  Req / fixture (events): ${(eventsRequests / fixtureCount).toFixed(2)}`);
+      }
+      const totalPerFixture = (statsRequests + eventsRequests) / fixtureCount;
+      console.log(`  Req / fixture (detail total): ${totalPerFixture.toFixed(2)}`);
+
+      console.log("  Endpoint totals (measured):");
+      console.log(`    /fixtures            : ${fixturesRequests}`);
+      console.log(`    /fixtures/statistics : ${statsRequests}`);
+      console.log(`    /fixtures/events     : ${eventsRequests}`);
+      console.log(`    /standings           : ${standingsRequests}`);
+
       const costWithoutStats = 3; // leagues + fixtures + standings
-      const costWithStats = costWithoutStats + fixtureCount;
+      const costWithStats = costWithoutStats + statsRequests + eventsRequests;
       console.log(`  Bootstrap cost (no stats)   : ${costWithoutStats} requests`);
       console.log(`  Bootstrap cost (with stats)  : ${costWithStats} requests`);
-      console.log(`  Incremental daily cost       : ~2 requests (standings + fixtures)`);
+      console.log(`  Incremental baseline cost    : ~2 requests (standings + fixtures)`);
+      console.log(`  Incremental detailed cost    : ~1 request per new fixture (statistics) + optional events fallback`);
       console.log("");
       console.log("  Projection for 6 leagues:");
       console.log(`    No stats : ${costWithoutStats * 6} requests (one-time bootstrap)`);
@@ -289,6 +311,44 @@ async function fetchFixtureStats(rawFixtures, existingStatsMap, limit) {
   return statsMap;
 }
 
+async function fetchFixtureEvents(rawFixtures, existingEventsMap, fixtureStatsMap, limit) {
+  const eventsMap = { ...existingEventsMap };
+  const fallbackFixtures = rawFixtures.filter((raw) => {
+    if (eventsMap[String(raw.fixture_id)]) return false;
+    const stats = fixtureStatsMap[String(raw.fixture_id)];
+    if (!stats || stats.unavailable) return true;
+    const homeHasCards = stats?.home && (stats.home.yellow_cards !== null || stats.home.red_cards !== null);
+    const awayHasCards = stats?.away && (stats.away.yellow_cards !== null || stats.away.red_cards !== null);
+    return !(homeHasCards && awayHasCards);
+  });
+
+  const toFetch = limit ? fallbackFixtures.slice(0, limit) : fallbackFixtures;
+  const skipped = fallbackFixtures.length - toFetch.length;
+
+  console.log(`  Fixture events fallback: ${Object.keys(eventsMap).length} cached, ${toFetch.length} to fetch${skipped ? `, ${skipped} skipped (limit)` : ""}`);
+
+  let fetched = 0;
+  let failed = 0;
+  for (const raw of toFetch) {
+    try {
+      const json = await apiGet("/fixtures/events", { fixture: raw.fixture_id });
+      const response = Array.isArray(json?.response) ? json.response : [];
+      const record = buildFixtureEventsRecord(raw.fixture_id, raw.home_id, raw.away_id, response);
+      eventsMap[String(raw.fixture_id)] = record;
+      fetched++;
+      if (fetched % 50 === 0) {
+        console.log(`  ... ${fetched}/${toFetch.length} fixture events fetched`);
+      }
+    } catch (err) {
+      console.warn(`  [WARN] fixture_events failed for fixture_id=${raw.fixture_id}: ${err?.message}`);
+      failed++;
+    }
+  }
+
+  console.log(`  Fixture events: ${fetched} fetched, ${failed} failed`);
+  return eventsMap;
+}
+
 // ---------------------------------------------------------------------------
 // Stage 4 — Fetch standings
 // ---------------------------------------------------------------------------
@@ -337,6 +397,7 @@ async function main() {
     meta: path.join(leagueDataDir, "meta.json"),
     rawFixtures: path.join(leagueDataDir, "raw-fixtures.json"),
     fixtureStats: path.join(leagueDataDir, "fixture-stats.json"),
+    rawEvents: path.join(leagueDataDir, "raw-events.json"),
     teamFacts: path.join(leagueDataDir, "team-facts.json"),
     teamAggregates: path.join(leagueDataDir, "team-aggregates.json"),
     snapshot: path.join(LEAGUES_DIR, `${slug}.json`)
@@ -347,7 +408,7 @@ async function main() {
   console.log("╚═══════════════════════════════════════════════════════╝");
   console.log(`  League      : ${leagueDefinition.defaultName} (id=${flags.leagueId})`);
   console.log(`  Season      : ${flags.season || "auto-resolve"}`);
-  console.log(`  Options     : skip-fixture-stats=${flags.skipFixtureStats} resume=${flags.resume} dry-run=${flags.dryRun} limit=${flags.limit || "none"}`);
+  console.log(`  Options     : skip-fixture-stats=${flags.skipFixtureStats} skip-fixture-events=${flags.skipFixtureEvents} resume=${flags.resume} dry-run=${flags.dryRun} limit=${flags.limit || "none"}`);
   console.log(`  API interval: ${MIN_INTERVAL_MS}ms`);
 
   if (flags.dryRun) {
@@ -399,6 +460,7 @@ async function main() {
   // ── Stage 3: Fixture stats (optional) ──────────────────────────────────
   QUOTA.beginStage("3-fixture-stats");
   let fixtureStatsMap = {};
+  let fixtureEventsMap = {};
 
   if (flags.skipFixtureStats) {
     console.log("  Skipped (--skip-fixture-stats). Corners/cards/shots will be null.");
@@ -426,6 +488,27 @@ async function main() {
     console.log(`  [LAYER 1+] Fixture stats: ${validStats} valid, ${unavailable} unavailable`);
   }
 
+  if (flags.skipFixtureEvents) {
+    console.log("  Skipped (--skip-fixture-events). Card fallback from events is disabled.");
+  } else {
+    const existingEventsFile = readJsonIfExists(paths.rawEvents);
+    const existingEventsMap = existingEventsFile?.events || {};
+    fixtureEventsMap = await fetchFixtureEvents(rawFixtures, existingEventsMap, fixtureStatsMap, flags.limit);
+
+    writeJsonAtomic(paths.rawEvents, {
+      meta: {
+        league_id: flags.leagueId,
+        season,
+        events_fetched_at_utc: new Date().toISOString(),
+        events_count: Object.keys(fixtureEventsMap).length,
+        mode: "fallback_for_missing_cards"
+      },
+      events: fixtureEventsMap
+    });
+
+    console.log(`  [LAYER 1.5] Fixture events fallback: ${Object.keys(fixtureEventsMap).length} records`);
+  }
+
   // ── Stage 4: Team facts ──────────────────────────────────────────────────
   QUOTA.beginStage("4-team-facts");
 
@@ -435,7 +518,7 @@ async function main() {
     if (!rec.unavailable) cleanStatsMap[fid] = rec;
   }
 
-  const allFacts = buildAllTeamFacts(rawFixtures, cleanStatsMap);
+  const allFacts = buildAllTeamFacts(rawFixtures, cleanStatsMap, fixtureEventsMap);
   const hasStats = Object.keys(cleanStatsMap).length > 0;
 
   writeJsonAtomic(paths.teamFacts, {
@@ -454,8 +537,9 @@ async function main() {
 
   // ── Stage 5: Team aggregates ─────────────────────────────────────────────
   QUOTA.beginStage("5-team-aggregates");
-  const teamAggregates = buildAllTeamAggregates(allFacts, flags.leagueId, season);
-  const teamCount = Object.keys(teamAggregates).length;
+  const competitionAggregates = buildAllTeamAggregates(allFacts, flags.leagueId, season);
+  const scopedAggregates = buildScopedTeamAggregates(allFacts, season);
+  const teamCount = Object.keys(competitionAggregates).length;
 
   writeJsonAtomic(paths.teamAggregates, {
     meta: {
@@ -466,13 +550,14 @@ async function main() {
       fixture_count: rawFixtures.length,
       has_advanced_stats: hasStats
     },
-    teams: teamAggregates
+    teams: competitionAggregates,
+    scopes: scopedAggregates
   });
 
   console.log(`  [LAYER 3] ${teamCount} team aggregates with total/home/away splits`);
 
   // Quick validation sample
-  const sampleTeam = Object.values(teamAggregates)[0];
+  const sampleTeam = Object.values(competitionAggregates)[0];
   if (sampleTeam) {
     const t = sampleTeam.total;
     console.log(`  Sample: ${sampleTeam.team_name} played=${t.played} gf=${t.goals_for} ga=${t.goals_against}`);
@@ -495,7 +580,7 @@ async function main() {
 
   const snapshot = buildLeagueV1SnapshotFromTeamAggregates({
     leagueDefinition,
-    teamAggregates,
+    teamAggregates: competitionAggregates,
     standingsPayload,
     allSeasonFixtures,
     generatedAtUtc

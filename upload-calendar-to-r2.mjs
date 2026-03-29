@@ -39,6 +39,7 @@ const FIXTURE_MODEL_LAYER_FILES = [
   'meta.json',
   'raw-fixtures.json',
   'fixture-stats.json',
+  'raw-events.json',
   'team-facts.json',
   'team-aggregates.json'
 ];

@@ -90,6 +90,7 @@ export function buildRawFixtureRecord(apiItem, competitionId, season) {
     round: String(league?.round || "").trim() || null,
     status: String(fixture?.status?.short || "").trim().toUpperCase(),
     competition_id: toInt(competitionId),
+    competition_name: String(league?.name || "").trim() || null,
     season: toInt(season),
     home_id: toInt(teams?.home?.id),
     home_name: String(teams?.home?.name || "").trim(),
@@ -97,6 +98,48 @@ export function buildRawFixtureRecord(apiItem, competitionId, season) {
     away_name: String(teams?.away?.name || "").trim(),
     home_goals: Number.isFinite(homeGoals) ? homeGoals : null,
     away_goals: Number.isFinite(awayGoals) ? awayGoals : null
+  };
+}
+
+/**
+ * Build a minimal fixture events record from API /fixtures/events response.
+ * Currently used for card fallback only when /fixtures/statistics is missing.
+ */
+export function buildFixtureEventsRecord(fixtureId, homeTeamId, awayTeamId, apiEventsResponse) {
+  const events = Array.isArray(apiEventsResponse) ? apiEventsResponse : [];
+
+  const byTeam = {
+    [String(homeTeamId)]: { yellow_cards: 0, red_cards: 0 },
+    [String(awayTeamId)]: { yellow_cards: 0, red_cards: 0 }
+  };
+
+  for (const ev of events) {
+    const teamId = toInt(ev?.team?.id);
+    if (!teamId || !byTeam[String(teamId)]) continue;
+
+    const type = String(ev?.type || "").toLowerCase();
+    const detail = String(ev?.detail || "").toLowerCase();
+    const isCard = type.includes("card") || detail.includes("card") || detail.includes("yellow") || detail.includes("red");
+    if (!isCard) continue;
+
+    const isRed = detail.includes("red");
+    const isYellow = detail.includes("yellow");
+    if (isRed) byTeam[String(teamId)].red_cards += 1;
+    else if (isYellow) byTeam[String(teamId)].yellow_cards += 1;
+  }
+
+  return {
+    fixture_id: fixtureId,
+    home_team_id: homeTeamId,
+    away_team_id: awayTeamId,
+    home: {
+      yellow_cards: byTeam[String(homeTeamId)]?.yellow_cards ?? 0,
+      red_cards: byTeam[String(homeTeamId)]?.red_cards ?? 0
+    },
+    away: {
+      yellow_cards: byTeam[String(awayTeamId)]?.yellow_cards ?? 0,
+      red_cards: byTeam[String(awayTeamId)]?.red_cards ?? 0
+    }
   };
 }
 
@@ -154,12 +197,14 @@ export function buildFixtureStatsRecord(fixtureId, homeTeamId, awayTeamId, apiSt
  * @param {object|null} fixtureStats - output of buildFixtureStatsRecord, or null
  * @returns {[object, object]}
  */
-export function buildTeamFactsFromFixture(rawFixture, fixtureStats) {
+export function buildTeamFactsFromFixture(rawFixture, fixtureStats, fixtureEvents = null) {
   const {
     fixture_id,
     played_at_utc,
     round,
+    status,
     competition_id,
+    competition_name,
     season,
     home_id,
     home_name,
@@ -185,6 +230,13 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats) {
 
     const statsBlock = fixtureStats ? (isHome ? fixtureStats.home : fixtureStats.away) : null;
     const opponentStatsBlock = fixtureStats ? (isHome ? fixtureStats.away : fixtureStats.home) : null;
+    const eventsBlock = fixtureEvents ? (isHome ? fixtureEvents.home : fixtureEvents.away) : null;
+    const opponentEventsBlock = fixtureEvents ? (isHome ? fixtureEvents.away : fixtureEvents.home) : null;
+
+    const yellowFor = statsBlock?.yellow_cards ?? eventsBlock?.yellow_cards ?? null;
+    const yellowAgainst = opponentStatsBlock?.yellow_cards ?? opponentEventsBlock?.yellow_cards ?? null;
+    const redFor = statsBlock?.red_cards ?? eventsBlock?.red_cards ?? null;
+    const redAgainst = opponentStatsBlock?.red_cards ?? opponentEventsBlock?.red_cards ?? null;
 
     return {
       fixture_id,
@@ -193,13 +245,16 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats) {
       opponent_id: opponentId,
       opponent_name: opponentName,
       competition_id,
+      competition_name,
       season,
       is_home: isHome,
       played_at_utc,
       round,
+      status,
       goals_for: gf,
       goals_against: ga,
       total_goals: totalGoals,
+      result: won ? "W" : drew ? "D" : "L",
       won,
       drew,
       lost,
@@ -214,15 +269,19 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats) {
       // Advanced stats — null if fixture stats not fetched yet
       corners_for: statsBlock?.corners ?? null,
       corners_against: opponentStatsBlock?.corners ?? null,
-      yellow_cards_for: statsBlock?.yellow_cards ?? null,
-      yellow_cards_against: opponentStatsBlock?.yellow_cards ?? null,
-      red_cards_for: statsBlock?.red_cards ?? null,
-      red_cards_against: opponentStatsBlock?.red_cards ?? null,
+      yellow_cards_for: yellowFor,
+      yellow_cards_against: yellowAgainst,
+      red_cards_for: redFor,
+      red_cards_against: redAgainst,
       shots_for: statsBlock?.shots ?? null,
+      shots_against: opponentStatsBlock?.shots ?? null,
       shots_on_target_for: statsBlock?.shots_on_target ?? null,
+      shots_on_target_against: opponentStatsBlock?.shots_on_target ?? null,
       possession_pct: statsBlock?.possession_pct ?? null,
       fouls_for: statsBlock?.fouls ?? null,
-      offsides_for: statsBlock?.offsides ?? null
+      fouls_against: opponentStatsBlock?.fouls ?? null,
+      offsides_for: statsBlock?.offsides ?? null,
+      offsides_against: opponentStatsBlock?.offsides ?? null
     };
   }
 
@@ -259,9 +318,16 @@ export function buildSplitStats(facts) {
       corners_against_total: null, corners_against_avg: null,
       yellow_cards_for_total: null, yellow_cards_for_avg: null,
       yellow_cards_against_total: null, yellow_cards_against_avg: null,
-      red_cards_for_total: null, red_cards_against_total: null,
+      red_cards_for_total: null, red_cards_for_avg: null,
+      red_cards_against_total: null, red_cards_against_avg: null,
       shots_for_total: null, shots_for_avg: null,
-      shots_on_target_for_total: null
+      shots_against_total: null, shots_against_avg: null,
+      shots_on_target_for_total: null, shots_on_target_against_total: null,
+      possession_avg: null,
+      fouls_for_total: null, fouls_for_avg: null,
+      fouls_against_total: null, fouls_against_avg: null,
+      offsides_for_total: null, offsides_for_avg: null,
+      offsides_against_total: null, offsides_against_avg: null
     };
   }
 
@@ -272,8 +338,12 @@ export function buildSplitStats(facts) {
   let corners_for_sum = 0, corners_against_sum = 0;
   let yellow_for_sum = 0, yellow_against_sum = 0;
   let red_for_sum = 0, red_against_sum = 0;
-  let shots_for_sum = 0, shots_on_target_sum = 0;
+  let shots_for_sum = 0, shots_against_sum = 0, shots_on_target_sum = 0, shots_on_target_against_sum = 0;
+  let possession_sum = 0;
+  let fouls_for_sum = 0, fouls_against_sum = 0;
+  let offsides_for_sum = 0, offsides_against_sum = 0;
   let corners_count = 0, yellow_count = 0, shots_count = 0, red_count = 0;
+  let possession_count = 0, fouls_count = 0, offsides_count = 0;
 
   for (const f of facts) {
     if (f.won) won++;
@@ -306,8 +376,24 @@ export function buildSplitStats(facts) {
     }
     if (f.shots_for !== null) {
       shots_for_sum += f.shots_for;
+      shots_against_sum += (f.shots_against ?? 0);
       shots_on_target_sum += (f.shots_on_target_for ?? 0);
+      shots_on_target_against_sum += (f.shots_on_target_against ?? 0);
       shots_count++;
+    }
+    if (f.possession_pct !== null) {
+      possession_sum += f.possession_pct;
+      possession_count++;
+    }
+    if (f.fouls_for !== null) {
+      fouls_for_sum += f.fouls_for;
+      fouls_against_sum += (f.fouls_against ?? 0);
+      fouls_count++;
+    }
+    if (f.offsides_for !== null) {
+      offsides_for_sum += f.offsides_for;
+      offsides_against_sum += (f.offsides_against ?? 0);
+      offsides_count++;
     }
   }
 
@@ -334,10 +420,24 @@ export function buildSplitStats(facts) {
     yellow_cards_against_total: yellow_count > 0 ? yellow_against_sum : null,
     yellow_cards_against_avg: yellow_count > 0 ? toFloat(yellow_against_sum / yellow_count, 2) : null,
     red_cards_for_total: red_count > 0 ? red_for_sum : null,
+    red_cards_for_avg: red_count > 0 ? toFloat(red_for_sum / red_count, 2) : null,
     red_cards_against_total: red_count > 0 ? red_against_sum : null,
+    red_cards_against_avg: red_count > 0 ? toFloat(red_against_sum / red_count, 2) : null,
     shots_for_total: shots_count > 0 ? shots_for_sum : null,
     shots_for_avg: shots_count > 0 ? toFloat(shots_for_sum / shots_count, 2) : null,
-    shots_on_target_for_total: shots_count > 0 ? shots_on_target_sum : null
+    shots_against_total: shots_count > 0 ? shots_against_sum : null,
+    shots_against_avg: shots_count > 0 ? toFloat(shots_against_sum / shots_count, 2) : null,
+    shots_on_target_for_total: shots_count > 0 ? shots_on_target_sum : null,
+    shots_on_target_against_total: shots_count > 0 ? shots_on_target_against_sum : null,
+    possession_avg: possession_count > 0 ? toFloat(possession_sum / possession_count, 2) : null,
+    fouls_for_total: fouls_count > 0 ? fouls_for_sum : null,
+    fouls_for_avg: fouls_count > 0 ? toFloat(fouls_for_sum / fouls_count, 2) : null,
+    fouls_against_total: fouls_count > 0 ? fouls_against_sum : null,
+    fouls_against_avg: fouls_count > 0 ? toFloat(fouls_against_sum / fouls_count, 2) : null,
+    offsides_for_total: offsides_count > 0 ? offsides_for_sum : null,
+    offsides_for_avg: offsides_count > 0 ? toFloat(offsides_for_sum / offsides_count, 2) : null,
+    offsides_against_total: offsides_count > 0 ? offsides_against_sum : null,
+    offsides_against_avg: offsides_count > 0 ? toFloat(offsides_against_sum / offsides_count, 2) : null
   };
 }
 
@@ -392,21 +492,72 @@ export function buildAllTeamAggregates(allFacts, competitionId, season) {
 }
 
 /**
+ * Build scoped team aggregates for:
+ *  - all_competitions (all facts for the season)
+ *  - competitions[competition_id] (facts filtered by competition)
+ */
+export function buildScopedTeamAggregates(allFacts, season) {
+  const facts = Array.isArray(allFacts) ? allFacts : [];
+  const byCompetitionFacts = new Map();
+
+  for (const fact of facts) {
+    const cid = Number(fact?.competition_id);
+    if (!Number.isFinite(cid)) continue;
+    if (!byCompetitionFacts.has(cid)) byCompetitionFacts.set(cid, []);
+    byCompetitionFacts.get(cid).push(fact);
+  }
+
+  const teamMap = new Map();
+  for (const fact of facts) {
+    const tid = Number(fact?.team_id);
+    if (!Number.isFinite(tid)) continue;
+    if (!teamMap.has(tid)) teamMap.set(tid, String(fact?.team_name || "").trim());
+  }
+
+  const allCompetitions = {};
+  for (const [teamId, teamName] of teamMap.entries()) {
+    const teamFacts = facts.filter((f) => Number(f.team_id) === teamId);
+    allCompetitions[String(teamId)] = {
+      team_id: teamId,
+      team_name: teamName,
+      season,
+      scope: "all_competitions",
+      competitions: Array.from(new Set(teamFacts.map((f) => Number(f.competition_id)).filter((n) => Number.isFinite(n)))).sort((a, b) => a - b),
+      total: buildSplitStats(teamFacts),
+      home: buildSplitStats(teamFacts.filter((f) => f.is_home)),
+      away: buildSplitStats(teamFacts.filter((f) => !f.is_home))
+    };
+  }
+
+  const competitions = {};
+  for (const [competitionId, competitionFacts] of byCompetitionFacts.entries()) {
+    competitions[String(competitionId)] = buildAllTeamAggregates(competitionFacts, competitionId, season);
+  }
+
+  return {
+    all_competitions: allCompetitions,
+    competitions
+  };
+}
+
+/**
  * Build all team facts from a list of raw fixtures and an optional fixture stats map.
  *
  * @param {Array}  rawFixtures  - output of buildRawFixtureRecord[]
  * @param {object} fixtureStatsMap - { [fixture_id]: buildFixtureStatsRecord output }, or {}
  * @returns {Array}  flat list of team facts (2 per fixture)
  */
-export function buildAllTeamFacts(rawFixtures, fixtureStatsMap) {
+export function buildAllTeamFacts(rawFixtures, fixtureStatsMap, fixtureEventsMap = {}) {
   const statsMap = fixtureStatsMap || {};
+  const eventsMap = fixtureEventsMap || {};
   const allFacts = [];
 
   for (const raw of rawFixtures) {
     if (raw.home_goals === null || raw.away_goals === null) continue;
     const stats = statsMap[String(raw.fixture_id)] || null;
+    const events = eventsMap[String(raw.fixture_id)] || null;
     try {
-      const [homeFact, awayFact] = buildTeamFactsFromFixture(raw, stats);
+      const [homeFact, awayFact] = buildTeamFactsFromFixture(raw, stats, events);
       allFacts.push(homeFact, awayFact);
     } catch {
       // skip malformed fixtures silently

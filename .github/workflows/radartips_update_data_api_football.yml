@@ -42,6 +42,33 @@ jobs:
           test -f "data/v1/radar_day.json"
           test -f "data/v1/radar_week.json"
 
+      - name: Hydrate Premier League fixture layers from R2 (optional)
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET_NAME: radartips-data
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo "[SKIP] Cloudflare secrets not available for hydration."
+            exit 0
+          fi
+
+          npx --yes wrangler@4.62.0 --version
+          mkdir -p data/v1/leagues/premier-league
+
+          for file in meta.json raw-fixtures.json fixture-stats.json raw-events.json team-facts.json team-aggregates.json; do
+            remote_key="${R2_BUCKET_NAME}/snapshots/leagues/premier-league/${file}"
+            local_path="data/v1/leagues/premier-league/${file}"
+            echo "[HYDRATE] ${remote_key} -> ${local_path}"
+            if ! npx --yes wrangler@4.62.0 r2 object get --remote "${remote_key}" --file "${local_path}"; then
+              echo "[WARN] Missing optional layer in R2: ${remote_key}"
+            fi
+          done
+
       - name: Generate fixed league snapshots (API-FOOTBALL, independent of calendar)
         env:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
