@@ -1,18 +1,15 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ME07NV3W8Y"></script>
-  <script>window.dataLayer=window.dataLayer||[]; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-ME07NV3W8Y', { anonymize_ip: true });</script>
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RadarTips • Radar del Día</title>
+  <title>RadarTips • Radar</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=12" />
-  <meta name="radartips-build" content="080f28b44a69">
+  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+  <meta name="radartips-build" content="2987e9d29d75">
 </head>
-<body data-theme="dark" data-page="day">
+<body data-page="day">
   <div class="container">
     <div class="topbar">
       <div class="brand">
@@ -27,6 +24,8 @@
 
       <div class="nav">
         <a class="pill" data-nav="day" href="#">—</a>
+        <a class="pill" data-nav="week" href="#">—</a>
+        <a class="pill" data-nav="calendar" href="#">—</a>
 
         <span style="width:10px"></span>
 
@@ -42,43 +41,53 @@
     </div>
 
     <div class="hero">
-      <div class="hero-header">
-        <h1 id="hero_title">Radar</h1>
-        <p id="hero_sub">—</p>
+      <h1 id="hero_title">Radar</h1>
+      <p id="hero_sub">—</p>
+
+    <div class="pitchbar" id="pitchbar" hidden aria-label="O que é o RadarTips">
+      <div class="pitchbox">
+        <div class="pitch-kicker" id="pitch_kicker">—</div>
+        <div class="pitch-actions">
+          <button class="btn" type="button" data-open="about" id="btn_about">—</button>
+          <a class="btn ghost" id="btn_browse" href="#">—</a>
+        </div>
+        <div class="pitch-freepro" id="pitch_free_pro">—</div>
       </div>
+      <div class="pitchbox pitchbox-right">
+        <div id="pitch_markets"></div>
+      </div>
+    </div>
+
 
       <div class="grid">
         <div class="card" data-slot="1">
           <div class="row">
-            <span class="badge risk low">pt</span>
+            <span class="badge risk low">es</span>
             <span class="badge top" style="opacity:.75">TOP 1</span>
           </div>
-          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
+          <h3>—</h3>
           <div class="meta"></div>
-          <div class="suggestion-highlight">—</div>
-          <div class="lock"></div>
+          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
         </div>
 
         <div class="card" data-slot="2">
           <div class="row">
-            <span class="badge risk med">pt</span>
+            <span class="badge risk med">es</span>
             <span class="badge top" style="opacity:.75">TOP 2</span>
           </div>
-          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
+          <h3>—</h3>
           <div class="meta"></div>
-          <div class="suggestion-highlight">—</div>
-          <div class="lock"></div>
+          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
         </div>
 
         <div class="card" data-slot="3">
           <div class="row">
-            <span class="badge risk high">pt</span>
+            <span class="badge risk high">es</span>
             <span class="badge top" style="opacity:.75">TOP 3</span>
           </div>
-          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
+          <h3>—</h3>
           <div class="meta"></div>
-          <div class="suggestion-highlight">—</div>
-          <div class="lock"></div>
+          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
         </div>
       </div>
     </div>
@@ -103,14 +112,16 @@
     </div>
   </div>
 
-  <script>
-    window.RT_LOCALE = "es";
-  </script>
-  <script src="/assets/js/app.080f28b44a69.js"></script>
-  <link rel="stylesheet" href="/assets/match-radar-v2.0baab1022371.css" />
+  <div class="modal-backdrop" id="modal_backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title" id="modal_title">Radar</div>
+        <button class="btn" id="modal_close" type="button">×</button>
+      </div>
+      <div class="modal-body" id="modal_body"></div>
+    </div>
+  </div>
 
-<!-- build-badge -->
-<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.080f28b44a69.js | 2026-03-26 23:52</div>
-<!-- /build-badge -->
+  <script src="/assets/js/app.2987e9d29d75.js"></script>
 </body>
 </html>

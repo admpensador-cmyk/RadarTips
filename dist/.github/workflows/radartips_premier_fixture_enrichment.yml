@@ -1,0 +1,114 @@
+name: Premier League fixture enrichment (Prédio 2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season year (e.g. 2025). Leave empty to auto-resolve"
+        required: false
+        type: string
+      limit:
+        description: "Optional limit of fixtures to process"
+        required: false
+        type: string
+      skip_fixture_events:
+        description: "Skip /fixtures/events fallback"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: premier-fixture-enrichment
+  cancel-in-progress: true
+
+jobs:
+  bootstrap-premier:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Bootstrap Premier League fixture enrichment layers
+        env:
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${APIFOOTBALL_KEY:-}" ]]; then
+            echo "[FATAL] Missing APIFOOTBALL_KEY secret"
+            exit 1
+          fi
+
+          ARGS=(--league-id=39 --resume)
+          if [[ -n "${{ inputs.season }}" ]]; then
+            ARGS+=("--season=${{ inputs.season }}")
+          fi
+          if [[ -n "${{ inputs.limit }}" ]]; then
+            ARGS+=("--limit=${{ inputs.limit }}")
+          fi
+          if [[ "${{ inputs.skip_fixture_events }}" == "true" ]]; then
+            ARGS+=("--skip-fixture-events")
+          fi
+
+          echo "[RUN] node tools/bootstrap-league-fixtures.mjs ${ARGS[*]}"
+          node tools/bootstrap-league-fixtures.mjs "${ARGS[@]}"
+
+          test -f "data/v1/leagues/premier-league.json"
+          test -f "data/v1/leagues/premier-league/meta.json"
+          test -f "data/v1/leagues/premier-league/raw-fixtures.json"
+          test -f "data/v1/leagues/premier-league/fixture-stats.json"
+          test -f "data/v1/leagues/premier-league/team-facts.json"
+          test -f "data/v1/leagues/premier-league/team-aggregates.json"
+
+      - name: Publish Premier League enriched snapshot and layers to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET_NAME: radartips-data
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo "[FATAL] Missing Cloudflare publication secrets"
+            exit 1
+          fi
+
+          npx --yes wrangler@4.62.0 --version
+
+          declare -a TARGETS=(
+            "data/v1/leagues/premier-league.json:snapshots/leagues/premier-league.json"
+            "data/v1/leagues/premier-league/meta.json:snapshots/leagues/premier-league/meta.json"
+            "data/v1/leagues/premier-league/raw-fixtures.json:snapshots/leagues/premier-league/raw-fixtures.json"
+            "data/v1/leagues/premier-league/fixture-stats.json:snapshots/leagues/premier-league/fixture-stats.json"
+            "data/v1/leagues/premier-league/raw-events.json:snapshots/leagues/premier-league/raw-events.json"
+            "data/v1/leagues/premier-league/team-facts.json:snapshots/leagues/premier-league/team-facts.json"
+            "data/v1/leagues/premier-league/team-aggregates.json:snapshots/leagues/premier-league/team-aggregates.json"
+          )
+
+          for pair in "${TARGETS[@]}"; do
+            local_file="${pair%%:*}"
+            remote_key="${pair##*:}"
+            if [[ -f "${local_file}" ]]; then
+              echo "[UPLOAD] ${local_file} -> ${R2_BUCKET_NAME}/${remote_key}"
+              npx --yes wrangler@4.62.0 r2 object put --remote "${R2_BUCKET_NAME}/${remote_key}" --file "${local_file}" --content-type application/json
+            else
+              echo "[WARN] Missing optional file: ${local_file}"
+            fi
+          done
+
+      - name: Validate production Premier League snapshot contract
+        env:
+          RADARTIPS_BASE_URL: https://radartips.com
+        run: |
+          set -euo pipefail
+          node -e 'const base=(process.env.RADARTIPS_BASE_URL||"https://radartips.com").replace(/\/$/,""); const url=`${base}/api/v1/leagues/premier-league.json`; (async()=>{ const res=await fetch(url,{headers:{"cache-control":"no-cache"}}); if(res.status!==200) throw new Error(`Expected 200, got ${res.status}`); const s=await res.json(); const resources=Array.isArray(s?.meta?.source?.resources)?s.meta.source.resources:[]; const advanced=s?.advanced||{}; if(String(s?.meta?.source?.provider)!=="api-football") throw new Error("provider must be api-football"); if(!resources.includes("/standings")||!resources.includes("/fixtures")) throw new Error("resources must include /standings and /fixtures"); if(!advanced?.corners||!advanced?.cards) throw new Error("missing advanced.corners/cards blocks"); console.log("[OK] Production Premier snapshot has enriched advanced blocks"); console.log("generated_at_utc="+(s?.meta?.generated_at_utc||"")); console.log("model="+(s?.meta?.source?.model||"")); console.log("corners_avg="+(s?.statistics?.league?.corners_avg)); console.log("yellow_cards_avg="+(s?.statistics?.league?.yellow_cards_avg)); console.log("red_cards_avg="+(s?.statistics?.league?.red_cards_avg)); })().catch((err)=>{ console.error("[FATAL]", err?.message||err); process.exit(1); });'

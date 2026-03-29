@@ -1,0 +1,1556 @@
+{
+  "competition": {
+    "slug": "ligue-1",
+    "competition_id": 61,
+    "name": "Ligue 1",
+    "country": "France",
+    "season": "2025",
+    "current_round": "Matchday",
+    "generated_at_utc": "2026-03-28T12:54:37.520Z"
+  },
+  "summary": {
+    "matches_count": 242,
+    "goals_per_game": 2.777,
+    "btts_pct": 0,
+    "over_15_pct": 0,
+    "over_25_pct": 0,
+    "over_35_pct": 0,
+    "under_25_pct": 0,
+    "clean_sheets_pct": 0,
+    "failed_to_score_pct": 0
+  },
+  "standings": [
+    {
+      "position": 1,
+      "team": "Paris Saint Germain",
+      "team_id": 85,
+      "points": 60,
+      "played": 26,
+      "wins": 19,
+      "draws": 3,
+      "losses": 4,
+      "goals_for": 58,
+      "goals_against": 22,
+      "goal_diff": 36,
+      "form_last5": "WLWWL"
+    },
+    {
+      "position": 2,
+      "team": "Lens",
+      "team_id": 116,
+      "points": 59,
+      "played": 27,
+      "wins": 19,
+      "draws": 2,
+      "losses": 6,
+      "goals_for": 54,
+      "goals_against": 24,
+      "goal_diff": 30,
+      "form_last5": "WLWDL"
+    },
+    {
+      "position": 3,
+      "team": "Marseille",
+      "team_id": 81,
+      "points": 49,
+      "played": 27,
+      "wins": 15,
+      "draws": 4,
+      "losses": 8,
+      "goals_for": 54,
+      "goals_against": 35,
+      "goal_diff": 19,
+      "form_last5": "LWWWL"
+    },
+    {
+      "position": 4,
+      "team": "Lyon",
+      "team_id": 80,
+      "points": 47,
+      "played": 27,
+      "wins": 14,
+      "draws": 5,
+      "losses": 8,
+      "goals_for": 41,
+      "goals_against": 29,
+      "goal_diff": 12,
+      "form_last5": "LDDLL"
+    },
+    {
+      "position": 5,
+      "team": "Lille",
+      "team_id": 79,
+      "points": 47,
+      "played": 27,
+      "wins": 14,
+      "draws": 5,
+      "losses": 8,
+      "goals_for": 42,
+      "goals_against": 34,
+      "goal_diff": 8,
+      "form_last5": "WWDWW"
+    },
+    {
+      "position": 6,
+      "team": "Monaco",
+      "team_id": 91,
+      "points": 46,
+      "played": 27,
+      "wins": 14,
+      "draws": 4,
+      "losses": 9,
+      "goals_for": 47,
+      "goals_against": 38,
+      "goal_diff": 9,
+      "form_last5": "WWWWW"
+    },
+    {
+      "position": 7,
+      "team": "Rennes",
+      "team_id": 94,
+      "points": 44,
+      "played": 27,
+      "wins": 12,
+      "draws": 8,
+      "losses": 7,
+      "goals_for": 43,
+      "goals_against": 37,
+      "goal_diff": 6,
+      "form_last5": "DLWWW"
+    },
+    {
+      "position": 8,
+      "team": "Strasbourg",
+      "team_id": 95,
+      "points": 40,
+      "played": 27,
+      "wins": 11,
+      "draws": 7,
+      "losses": 9,
+      "goals_for": 43,
+      "goals_against": 33,
+      "goal_diff": 10,
+      "form_last5": "WDDDW"
+    },
+    {
+      "position": 9,
+      "team": "Toulouse",
+      "team_id": 96,
+      "points": 37,
+      "played": 27,
+      "wins": 10,
+      "draws": 7,
+      "losses": 10,
+      "goals_for": 38,
+      "goals_against": 32,
+      "goal_diff": 6,
+      "form_last5": "WWLLD"
+    },
+    {
+      "position": 10,
+      "team": "Lorient",
+      "team_id": 97,
+      "points": 37,
+      "played": 27,
+      "wins": 9,
+      "draws": 10,
+      "losses": 8,
+      "goals_for": 37,
+      "goals_against": 41,
+      "goal_diff": -4,
+      "form_last5": "LWDDD"
+    },
+    {
+      "position": 11,
+      "team": "Stade Brestois 29",
+      "team_id": 106,
+      "points": 36,
+      "played": 27,
+      "wins": 10,
+      "draws": 6,
+      "losses": 11,
+      "goals_for": 34,
+      "goals_against": 39,
+      "goal_diff": -5,
+      "form_last5": "LLWWW"
+    },
+    {
+      "position": 12,
+      "team": "Angers",
+      "team_id": 77,
+      "points": 32,
+      "played": 27,
+      "wins": 9,
+      "draws": 5,
+      "losses": 13,
+      "goals_for": 24,
+      "goals_against": 37,
+      "goal_diff": -13,
+      "form_last5": "LLWLL"
+    },
+    {
+      "position": 13,
+      "team": "Paris FC",
+      "team_id": 114,
+      "points": 31,
+      "played": 27,
+      "wins": 7,
+      "draws": 10,
+      "losses": 10,
+      "goals_for": 32,
+      "goals_against": 43,
+      "goal_diff": -11,
+      "form_last5": "WDDWD"
+    },
+    {
+      "position": 14,
+      "team": "Le Havre",
+      "team_id": 111,
+      "points": 27,
+      "played": 27,
+      "wins": 6,
+      "draws": 9,
+      "losses": 12,
+      "goals_for": 22,
+      "goals_against": 35,
+      "goal_diff": -13,
+      "form_last5": "LDLLL"
+    },
+    {
+      "position": 15,
+      "team": "Nice",
+      "team_id": 84,
+      "points": 27,
+      "played": 27,
+      "wins": 7,
+      "draws": 6,
+      "losses": 14,
+      "goals_for": 32,
+      "goals_against": 52,
+      "goal_diff": -20,
+      "form_last5": "LWLLD"
+    },
+    {
+      "position": 16,
+      "team": "Auxerre",
+      "team_id": 108,
+      "points": 22,
+      "played": 27,
+      "wins": 5,
+      "draws": 7,
+      "losses": 15,
+      "goals_for": 22,
+      "goals_against": 36,
+      "goal_diff": -14,
+      "form_last5": "WLDDL"
+    },
+    {
+      "position": 17,
+      "team": "Nantes",
+      "team_id": 83,
+      "points": 17,
+      "played": 26,
+      "wins": 4,
+      "draws": 5,
+      "losses": 17,
+      "goals_for": 24,
+      "goals_against": 45,
+      "goal_diff": -21,
+      "form_last5": "LLLWL"
+    },
+    {
+      "position": 18,
+      "team": "Metz",
+      "team_id": 112,
+      "points": 14,
+      "played": 27,
+      "wins": 3,
+      "draws": 5,
+      "losses": 19,
+      "goals_for": 25,
+      "goals_against": 60,
+      "goal_diff": -35,
+      "form_last5": "DLLLL"
+    }
+  ],
+  "fixtures": {
+    "upcoming": [],
+    "recent": []
+  },
+  "statistics": {
+    "league": {
+      "matches_count": 242,
+      "goals_for_total": 672,
+      "goals_against_total": 672,
+      "goals_per_game": 2.777,
+      "home_goals_avg": 1.579,
+      "away_goals_avg": 1.196,
+      "over_15_pct": 0,
+      "over_25_pct": 0,
+      "over_35_pct": 0,
+      "btts_pct": 0,
+      "clean_sheets_pct": 0,
+      "failed_to_score_pct": 0,
+      "home_btts_pct": null,
+      "away_btts_pct": null,
+      "home_over_25_pct": null,
+      "away_over_25_pct": null,
+      "home_clean_sheets_pct": null,
+      "away_clean_sheets_pct": null,
+      "under_25_pct": 0,
+      "corners_avg": null,
+      "shots_avg": null,
+      "possession_avg": null
+    },
+    "teams": [
+      {
+        "team_id": 85,
+        "team": "Paris Saint Germain",
+        "played": 26,
+        "matches": 26,
+        "goals_for": 58,
+        "goals_against": 22,
+        "goals_for_per_game": 2.2,
+        "goals_against_per_game": 0.8,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 58,
+        "goals_conceded": 22
+      },
+      {
+        "team_id": 116,
+        "team": "Lens",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 54,
+        "goals_against": 24,
+        "goals_for_per_game": 2,
+        "goals_against_per_game": 0.9,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 54,
+        "goals_conceded": 24
+      },
+      {
+        "team_id": 81,
+        "team": "Marseille",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 54,
+        "goals_against": 35,
+        "goals_for_per_game": 2,
+        "goals_against_per_game": 1.3,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 54,
+        "goals_conceded": 35
+      },
+      {
+        "team_id": 80,
+        "team": "Lyon",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 41,
+        "goals_against": 29,
+        "goals_for_per_game": 1.5,
+        "goals_against_per_game": 1.1,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 41,
+        "goals_conceded": 29
+      },
+      {
+        "team_id": 79,
+        "team": "Lille",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 42,
+        "goals_against": 34,
+        "goals_for_per_game": 1.6,
+        "goals_against_per_game": 1.3,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 42,
+        "goals_conceded": 34
+      },
+      {
+        "team_id": 91,
+        "team": "Monaco",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 47,
+        "goals_against": 38,
+        "goals_for_per_game": 1.7,
+        "goals_against_per_game": 1.4,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 47,
+        "goals_conceded": 38
+      },
+      {
+        "team_id": 94,
+        "team": "Rennes",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 43,
+        "goals_against": 37,
+        "goals_for_per_game": 1.6,
+        "goals_against_per_game": 1.4,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 43,
+        "goals_conceded": 37
+      },
+      {
+        "team_id": 95,
+        "team": "Strasbourg",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 43,
+        "goals_against": 33,
+        "goals_for_per_game": 1.6,
+        "goals_against_per_game": 1.2,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 43,
+        "goals_conceded": 33
+      },
+      {
+        "team_id": 96,
+        "team": "Toulouse",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 38,
+        "goals_against": 32,
+        "goals_for_per_game": 1.4,
+        "goals_against_per_game": 1.2,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 38,
+        "goals_conceded": 32
+      },
+      {
+        "team_id": 97,
+        "team": "Lorient",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 37,
+        "goals_against": 41,
+        "goals_for_per_game": 1.4,
+        "goals_against_per_game": 1.5,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 37,
+        "goals_conceded": 41
+      },
+      {
+        "team_id": 106,
+        "team": "Stade Brestois 29",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 34,
+        "goals_against": 39,
+        "goals_for_per_game": 1.3,
+        "goals_against_per_game": 1.4,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 34,
+        "goals_conceded": 39
+      },
+      {
+        "team_id": 77,
+        "team": "Angers",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 24,
+        "goals_against": 37,
+        "goals_for_per_game": 0.9,
+        "goals_against_per_game": 1.4,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 24,
+        "goals_conceded": 37
+      },
+      {
+        "team_id": 114,
+        "team": "Paris FC",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 32,
+        "goals_against": 43,
+        "goals_for_per_game": 1.2,
+        "goals_against_per_game": 1.6,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 32,
+        "goals_conceded": 43
+      },
+      {
+        "team_id": 111,
+        "team": "Le Havre",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 22,
+        "goals_against": 35,
+        "goals_for_per_game": 0.8,
+        "goals_against_per_game": 1.3,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 22,
+        "goals_conceded": 35
+      },
+      {
+        "team_id": 84,
+        "team": "Nice",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 32,
+        "goals_against": 52,
+        "goals_for_per_game": 1.2,
+        "goals_against_per_game": 1.9,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 32,
+        "goals_conceded": 52
+      },
+      {
+        "team_id": 108,
+        "team": "Auxerre",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 22,
+        "goals_against": 36,
+        "goals_for_per_game": 0.8,
+        "goals_against_per_game": 1.3,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 22,
+        "goals_conceded": 36
+      },
+      {
+        "team_id": 83,
+        "team": "Nantes",
+        "played": 26,
+        "matches": 26,
+        "goals_for": 24,
+        "goals_against": 45,
+        "goals_for_per_game": 0.9,
+        "goals_against_per_game": 1.7,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 24,
+        "goals_conceded": 45
+      },
+      {
+        "team_id": 112,
+        "team": "Metz",
+        "played": 27,
+        "matches": 27,
+        "goals_for": 25,
+        "goals_against": 60,
+        "goals_for_per_game": 0.9,
+        "goals_against_per_game": 2.2,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 25,
+        "goals_conceded": 60
+      }
+    ],
+    "team_rankings": {
+      "by_goals_for": [
+        {
+          "team_id": 85,
+          "team": "Paris Saint Germain",
+          "value": 58,
+          "matches": 26
+        },
+        {
+          "team_id": 116,
+          "team": "Lens",
+          "value": 54,
+          "matches": 27
+        },
+        {
+          "team_id": 81,
+          "team": "Marseille",
+          "value": 54,
+          "matches": 27
+        },
+        {
+          "team_id": 91,
+          "team": "Monaco",
+          "value": 47,
+          "matches": 27
+        },
+        {
+          "team_id": 94,
+          "team": "Rennes",
+          "value": 43,
+          "matches": 27
+        },
+        {
+          "team_id": 95,
+          "team": "Strasbourg",
+          "value": 43,
+          "matches": 27
+        },
+        {
+          "team_id": 79,
+          "team": "Lille",
+          "value": 42,
+          "matches": 27
+        },
+        {
+          "team_id": 80,
+          "team": "Lyon",
+          "value": 41,
+          "matches": 27
+        },
+        {
+          "team_id": 96,
+          "team": "Toulouse",
+          "value": 38,
+          "matches": 27
+        },
+        {
+          "team_id": 97,
+          "team": "Lorient",
+          "value": 37,
+          "matches": 27
+        },
+        {
+          "team_id": 106,
+          "team": "Stade Brestois 29",
+          "value": 34,
+          "matches": 27
+        },
+        {
+          "team_id": 114,
+          "team": "Paris FC",
+          "value": 32,
+          "matches": 27
+        },
+        {
+          "team_id": 84,
+          "team": "Nice",
+          "value": 32,
+          "matches": 27
+        },
+        {
+          "team_id": 112,
+          "team": "Metz",
+          "value": 25,
+          "matches": 27
+        },
+        {
+          "team_id": 77,
+          "team": "Angers",
+          "value": 24,
+          "matches": 27
+        },
+        {
+          "team_id": 83,
+          "team": "Nantes",
+          "value": 24,
+          "matches": 26
+        },
+        {
+          "team_id": 111,
+          "team": "Le Havre",
+          "value": 22,
+          "matches": 27
+        },
+        {
+          "team_id": 108,
+          "team": "Auxerre",
+          "value": 22,
+          "matches": 27
+        }
+      ],
+      "by_goals_against": [
+        {
+          "team_id": 85,
+          "team": "Paris Saint Germain",
+          "value": 22,
+          "matches": 26
+        },
+        {
+          "team_id": 116,
+          "team": "Lens",
+          "value": 24,
+          "matches": 27
+        },
+        {
+          "team_id": 80,
+          "team": "Lyon",
+          "value": 29,
+          "matches": 27
+        },
+        {
+          "team_id": 96,
+          "team": "Toulouse",
+          "value": 32,
+          "matches": 27
+        },
+        {
+          "team_id": 95,
+          "team": "Strasbourg",
+          "value": 33,
+          "matches": 27
+        },
+        {
+          "team_id": 79,
+          "team": "Lille",
+          "value": 34,
+          "matches": 27
+        },
+        {
+          "team_id": 81,
+          "team": "Marseille",
+          "value": 35,
+          "matches": 27
+        },
+        {
+          "team_id": 111,
+          "team": "Le Havre",
+          "value": 35,
+          "matches": 27
+        },
+        {
+          "team_id": 108,
+          "team": "Auxerre",
+          "value": 36,
+          "matches": 27
+        },
+        {
+          "team_id": 94,
+          "team": "Rennes",
+          "value": 37,
+          "matches": 27
+        },
+        {
+          "team_id": 77,
+          "team": "Angers",
+          "value": 37,
+          "matches": 27
+        },
+        {
+          "team_id": 91,
+          "team": "Monaco",
+          "value": 38,
+          "matches": 27
+        },
+        {
+          "team_id": 106,
+          "team": "Stade Brestois 29",
+          "value": 39,
+          "matches": 27
+        },
+        {
+          "team_id": 97,
+          "team": "Lorient",
+          "value": 41,
+          "matches": 27
+        },
+        {
+          "team_id": 114,
+          "team": "Paris FC",
+          "value": 43,
+          "matches": 27
+        },
+        {
+          "team_id": 83,
+          "team": "Nantes",
+          "value": 45,
+          "matches": 26
+        },
+        {
+          "team_id": 84,
+          "team": "Nice",
+          "value": 52,
+          "matches": 27
+        },
+        {
+          "team_id": 112,
+          "team": "Metz",
+          "value": 60,
+          "matches": 27
+        }
+      ],
+      "by_btts_pct": [
+        {
+          "team_id": 85,
+          "team": "Paris Saint Germain",
+          "value": 0,
+          "matches": 26
+        },
+        {
+          "team_id": 116,
+          "team": "Lens",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 81,
+          "team": "Marseille",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 80,
+          "team": "Lyon",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 79,
+          "team": "Lille",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 91,
+          "team": "Monaco",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 94,
+          "team": "Rennes",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 95,
+          "team": "Strasbourg",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 96,
+          "team": "Toulouse",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 97,
+          "team": "Lorient",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 106,
+          "team": "Stade Brestois 29",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 77,
+          "team": "Angers",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 114,
+          "team": "Paris FC",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 111,
+          "team": "Le Havre",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 84,
+          "team": "Nice",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 108,
+          "team": "Auxerre",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 83,
+          "team": "Nantes",
+          "value": 0,
+          "matches": 26
+        },
+        {
+          "team_id": 112,
+          "team": "Metz",
+          "value": 0,
+          "matches": 27
+        }
+      ],
+      "by_over_25_pct": [
+        {
+          "team_id": 85,
+          "team": "Paris Saint Germain",
+          "value": 0,
+          "matches": 26
+        },
+        {
+          "team_id": 116,
+          "team": "Lens",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 81,
+          "team": "Marseille",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 80,
+          "team": "Lyon",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 79,
+          "team": "Lille",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 91,
+          "team": "Monaco",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 94,
+          "team": "Rennes",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 95,
+          "team": "Strasbourg",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 96,
+          "team": "Toulouse",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 97,
+          "team": "Lorient",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 106,
+          "team": "Stade Brestois 29",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 77,
+          "team": "Angers",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 114,
+          "team": "Paris FC",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 111,
+          "team": "Le Havre",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 84,
+          "team": "Nice",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 108,
+          "team": "Auxerre",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 83,
+          "team": "Nantes",
+          "value": 0,
+          "matches": 26
+        },
+        {
+          "team_id": 112,
+          "team": "Metz",
+          "value": 0,
+          "matches": 27
+        }
+      ],
+      "by_clean_sheets_pct": [
+        {
+          "team_id": 85,
+          "team": "Paris Saint Germain",
+          "value": 0,
+          "matches": 26
+        },
+        {
+          "team_id": 116,
+          "team": "Lens",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 81,
+          "team": "Marseille",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 80,
+          "team": "Lyon",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 79,
+          "team": "Lille",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 91,
+          "team": "Monaco",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 94,
+          "team": "Rennes",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 95,
+          "team": "Strasbourg",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 96,
+          "team": "Toulouse",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 97,
+          "team": "Lorient",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 106,
+          "team": "Stade Brestois 29",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 77,
+          "team": "Angers",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 114,
+          "team": "Paris FC",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 111,
+          "team": "Le Havre",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 84,
+          "team": "Nice",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 108,
+          "team": "Auxerre",
+          "value": 0,
+          "matches": 27
+        },
+        {
+          "team_id": 83,
+          "team": "Nantes",
+          "value": 0,
+          "matches": 26
+        },
+        {
+          "team_id": 112,
+          "team": "Metz",
+          "value": 0,
+          "matches": 27
+        }
+      ]
+    },
+    "team_rankings_legacy": [
+      {
+        "team_id": 85,
+        "team": "Paris Saint Germain",
+        "goals_for": 58,
+        "goals_against": 22,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 58,
+        "goals_conceded": 22
+      },
+      {
+        "team_id": 116,
+        "team": "Lens",
+        "goals_for": 54,
+        "goals_against": 24,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 54,
+        "goals_conceded": 24
+      },
+      {
+        "team_id": 81,
+        "team": "Marseille",
+        "goals_for": 54,
+        "goals_against": 35,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 54,
+        "goals_conceded": 35
+      },
+      {
+        "team_id": 91,
+        "team": "Monaco",
+        "goals_for": 47,
+        "goals_against": 38,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 47,
+        "goals_conceded": 38
+      },
+      {
+        "team_id": 94,
+        "team": "Rennes",
+        "goals_for": 43,
+        "goals_against": 37,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 43,
+        "goals_conceded": 37
+      },
+      {
+        "team_id": 95,
+        "team": "Strasbourg",
+        "goals_for": 43,
+        "goals_against": 33,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 43,
+        "goals_conceded": 33
+      },
+      {
+        "team_id": 79,
+        "team": "Lille",
+        "goals_for": 42,
+        "goals_against": 34,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 42,
+        "goals_conceded": 34
+      },
+      {
+        "team_id": 80,
+        "team": "Lyon",
+        "goals_for": 41,
+        "goals_against": 29,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 41,
+        "goals_conceded": 29
+      },
+      {
+        "team_id": 96,
+        "team": "Toulouse",
+        "goals_for": 38,
+        "goals_against": 32,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 38,
+        "goals_conceded": 32
+      },
+      {
+        "team_id": 97,
+        "team": "Lorient",
+        "goals_for": 37,
+        "goals_against": 41,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 37,
+        "goals_conceded": 41
+      },
+      {
+        "team_id": 106,
+        "team": "Stade Brestois 29",
+        "goals_for": 34,
+        "goals_against": 39,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 34,
+        "goals_conceded": 39
+      },
+      {
+        "team_id": 114,
+        "team": "Paris FC",
+        "goals_for": 32,
+        "goals_against": 43,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 32,
+        "goals_conceded": 43
+      },
+      {
+        "team_id": 84,
+        "team": "Nice",
+        "goals_for": 32,
+        "goals_against": 52,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 32,
+        "goals_conceded": 52
+      },
+      {
+        "team_id": 112,
+        "team": "Metz",
+        "goals_for": 25,
+        "goals_against": 60,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 25,
+        "goals_conceded": 60
+      },
+      {
+        "team_id": 77,
+        "team": "Angers",
+        "goals_for": 24,
+        "goals_against": 37,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 24,
+        "goals_conceded": 37
+      },
+      {
+        "team_id": 83,
+        "team": "Nantes",
+        "goals_for": 24,
+        "goals_against": 45,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 24,
+        "goals_conceded": 45
+      },
+      {
+        "team_id": 111,
+        "team": "Le Havre",
+        "goals_for": 22,
+        "goals_against": 35,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 22,
+        "goals_conceded": 35
+      },
+      {
+        "team_id": 108,
+        "team": "Auxerre",
+        "goals_for": 22,
+        "goals_against": 36,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 22,
+        "goals_conceded": 36
+      }
+    ],
+    "home_away_splits": {
+      "home": {
+        "goals_avg": 1.579,
+        "btts_pct": null,
+        "over_25_pct": null,
+        "clean_sheets_pct": null
+      },
+      "away": {
+        "goals_avg": 1.196,
+        "btts_pct": null,
+        "over_25_pct": null,
+        "clean_sheets_pct": null
+      },
+      "home_goals_avg": 1.579,
+      "away_goals_avg": 1.196,
+      "home_btts_pct": null,
+      "away_btts_pct": null,
+      "home_over_25_pct": null,
+      "away_over_25_pct": null,
+      "home_clean_sheets_pct": null,
+      "away_clean_sheets_pct": null,
+      "goals_home": null,
+      "goals_away": null,
+      "btts_home_pct": null,
+      "btts_away_pct": null,
+      "over_25_home_pct": null,
+      "over_25_away_pct": null,
+      "clean_sheets_home_pct": null,
+      "clean_sheets_away_pct": null
+    }
+  },
+  "trends": {
+    "trend_cards": [
+      {
+        "title": "Goal pressure",
+        "value": "2.78 goals/game",
+        "note": "Balanced totals profile"
+      },
+      {
+        "title": "BTTS cadence",
+        "value": "0.0%",
+        "note": "Moderate bilateral scoring"
+      },
+      {
+        "title": "Clean sheet footprint",
+        "value": "0.0%",
+        "note": "Defenses concede often"
+      },
+      {
+        "title": "Failed to score",
+        "value": "0.0%",
+        "note": "Attacks maintain stable floor"
+      }
+    ],
+    "team_profiles": [
+      {
+        "team": "Paris Saint Germain",
+        "position": 1,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Lens",
+        "position": 2,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Marseille",
+        "position": 3,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Lyon",
+        "position": 4,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Lille",
+        "position": 5,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Monaco",
+        "position": 6,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Rennes",
+        "position": 7,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Strasbourg",
+        "position": 8,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Toulouse",
+        "position": 9,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Lorient",
+        "position": 10,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Stade Brestois 29",
+        "position": 11,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Angers",
+        "position": 12,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      }
+    ],
+    "summary_text": "Ligue 1 2025 shows 2.78 goals per game with BTTS at 0.0%. Over 2.5 sits at 0.0%, while clean-sheet occurrence is 0.0%, indicating a mixed attack-defense profile."
+  },
+  "meta": {
+    "generated_at_utc": "2026-03-28T12:54:37.520Z",
+    "source": {
+      "provider": "api-football",
+      "league_id": 61,
+      "season": "2025",
+      "resources": [
+        "/standings",
+        "/fixtures",
+        "/teams/statistics"
+      ]
+    },
+    "version": "league_page_v1",
+    "schema": 1
+  }
+}

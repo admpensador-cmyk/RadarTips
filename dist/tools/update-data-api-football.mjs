@@ -18,7 +18,21 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { ApiFootballClient } from "./api-football-client.mjs";
-import { PREMIER_LEAGUE_V1, buildPremierLeagueV1Snapshot, enforceLeagueV1StatisticsContract } from "./lib/league-v1-snapshot.mjs";
+import {
+  LEAGUE_PAGE_V1_DEFINITIONS,
+  PREMIER_LEAGUE_V1,
+  assertLeaguePageSnapshotHasCoreData,
+  assertLeaguePageSnapshotUsesApiFootball,
+  buildLeagueV1Snapshot,
+  buildLeagueV1SnapshotFromTeamAggregates,
+  enforceLeagueV1StatisticsContract
+} from "./lib/league-v1-snapshot.mjs";
+import {
+  buildRawFixtureRecord,
+  buildAllTeamFacts,
+  buildAllTeamAggregates,
+  buildScopedTeamAggregates
+} from "./lib/league-fixtures-model.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
@@ -28,7 +42,31 @@ const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
 const OUT_COVERAGE_REPORT = path.join(OUT_DIR, "calendar_coverage_report.json");
-const OUT_PREMIER_LEAGUE_V1 = path.join(OUT_LEAGUES_DIR, `${PREMIER_LEAGUE_V1.slug}.json`);
+const LEAGUE_PAGE_OUTPUTS = new Map(
+  LEAGUE_PAGE_V1_DEFINITIONS.map((entry) => [entry.slug, path.join(OUT_LEAGUES_DIR, `${entry.slug}.json`)])
+);
+
+function getFixtureModelStoragePaths(slug) {
+  const leagueDir = path.join(OUT_LEAGUES_DIR, slug);
+  return {
+    dir: leagueDir,
+    meta: path.join(leagueDir, "meta.json"),
+    rawFixtures: path.join(leagueDir, "raw-fixtures.json"),
+    fixtureStats: path.join(leagueDir, "fixture-stats.json"),
+    rawEvents: path.join(leagueDir, "raw-events.json"),
+    teamFacts: path.join(leagueDir, "team-facts.json"),
+    teamAggregates: path.join(leagueDir, "team-aggregates.json")
+  };
+}
+
+function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return null;
+  }
+}
 
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
@@ -538,7 +576,36 @@ async function fetchAllFixturesForLeagueSeason({ league_id, season, timezone }) 
     season,
     timezone
   }, "fixtures");
-  return Array.isArray(json?.response) ? json.response : [];
+  const response = Array.isArray(json?.response) ? json.response : [];
+  if (response.length > 0) {
+    return response;
+  }
+
+  const fallbackRequests = [
+    { league: league_id, season, last: 380, timezone },
+    { league: league_id, season, next: 20, timezone },
+    { league: league_id, last: 380, timezone },
+    { league: league_id, next: 20, timezone }
+  ];
+
+  const fallbackResults = await Promise.allSettled(
+    fallbackRequests.map((params) => trackedApiGet("/fixtures", params, "fixtures"))
+  );
+
+  const merged = [];
+  const seenFixtureIds = new Set();
+  for (const result of fallbackResults) {
+    if (result.status !== "fulfilled") continue;
+    const entries = Array.isArray(result.value?.response) ? result.value.response : [];
+    for (const entry of entries) {
+      const fixtureId = Number(entry?.fixture?.id);
+      if (!Number.isFinite(fixtureId) || seenFixtureIds.has(fixtureId)) continue;
+      seenFixtureIds.add(fixtureId);
+      merged.push(entry);
+    }
+  }
+
+  return merged;
 }
 
 async function fetchStandingsForLeagueSeason({ league_id, season }) {
@@ -551,6 +618,42 @@ async function fetchStandingsForLeagueSeason({ league_id, season }) {
     throw new Error(`No standings data returned for league_id=${league_id} season=${season}`);
   }
   return json;
+}
+
+function extractTeamIdsFromStandingsPayload(standingsPayload) {
+  const response = Array.isArray(standingsPayload?.response) ? standingsPayload.response : [];
+  const leagueBlock = response[0]?.league || null;
+  const groups = Array.isArray(leagueBlock?.standings) ? leagueBlock.standings : [];
+  const rows = groups.find((entry) => Array.isArray(entry)) || [];
+  const teamIds = rows
+    .map((row) => Number(row?.team?.id))
+    .filter((teamId) => Number.isFinite(teamId));
+  return Array.from(new Set(teamIds));
+}
+
+async function fetchTeamStatisticsForLeagueSeason({ league_id, season, standingsPayload }) {
+  const teamIds = extractTeamIdsFromStandingsPayload(standingsPayload);
+  if (!teamIds.length) {
+    throw new Error(`[LEAGUE-V1] No team ids available in standings payload for league_id=${league_id} season=${season}`);
+  }
+
+  const payloads = [];
+  for (const teamId of teamIds) {
+    const payload = await trackedApiGet("/teams/statistics", {
+      league: league_id,
+      season,
+      team: teamId
+    }, "others");
+
+    const response = payload?.response;
+    if (!response || typeof response !== "object") {
+      throw new Error(`[LEAGUE-V1] Empty /teams/statistics payload for team_id=${teamId} league_id=${league_id} season=${season}`);
+    }
+
+    payloads.push(payload);
+  }
+
+  return payloads;
 }
 
 async function fixtureHasValidStatistics(fixtureId) {
@@ -1373,49 +1476,245 @@ async function generateStandings(flags, resolved, timezone) {
     return;
   }
 
+  const requestedLeagueIds = new Set((Array.isArray(flags?.leagueIds) ? flags.leagueIds : []).map((entry) => Number(entry)).filter((entry) => Number.isFinite(entry)));
+  const selectedLeagueDefinitions = requestedLeagueIds.size > 0
+    ? LEAGUE_PAGE_V1_DEFINITIONS.filter((entry) => requestedLeagueIds.has(entry.leagueId))
+    : LEAGUE_PAGE_V1_DEFINITIONS.slice();
+
+  if (!selectedLeagueDefinitions.length) {
+    throw new Error(
+      `[LEAGUE-V1] No supported fixed league snapshots matched requested league_ids=${Array.from(requestedLeagueIds).join(",")}`
+    );
+  }
+
   const resolvedLeagues = Array.isArray(resolved) ? resolved : [];
-  let premierLeague = resolvedLeagues.find((entry) => Number(entry?.league_id) === PREMIER_LEAGUE_V1.leagueId) || null;
+  const successes = [];
+  const failures = [];
 
-  if (!premierLeague) {
-    premierLeague = await resolveLeagueById({
-      league_id: PREMIER_LEAGUE_V1.leagueId,
-      country: PREMIER_LEAGUE_V1.defaultCountry,
-      display_name: PREMIER_LEAGUE_V1.defaultName,
-      type: "league"
-    });
+  for (const leagueDefinition of selectedLeagueDefinitions) {
+    try {
+      let resolvedLeague = resolvedLeagues.find((entry) => Number(entry?.league_id) === leagueDefinition.leagueId) || null;
+
+      if (!resolvedLeague) {
+        resolvedLeague = await resolveLeagueById({
+          league_id: leagueDefinition.leagueId,
+          country: leagueDefinition.defaultCountry,
+          display_name: leagueDefinition.defaultName,
+          type: "league"
+        });
+      }
+
+      if (!resolvedLeague?.league_id || !Number.isFinite(resolvedLeague?.season)) {
+        throw new Error(`[LEAGUE-V1] Failed resolving ${leagueDefinition.defaultName} season.`);
+      }
+
+      console.log(`\n[LEAGUE-V1] Generating official snapshot for ${leagueDefinition.defaultName}...`);
+      console.log(`[LEAGUE-V1] league_id=${resolvedLeague.league_id} season=${resolvedLeague.season}`);
+
+      const standingsPayload = await fetchStandingsForLeagueSeason({
+        league_id: resolvedLeague.league_id,
+        season: resolvedLeague.season
+      });
+
+      let allSeasonFixturesRaw = [];
+      try {
+        const fp = await fetchAllFixturesForLeagueSeason({
+          league_id: resolvedLeague.league_id,
+          season: resolvedLeague.season,
+          timezone
+        });
+        // fetchAllFixturesForLeagueSeason returns the raw response array directly
+        allSeasonFixturesRaw = Array.isArray(fp) ? fp : (Array.isArray(fp?.response) ? fp.response : []);
+      } catch (err) {
+        console.warn(
+          `[LEAGUE-V1] Optional fixtures fetch failed for ${leagueDefinition.slug}: ${err?.message || err}. Continuing with empty fixtures.`
+        );
+      }
+
+      const generatedAtUtc = nowIso();
+      let snapshot;
+
+      if (leagueDefinition.useFixtureModel) {
+        // ── FIXTURE MODEL PATH (Prédio 2) ─────────────────────────────────
+        // Derive all stats from finished fixtures. Eliminates 20 /teams/statistics
+        // API calls per run. Correctly computes btts/clean_sheets/over/goals.
+        console.log(`[LEAGUE-V1] Using fixture-derived model for ${leagueDefinition.slug}`);
+
+        const fixtureModelPaths = getFixtureModelStoragePaths(leagueDefinition.slug);
+        const persistedFixtureStats = readJsonIfExists(fixtureModelPaths.fixtureStats);
+        const persistedRawEvents = readJsonIfExists(fixtureModelPaths.rawEvents);
+        const fixtureStatsMap = persistedFixtureStats?.stats && typeof persistedFixtureStats.stats === "object"
+          ? persistedFixtureStats.stats
+          : {};
+        const fixtureEventsMap = persistedRawEvents?.events && typeof persistedRawEvents.events === "object"
+          ? persistedRawEvents.events
+          : {};
+
+        const FINISHED = new Set(["FT", "AET", "PEN"]);
+        const finishedRaw = allSeasonFixturesRaw
+          .map((item) => buildRawFixtureRecord(item, resolvedLeague.league_id, resolvedLeague.season))
+          .filter(
+            (r) => r !== null &&
+            FINISHED.has(r.status) &&
+            r.home_goals !== null &&
+            r.away_goals !== null
+          );
+
+        if (!finishedRaw.length) {
+          throw new Error(`[LEAGUE-V1] No finished fixtures found for ${leagueDefinition.slug} season=${resolvedLeague.season}`);
+        }
+
+        const allFacts = buildAllTeamFacts(finishedRaw, fixtureStatsMap, fixtureEventsMap);
+        const teamAggregates = buildAllTeamAggregates(allFacts, resolvedLeague.league_id, resolvedLeague.season);
+        const scopedAggregates = buildScopedTeamAggregates(allFacts, resolvedLeague.season);
+        const teamCount = Object.keys(teamAggregates).length;
+        const generatedAtUtc = nowIso();
+        const fixtureStatsCount = Object.values(fixtureStatsMap).filter((s) => s && !s.unavailable).length;
+        const fixtureStatsUnavailable = Object.values(fixtureStatsMap).filter((s) => s && s.unavailable).length;
+
+        writeJsonAtomic(fixtureModelPaths.meta, {
+          league_id: resolvedLeague.league_id,
+          season: resolvedLeague.season,
+          slug: leagueDefinition.slug,
+          model: "fixture_derived_v1",
+          generated_at_utc: generatedAtUtc,
+          fixture_count: finishedRaw.length,
+          fact_count: allFacts.length,
+          team_count: teamCount,
+          has_advanced_stats: false,
+          source_resources: ["/standings", "/fixtures"],
+          generated_by: "update-data-api-football.mjs"
+        });
+
+        writeJsonAtomic(fixtureModelPaths.rawFixtures, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            fixture_count: finishedRaw.length,
+            status_filter: ["FT", "AET", "PEN"]
+          },
+          fixtures: finishedRaw
+        });
+
+        writeJsonAtomic(fixtureModelPaths.fixtureStats, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            total_checked: finishedRaw.length,
+            stats_count: fixtureStatsCount,
+            unavailable_count: fixtureStatsUnavailable,
+            has_advanced_stats: fixtureStatsCount > 0,
+            source: fixtureStatsCount > 0
+              ? "persisted_fixture_stats_layer"
+              : "daily standings pipeline without persisted fixture stats"
+          },
+          stats: fixtureStatsMap
+        });
+
+        writeJsonAtomic(fixtureModelPaths.rawEvents, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            events_count: Object.keys(fixtureEventsMap).length,
+            source: Object.keys(fixtureEventsMap).length > 0
+              ? "persisted_fixture_events_layer"
+              : "daily standings pipeline without persisted fixture events"
+          },
+          events: fixtureEventsMap
+        });
+
+        writeJsonAtomic(fixtureModelPaths.teamFacts, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            fact_count: allFacts.length,
+            fixture_count: finishedRaw.length,
+            has_advanced_stats: fixtureStatsCount > 0 || Object.keys(fixtureEventsMap).length > 0
+          },
+          facts: allFacts
+        });
+
+        writeJsonAtomic(fixtureModelPaths.teamAggregates, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            team_count: teamCount,
+            fixture_count: finishedRaw.length,
+            has_advanced_stats: fixtureStatsCount > 0 || Object.keys(fixtureEventsMap).length > 0
+          },
+          teams: teamAggregates,
+          scopes: scopedAggregates
+        });
+
+        console.log(`[LEAGUE-V1] fixture-model: ${finishedRaw.length} finished fixtures, ${teamCount} teams, ${allFacts.length} facts`);
+
+        snapshot = buildLeagueV1SnapshotFromTeamAggregates({
+          leagueDefinition,
+          teamAggregates,
+          standingsPayload,
+          allSeasonFixtures: allSeasonFixturesRaw,
+          generatedAtUtc
+        });
+      } else {
+        // ── LEGACY API-AGGREGATE PATH (other leagues) ─────────────────────
+        const fixturesPayload = { response: allSeasonFixturesRaw };
+
+        const teamStatisticsPayloads = await fetchTeamStatisticsForLeagueSeason({
+          league_id: resolvedLeague.league_id,
+          season: resolvedLeague.season,
+          standingsPayload
+        });
+
+        snapshot = enforceLeagueV1StatisticsContract(buildLeagueV1Snapshot({
+          leagueDefinition,
+          standingsPayload,
+          fixturesPayload,
+          teamStatisticsPayloads,
+          generatedAtUtc
+        }));
+      }
+
+      assertLeaguePageSnapshotUsesApiFootball(snapshot, leagueDefinition);
+      assertLeaguePageSnapshotHasCoreData(snapshot);
+
+      const outputPath = LEAGUE_PAGE_OUTPUTS.get(leagueDefinition.slug);
+      writeJsonAtomic(outputPath, snapshot);
+      successes.push({
+        slug: leagueDefinition.slug,
+        league_id: leagueDefinition.leagueId,
+        outputPath,
+        standings: snapshot.standings.length,
+        upcoming: snapshot.fixtures.upcoming.length,
+        recent: snapshot.fixtures.recent.length,
+        matches_count: snapshot.statistics.league.matches_count
+      });
+      console.log(
+        `[LEAGUE-V1] Wrote ${outputPath.replace(process.cwd(), ".")} ` +
+        `standings=${snapshot.standings.length} upcoming=${snapshot.fixtures.upcoming.length} recent=${snapshot.fixtures.recent.length} matches=${snapshot.statistics.league.matches_count}`
+      );
+    } catch (err) {
+      const reason = err?.message || String(err);
+      failures.push({ slug: leagueDefinition.slug, league_id: leagueDefinition.leagueId, reason });
+      console.error(`[LEAGUE-V1] Failed ${leagueDefinition.slug}: ${reason}`);
+    }
   }
 
-  if (!premierLeague?.league_id || !Number.isFinite(premierLeague?.season)) {
-    throw new Error(`[LEAGUE-V1] Failed resolving ${PREMIER_LEAGUE_V1.defaultName} season.`);
+  console.log(`[LEAGUE-V1] snapshot summary success=${successes.length} failed=${failures.length}`);
+  if (successes.length > 0) {
+    console.log(`[LEAGUE-V1] generated_slugs=${successes.map((entry) => entry.slug).join(",")}`);
+  }
+  if (failures.length > 0) {
+    console.log(`[LEAGUE-V1] failed_slugs=${failures.map((entry) => `${entry.slug}:${entry.reason}`).join(" | ")}`);
   }
 
-  console.log(`\n[LEAGUE-V1] Generating official snapshot for ${PREMIER_LEAGUE_V1.defaultName}...`);
-  console.log(`[LEAGUE-V1] league_id=${premierLeague.league_id} season=${premierLeague.season}`);
-
-  const [standingsPayload, fixturesPayload] = await Promise.all([
-    fetchStandingsForLeagueSeason({
-      league_id: premierLeague.league_id,
-      season: premierLeague.season
-    }),
-    fetchAllFixturesForLeagueSeason({
-      league_id: premierLeague.league_id,
-      season: premierLeague.season,
-      timezone
-    })
-  ]);
-
-  const generatedAtUtc = nowIso();
-  const snapshot = enforceLeagueV1StatisticsContract(buildPremierLeagueV1Snapshot({
-    standingsPayload,
-    fixturesPayload,
-    generatedAtUtc
-  }));
-
-  writeJsonAtomic(OUT_PREMIER_LEAGUE_V1, snapshot);
-  console.log(
-    `[LEAGUE-V1] Wrote ${OUT_PREMIER_LEAGUE_V1.replace(process.cwd(), ".")} ` +
-    `standings=${snapshot.standings.length} upcoming=${snapshot.fixtures.upcoming.length} recent=${snapshot.fixtures.recent.length}`
-  );
+  if (successes.length <= 0) {
+    throw new Error("[LEAGUE-V1] All requested league snapshots failed to generate.");
+  }
 }
 
 async function main() {

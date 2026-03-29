@@ -1,6 +1,4 @@
 (function () {
-  console.log('[LeaguePage] script loaded');
-
   var STORE = window.RT_LEAGUE_V1_DATA;
 
   var TAB_ORDER = ['overview', 'table', 'statistics', 'trends', 'games', 'teams'];
@@ -33,11 +31,16 @@
             country: 'England',
             season: 'current'
           },
-          heroMetrics: [],
+          heroMetrics: [
+            { label: 'Goals / match', value: '-', trend: 'steady' },
+            { label: 'BTTS', value: '-', trend: 'steady' },
+            { label: 'Over 2.5', value: '-', trend: 'steady' },
+            { label: 'Clean sheets', value: '-', trend: 'steady' }
+          ],
           overview: { competitionSummary: [], featuredMatches: [], globalTrends: [], quickRankings: [] },
           standings: [],
           statistics: { leagueStats: [], rankings: [], teams: [], splits: [] },
-          trends: { cards: [], teamProfiles: [], reading: [] },
+          trends: { cards: [], teamProfiles: [], reading: ['Awaiting league snapshot.', ''] },
           games: { upcoming: [], recent: [] },
           teamsIndex: []
         }
@@ -93,29 +96,13 @@
 
   function asPct(value) {
     var num = Number(value);
-    return Number.isFinite(num) ? num.toFixed(1) + '%' : null;
-  }
-
-  function asPctOrDash(value) {
-    var num = Number(value);
-    if (!Number.isFinite(num)) return null;
+    if (!Number.isFinite(num)) return '0.0%';
     return num.toFixed(1) + '%';
-  }
-
-  function asNumOrDash(value, digits) {
-    var num = Number(value);
-    if (!Number.isFinite(num)) return null;
-    return num.toFixed(digits || 1);
-  }
-
-  function numberOrNull(value) {
-    var num = Number(value);
-    return Number.isFinite(num) ? num : null;
   }
 
   function asNum(value, digits) {
     var num = Number(value);
-    if (!Number.isFinite(num)) return null;
+    if (!Number.isFinite(num)) return '-';
     return num.toFixed(digits || 1);
   }
 
@@ -142,32 +129,25 @@
   }
 
   function buildFeaturedFromFixtures(fixtures) {
-    return (fixtures || []).slice(0, 8).map(function (f) {
-      var kickoff = formatKickoff(f.kickoff_utc);
-      var home = String(f.home || '').trim();
-      var away = String(f.away || '').trim();
-      var round = String(f.round || '').trim();
-      var status = String(f.status || '').trim();
-      if (!home || !away || !kickoff) return null;
-
+    return (fixtures || []).slice(0, 5).map(function (f) {
       var tags = [];
       if (f.score) tags.push('result captured');
-      if (round) tags.push(round);
+      if (f.round) tags.push(String(f.round));
       return {
         fixtureId: f.fixture_id,
-        round: round || null,
-        kickoff: kickoff,
-        status: status || null,
-        home: home,
-        away: away,
-        tags: tags
+        round: f.round || 'Round',
+        kickoff: formatKickoff(f.kickoff_utc),
+        status: f.status || 'Scheduled',
+        home: f.home,
+        away: f.away,
+        tags: tags.length ? tags : ['league fixture']
       };
-    }).filter(Boolean).slice(0, 5);
+    });
   }
 
   function formatKickoff(isoUtc) {
     var ms = Date.parse(String(isoUtc || ''));
-    if (!Number.isFinite(ms)) return null;
+    if (!Number.isFinite(ms)) return 'TBD';
     var d = new Date(ms);
     var day = String(d.getUTCDate()).padStart(2, '0');
     var month = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -177,25 +157,20 @@
   }
 
   function deriveTrend(summary, splits) {
-    var goals = numberOrNull(summary.goals_per_game);
-    var btts = numberOrNull(summary.btts_pct);
-    var over25 = numberOrNull(summary.over_25_pct);
-    var under25 = numberOrNull(summary.under_25_pct);
-    var safeSplits = splits && typeof splits === 'object' ? splits : {};
-    var homeBtts = numberOrNull((safeSplits.home && safeSplits.home.btts_pct) != null ? safeSplits.home.btts_pct : safeSplits.home_btts_pct);
-    var rows = [];
-    if (goals != null) rows.push({ title: 'Goals per game', value: goals.toFixed(2), note: goals.toFixed(2) + ' average goals per match' });
-    if (btts != null) rows.push({ title: 'BTTS', value: btts.toFixed(1) + '%', note: btts.toFixed(1) + '% of matches had both teams scoring' });
-    if (over25 != null) rows.push({ title: 'Over 2.5', value: over25.toFixed(1) + '%', note: over25.toFixed(1) + '% of matches finished over 2.5 goals' });
-    if (under25 != null) rows.push({ title: 'Under 2.5', value: under25.toFixed(1) + '%', note: under25.toFixed(1) + '% of matches stayed under 2.5 goals' });
-    if (homeBtts != null) rows.push({ title: 'Home BTTS', value: homeBtts.toFixed(1) + '%', note: homeBtts.toFixed(1) + '% BTTS rate in home-side split' });
-    return rows;
+    var goals = Number(summary.goals_per_game || 0);
+    var btts = Number(summary.btts_pct || 0);
+    var over25 = Number(summary.over_25_pct || 0);
+    var clean = Number(summary.clean_sheets_pct || 0);
+    var homeBtts = Number((splits && splits.home && splits.home.btts_pct) || splits.home_btts_pct || 50);
+    return [
+      { title: 'Goal trend', value: goals.toFixed(2) + ' goals/game', note: goals >= 2.7 ? 'high-volume phase' : 'moderate scoring pace' },
+      { title: 'BTTS trend', value: btts.toFixed(1) + '%', note: btts >= 52 ? 'bilateral scoring above baseline' : 'mixed bilateral scoring' },
+      { title: 'Home edge', value: asPct(homeBtts), note: 'home-away split monitored' },
+      { title: 'Over/Under shape', value: over25.toFixed(1) + '% over 2.5', note: clean >= 40 ? 'defensive resistance still present' : 'open-game pattern' }
+    ];
   }
 
   function adaptSnapshotToLeague(snapshot, fallbackLeague) {
-    if (!fallbackLeague || !fallbackLeague.competition) {
-      fallbackLeague = buildRuntimeStore().bySlug['premier-league'];
-    }
     var competition = snapshot && snapshot.competition ? snapshot.competition : {};
     var summary = snapshot && snapshot.summary ? snapshot.summary : {};
     var standings = Array.isArray(snapshot && snapshot.standings) ? snapshot.standings : [];
@@ -203,80 +178,43 @@
     var statistics = snapshot && snapshot.statistics ? snapshot.statistics : {};
     var leagueStats = statistics.league || {};
     var teamsStats = Array.isArray(statistics.teams) ? statistics.teams : [];
-    var rankings = statistics.team_rankings && !Array.isArray(statistics.team_rankings) ? statistics.team_rankings : null;
+    var rankings = statistics.team_rankings && !Array.isArray(statistics.team_rankings) ? statistics.team_rankings : {};
+    var legacyRankings = Array.isArray(statistics.team_rankings) ? statistics.team_rankings : [];
     var splits = statistics.home_away_splits || {};
     var trends = snapshot && snapshot.trends ? snapshot.trends : {};
 
-    function asRankingRows(rows) {
-      return (Array.isArray(rows) ? rows : []).slice(0, 5);
+    function asRankingRows(rows, fallbackSelector) {
+      var list = Array.isArray(rows) ? rows : [];
+      if (!list.length && Array.isArray(legacyRankings) && legacyRankings.length) {
+        return legacyRankings
+          .slice()
+          .sort(fallbackSelector)
+          .slice(0, 5)
+          .map(function (row) {
+            return {
+              team: row.team,
+              value: Number(row.over_25_pct || row.btts_pct || row.clean_sheets_pct || row.goals_for || row.goals_scored || 0),
+              matches: Number(row.matches || row.played || 0)
+            };
+          });
+      }
+      return list.slice(0, 5);
     }
 
-    var byGoalsFor = asRankingRows(rankings && rankings.by_goals_for);
-    var byGoalsAgainst = asRankingRows(rankings && rankings.by_goals_against);
-    var byBtts = asRankingRows(rankings && rankings.by_btts_pct);
-    var byOver25 = asRankingRows(rankings && rankings.by_over_25_pct);
-    var byClean = asRankingRows(rankings && rankings.by_clean_sheets_pct);
+    var byGoalsFor = asRankingRows(rankings.by_goals_for, function (a, b) { return Number(b.goals_for || b.goals_scored || 0) - Number(a.goals_for || a.goals_scored || 0); });
+    var byGoalsAgainst = asRankingRows(rankings.by_goals_against, function (a, b) { return Number(a.goals_against || a.goals_conceded || 0) - Number(b.goals_against || b.goals_conceded || 0); });
+    var byBtts = asRankingRows(rankings.by_btts_pct, function (a, b) { return Number(b.btts_pct || 0) - Number(a.btts_pct || 0); });
+    var byOver25 = asRankingRows(rankings.by_over_25_pct, function (a, b) { return Number(b.over_25_pct || 0) - Number(a.over_25_pct || 0); });
+    var byClean = asRankingRows(rankings.by_clean_sheets_pct, function (a, b) { return Number(b.clean_sheets_pct || 0) - Number(a.clean_sheets_pct || 0); });
 
-    var topAttack = byGoalsFor[0] || null;
-    var topDefense = byGoalsAgainst[0] || null;
+    var topAttack = byGoalsFor[0] || standings.slice().sort(function (a, b) { return Number(b.goals_for || 0) - Number(a.goals_for || 0); })[0] || null;
+    var topDefense = byGoalsAgainst[0] || standings.slice().sort(function (a, b) { return Number(a.goals_against || 999) - Number(b.goals_against || 999); })[0] || null;
     var topOver = byOver25[0] || null;
     var topBtts = byBtts[0] || null;
     var topClean = byClean[0] || null;
 
-    var splitHome = splits && typeof splits.home === 'object' ? splits.home : null;
-    var splitAway = splits && typeof splits.away === 'object' ? splits.away : null;
-
-    var goalsPerGame = numberOrNull(summary.goals_per_game);
-    var over15Pct = numberOrNull(summary.over_15_pct);
-    var over25Pct = numberOrNull(summary.over_25_pct);
-    var bttsPct = numberOrNull(summary.btts_pct);
-    var cleanSheetsPct = numberOrNull(summary.clean_sheets_pct);
-    var under25Pct = numberOrNull(summary.under_25_pct);
-
-    var leagueGoalsPerGame = numberOrNull(leagueStats.goals_per_game);
-    var leagueOver15Pct = numberOrNull(leagueStats.over_15_pct);
-    var leagueOver25Pct = numberOrNull(leagueStats.over_25_pct);
-    var leagueOver35Pct = numberOrNull(leagueStats.over_35_pct);
-    var leagueBttsPct = numberOrNull(leagueStats.btts_pct);
-    var leagueCleanSheetsPct = numberOrNull(leagueStats.clean_sheets_pct);
-    var leagueFailedToScorePct = numberOrNull(leagueStats.failed_to_score_pct);
-
-    var summaryRows = [];
-    if (goalsPerGame != null) summaryRows.push({ label: 'Goals per game', value: goalsPerGame.toFixed(2), insight: goalsPerGame.toFixed(2) + ' average goals per match' });
-    if (bttsPct != null) summaryRows.push({ label: 'BTTS', value: asPctOrDash(bttsPct), insight: asPctOrDash(bttsPct) + ' of matches had both teams scoring' });
-    if (over15Pct != null) summaryRows.push({ label: 'Over 1.5', value: asPctOrDash(over15Pct), insight: asPctOrDash(over15Pct) + ' of matches finished over 1.5 goals' });
-    if (over25Pct != null) summaryRows.push({ label: 'Over 2.5', value: asPctOrDash(over25Pct), insight: asPctOrDash(over25Pct) + ' of matches finished over 2.5 goals' });
-    if (under25Pct != null) summaryRows.push({ label: 'Under 2.5', value: asPctOrDash(under25Pct), insight: asPctOrDash(under25Pct) + ' of matches stayed under 2.5 goals' });
-
-    var leagueMetricRows = [];
-    if (leagueGoalsPerGame != null) leagueMetricRows.push({ label: 'Goals / game', value: leagueGoalsPerGame.toFixed(2) });
-    if (leagueBttsPct != null) leagueMetricRows.push({ label: 'BTTS', value: asPctOrDash(leagueBttsPct) });
-    if (leagueOver15Pct != null) leagueMetricRows.push({ label: 'Over 1.5', value: asPctOrDash(leagueOver15Pct) });
-    if (leagueOver25Pct != null) leagueMetricRows.push({ label: 'Over 2.5', value: asPctOrDash(leagueOver25Pct) });
-    if (leagueOver35Pct != null) leagueMetricRows.push({ label: 'Over 3.5', value: asPctOrDash(leagueOver35Pct) });
-    if (leagueCleanSheetsPct != null) leagueMetricRows.push({ label: 'Clean sheets', value: asPctOrDash(leagueCleanSheetsPct) });
-    if (leagueFailedToScorePct != null) leagueMetricRows.push({ label: 'Failed to score', value: asPctOrDash(leagueFailedToScorePct) });
-
-    function splitMetric(metric, homeValue, awayValue, formatter) {
-      var h = numberOrNull(homeValue);
-      var a = numberOrNull(awayValue);
-      if (h == null || a == null) return null;
-      var total = Math.max(0.01, h + a);
-      return {
-        metric: metric,
-        homeLabel: formatter === 'num' ? asNumOrDash(h, 2) : asPctOrDash(h),
-        awayLabel: formatter === 'num' ? asNumOrDash(a, 2) : asPctOrDash(a),
-        barHome: asSplitPct((h / total) * 100),
-        barAway: asSplitPct((a / total) * 100)
-      };
-    }
-
-    var splitRows = [
-      splitMetric('Goals avg', splitHome && splitHome.goals_avg, splitAway && splitAway.goals_avg, 'num'),
-      splitMetric('BTTS', splitHome && splitHome.btts_pct, splitAway && splitAway.btts_pct, 'pct'),
-      splitMetric('Over 2.5', splitHome && splitHome.over_25_pct, splitAway && splitAway.over_25_pct, 'pct'),
-      splitMetric('Clean sheets', splitHome && splitHome.clean_sheets_pct, splitAway && splitAway.clean_sheets_pct, 'pct')
-    ].filter(Boolean);
+    var splitHome = splits.home || {};
+    var splitAway = splits.away || {};
 
     return {
       competition: {
@@ -288,22 +226,28 @@
         season: competition.season || fallbackLeague.competition.season
       },
       heroMetrics: [
-        goalsPerGame != null ? { label: 'Goals / match', value: goalsPerGame.toFixed(2) } : null,
-        bttsPct != null ? { label: 'BTTS', value: asPctOrDash(bttsPct) } : null,
-        over25Pct != null ? { label: 'Over 2.5', value: asPctOrDash(over25Pct) } : null,
-        cleanSheetsPct != null ? { label: 'Clean sheets', value: asPctOrDash(cleanSheetsPct) } : null
-      ].filter(Boolean),
+        { label: 'Goals / match', value: asNum(summary.goals_per_game, 2), trend: 'up' },
+        { label: 'BTTS', value: asPct(summary.btts_pct), trend: 'steady' },
+        { label: 'Over 2.5', value: asPct(summary.over_25_pct), trend: 'up' },
+        { label: 'Clean sheets', value: asPct(summary.clean_sheets_pct), trend: 'steady' }
+      ],
       overview: {
-        competitionSummary: summaryRows,
+        competitionSummary: [
+          { label: 'Average goals', value: asNum(summary.goals_per_game, 2), insight: 'derived from finished season fixtures' },
+          { label: 'BTTS', value: asPct(summary.btts_pct), insight: 'both teams to score ratio' },
+          { label: 'Over 1.5', value: asPct(summary.over_15_pct), insight: 'goal floor consistency' },
+          { label: 'Over 2.5', value: asPct(summary.over_25_pct), insight: 'primary totals trigger' },
+          { label: 'Under 2.5', value: asPct(summary.under_25_pct), insight: 'controlled-game counterweight' }
+        ],
         featuredMatches: buildFeaturedFromFixtures(fixtures.upcoming && fixtures.upcoming.length ? fixtures.upcoming : fixtures.recent),
         globalTrends: deriveTrend(summary, splits),
         quickRankings: [
-          { label: 'Best attack', team: topAttack ? topAttack.team : null },
-          { label: 'Best defense', team: topDefense ? topDefense.team : null },
-          { label: 'Highest over 2.5', team: topOver ? topOver.team : null },
-          { label: 'Highest BTTS', team: topBtts ? topBtts.team : null },
-          { label: 'Highest clean sheets', team: topClean ? topClean.team : null }
-        ].filter(function (row) { return !!row.team; })
+          { label: 'Best attack', team: topAttack ? topAttack.team : 'n/a' },
+          { label: 'Best defense', team: topDefense ? topDefense.team : 'n/a' },
+          { label: 'Most over 2.5', team: topOver ? topOver.team : 'n/a' },
+          { label: 'Most BTTS', team: topBtts ? topBtts.team : 'n/a' },
+          { label: 'Most clean sheets', team: topClean ? topClean.team : 'n/a' }
+        ]
       },
       standings: standings.map(function (row) {
         return {
@@ -321,13 +265,18 @@
         };
       }),
       statistics: {
-        leagueStats: leagueMetricRows,
+        leagueStats: [
+          { label: 'Goals / game', value: asNum(leagueStats.goals_per_game != null ? leagueStats.goals_per_game : summary.goals_per_game, 2) },
+          { label: 'Over 2.5', value: asPct(leagueStats.over_25_pct != null ? leagueStats.over_25_pct : summary.over_25_pct) },
+          { label: 'BTTS', value: asPct(leagueStats.btts_pct != null ? leagueStats.btts_pct : summary.btts_pct) },
+          { label: 'Clean sheets', value: asPct(leagueStats.clean_sheets_pct != null ? leagueStats.clean_sheets_pct : summary.clean_sheets_pct) }
+        ],
         rankings: [
-          { title: 'Top scoring teams', rows: byGoalsFor },
-          { title: 'Best defensive records', rows: byGoalsAgainst },
-          { title: 'Highest BTTS rate', rows: byBtts },
-          { title: 'Highest over 2.5 rate', rows: byOver25 },
-          { title: 'Highest clean sheet rate', rows: byClean }
+          { title: 'Top ataques', rows: byGoalsFor },
+          { title: 'Melhores defesas', rows: byGoalsAgainst },
+          { title: 'Mais BTTS', rows: byBtts },
+          { title: 'Mais Over 2.5', rows: byOver25 },
+          { title: 'Mais clean sheets', rows: byClean }
         ],
         teams: teamsStats.map(function (row) {
           return {
@@ -336,29 +285,58 @@
             played: Number(row.played || row.matches || 0),
             goals_for: Number(row.goals_for || row.goals_scored || 0),
             goals_against: Number(row.goals_against || row.goals_conceded || 0),
-            goals_for_per_game: asNumOrDash(row.goals_for_per_game, 2),
-            goals_against_per_game: asNumOrDash(row.goals_against_per_game, 2),
-            over_15_pct: asPctOrDash(row.over_15_pct),
-            over_25_pct: asPctOrDash(row.over_25_pct),
-            over_35_pct: asPctOrDash(row.over_35_pct),
-            btts_pct: asPctOrDash(row.btts_pct),
-            clean_sheets_pct: asPctOrDash(row.clean_sheets_pct),
-            failed_to_score_pct: asPctOrDash(row.failed_to_score_pct)
+            goals_for_per_game: asNum(row.goals_for_per_game, 2),
+            goals_against_per_game: asNum(row.goals_against_per_game, 2),
+            over_15_pct: asPct(row.over_15_pct),
+            over_25_pct: asPct(row.over_25_pct),
+            over_35_pct: asPct(row.over_35_pct),
+            btts_pct: asPct(row.btts_pct),
+            clean_sheets_pct: asPct(row.clean_sheets_pct),
+            failed_to_score_pct: asPct(row.failed_to_score_pct)
           };
         }),
-        splits: splitRows
+        splits: [
+          {
+            metric: 'Goals avg',
+            homeLabel: asNum(splitHome.goals_avg != null ? splitHome.goals_avg : splits.home_goals_avg, 2),
+            awayLabel: asNum(splitAway.goals_avg != null ? splitAway.goals_avg : splits.away_goals_avg, 2),
+            barHome: asSplitPct((Number(splitHome.goals_avg != null ? splitHome.goals_avg : splits.home_goals_avg || 0) / Math.max(0.01, Number(splitHome.goals_avg != null ? splitHome.goals_avg : splits.home_goals_avg || 0) + Number(splitAway.goals_avg != null ? splitAway.goals_avg : splits.away_goals_avg || 0))) * 100),
+            barAway: asSplitPct((Number(splitAway.goals_avg != null ? splitAway.goals_avg : splits.away_goals_avg || 0) / Math.max(0.01, Number(splitHome.goals_avg != null ? splitHome.goals_avg : splits.home_goals_avg || 0) + Number(splitAway.goals_avg != null ? splitAway.goals_avg : splits.away_goals_avg || 0))) * 100)
+          },
+          {
+            metric: 'BTTS',
+            homeLabel: asPct(splitHome.btts_pct != null ? splitHome.btts_pct : splits.home_btts_pct),
+            awayLabel: asPct(splitAway.btts_pct != null ? splitAway.btts_pct : splits.away_btts_pct),
+            barHome: asSplitPct(splitHome.btts_pct != null ? splitHome.btts_pct : splits.home_btts_pct),
+            barAway: asSplitPct(splitAway.btts_pct != null ? splitAway.btts_pct : splits.away_btts_pct)
+          },
+          {
+            metric: 'Over 2.5',
+            homeLabel: asPct(splitHome.over_25_pct != null ? splitHome.over_25_pct : splits.home_over_25_pct),
+            awayLabel: asPct(splitAway.over_25_pct != null ? splitAway.over_25_pct : splits.away_over_25_pct),
+            barHome: asSplitPct(splitHome.over_25_pct != null ? splitHome.over_25_pct : splits.home_over_25_pct),
+            barAway: asSplitPct(splitAway.over_25_pct != null ? splitAway.over_25_pct : splits.away_over_25_pct)
+          },
+          {
+            metric: 'Clean sheets',
+            homeLabel: asPct(splitHome.clean_sheets_pct != null ? splitHome.clean_sheets_pct : splits.home_clean_sheets_pct),
+            awayLabel: asPct(splitAway.clean_sheets_pct != null ? splitAway.clean_sheets_pct : splits.away_clean_sheets_pct),
+            barHome: asSplitPct(splitHome.clean_sheets_pct != null ? splitHome.clean_sheets_pct : splits.home_clean_sheets_pct),
+            barAway: asSplitPct(splitAway.clean_sheets_pct != null ? splitAway.clean_sheets_pct : splits.away_clean_sheets_pct)
+          }
+        ]
       },
       trends: {
         cards: Array.isArray(trends.trend_cards) && trends.trend_cards.length ? trends.trend_cards.map(function (card) {
           return { title: card.title, text: card.note ? (card.value + ' - ' + card.note) : card.value };
-        }) : [],
+        }) : fallbackLeague.trends.cards,
         teamProfiles: Array.isArray(trends.team_profiles) ? trends.team_profiles.map(function (profile) {
           return { team: profile.team, profile: profile.profile, tags: profile.tags || [] };
-        }) : [],
+        }) : fallbackLeague.trends.teamProfiles,
         reading: [
-          trends.summary_text ? String(trends.summary_text) : null,
-          (snapshot.meta && snapshot.meta.generated_at_utc) ? ('Snapshot generated at ' + snapshot.meta.generated_at_utc + '.') : null
-        ].filter(Boolean)
+          String(trends.summary_text || 'Premier League data is now loaded from a consolidated real snapshot.'),
+          String((snapshot.meta && snapshot.meta.generated_at_utc) ? ('Snapshot generated at ' + snapshot.meta.generated_at_utc + '.') : 'Data source is structured for upcoming multi-league rollout.')
+        ]
       },
       games: {
         upcoming: buildFeaturedFromFixtures(fixtures.upcoming || []),
@@ -372,8 +350,8 @@
           form: formString(row.form_last5),
           goalsFor: Number(row.goals_for || 0),
           goalsAgainst: Number(row.goals_against || 0),
-          btts: rankRow ? asPct(rankRow.btts_pct) : null,
-          profile: null
+          btts: rankRow ? asPct(rankRow.btts_pct) : '0.0%',
+          profile: rankRow && Number(rankRow.clean_sheets_pct || 0) >= 35 ? 'defensive stable' : 'balanced profile'
         };
       })
     };
@@ -401,10 +379,10 @@
   }
 
   function createTopMetric(metric) {
-    if (!metric || !metric.value) return '';
     return '<article class="league-v1-kpi">' +
       '<div class="league-v1-kpi-label">' + esc(metric.label) + '</div>' +
       '<div class="league-v1-kpi-value">' + esc(metric.value) + '</div>' +
+      '<div class="league-v1-kpi-trend ' + esc(metric.trend) + '">' + esc(metric.trend) + '</div>' +
       '</article>';
   }
 
@@ -423,6 +401,7 @@
       '<div class="league-v1-meta">' +
       '<span>' + esc(league.competition.country) + '</span>' +
       '<span>Season ' + esc(league.competition.season) + '</span>' +
+      '<span>RadarTips League Center v1</span>' +
       '</div>' +
       '</div>' +
       '</div>' +
@@ -431,7 +410,7 @@
       '<select id="leagueV1Switcher">' + options + '</select>' +
       '</div>' +
       '</div>' +
-        (Array.isArray(league.heroMetrics) && league.heroMetrics.length ? '<div class="league-v1-kpis">' + league.heroMetrics.map(createTopMetric).join('') + '</div>' : '') +
+      '<div class="league-v1-kpis">' + league.heroMetrics.map(createTopMetric).join('') + '</div>' +
       '</section>';
   }
 
@@ -455,54 +434,35 @@
   }
 
   function renderOverview(league) {
-    var sections = [];
+    var summaryCards = '<div class="league-v1-grid-3">' + league.overview.competitionSummary.map(function (metric) {
+      return '<article class="league-v1-card">' +
+        '<h4>' + esc(metric.label) + '</h4>' +
+        '<p>' + esc(metric.value) + '</p>' +
+        '<div class="league-v1-tagline">' + esc(metric.insight) + '</div>' +
+        '</article>';
+    }).join('') + '</div>';
 
-    var summaryRows = Array.isArray(league.overview.competitionSummary) ? league.overview.competitionSummary : [];
-    if (summaryRows.length) {
-      var summaryCards = '<div class="league-v1-grid-3">' + summaryRows.map(function (metric) {
-        return '<article class="league-v1-card">' +
-          '<h4>' + esc(metric.label) + '</h4>' +
-          '<p>' + esc(metric.value) + '</p>' +
-          '<div class="league-v1-tagline">' + esc(metric.insight || '') + '</div>' +
-          '</article>';
-      }).join('') + '</div>';
-      sections.push(section('Overview metrics', '', summaryCards));
-    }
+    var featured = '<div class="league-v1-match-list">' + league.overview.featuredMatches.map(matchCard).join('') + '</div>';
 
-    var featuredMatches = Array.isArray(league.overview.featuredMatches) ? league.overview.featuredMatches : [];
-    if (featuredMatches.length) {
-      var featured = '<div class="league-v1-match-list">' + featuredMatches.map(matchCard).join('') + '</div>';
-      sections.push(section('Featured fixtures', '', featured));
-    }
+    var trendCards = '<div class="league-v1-grid-4">' + league.overview.globalTrends.map(function (trend) {
+      return '<article class="league-v1-card">' +
+        '<h4>' + esc(trend.title) + '</h4>' +
+        '<p>' + esc(trend.value) + '</p>' +
+        '<div class="league-v1-tagline">' + esc(trend.note) + '</div>' +
+        '</article>';
+    }).join('') + '</div>';
 
-    var trendRows = Array.isArray(league.overview.globalTrends) ? league.overview.globalTrends : [];
-    if (trendRows.length) {
-      var trendCards = '<div class="league-v1-grid-4">' + trendRows.map(function (trend) {
-        return '<article class="league-v1-card">' +
-          '<h4>' + esc(trend.title) + '</h4>' +
-          '<p>' + esc(trend.value) + '</p>' +
-          '<div class="league-v1-tagline">' + esc(trend.note || '') + '</div>' +
-          '</article>';
-      }).join('') + '</div>';
-      sections.push(section('Derived ratios', '', trendCards));
-    }
+    var rankings = '<div class="league-v1-grid-2">' + league.overview.quickRankings.map(function (item) {
+      return '<article class="league-v1-card">' +
+        '<h4>' + esc(item.label) + '</h4>' +
+        '<p>' + esc(item.team) + '</p>' +
+        '</article>';
+    }).join('') + '</div>';
 
-    var quickRankingsRows = Array.isArray(league.overview.quickRankings) ? league.overview.quickRankings : [];
-    if (quickRankingsRows.length) {
-      var rankings = '<div class="league-v1-grid-2">' + quickRankingsRows.map(function (item) {
-        return '<article class="league-v1-card">' +
-          '<h4>' + esc(item.label) + '</h4>' +
-          '<p>' + esc(item.team) + '</p>' +
-          '</article>';
-      }).join('') + '</div>';
-      sections.push(section('Quick rankings', '', rankings));
-    }
-
-    if (!sections.length) {
-      return section('Overview metrics', 'no summary data available', '<div class="league-v1-text-block"><p>No summary fields were returned by the snapshot.</p></div>');
-    }
-
-    return sections.join('');
+    return section('Resumo da competicao', 'snapshot analitico', summaryCards) +
+      section('Destaques da rodada', '3-5 jogos priorizados', featured) +
+      section('Tendencias globais', 'leitura de comportamento', trendCards) +
+      section('Rankings rapidos', 'quem lidera cada eixo', rankings);
   }
 
   function renderTable(league) {
@@ -530,105 +490,65 @@
   }
 
   function renderStatistics(league) {
-    var safeStatistics = league && league.statistics ? league.statistics : {};
-    var statRows = Array.isArray(safeStatistics.leagueStats) ? safeStatistics.leagueStats : [];
-    var rankingGroups = (Array.isArray(safeStatistics.rankings) ? safeStatistics.rankings : []).filter(function (group) {
-      return group && Array.isArray(group.rows) && group.rows.length;
-    });
-    var teamsRows = Array.isArray(safeStatistics.teams) ? safeStatistics.teams : [];
-    var splitRowsData = Array.isArray(safeStatistics.splits) ? safeStatistics.splits : [];
+    var statCards = '<div class="league-v1-grid-4">' + (league.statistics.leagueStats || []).map(function (stat) {
+      return '<article class="league-v1-card"><h4>' + esc(stat.label) + '</h4><p>' + esc(stat.value) + '</p></article>';
+    }).join('') + '</div>';
 
-    var blocks = [];
-
-    if (statRows.length) {
-      var statCards = '<div class="league-v1-grid-4">' + statRows.map(function (stat) {
-        return '<article class="league-v1-card"><h4>' + esc(stat.label) + '</h4><p>' + esc(stat.value) + '</p></article>';
-      }).join('') + '</div>';
-      blocks.push(section('League statistics', '', statCards));
-    }
-
-    if (rankingGroups.length) {
-      var rankingBlocks = '<div class="league-v1-grid-2">' + rankingGroups.map(function (group) {
-        var safeGroup = group && typeof group === 'object' ? group : {};
-        var rows = (Array.isArray(safeGroup.rows) ? safeGroup.rows : []).slice(0, 5).map(function (row) {
-          return '<tr><td><strong>' + esc(row.team) + '</strong></td><td>' + asNumOrDash(row.value, 2) + '</td><td>' + Number(row.matches || 0) + '</td></tr>';
-        }).join('');
-        return '<article class="league-v1-card">' +
-          '<h4>' + esc(safeGroup.title || 'Ranking') + '</h4>' +
-          '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Team</th><th>Value</th><th>Matches</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-          '</article>';
-      }).join('') + '</div>';
-      blocks.push(section('Rankings', '', rankingBlocks));
-    }
-
-    if (teamsRows.length) {
-      var teamRows = teamsRows.map(function (row) {
-        return '<tr>' +
-          '<td><strong>' + esc(row.team) + '</strong></td>' +
-          '<td>' + Number(row.played || 0) + '</td>' +
-          '<td>' + Number(row.goals_for || 0) + '</td>' +
-          '<td>' + Number(row.goals_against || 0) + '</td>' +
-          '<td>' + esc(row.goals_for_per_game) + '</td>' +
-          '<td>' + esc(row.goals_against_per_game) + '</td>' +
-          '<td>' + esc(row.over_15_pct) + '</td>' +
-          '<td>' + esc(row.over_25_pct) + '</td>' +
-          '<td>' + esc(row.over_35_pct) + '</td>' +
-          '<td>' + esc(row.btts_pct) + '</td>' +
-          '<td>' + esc(row.clean_sheets_pct) + '</td>' +
-          '<td>' + esc(row.failed_to_score_pct) + '</td>' +
-        '</tr>';
+    var rankingBlocks = '<div class="league-v1-grid-2">' + (league.statistics.rankings || []).map(function (group) {
+      var rows = (group.rows || []).slice(0, 5).map(function (row) {
+        return '<tr><td><strong>' + esc(row.team) + '</strong></td><td>' + asNum(row.value, 2) + '</td><td>' + Number(row.matches || 0) + '</td></tr>';
       }).join('');
-      blocks.push(section('Team table', '', '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Team</th><th>P</th><th>GF</th><th>GA</th><th>GF/P</th><th>GA/P</th><th>O1.5</th><th>O2.5</th><th>O3.5</th><th>BTTS</th><th>CS</th><th>FTS</th></tr></thead><tbody>' + teamRows + '</tbody></table></div>'));
-    }
+      return '<article class="league-v1-card">' +
+        '<h4>' + esc(group.title) + '</h4>' +
+        '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Time</th><th>Valor</th><th>Jogos</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '</article>';
+    }).join('') + '</div>';
 
-    if (splitRowsData.length) {
-      var splitRows = splitRowsData.map(function (split) {
-        return '<article class="league-v1-card">' +
-          '<h4>' + esc(split.metric) + '</h4>' +
-          '<p>Home ' + esc(split.homeLabel) + ' vs Away ' + esc(split.awayLabel) + '</p>' +
-          '<div class="league-v1-split-bar"><span class="league-v1-split-home" style="width:' + Number(split.barHome || 0) + '%"></span><span class="league-v1-split-away" style="width:' + Number(split.barAway || 0) + '%"></span></div>' +
-          '</article>';
-      }).join('');
-      blocks.push(section('Home vs Away', '', '<div class="league-v1-grid-2">' + splitRows + '</div>'));
-    }
+    var teamRows = (league.statistics.teams || []).map(function (row) {
+      return '<tr>' +
+        '<td><strong>' + esc(row.team) + '</strong></td>' +
+        '<td>' + Number(row.played || 0) + '</td>' +
+        '<td>' + Number(row.goals_for || 0) + '</td>' +
+        '<td>' + Number(row.goals_against || 0) + '</td>' +
+        '<td>' + esc(row.goals_for_per_game) + '</td>' +
+        '<td>' + esc(row.goals_against_per_game) + '</td>' +
+        '<td>' + esc(row.over_15_pct) + '</td>' +
+        '<td>' + esc(row.over_25_pct) + '</td>' +
+        '<td>' + esc(row.over_35_pct) + '</td>' +
+        '<td>' + esc(row.btts_pct) + '</td>' +
+        '<td>' + esc(row.clean_sheets_pct) + '</td>' +
+        '<td>' + esc(row.failed_to_score_pct) + '</td>' +
+      '</tr>';
+    }).join('');
 
-    if (!blocks.length) {
-      return section('League statistics', 'no statistics data available', '<div class="league-v1-text-block"><p>No statistics fields were returned by the snapshot.</p></div>');
-    }
+    var splitRows = (league.statistics.splits || []).map(function (split) {
+      return '<article class="league-v1-card">' +
+        '<h4>' + esc(split.metric) + '</h4>' +
+        '<p>Home ' + esc(split.homeLabel) + ' vs Away ' + esc(split.awayLabel) + '</p>' +
+        '<div class="league-v1-split-bar"><span class="league-v1-split-home" style="width:' + Number(split.barHome || 0) + '%"></span><span class="league-v1-split-away" style="width:' + Number(split.barAway || 0) + '%"></span></div>' +
+        '</article>';
+    }).join('');
 
-    return blocks.join('');
+    return section('Estatisticas gerais da liga', 'dados reais do snapshot oficial', statCards) +
+      section('Rankings', 'top ataques, defesas, BTTS, over e clean sheets', rankingBlocks) +
+      section('Tabela por time', 'metricas completas por equipe', '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Time</th><th>J</th><th>GF</th><th>GA</th><th>GF/J</th><th>GA/J</th><th>O1.5</th><th>O2.5</th><th>O3.5</th><th>BTTS</th><th>CS</th><th>FTS</th></tr></thead><tbody>' + teamRows + '</tbody></table></div>') +
+      section('Casa vs Fora', 'splits comparativos da competicao', '<div class="league-v1-grid-2">' + splitRows + '</div>');
   }
 
   function renderTrends(league) {
-    var cardsList = Array.isArray(league.trends.cards) ? league.trends.cards : [];
-    var profiles = Array.isArray(league.trends.teamProfiles) ? league.trends.teamProfiles : [];
-    var readingRows = Array.isArray(league.trends.reading) ? league.trends.reading : [];
-    var out = [];
+    var cards = '<div class="league-v1-grid-2">' + league.trends.cards.map(function (card) {
+      return '<article class="league-v1-card"><h4>' + esc(card.title) + '</h4><p>' + esc(card.text) + '</p></article>';
+    }).join('') + '</div>';
 
-    if (cardsList.length) {
-      var cards = '<div class="league-v1-grid-2">' + cardsList.map(function (card) {
-        return '<article class="league-v1-card"><h4>' + esc(card.title) + '</h4><p>' + esc(card.text) + '</p></article>';
-      }).join('') + '</div>';
-      out.push(section('Trend cards', '', cards));
-    }
+    var teamProfileRows = league.trends.teamProfiles.map(function (entry) {
+      return '<tr><td><strong>' + esc(entry.team) + '</strong></td><td>' + esc(entry.profile) + '</td><td>' + entry.tags.map(function (tag) { return '<span class="league-v1-tag">' + esc(tag) + '</span>'; }).join(' ') + '</td></tr>';
+    }).join('');
 
-    if (profiles.length) {
-      var teamProfileRows = profiles.map(function (entry) {
-        return '<tr><td><strong>' + esc(entry.team) + '</strong></td><td>' + esc(entry.profile) + '</td><td>' + entry.tags.map(function (tag) { return '<span class="league-v1-tag">' + esc(tag) + '</span>'; }).join(' ') + '</td></tr>';
-      }).join('');
-      out.push(section('Team profiles', '', '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Team</th><th>Profile</th><th>Tags</th></tr></thead><tbody>' + teamProfileRows + '</tbody></table></div>'));
-    }
+    var reading = '<div class="league-v1-text-block"><p>' + esc(league.trends.reading[0]) + '</p><p>' + esc(league.trends.reading[1]) + '</p></div>';
 
-    if (readingRows.length) {
-      var reading = '<div class="league-v1-text-block">' + readingRows.map(function (row) { return '<p>' + esc(row) + '</p>'; }).join('') + '</div>';
-      out.push(section('Summary text', '', reading));
-    }
-
-    if (!out.length) {
-      return section('Trend cards', 'no trends data available', '<div class="league-v1-text-block"><p>No trends fields were returned by the snapshot.</p></div>');
-    }
-
-    return out.join('');
+    return section('Tendencias da competicao', 'interpretable layer', cards) +
+      section('Perfil dos times', 'tags analiticas', '<div class="league-v1-table-wrap"><table class="league-v1-table"><thead><tr><th>Time</th><th>Perfil</th><th>Tags</th></tr></thead><tbody>' + teamProfileRows + '</tbody></table></div>') +
+      section('Leitura automatica', 'resumo contextual', reading);
   }
 
   function renderGames(league) {
@@ -669,7 +589,8 @@
         '<div class="league-v1-row"><small>Forma</small><span>' + formDots(team.form) + '</span></div>' +
         '<div class="league-v1-row"><small>Gols pro</small><strong>' + team.goalsFor + '</strong></div>' +
         '<div class="league-v1-row"><small>Gols contra</small><strong>' + team.goalsAgainst + '</strong></div>' +
-        (team.btts ? '<div class="league-v1-row"><small>BTTS</small><strong>' + esc(team.btts) + '</strong></div>' : '') +
+        '<div class="league-v1-row"><small>BTTS</small><strong>' + esc(team.btts) + '</strong></div>' +
+        '<div class="league-v1-profile">' + esc(team.profile) + '</div>' +
         '</article>';
     }).join('');
 
@@ -677,15 +598,10 @@
   }
 
   function matchCard(match) {
-    var statusRow = [];
-    if (match.status) statusRow.push('<span class="league-v1-status">' + esc(match.status) + '</span>');
-    if (match.round) statusRow.push('<span class="league-v1-status">' + esc(match.round) + '</span>');
-    var tags = Array.isArray(match.tags) ? match.tags : [];
-
     return '<article class="league-v1-match-item">' +
       '<div class="league-v1-row"><strong>' + esc(match.home) + ' vs ' + esc(match.away) + '</strong><span class="league-v1-time">' + esc(match.kickoff) + '</span></div>' +
-      (statusRow.length ? '<div class="league-v1-row">' + statusRow.join('') + '</div>' : '') +
-      '<div class="league-v1-row"><div class="league-v1-tags">' + tags.map(function (tag) { return '<span class="league-v1-tag">' + esc(tag) + '</span>'; }).join('') + '</div><button class="league-v1-action">Analisar</button></div>' +
+      '<div class="league-v1-row"><span class="league-v1-status">' + esc(match.status) + '</span><span class="league-v1-status">' + esc(match.round) + '</span></div>' +
+      '<div class="league-v1-row"><div class="league-v1-tags">' + match.tags.map(function (tag) { return '<span class="league-v1-tag">' + esc(tag) + '</span>'; }).join('') + '</div><button class="league-v1-action">Analisar</button></div>' +
       '</article>';
   }
 
@@ -724,10 +640,7 @@
 
   function bindInteractions() {
     var root = document.querySelector('[data-league-v1-root]');
-    if (!root) {
-      console.warn('[LeaguePage] bindInteractions skipped: root not found');
-      return;
-    }
+    if (!root) return;
 
     root.querySelectorAll('.league-v1-tab').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -761,49 +674,19 @@
   function render() {
     var league = getLeague();
     var root = document.querySelector('[data-league-v1-root]');
-    if (!root) {
-      console.warn('[LeaguePage] render skipped: root not found');
-      return;
-    }
+    if (!root) return;
 
     if (state.loading) {
-      root.innerHTML = '<section class="league-v1-section"><div class="league-v1-section-head"><h3 class="league-v1-section-title">Loading</h3></div><div class="league-v1-text-block"><p>Loading league data.</p></div></section>';
+      root.innerHTML = '<section class="league-v1-section"><div class="league-v1-section-head"><h3 class="league-v1-section-title">Loading competition data</h3><div class="league-v1-section-note">building view...</div></div><div class="league-v1-text-block"><p>Fetching consolidated league snapshot.</p></div></section>';
       return;
     }
 
-    try {
-      root.innerHTML = renderHeader(league) + renderTabs() + renderPanels(league);
-      bindInteractions();
-    } catch (err) {
-      console.error('[league-v1] render_failed', err && err.message ? err.message : err);
-      var fallback = getFallbackLeague(state.leagueSlug) || buildRuntimeStore().bySlug['premier-league'];
-      root.innerHTML = renderHeader(fallback) + renderTabs() + section('Error', '', '<div class="league-v1-text-block"><p>Unable to render league data.</p></div>');
-      bindInteractions();
-    }
+    root.innerHTML = renderHeader(league) + renderTabs() + renderPanels(league);
+    bindInteractions();
   }
 
-  async function initLeaguePage() {
-    console.log('[LeaguePage] init start');
-
-    var root = document.querySelector('[data-league-v1-root]');
-    if (!root) {
-      console.warn('[LeaguePage] init aborted: root not found');
-      return;
-    }
-
+  (async function init() {
     await ensureLeagueDataLoaded(state.leagueSlug);
     render();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      initLeaguePage().catch(function (err) {
-        console.error('[LeaguePage] init failed', err && err.message ? err.message : err);
-      });
-    }, { once: true });
-  } else {
-    initLeaguePage().catch(function (err) {
-      console.error('[LeaguePage] init failed', err && err.message ? err.message : err);
-    });
-  }
+  })();
 })();

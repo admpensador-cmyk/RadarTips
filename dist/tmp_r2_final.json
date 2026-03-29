@@ -1,0 +1,1697 @@
+{
+  "competition": {
+    "slug": "premier-league",
+    "competition_id": 39,
+    "name": "Premier League",
+    "country": "England",
+    "season": "2025",
+    "current_round": "Matchday",
+    "generated_at_utc": "2026-03-27T00:31:52.479Z"
+  },
+  "summary": {
+    "matches_count": 0,
+    "goals_per_game": 0,
+    "btts_pct": 0,
+    "over_15_pct": 0,
+    "over_25_pct": 0,
+    "over_35_pct": 0,
+    "under_25_pct": 0,
+    "clean_sheets_pct": 0,
+    "failed_to_score_pct": 0
+  },
+  "standings": [
+    {
+      "position": 1,
+      "team": "Arsenal",
+      "team_id": 42,
+      "points": 70,
+      "played": 31,
+      "wins": 21,
+      "draws": 7,
+      "losses": 3,
+      "goals_for": 61,
+      "goals_against": 22,
+      "goal_diff": 39,
+      "form_last5": "WWWWD"
+    },
+    {
+      "position": 2,
+      "team": "Manchester City",
+      "team_id": 50,
+      "points": 61,
+      "played": 30,
+      "wins": 18,
+      "draws": 7,
+      "losses": 5,
+      "goals_for": 60,
+      "goals_against": 28,
+      "goal_diff": 32,
+      "form_last5": "DDWWW"
+    },
+    {
+      "position": 3,
+      "team": "Manchester United",
+      "team_id": 33,
+      "points": 55,
+      "played": 31,
+      "wins": 15,
+      "draws": 10,
+      "losses": 6,
+      "goals_for": 56,
+      "goals_against": 43,
+      "goal_diff": 13,
+      "form_last5": "DWLWW"
+    },
+    {
+      "position": 4,
+      "team": "Aston Villa",
+      "team_id": 66,
+      "points": 54,
+      "played": 31,
+      "wins": 16,
+      "draws": 6,
+      "losses": 9,
+      "goals_for": 42,
+      "goals_against": 37,
+      "goal_diff": 5,
+      "form_last5": "WLLLD"
+    },
+    {
+      "position": 5,
+      "team": "Liverpool",
+      "team_id": 40,
+      "points": 49,
+      "played": 31,
+      "wins": 14,
+      "draws": 7,
+      "losses": 10,
+      "goals_for": 50,
+      "goals_against": 42,
+      "goal_diff": 8,
+      "form_last5": "LDLWW"
+    },
+    {
+      "position": 6,
+      "team": "Chelsea",
+      "team_id": 49,
+      "points": 48,
+      "played": 31,
+      "wins": 13,
+      "draws": 9,
+      "losses": 9,
+      "goals_for": 53,
+      "goals_against": 38,
+      "goal_diff": 15,
+      "form_last5": "LLWLD"
+    },
+    {
+      "position": 7,
+      "team": "Brentford",
+      "team_id": 55,
+      "points": 46,
+      "played": 31,
+      "wins": 13,
+      "draws": 7,
+      "losses": 11,
+      "goals_for": 46,
+      "goals_against": 42,
+      "goal_diff": 4,
+      "form_last5": "DDDWL"
+    },
+    {
+      "position": 8,
+      "team": "Everton",
+      "team_id": 45,
+      "points": 46,
+      "played": 31,
+      "wins": 13,
+      "draws": 7,
+      "losses": 11,
+      "goals_for": 37,
+      "goals_against": 35,
+      "goal_diff": 2,
+      "form_last5": "WLWWL"
+    },
+    {
+      "position": 9,
+      "team": "Fulham",
+      "team_id": 36,
+      "points": 44,
+      "played": 31,
+      "wins": 13,
+      "draws": 5,
+      "losses": 13,
+      "goals_for": 43,
+      "goals_against": 44,
+      "goal_diff": -1,
+      "form_last5": "WDLWW"
+    },
+    {
+      "position": 10,
+      "team": "Brighton",
+      "team_id": 51,
+      "points": 43,
+      "played": 31,
+      "wins": 11,
+      "draws": 10,
+      "losses": 10,
+      "goals_for": 41,
+      "goals_against": 37,
+      "goal_diff": 4,
+      "form_last5": "WWLWW"
+    },
+    {
+      "position": 11,
+      "team": "Sunderland",
+      "team_id": 746,
+      "points": 43,
+      "played": 31,
+      "wins": 11,
+      "draws": 10,
+      "losses": 10,
+      "goals_for": 32,
+      "goals_against": 36,
+      "goal_diff": -4,
+      "form_last5": "WLWDL"
+    },
+    {
+      "position": 12,
+      "team": "Newcastle",
+      "team_id": 34,
+      "points": 42,
+      "played": 31,
+      "wins": 12,
+      "draws": 6,
+      "losses": 13,
+      "goals_for": 44,
+      "goals_against": 45,
+      "goal_diff": -1,
+      "form_last5": "LWWLL"
+    },
+    {
+      "position": 13,
+      "team": "Bournemouth",
+      "team_id": 35,
+      "points": 42,
+      "played": 31,
+      "wins": 9,
+      "draws": 15,
+      "losses": 7,
+      "goals_for": 46,
+      "goals_against": 48,
+      "goal_diff": -2,
+      "form_last5": "DDDDD"
+    },
+    {
+      "position": 14,
+      "team": "Crystal Palace",
+      "team_id": 52,
+      "points": 39,
+      "played": 30,
+      "wins": 10,
+      "draws": 9,
+      "losses": 11,
+      "goals_for": 33,
+      "goals_against": 35,
+      "goal_diff": -2,
+      "form_last5": "DWLWL"
+    },
+    {
+      "position": 15,
+      "team": "Leeds",
+      "team_id": 63,
+      "points": 33,
+      "played": 31,
+      "wins": 7,
+      "draws": 12,
+      "losses": 12,
+      "goals_for": 37,
+      "goals_against": 48,
+      "goal_diff": -11,
+      "form_last5": "DDLLD"
+    },
+    {
+      "position": 16,
+      "team": "Nottingham Forest",
+      "team_id": 65,
+      "points": 32,
+      "played": 31,
+      "wins": 8,
+      "draws": 8,
+      "losses": 15,
+      "goals_for": 31,
+      "goals_against": 43,
+      "goal_diff": -12,
+      "form_last5": "WDDLL"
+    },
+    {
+      "position": 17,
+      "team": "Tottenham",
+      "team_id": 47,
+      "points": 30,
+      "played": 31,
+      "wins": 7,
+      "draws": 9,
+      "losses": 15,
+      "goals_for": 40,
+      "goals_against": 50,
+      "goal_diff": -10,
+      "form_last5": "LDLLL"
+    },
+    {
+      "position": 18,
+      "team": "West Ham",
+      "team_id": 48,
+      "points": 29,
+      "played": 31,
+      "wins": 7,
+      "draws": 8,
+      "losses": 16,
+      "goals_for": 36,
+      "goals_against": 57,
+      "goal_diff": -21,
+      "form_last5": "LDWLD"
+    },
+    {
+      "position": 19,
+      "team": "Burnley",
+      "team_id": 44,
+      "points": 20,
+      "played": 31,
+      "wins": 4,
+      "draws": 8,
+      "losses": 19,
+      "goals_for": 33,
+      "goals_against": 61,
+      "goal_diff": -28,
+      "form_last5": "LDLLD"
+    },
+    {
+      "position": 20,
+      "team": "Wolves",
+      "team_id": 39,
+      "points": 17,
+      "played": 31,
+      "wins": 3,
+      "draws": 8,
+      "losses": 20,
+      "goals_for": 24,
+      "goals_against": 54,
+      "goal_diff": -30,
+      "form_last5": "DWWLD"
+    }
+  ],
+  "fixtures": {
+    "upcoming": [],
+    "recent": []
+  },
+  "statistics": {
+    "league": {
+      "matches_count": 0,
+      "goals_for_total": 0,
+      "goals_against_total": 0,
+      "goals_per_game": 0,
+      "home_goals_avg": 0,
+      "away_goals_avg": 0,
+      "over_15_pct": 0,
+      "over_25_pct": 0,
+      "over_35_pct": 0,
+      "btts_pct": 0,
+      "clean_sheets_pct": 0,
+      "failed_to_score_pct": 0,
+      "home_btts_pct": 0,
+      "away_btts_pct": 0,
+      "home_over_25_pct": 0,
+      "away_over_25_pct": 0,
+      "home_clean_sheets_pct": 0,
+      "away_clean_sheets_pct": 0,
+      "under_25_pct": 0,
+      "corners_avg": null,
+      "shots_avg": null,
+      "possession_avg": null
+    },
+    "teams": [
+      {
+        "team_id": 42,
+        "team": "Arsenal",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 50,
+        "team": "Manchester City",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 33,
+        "team": "Manchester United",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 66,
+        "team": "Aston Villa",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 40,
+        "team": "Liverpool",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 49,
+        "team": "Chelsea",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 55,
+        "team": "Brentford",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 45,
+        "team": "Everton",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 36,
+        "team": "Fulham",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 51,
+        "team": "Brighton",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 746,
+        "team": "Sunderland",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 34,
+        "team": "Newcastle",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 35,
+        "team": "Bournemouth",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 52,
+        "team": "Crystal Palace",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 63,
+        "team": "Leeds",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 65,
+        "team": "Nottingham Forest",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 47,
+        "team": "Tottenham",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 48,
+        "team": "West Ham",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 44,
+        "team": "Burnley",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 39,
+        "team": "Wolves",
+        "played": 0,
+        "matches": 0,
+        "goals_for": 0,
+        "goals_against": 0,
+        "goals_for_per_game": 0,
+        "goals_against_per_game": 0,
+        "over_15_pct": 0,
+        "over_25_pct": 0,
+        "over_35_pct": 0,
+        "btts_pct": 0,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      }
+    ],
+    "team_rankings": {
+      "by_goals_for": [
+        {
+          "team_id": 42,
+          "team": "Arsenal",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 50,
+          "team": "Manchester City",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 33,
+          "team": "Manchester United",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 66,
+          "team": "Aston Villa",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 40,
+          "team": "Liverpool",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 49,
+          "team": "Chelsea",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 55,
+          "team": "Brentford",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 45,
+          "team": "Everton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 36,
+          "team": "Fulham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 51,
+          "team": "Brighton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 746,
+          "team": "Sunderland",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 34,
+          "team": "Newcastle",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 35,
+          "team": "Bournemouth",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 52,
+          "team": "Crystal Palace",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 63,
+          "team": "Leeds",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 65,
+          "team": "Nottingham Forest",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 47,
+          "team": "Tottenham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 48,
+          "team": "West Ham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 44,
+          "team": "Burnley",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 39,
+          "team": "Wolves",
+          "value": 0,
+          "matches": 0
+        }
+      ],
+      "by_goals_against": [
+        {
+          "team_id": 42,
+          "team": "Arsenal",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 50,
+          "team": "Manchester City",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 33,
+          "team": "Manchester United",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 66,
+          "team": "Aston Villa",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 40,
+          "team": "Liverpool",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 49,
+          "team": "Chelsea",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 55,
+          "team": "Brentford",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 45,
+          "team": "Everton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 36,
+          "team": "Fulham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 51,
+          "team": "Brighton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 746,
+          "team": "Sunderland",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 34,
+          "team": "Newcastle",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 35,
+          "team": "Bournemouth",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 52,
+          "team": "Crystal Palace",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 63,
+          "team": "Leeds",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 65,
+          "team": "Nottingham Forest",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 47,
+          "team": "Tottenham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 48,
+          "team": "West Ham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 44,
+          "team": "Burnley",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 39,
+          "team": "Wolves",
+          "value": 0,
+          "matches": 0
+        }
+      ],
+      "by_btts_pct": [
+        {
+          "team_id": 42,
+          "team": "Arsenal",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 50,
+          "team": "Manchester City",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 33,
+          "team": "Manchester United",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 66,
+          "team": "Aston Villa",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 40,
+          "team": "Liverpool",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 49,
+          "team": "Chelsea",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 55,
+          "team": "Brentford",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 45,
+          "team": "Everton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 36,
+          "team": "Fulham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 51,
+          "team": "Brighton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 746,
+          "team": "Sunderland",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 34,
+          "team": "Newcastle",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 35,
+          "team": "Bournemouth",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 52,
+          "team": "Crystal Palace",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 63,
+          "team": "Leeds",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 65,
+          "team": "Nottingham Forest",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 47,
+          "team": "Tottenham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 48,
+          "team": "West Ham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 44,
+          "team": "Burnley",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 39,
+          "team": "Wolves",
+          "value": 0,
+          "matches": 0
+        }
+      ],
+      "by_over_25_pct": [
+        {
+          "team_id": 42,
+          "team": "Arsenal",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 50,
+          "team": "Manchester City",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 33,
+          "team": "Manchester United",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 66,
+          "team": "Aston Villa",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 40,
+          "team": "Liverpool",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 49,
+          "team": "Chelsea",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 55,
+          "team": "Brentford",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 45,
+          "team": "Everton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 36,
+          "team": "Fulham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 51,
+          "team": "Brighton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 746,
+          "team": "Sunderland",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 34,
+          "team": "Newcastle",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 35,
+          "team": "Bournemouth",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 52,
+          "team": "Crystal Palace",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 63,
+          "team": "Leeds",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 65,
+          "team": "Nottingham Forest",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 47,
+          "team": "Tottenham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 48,
+          "team": "West Ham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 44,
+          "team": "Burnley",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 39,
+          "team": "Wolves",
+          "value": 0,
+          "matches": 0
+        }
+      ],
+      "by_clean_sheets_pct": [
+        {
+          "team_id": 42,
+          "team": "Arsenal",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 50,
+          "team": "Manchester City",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 33,
+          "team": "Manchester United",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 66,
+          "team": "Aston Villa",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 40,
+          "team": "Liverpool",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 49,
+          "team": "Chelsea",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 55,
+          "team": "Brentford",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 45,
+          "team": "Everton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 36,
+          "team": "Fulham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 51,
+          "team": "Brighton",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 746,
+          "team": "Sunderland",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 34,
+          "team": "Newcastle",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 35,
+          "team": "Bournemouth",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 52,
+          "team": "Crystal Palace",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 63,
+          "team": "Leeds",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 65,
+          "team": "Nottingham Forest",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 47,
+          "team": "Tottenham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 48,
+          "team": "West Ham",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 44,
+          "team": "Burnley",
+          "value": 0,
+          "matches": 0
+        },
+        {
+          "team_id": 39,
+          "team": "Wolves",
+          "value": 0,
+          "matches": 0
+        }
+      ]
+    },
+    "team_rankings_legacy": [
+      {
+        "team_id": 42,
+        "team": "Arsenal",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 50,
+        "team": "Manchester City",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 33,
+        "team": "Manchester United",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 66,
+        "team": "Aston Villa",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 40,
+        "team": "Liverpool",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 49,
+        "team": "Chelsea",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 55,
+        "team": "Brentford",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 45,
+        "team": "Everton",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 36,
+        "team": "Fulham",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 51,
+        "team": "Brighton",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 746,
+        "team": "Sunderland",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 34,
+        "team": "Newcastle",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 35,
+        "team": "Bournemouth",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 52,
+        "team": "Crystal Palace",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 63,
+        "team": "Leeds",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 65,
+        "team": "Nottingham Forest",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 47,
+        "team": "Tottenham",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 48,
+        "team": "West Ham",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 44,
+        "team": "Burnley",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      },
+      {
+        "team_id": 39,
+        "team": "Wolves",
+        "goals_for": 0,
+        "goals_against": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0,
+        "goals_scored": 0,
+        "goals_conceded": 0
+      }
+    ],
+    "home_away_splits": {
+      "home": {
+        "goals_avg": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0
+      },
+      "away": {
+        "goals_avg": 0,
+        "btts_pct": 0,
+        "over_25_pct": 0,
+        "clean_sheets_pct": 0
+      },
+      "home_goals_avg": 0,
+      "away_goals_avg": 0,
+      "home_btts_pct": 0,
+      "away_btts_pct": 0,
+      "home_over_25_pct": 0,
+      "away_over_25_pct": 0,
+      "home_clean_sheets_pct": 0,
+      "away_clean_sheets_pct": 0,
+      "goals_home": 0,
+      "goals_away": 0,
+      "btts_home_pct": 0,
+      "btts_away_pct": 0,
+      "over_25_home_pct": 0,
+      "over_25_away_pct": 0,
+      "clean_sheets_home_pct": 0,
+      "clean_sheets_away_pct": 0
+    }
+  },
+  "trends": {
+    "trend_cards": [
+      {
+        "title": "Goal pressure",
+        "value": "0.00 goals/game",
+        "note": "Balanced totals profile"
+      },
+      {
+        "title": "BTTS cadence",
+        "value": "0.0%",
+        "note": "Moderate bilateral scoring"
+      },
+      {
+        "title": "Clean sheet footprint",
+        "value": "0.0%",
+        "note": "Defenses concede often"
+      },
+      {
+        "title": "Failed to score",
+        "value": "0.0%",
+        "note": "Attacks maintain stable floor"
+      }
+    ],
+    "team_profiles": [
+      {
+        "team": "Arsenal",
+        "position": 1,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Manchester City",
+        "position": 2,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Manchester United",
+        "position": 3,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Aston Villa",
+        "position": 4,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Liverpool",
+        "position": 5,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Chelsea",
+        "position": 6,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Brentford",
+        "position": 7,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Everton",
+        "position": 8,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Fulham",
+        "position": 9,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Brighton",
+        "position": 10,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Sunderland",
+        "position": 11,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Newcastle",
+        "position": 12,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      }
+    ],
+    "summary_text": "Premier League 2025 shows 0.00 goals per game with BTTS at 0.0%. Over 2.5 sits at 0.0%, while clean-sheet occurrence is 0.0%, indicating a mixed attack-defense profile."
+  },
+  "meta": {
+    "generated_at_utc": "2026-03-27T00:31:52.479Z",
+    "source": {
+      "provider": "api-football",
+      "league_id": 39,
+      "season": "2025",
+      "resources": [
+        "/standings",
+        "/fixtures"
+      ]
+    },
+    "version": "league_page_v1",
+    "schema": 1
+  }
+}

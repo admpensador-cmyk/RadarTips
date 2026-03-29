@@ -1,0 +1,16 @@
+{
+  "league_id": 39,
+  "season": 2025,
+  "slug": "premier-league",
+  "model": "fixture_derived_v1",
+  "generated_at_utc": "2026-03-29T04:04:25.797Z",
+  "fixture_count": 309,
+  "fact_count": 618,
+  "team_count": 20,
+  "has_advanced_stats": false,
+  "source_resources": [
+    "/standings",
+    "/fixtures"
+  ],
+  "generated_by": "update-data-api-football.mjs"
+}
