@@ -1244,3 +1244,80 @@ input::placeholder{
   .rt-cal-match{grid-template-columns:1fr;gap:8px}
   .rt-cal-more{width:100%;min-width:0}
 }
+
+/* ============================================================
+   HOTFIX: DARK MODE – themed backgrounds for calendar components
+   Generic classes (.hero, .card, .group, .section, .match, .modal)
+   have hardcoded white rgba() backgrounds that ignore data-theme="dark".
+   These overrides restore correct dark-mode rendering.
+   Scoped to body[data-theme="dark"] — zero effect on light mode.
+   ============================================================ */
+body[data-theme="dark"] .hero::before {
+  background:
+    linear-gradient(135deg, rgba(56,189,248,.06) 0%, transparent 30%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bg-surface) 92%, transparent),
+      color-mix(in srgb, var(--bg-elevated) 86%, transparent) 100%);
+}
+
+body[data-theme="dark"] .card {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bg-surface) 94%, transparent),
+    color-mix(in srgb, var(--bg-surface) 86%, transparent));
+  box-shadow:
+    0 10px 40px rgba(0,0,0,.22),
+    inset 0 1px 1px rgba(255,255,255,.04);
+}
+
+body[data-theme="dark"] .card:hover {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bg-elevated) 96%, transparent),
+    color-mix(in srgb, var(--bg-elevated) 90%, transparent));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.30),
+    inset 0 1px 1px rgba(255,255,255,.06);
+}
+
+body[data-theme="dark"] .card::before {
+  display: none;
+}
+
+body[data-theme="dark"] .group {
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  border-color: color-mix(in srgb, var(--border-soft) 82%, #000 18%);
+}
+
+body[data-theme="dark"] .section {
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  border-color: var(--border-soft);
+}
+
+body[data-theme="dark"] .match {
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  border-color: rgba(37,48,71,.92);
+}
+
+body[data-theme="dark"] .modal {
+  background: color-mix(in srgb, var(--bg-elevated) 95%, transparent);
+  border-color: rgba(37,48,71,.9);
+}
+
+body[data-theme="dark"] .modal-head {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 10%, transparent),
+    transparent);
+  border-color: rgba(37,48,71,.9);
+}
+
+body[data-theme="dark"] .input {
+  background: color-mix(in srgb, var(--bg-elevated) 95%, transparent);
+  color: var(--ink);
+  border-color: var(--stroke);
+}
+
+body[data-theme="dark"] .lock {
+  color: color-mix(in srgb, var(--accent) 80%, var(--text-main));
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}

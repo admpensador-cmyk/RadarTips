@@ -1,4 +1,11 @@
 (function () {
+  // Guard: abort the entire IIFE if not on a league page.
+  // Since this script is placed at the bottom of <body>, the DOM is available.
+  // This prevents any state setup, event registration, or fetch on non-league pages.
+  if (document.readyState !== 'loading' && !document.querySelector('[data-league-v1-root]')) {
+    return;
+  }
+
   console.log('[LeaguePage] script loaded');
 
   var STORE = window.RT_LEAGUE_V1_DATA;
