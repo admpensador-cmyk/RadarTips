@@ -45,6 +45,18 @@ const LEAGUE_PAGE_OUTPUTS = new Map(
   LEAGUE_PAGE_V1_DEFINITIONS.map((entry) => [entry.slug, path.join(OUT_LEAGUES_DIR, `${entry.slug}.json`)])
 );
 
+function getFixtureModelStoragePaths(slug) {
+  const leagueDir = path.join(OUT_LEAGUES_DIR, slug);
+  return {
+    dir: leagueDir,
+    meta: path.join(leagueDir, "meta.json"),
+    rawFixtures: path.join(leagueDir, "raw-fixtures.json"),
+    fixtureStats: path.join(leagueDir, "fixture-stats.json"),
+    teamFacts: path.join(leagueDir, "team-facts.json"),
+    teamAggregates: path.join(leagueDir, "team-aggregates.json")
+  };
+}
+
 const CONFIG_PATH = path.join(process.cwd(), "tools", "api-football.config.json");
 const COVERAGE_ALLOWLIST_PATH = path.join(process.cwd(), "data", "coverage_allowlist.json");
 
@@ -1517,6 +1529,8 @@ async function generateStandings(flags, resolved, timezone) {
         // API calls per run. Correctly computes btts/clean_sheets/over/goals.
         console.log(`[LEAGUE-V1] Using fixture-derived model for ${leagueDefinition.slug}`);
 
+        const fixtureModelPaths = getFixtureModelStoragePaths(leagueDefinition.slug);
+
         const FINISHED = new Set(["FT", "AET", "PEN"]);
         const finishedRaw = allSeasonFixturesRaw
           .map((item) => buildRawFixtureRecord(item, resolvedLeague.league_id, resolvedLeague.season))
@@ -1534,6 +1548,70 @@ async function generateStandings(flags, resolved, timezone) {
         const allFacts = buildAllTeamFacts(finishedRaw, {}); // no fixture stats in CI (saves quota)
         const teamAggregates = buildAllTeamAggregates(allFacts, resolvedLeague.league_id, resolvedLeague.season);
         const teamCount = Object.keys(teamAggregates).length;
+        const generatedAtUtc = nowIso();
+
+        writeJsonAtomic(fixtureModelPaths.meta, {
+          league_id: resolvedLeague.league_id,
+          season: resolvedLeague.season,
+          slug: leagueDefinition.slug,
+          model: "fixture_derived_v1",
+          generated_at_utc: generatedAtUtc,
+          fixture_count: finishedRaw.length,
+          fact_count: allFacts.length,
+          team_count: teamCount,
+          has_advanced_stats: false,
+          source_resources: ["/standings", "/fixtures"],
+          generated_by: "update-data-api-football.mjs"
+        });
+
+        writeJsonAtomic(fixtureModelPaths.rawFixtures, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            fixture_count: finishedRaw.length,
+            status_filter: ["FT", "AET", "PEN"]
+          },
+          fixtures: finishedRaw
+        });
+
+        writeJsonAtomic(fixtureModelPaths.fixtureStats, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            total_checked: finishedRaw.length,
+            stats_count: 0,
+            unavailable_count: finishedRaw.length,
+            has_advanced_stats: false,
+            skipped_reason: "daily standings pipeline runs without /fixtures/statistics to save quota"
+          },
+          stats: {}
+        });
+
+        writeJsonAtomic(fixtureModelPaths.teamFacts, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            fact_count: allFacts.length,
+            fixture_count: finishedRaw.length,
+            has_advanced_stats: false
+          },
+          facts: allFacts
+        });
+
+        writeJsonAtomic(fixtureModelPaths.teamAggregates, {
+          meta: {
+            league_id: resolvedLeague.league_id,
+            season: resolvedLeague.season,
+            generated_at_utc: generatedAtUtc,
+            team_count: teamCount,
+            fixture_count: finishedRaw.length,
+            has_advanced_stats: false
+          },
+          teams: teamAggregates
+        });
 
         console.log(`[LEAGUE-V1] fixture-model: ${finishedRaw.length} finished fixtures, ${teamCount} teams, ${allFacts.length} facts`);
 

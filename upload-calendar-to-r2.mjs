@@ -35,6 +35,13 @@ const LEAGUE_SNAPSHOT_TARGETS = LEAGUE_PAGE_V1_DEFINITIONS.map((entry) => ({
   remote: `snapshots/leagues/${entry.slug}.json`,
   definition: entry
 }));
+const FIXTURE_MODEL_LAYER_FILES = [
+  'meta.json',
+  'raw-fixtures.json',
+  'fixture-stats.json',
+  'team-facts.json',
+  'team-aggregates.json'
+];
 
 const args = new Set(process.argv.slice(2));
 const uploadCalendarArtifacts = !args.has('--leagues-only');
@@ -191,9 +198,34 @@ function loadValidLeagueSnapshots() {
   return { validSnapshots, failures };
 }
 
+function loadFixtureModelAuxiliaryTargets(validSnapshots) {
+  const targets = [];
+
+  for (const snapshotTarget of validSnapshots) {
+    if (!snapshotTarget?.definition?.useFixtureModel) continue;
+
+    const leagueLayerDir = path.join(LEAGUES_DIR, snapshotTarget.slug);
+    for (const fileName of FIXTURE_MODEL_LAYER_FILES) {
+      const local = path.join(leagueLayerDir, fileName);
+      if (!fs.existsSync(local)) continue;
+      targets.push({
+        slug: snapshotTarget.slug,
+        local,
+        remote: `snapshots/leagues/${snapshotTarget.slug}/${fileName}`,
+        auxiliary: true
+      });
+    }
+  }
+
+  return targets;
+}
+
 const { validSnapshots: leagueSnapshots, failures: leagueSnapshotFailures } = uploadLeagueArtifacts
   ? loadValidLeagueSnapshots()
   : { validSnapshots: [], failures: [] };
+const leagueAuxiliaryTargets = uploadLeagueArtifacts
+  ? loadFixtureModelAuxiliaryTargets(leagueSnapshots)
+  : [];
 
 if (uploadLeagueArtifacts) {
   if (leagueSnapshots.length > 0) {
@@ -223,6 +255,7 @@ if (uploadCalendarArtifacts) {
 }
 if (uploadLeagueArtifacts) {
   uploadTargets.push(...leagueSnapshots.map((entry) => ({ local: entry.local, remote: entry.remote, slug: entry.slug })));
+  uploadTargets.push(...leagueAuxiliaryTargets);
 }
 
 async function uploadTarget(target) {
@@ -327,6 +360,39 @@ async function verifyUploadedLeagueSnapshot(target) {
   assertLeaguePageSnapshotHasCoreData(downloaded);
 }
 
+async function verifyUploadedJsonArtifact(target) {
+  const localTmp = `tmp_verify_${target.slug}_${path.basename(target.remote).replace(/[^a-z0-9.-]/gi, '_')}`;
+  const verifyArgs = [
+    'wrangler',
+    'r2',
+    'object',
+    'get',
+    '--remote',
+    `${R2_BUCKET}/${target.remote}`,
+    '--file',
+    localTmp
+  ];
+
+  for (const arg of verifyArgs) {
+    assertNotBlocked7D(arg, 'verify_arg');
+  }
+
+  await new Promise((resolve, reject) => {
+    const verify = spawn('npx', verifyArgs, {
+      cwd: ROOT,
+      stdio: 'inherit',
+      env: process.env,
+      shell: true,
+    });
+    verify.on('close', (verifyCode) => {
+      if (verifyCode === 0) resolve();
+      else reject(new Error(`verify_failed remote=${target.remote} code=${verifyCode}`));
+    });
+  });
+
+  JSON.parse(fs.readFileSync(path.join(ROOT, localTmp), 'utf8'));
+}
+
 (async () => {
   try {
     for (const target of uploadTargets) {
@@ -355,8 +421,14 @@ async function verifyUploadedLeagueSnapshot(target) {
       for (const target of leagueSnapshots) {
         await verifyUploadedLeagueSnapshot(target);
       }
+      for (const target of leagueAuxiliaryTargets) {
+        await verifyUploadedJsonArtifact(target);
+      }
       console.log(`\n✅ League snapshots uploaded to R2!`);
       for (const target of leagueSnapshots) {
+        console.log(`   - ${target.remote}`);
+      }
+      for (const target of leagueAuxiliaryTargets) {
         console.log(`   - ${target.remote}`);
       }
     }
