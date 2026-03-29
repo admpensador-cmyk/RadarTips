@@ -24,8 +24,14 @@ import {
   assertLeaguePageSnapshotHasCoreData,
   assertLeaguePageSnapshotUsesApiFootball,
   buildLeagueV1Snapshot,
+  buildLeagueV1SnapshotFromTeamAggregates,
   enforceLeagueV1StatisticsContract
 } from "./lib/league-v1-snapshot.mjs";
+import {
+  buildRawFixtureRecord,
+  buildAllTeamFacts,
+  buildAllTeamAggregates
+} from "./lib/league-fixtures-model.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
@@ -1487,33 +1493,75 @@ async function generateStandings(flags, resolved, timezone) {
         season: resolvedLeague.season
       });
 
-      let fixturesPayload = { response: [] };
+      let allSeasonFixturesRaw = [];
       try {
-        fixturesPayload = await fetchAllFixturesForLeagueSeason({
+        const fp = await fetchAllFixturesForLeagueSeason({
           league_id: resolvedLeague.league_id,
           season: resolvedLeague.season,
           timezone
         });
+        // fetchAllFixturesForLeagueSeason returns the raw response array directly
+        allSeasonFixturesRaw = Array.isArray(fp) ? fp : (Array.isArray(fp?.response) ? fp.response : []);
       } catch (err) {
         console.warn(
           `[LEAGUE-V1] Optional fixtures fetch failed for ${leagueDefinition.slug}: ${err?.message || err}. Continuing with empty fixtures.`
         );
       }
 
-      const teamStatisticsPayloads = await fetchTeamStatisticsForLeagueSeason({
-        league_id: resolvedLeague.league_id,
-        season: resolvedLeague.season,
-        standingsPayload
-      });
-
       const generatedAtUtc = nowIso();
-      const snapshot = enforceLeagueV1StatisticsContract(buildLeagueV1Snapshot({
-        leagueDefinition,
-        standingsPayload,
-        fixturesPayload,
-        teamStatisticsPayloads,
-        generatedAtUtc
-      }));
+      let snapshot;
+
+      if (leagueDefinition.useFixtureModel) {
+        // ── FIXTURE MODEL PATH (Prédio 2) ─────────────────────────────────
+        // Derive all stats from finished fixtures. Eliminates 20 /teams/statistics
+        // API calls per run. Correctly computes btts/clean_sheets/over/goals.
+        console.log(`[LEAGUE-V1] Using fixture-derived model for ${leagueDefinition.slug}`);
+
+        const FINISHED = new Set(["FT", "AET", "PEN"]);
+        const finishedRaw = allSeasonFixturesRaw
+          .map((item) => buildRawFixtureRecord(item, resolvedLeague.league_id, resolvedLeague.season))
+          .filter(
+            (r) => r !== null &&
+            FINISHED.has(r.status) &&
+            r.home_goals !== null &&
+            r.away_goals !== null
+          );
+
+        if (!finishedRaw.length) {
+          throw new Error(`[LEAGUE-V1] No finished fixtures found for ${leagueDefinition.slug} season=${resolvedLeague.season}`);
+        }
+
+        const allFacts = buildAllTeamFacts(finishedRaw, {}); // no fixture stats in CI (saves quota)
+        const teamAggregates = buildAllTeamAggregates(allFacts, resolvedLeague.league_id, resolvedLeague.season);
+        const teamCount = Object.keys(teamAggregates).length;
+
+        console.log(`[LEAGUE-V1] fixture-model: ${finishedRaw.length} finished fixtures, ${teamCount} teams, ${allFacts.length} facts`);
+
+        snapshot = buildLeagueV1SnapshotFromTeamAggregates({
+          leagueDefinition,
+          teamAggregates,
+          standingsPayload,
+          allSeasonFixtures: allSeasonFixturesRaw,
+          generatedAtUtc
+        });
+      } else {
+        // ── LEGACY API-AGGREGATE PATH (other leagues) ─────────────────────
+        const fixturesPayload = { response: allSeasonFixturesRaw };
+
+        const teamStatisticsPayloads = await fetchTeamStatisticsForLeagueSeason({
+          league_id: resolvedLeague.league_id,
+          season: resolvedLeague.season,
+          standingsPayload
+        });
+
+        snapshot = enforceLeagueV1StatisticsContract(buildLeagueV1Snapshot({
+          leagueDefinition,
+          standingsPayload,
+          fixturesPayload,
+          teamStatisticsPayloads,
+          generatedAtUtc
+        }));
+      }
 
       assertLeaguePageSnapshotUsesApiFootball(snapshot, leagueDefinition);
       assertLeaguePageSnapshotHasCoreData(snapshot);

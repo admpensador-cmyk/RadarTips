@@ -3,7 +3,11 @@ export const LEAGUE_PAGE_V1_DEFINITIONS = Object.freeze([
     slug: "premier-league",
     leagueId: 39,
     defaultName: "Premier League",
-    defaultCountry: "England"
+    defaultCountry: "England",
+    // useFixtureModel: derive all stats from finished fixtures instead of
+    // /teams/statistics API aggregates. Removes 20 API calls per run and
+    // correctly computes btts/clean_sheets/over from own fixture data.
+    useFixtureModel: true
   },
   {
     slug: "la-liga",
@@ -39,7 +43,10 @@ export const LEAGUE_PAGE_V1_DEFINITIONS = Object.freeze([
 
 export const PREMIER_LEAGUE_V1 = LEAGUE_PAGE_V1_DEFINITIONS.find((entry) => entry.slug === "premier-league");
 
-const REQUIRED_SOURCE_RESOURCES = ["/standings", "/teams/statistics"];
+// Standings is always required. For stats, at least one of /teams/statistics
+// or /fixtures must be present (fixture-model snapshots use /fixtures).
+const REQUIRED_SOURCE_RESOURCES = ["/standings"];
+const REQUIRED_STAT_RESOURCES = ["/teams/statistics", "/fixtures"];
 const FORBIDDEN_SOURCE_TOKENS = [
   "openfootball",
   "football.json",
@@ -104,6 +111,11 @@ export function assertLeaguePageSnapshotUsesApiFootball(snapshot, expectedDefini
     if (!resources.includes(required)) {
       throw new Error(`[LEAGUE-V1] Missing required API resource: ${required}`);
     }
+  }
+  // Must have at least one stat resource (either API aggregates or fixture-derived)
+  const hasStatResource = REQUIRED_STAT_RESOURCES.some((r) => resources.includes(r));
+  if (!hasStatResource) {
+    throw new Error(`[LEAGUE-V1] Snapshot must list at least one stat resource (${REQUIRED_STAT_RESOURCES.join(" or ")})`);
   }
 
   const raw = JSON.stringify(snapshot);
@@ -752,7 +764,16 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
       clean_sheets_pct: cleanSheets,
       failed_to_score_pct: failedToScore,
       goals_scored: goalsFor,
-      goals_conceded: goalsAgainst
+      goals_conceded: goalsAgainst,
+      // Pass through extended fixture-model fields (home/away splits per team,
+      // corners and cards averages). These are null when not yet bootstrapped.
+      ...(row?.home && typeof row.home === "object" ? { home: row.home } : {}),
+      ...(row?.away && typeof row.away === "object" ? { away: row.away } : {}),
+      ...(row?.corners_for_avg != null ? { corners_for_avg: row.corners_for_avg } : {}),
+      ...(row?.corners_against_avg != null ? { corners_against_avg: row.corners_against_avg } : {}),
+      ...(row?.yellow_cards_for_avg != null ? { yellow_cards_for_avg: row.yellow_cards_for_avg } : {}),
+      ...(row?.yellow_cards_against_avg != null ? { yellow_cards_against_avg: row.yellow_cards_against_avg } : {}),
+      ...(row?.red_cards_for_total != null ? { red_cards_for_total: row.red_cards_for_total } : {})
     };
   });
 
@@ -932,4 +953,322 @@ export function buildPremierLeagueV1Snapshot(args) {
     leagueDefinition: PREMIER_LEAGUE_V1,
     ...args
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fixture-based snapshot builder (Prédio 2 — Layer 4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build a League Page V1 snapshot entirely from team aggregates (Layer 3 data).
+ *
+ * Key differences vs buildLeagueV1Snapshot:
+ *  - btts_pct / clean_sheets_pct / over_X_pct derived from actual finished
+ *    fixtures, NOT from the /teams/statistics API aggregate (which had broken
+ *    field-path mappings).
+ *  - home/away splits are fully populated (previously all null).
+ *  - corners_avg is populated when fixture stats have been bootstrapped.
+ *  - meta.source.resources lists "/fixtures" instead of "/teams/statistics".
+ *  - Saves ~20 API calls per run (no more per-team /teams/statistics requests).
+ *
+ * @param {object} opts
+ * @param {object}   opts.leagueDefinition   - from LEAGUE_PAGE_V1_DEFINITIONS
+ * @param {object}   opts.teamAggregates     - plain object {[teamId]: aggregate}
+ * @param {object}   opts.standingsPayload   - raw /standings API response
+ * @param {Array}    opts.allSeasonFixtures  - raw /fixtures response items (all statuses)
+ * @param {string}   opts.generatedAtUtc
+ */
+export function buildLeagueV1SnapshotFromTeamAggregates({
+  leagueDefinition = PREMIER_LEAGUE_V1,
+  teamAggregates,
+  standingsPayload,
+  allSeasonFixtures = [],
+  generatedAtUtc = new Date().toISOString()
+}) {
+  const aggregatesArray = Object.values(teamAggregates || {});
+  if (!aggregatesArray.length) {
+    throw new Error("[LEAGUE-V1] buildLeagueV1SnapshotFromTeamAggregates: teamAggregates is empty");
+  }
+
+  // ── standings & season ──────────────────────────────────────────────────
+  const standingsRows = mapStandingsRows(standingsPayload);
+  const leagueBlock = extractLeagueBlock(standingsPayload);
+  const seasonStr = String(leagueBlock?.season || aggregatesArray[0]?.season || "");
+
+  // ── build fixtures (upcoming/recent) from allSeasonFixtures ─────────────
+  const fixturesWrapped = buildFixtures({ response: allSeasonFixtures });
+
+  // ── map team aggregates to statistics.teams format ───────────────────────
+  const teamStats = aggregatesArray.map((agg) => {
+    const total = agg.total;
+    const home = agg.home;
+    const away = agg.away;
+
+    return {
+      team_id: agg.team_id,
+      team: agg.team_name,
+      played: total.played,
+      matches: total.played,
+      goals_for: total.goals_for,
+      goals_against: total.goals_against,
+      goals_for_per_game: total.goals_for_per_game,
+      goals_against_per_game: total.goals_against_per_game,
+      over_15_pct: total.over_15_pct,
+      over_25_pct: total.over_25_pct,
+      over_35_pct: total.over_35_pct,
+      under_25_pct: total.over_25_pct !== null ? Number((100 - total.over_25_pct).toFixed(2)) : null,
+      btts_pct: total.btts_pct,
+      clean_sheets_pct: total.clean_sheets_pct,
+      failed_to_score_pct: total.failed_to_score_pct,
+      goals_scored: total.goals_for,
+      goals_conceded: total.goals_against,
+      // Extended: per-team home/away splits (fully populated from fixture data)
+      home: {
+        played: home.played,
+        goals_for: home.goals_for,
+        goals_against: home.goals_against,
+        goals_for_per_game: home.goals_for_per_game,
+        btts_pct: home.btts_pct,
+        over_25_pct: home.over_25_pct,
+        clean_sheets_pct: home.clean_sheets_pct,
+        failed_to_score_pct: home.failed_to_score_pct
+      },
+      away: {
+        played: away.played,
+        goals_for: away.goals_for,
+        goals_against: away.goals_against,
+        goals_for_per_game: away.goals_for_per_game,
+        btts_pct: away.btts_pct,
+        over_25_pct: away.over_25_pct,
+        clean_sheets_pct: away.clean_sheets_pct,
+        failed_to_score_pct: away.failed_to_score_pct
+      },
+      // Advanced stats (null if fixture stats not yet bootstrapped)
+      corners_for_avg: total.corners_for_avg ?? null,
+      corners_against_avg: total.corners_against_avg ?? null,
+      yellow_cards_for_avg: total.yellow_cards_for_avg ?? null,
+      yellow_cards_against_avg: total.yellow_cards_against_avg ?? null,
+      red_cards_for_total: total.red_cards_for_total ?? null
+    };
+  });
+
+  // ── league-level statistics from aggregates ──────────────────────────────
+  // Each match is represented in two team facts (home + away). We use only
+  // the HOME perspective to get per-match counts (avoids double-counting).
+  const homeAggs = aggregatesArray.map((a) => a.home).filter((h) => h.played > 0);
+  const totalHomePlayed = homeAggs.reduce((s, h) => s + h.played, 0); // = total matches
+  const matchesCount = totalHomePlayed; // each home team = one unique match
+
+  const totalGoalsForAll = aggregatesArray.reduce((s, a) => s + a.total.goals_for, 0);
+  const goalsPerGame = matchesCount > 0 ? Number((totalGoalsForAll / matchesCount).toFixed(3)) : null;
+
+  // BTTS: from home team perspective (each match counted once)
+  const totalBtts = homeAggs.reduce((s, h) => s + h.btts_count, 0);
+  const leagueBttsPct = matchesCount > 0 ? Number(((totalBtts / matchesCount) * 100).toFixed(2)) : null;
+
+  // Over X: from home team perspective
+  const totalOver05 = homeAggs.reduce((s, h) => s + h.over_05_count, 0);
+  const totalOver15 = homeAggs.reduce((s, h) => s + h.over_15_count, 0);
+  const totalOver25 = homeAggs.reduce((s, h) => s + h.over_25_count, 0);
+  const totalOver35 = homeAggs.reduce((s, h) => s + h.over_35_count, 0);
+  const leagueOver05Pct = matchesCount > 0 ? Number(((totalOver05 / matchesCount) * 100).toFixed(2)) : null;
+  const leagueOver15Pct = matchesCount > 0 ? Number(((totalOver15 / matchesCount) * 100).toFixed(2)) : null;
+  const leagueOver25Pct = matchesCount > 0 ? Number(((totalOver25 / matchesCount) * 100).toFixed(2)) : null;
+  const leagueOver35Pct = matchesCount > 0 ? Number(((totalOver35 / matchesCount) * 100).toFixed(2)) : null;
+  const leagueUnder25Pct = leagueOver25Pct !== null ? Number((100 - leagueOver25Pct).toFixed(2)) : null;
+
+  // Clean sheets / failed to score: sum across ALL team appearances (both home+away)
+  // "league clean_sheets_pct" = % of team-games where the team kept a clean sheet
+  const totalTeamMatches = aggregatesArray.reduce((s, a) => s + a.total.played, 0);
+  const totalCleanSheets = aggregatesArray.reduce((s, a) => s + a.total.clean_sheets_count, 0);
+  const totalFailed = aggregatesArray.reduce((s, a) => s + a.total.failed_to_score_count, 0);
+  const leagueCleanSheetsPct = totalTeamMatches > 0
+    ? Number(((totalCleanSheets / totalTeamMatches) * 100).toFixed(2))
+    : null;
+  const leagueFailedPct = totalTeamMatches > 0
+    ? Number(((totalFailed / totalTeamMatches) * 100).toFixed(2))
+    : null;
+
+  // Home/away venue splits (league level)
+  const awayAggs = aggregatesArray.map((a) => a.away).filter((a) => a.played > 0);
+  const totalAwayPlayed = awayAggs.reduce((s, a) => s + a.played, 0);
+
+  const homeGoalsTotal = homeAggs.reduce((s, h) => s + h.goals_for, 0);
+  const awayGoalsTotal = awayAggs.reduce((s, a) => s + a.goals_for, 0);
+  const homeGoalsAvg = totalHomePlayed > 0 ? Number((homeGoalsTotal / totalHomePlayed).toFixed(3)) : null;
+  const awayGoalsAvg = totalAwayPlayed > 0 ? Number((awayGoalsTotal / totalAwayPlayed).toFixed(3)) : null;
+
+  const homeBttsPct = matchesCount > 0 ? Number(((totalBtts / matchesCount) * 100).toFixed(2)) : null;
+  const awayBttsPct = homeBttsPct; // BTTS is symmetric
+
+  const totalHomeClean = homeAggs.reduce((s, h) => s + h.clean_sheets_count, 0);
+  const totalAwayClean = awayAggs.reduce((s, a) => s + a.clean_sheets_count, 0);
+  const homeCleanSheetsPct = totalHomePlayed > 0 ? Number(((totalHomeClean / totalHomePlayed) * 100).toFixed(2)) : null;
+  const awayCleanSheetsPct = totalAwayPlayed > 0 ? Number(((totalAwayClean / totalAwayPlayed) * 100).toFixed(2)) : null;
+
+  const homeOver25Pct = leagueOver25Pct; // same match, just different perspective
+  const awayOver25Pct = leagueOver25Pct;
+
+  // Corners average (only if fixture stats were bootstrapped)
+  const homeCornerAggs = homeAggs.filter((h) => h.corners_for_total !== null);
+  const awayCornerAggs = awayAggs.filter((a) => a.corners_for_total !== null);
+  const totalCornersHome = homeCornerAggs.reduce((s, h) => s + h.corners_for_total, 0);
+  const totalCornersAway = awayCornerAggs.reduce((s, a) => s + a.corners_for_total, 0);
+  const cornersPlayed = homeCornerAggs.reduce((s, h) => s + h.played, 0);
+  const cornersAvg = cornersPlayed > 0
+    ? Number(((totalCornersHome + totalCornersAway) / cornersPlayed).toFixed(2))
+    : null;
+
+  // Yellow cards average (only if bootstrapped)
+  const homeYellowAggs = homeAggs.filter((h) => h.yellow_cards_for_total !== null);
+  const awayYellowAggs = awayAggs.filter((a) => a.yellow_cards_for_total !== null);
+  const totalYellowHome = homeYellowAggs.reduce((s, h) => s + h.yellow_cards_for_total, 0);
+  const totalYellowAway = awayYellowAggs.reduce((s, a) => s + a.yellow_cards_for_total, 0);
+  const yellowPlayed = homeYellowAggs.reduce((s, h) => s + h.played, 0);
+  const yellowCardsAvg = yellowPlayed > 0
+    ? Number(((totalYellowHome + totalYellowAway) / yellowPlayed).toFixed(2))
+    : null;
+
+  // ── summary ─────────────────────────────────────────────────────────────
+  const summary = {
+    matches_count: matchesCount,
+    goals_per_game: goalsPerGame,
+    btts_pct: leagueBttsPct,
+    over_15_pct: leagueOver15Pct,
+    over_25_pct: leagueOver25Pct,
+    over_35_pct: leagueOver35Pct,
+    under_25_pct: leagueUnder25Pct,
+    clean_sheets_pct: leagueCleanSheetsPct,
+    failed_to_score_pct: leagueFailedPct
+  };
+
+  // ── team rankings ────────────────────────────────────────────────────────
+  const teamRankings = buildTeamRankings(teamStats);
+
+  // ── home/away splits for statistics.home_away_splits ────────────────────
+  const splits = {
+    home: {
+      goals_avg: homeGoalsAvg,
+      btts_pct: homeBttsPct,
+      over_25_pct: homeOver25Pct,
+      clean_sheets_pct: homeCleanSheetsPct
+    },
+    away: {
+      goals_avg: awayGoalsAvg,
+      btts_pct: awayBttsPct,
+      over_25_pct: awayOver25Pct,
+      clean_sheets_pct: awayCleanSheetsPct
+    },
+    home_goals_avg: homeGoalsAvg,
+    away_goals_avg: awayGoalsAvg,
+    home_btts_pct: homeBttsPct,
+    away_btts_pct: awayBttsPct,
+    home_over_25_pct: homeOver25Pct,
+    away_over_25_pct: awayOver25Pct,
+    home_clean_sheets_pct: homeCleanSheetsPct,
+    away_clean_sheets_pct: awayCleanSheetsPct,
+    goals_home: homeGoalsTotal,
+    goals_away: awayGoalsTotal,
+    btts_home_pct: homeBttsPct,
+    btts_away_pct: awayBttsPct,
+    over_25_home_pct: homeOver25Pct,
+    over_25_away_pct: awayOver25Pct,
+    clean_sheets_home_pct: homeCleanSheetsPct,
+    clean_sheets_away_pct: awayCleanSheetsPct
+  };
+
+  // ── competition block ────────────────────────────────────────────────────
+  const competition = {
+    slug: leagueDefinition.slug,
+    competition_id: leagueDefinition.leagueId,
+    name: leagueBlock?.name || leagueDefinition.defaultName,
+    country: leagueBlock?.country || leagueDefinition.defaultCountry,
+    season: seasonStr,
+    current_round: deriveCurrentRound(fixturesWrapped),
+    generated_at_utc: generatedAtUtc
+  };
+
+  // ── assemble snapshot ────────────────────────────────────────────────────
+  const league = {
+    matches_count: matchesCount,
+    goals_for_total: totalGoalsForAll,
+    goals_against_total: totalGoalsForAll,
+    goals_per_game: goalsPerGame,
+    home_goals_avg: homeGoalsAvg,
+    away_goals_avg: awayGoalsAvg,
+    over_05_pct: leagueOver05Pct,
+    over_15_pct: leagueOver15Pct,
+    over_25_pct: leagueOver25Pct,
+    over_35_pct: leagueOver35Pct,
+    under_25_pct: leagueUnder25Pct,
+    btts_pct: leagueBttsPct,
+    clean_sheets_pct: leagueCleanSheetsPct,
+    failed_to_score_pct: leagueFailedPct,
+    home_btts_pct: homeBttsPct,
+    away_btts_pct: awayBttsPct,
+    home_over_25_pct: homeOver25Pct,
+    away_over_25_pct: awayOver25Pct,
+    home_clean_sheets_pct: homeCleanSheetsPct,
+    away_clean_sheets_pct: awayCleanSheetsPct,
+    corners_avg: cornersAvg,
+    yellow_cards_avg: yellowCardsAvg,
+    shots_avg: null,
+    possession_avg: null
+  };
+
+  const topTeamRankingRows = teamRankings.by_goals_for.slice(0, 20).map((row) => {
+    const team = teamStats.find((t) => t.team_id === row.team_id) || null;
+    return {
+      team_id: row.team_id,
+      team: row.team,
+      goals_for: row.value,
+      goals_against: team?.goals_against ?? null,
+      btts_pct: team?.btts_pct ?? null,
+      over_25_pct: team?.over_25_pct ?? null,
+      clean_sheets_pct: team?.clean_sheets_pct ?? null,
+      goals_scored: row.value,
+      goals_conceded: team?.goals_against ?? null
+    };
+  });
+
+  const snapshot = {
+    competition,
+    summary,
+    standings: standingsRows,
+    fixtures: {
+      upcoming: fixturesWrapped.upcoming,
+      recent: fixturesWrapped.recent
+    },
+    statistics: {
+      league,
+      teams: teamStats,
+      team_rankings: teamRankings,
+      team_rankings_legacy: topTeamRankingRows,
+      home_away_splits: splits
+    },
+    trends: {
+      trend_cards: buildTrendCards(summary),
+      team_profiles: buildTeamProfiles(standingsRows, teamStats),
+      summary_text:
+        `${competition.name} ${competition.season} shows ${formatNumber(summary.goals_per_game, 2)} goals per game with BTTS at ` +
+        `${formatNumber(summary.btts_pct, 1)}%. Over 2.5 sits at ${formatNumber(summary.over_25_pct, 1)}%, while clean-sheet occurrence is ` +
+        `${formatNumber(summary.clean_sheets_pct, 1)}%, indicating a mixed attack-defense profile.`
+    },
+    meta: {
+      generated_at_utc: generatedAtUtc,
+      source: {
+        provider: "api-football",
+        league_id: leagueDefinition.leagueId,
+        season: seasonStr,
+        resources: ["/standings", "/fixtures"],
+        model: "fixture_derived_v1"
+      },
+      version: "league_page_v1",
+      schema: 1
+    }
+  };
+
+  return assertLeaguePageSnapshotHasCoreData(
+    assertLeaguePageSnapshotUsesApiFootball(enforceLeagueV1StatisticsContract(snapshot), leagueDefinition)
+  );
 }
