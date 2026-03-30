@@ -6,121 +6,87 @@
   <title>RadarTips • Radar</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=8" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=14" />
 </head>
-<body data-page="day">
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brandline">
-          <div class="logo">
-            <span id="brand">RadarTips</span>
-            <span class="badge-mini" id="disclaimer">—</span>
-          </div>
+<body data-page="day" data-shell="day-v2" data-rt-surface="radar-day" data-theme="dark">
+  <div class="rt-day">
+    <header class="rt-header">
+      <div class="rt-header-top">
+        <div class="rt-brand-row">
+          <span id="brand" class="rt-brand-text">RadarTips</span>
+          <span class="badge-mini" id="disclaimer"></span>
         </div>
-        <div class="mini" id="subtitle"></div>
+        <p class="mini rt-tagline" id="subtitle"></p>
       </div>
-
-      <div class="nav">
-        <a class="pill" data-nav="day" href="#">—</a>
-        <a class="pill" data-nav="week" href="#">—</a>
-        <a class="pill" data-nav="calendar" href="#">—</a>
-
-        <span style="width:10px"></span>
-
-        
-        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
-
-        <span class="lang" data-lang="en">EN</span>
-        <span class="lang" data-lang="pt">PT</span>
-        <span class="lang" data-lang="es">ES</span>
-        <span class="lang" data-lang="fr">FR</span>
-        <span class="lang" data-lang="de">DE</span>
-      </div>
-    </div>
-
-    <div class="hero">
-      <h1 id="hero_title">Radar</h1>
-      <p id="hero_sub">—</p>
-
-    <div class="pitchbar" id="pitchbar" hidden aria-label="O que é o RadarTips">
-      <div class="pitchbox">
-        <div class="pitch-kicker" id="pitch_kicker">—</div>
-        <div class="pitch-actions">
-          <button class="btn" type="button" data-open="about" id="btn_about">—</button>
-          <a class="btn ghost" id="btn_browse" href="#">—</a>
-        </div>
-        <div class="pitch-freepro" id="pitch_free_pro">—</div>
-      </div>
-      <div class="pitchbox pitchbox-right">
-        <div id="pitch_markets"></div>
-      </div>
-    </div>
-
-
-      <div class="grid">
-        <div class="card" data-slot="1">
-          <div class="row">
-            <span class="badge risk low">fr</span>
-            <span class="badge top" style="opacity:.75">TOP 1</span>
-          </div>
-          <h3>—</h3>
-          <div class="meta"></div>
-          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
-        </div>
-
-        <div class="card" data-slot="2">
-          <div class="row">
-            <span class="badge risk med">fr</span>
-            <span class="badge top" style="opacity:.75">TOP 2</span>
-          </div>
-          <h3>—</h3>
-          <div class="meta"></div>
-          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
-        </div>
-
-        <div class="card" data-slot="3">
-          <div class="row">
-            <span class="badge risk high">fr</span>
-            <span class="badge top" style="opacity:.75">TOP 3</span>
-          </div>
-          <h3>—</h3>
-          <div class="meta"></div>
-          <div class="lock"><span class="pro">PRO</span> · — <button class="btn primary" type="button">PRO</button></div>
+      <div class="rt-header-actions">
+        <nav class="rt-nav-pills" aria-label="Vues Radar">
+          <a class="pill" data-nav="day" href="#"></a>
+          <a class="pill" data-nav="calendar" href="#"></a>
+        </nav>
+        <div class="rt-lang-tools">
+          <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Thème">☾</button>
+          <span class="lang" data-lang="en">EN</span>
+          <span class="lang" data-lang="pt">PT</span>
+          <span class="lang" data-lang="es">ES</span>
+          <span class="lang" data-lang="fr">FR</span>
+          <span class="lang" data-lang="de">DE</span>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="section" id="calendar_section">
-      <h2 id="calendar_title">—</h2>
-      <div class="sub" id="calendar_sub">—</div>
-
-      <div class="controls">
-        <div class="toggle">
-          <button class="pill" id="btn_time" type="button">—</button>
-          <button class="pill" id="btn_country" type="button">—</button>
+    <main class="rt-main">
+      <section class="rt-top3" aria-labelledby="top3_heading">
+        <header class="rt-top3-head">
+          <h2 id="top3_heading" class="rt-top3-title"></h2>
+          <p id="top3_sub" class="rt-top3-sub"></p>
+        </header>
+        <div class="rt-top3-grid">
+          <article class="rt-slot" data-slot="1">
+            <div class="rt-slot-topbar"></div>
+            <h3></h3>
+            <div class="meta"></div>
+            <div class="lock"></div>
+          </article>
+          <article class="rt-slot" data-slot="2">
+            <div class="rt-slot-topbar"></div>
+            <h3></h3>
+            <div class="meta"></div>
+            <div class="lock"></div>
+          </article>
+          <article class="rt-slot" data-slot="3">
+            <div class="rt-slot-topbar"></div>
+            <h3></h3>
+            <div class="meta"></div>
+            <div class="lock"></div>
+          </article>
         </div>
-        <input class="input" id="search" type="text" placeholder="—" />
+      </section>
+
+      <section class="section rt-cal rt-dayboard" id="calendar_section">
+        <div id="dayboard_tabs" class="rt-day-tabs" role="tablist"></div>
+        <div class="controls">
+          <input class="input" id="search" type="search" autocomplete="off" />
+        </div>
+        <div class="rt-dayboard-split">
+          <aside id="country_list" class="rt-country-list" aria-label="Pays"></aside>
+          <div class="cal rt-dayboard-matches" id="calendar"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer rt-footer"></footer>
+  </div>
+
+  <div id="modal_backdrop" class="rt-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="rt-modal">
+      <div class="rt-modal-head">
+        <div id="modal_title" class="rt-modal-title"></div>
+        <button type="button" class="btn" id="modal_close">×</button>
       </div>
-
-      <div class="cal" id="calendar"></div>
-    </div>
-
-    <div class="footer">
-      © <span id="year"></span> RadarTips
+      <div id="modal_body" class="rt-modal-body"></div>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="modal_backdrop" role="dialog" aria-modal="true">
-    <div class="modal">
-      <div class="modal-head">
-        <div class="modal-title" id="modal_title">Radar</div>
-        <button class="btn" id="modal_close" type="button">×</button>
-      </div>
-      <div class="modal-body" id="modal_body"></div>
-    </div>
-  </div>
-
-  <script src="/assets/js/app.js?v=8"></script>
+  <script src="/assets/js/app.js?v=11"></script>
 </body>
 </html>

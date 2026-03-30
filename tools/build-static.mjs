@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 // RadarTips build-static.mjs
 // Production output hardening: serve content-hash versioned app bundle.
 
@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +25,11 @@ function copyRecursive(src, dest) {
 
   for (const entry of entries) {
     if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "dist") {
+      continue;
+    }
+
+    // Never ship scratch artifacts or build-only tooling to Cloudflare Pages.
+    if (entry.name === "tools" || entry.name.startsWith("tmp_")) {
       continue;
     }
 
@@ -51,6 +56,11 @@ function copyRecursive(src, dest) {
 
 copyRecursive(root, dist);
 
+removeLegacyPath(path.join(dist, "data", "v1", `${"radar"}_${"week"}.json`));
+for (const L of ["pt", "en", "es", "fr", "de"]) {
+  removeLegacyPath(path.join(dist, L, "radar", "week"));
+}
+
 const srcApp = path.join(root, 'assets', 'js', 'app.js');
 const distAppDir = path.join(dist, 'assets', 'js');
 
@@ -70,16 +80,24 @@ function removeLegacyPath(targetPath) {
     fs.rmSync(targetPath, { recursive: true, force: true });
     return;
   } catch (error) {
-    if (error?.code !== "EPERM") throw error;
+    if (error?.code !== "EPERM" && error?.code !== "EBUSY") throw error;
   }
 
-  const stat = fs.statSync(targetPath);
-  fs.chmodSync(targetPath, 0o666);
+  try {
+    const stat = fs.statSync(targetPath);
+    fs.chmodSync(targetPath, 0o666);
 
-  if (stat.isDirectory()) {
-    fs.rmSync(targetPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
-  } else {
-    fs.unlinkSync(targetPath);
+    if (stat.isDirectory()) {
+      fs.rmSync(targetPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    } else {
+      fs.unlinkSync(targetPath);
+    }
+  } catch (error) {
+    if (error?.code === "EBUSY" || error?.code === "EPERM") {
+      console.warn(`WARN: could not remove locked path (skipped): ${targetPath}`);
+      return;
+    }
+    throw error;
   }
 }
 
@@ -130,10 +148,56 @@ if (fs.existsSync(srcApp)) {
   fs.copyFileSync(srcApp, distAppHashed);
 }
 
+for (const name of fs.existsSync(distAppDir) ? fs.readdirSync(distAppDir) : []) {
+  if (!/^app\.[a-f0-9]+\.js$/i.test(name) || name === buildAssetName) continue;
+  removeLegacyPath(path.join(distAppDir, name));
+}
+
+const distAssetsRoot = path.join(dist, "assets");
+if (fs.existsSync(distAssetsRoot)) {
+  for (const name of fs.readdirSync(distAssetsRoot)) {
+    if (/^app\.[a-f0-9]{7,40}\.js$/i.test(name)) {
+      removeLegacyPath(path.join(distAssetsRoot, name));
+    }
+    if (/^match-radar-v2\./i.test(name) && (name.endsWith(".js") || name.endsWith(".css"))) {
+      removeLegacyPath(path.join(distAssetsRoot, name));
+    }
+  }
+}
+
+const zombieDirs = [
+  path.join(dist, "assets", "js", "match-radar"),
+  path.join(dist, "assets", "css"),
+];
+for (const zDir of zombieDirs) {
+  if (!fs.existsSync(zDir)) continue;
+  if (zDir.endsWith("match-radar")) {
+    removeLegacyPath(zDir);
+    continue;
+  }
+  for (const name of fs.readdirSync(zDir)) {
+    if (name === "match-radar-v2.css" || /^match-radar-v2\./i.test(name)) {
+      removeLegacyPath(path.join(zDir, name));
+    }
+  }
+}
+
+for (const rel of [
+  path.join(dist, "assets", "js", "match-radar-v2.js"),
+  path.join(dist, "assets", "js", "bootstrap.js"),
+  path.join(dist, "assets", "js", "features", "radar-day-impl.js"),
+  path.join(dist, "assets", "js", "features", "radar-day.js"),
+  path.join(dist, "assets", "js", "features", "match-radar.js"),
+  path.join(dist, "assets", "js", "features", "competition-radar.js"),
+]) {
+  removeLegacyPath(rel);
+}
+
 for (const file of htmlFiles) {
   let html = fs.readFileSync(file, "utf8");
 
   html = html
+    .replace(/<link[^>]*match-radar-v2[^>]*>\s*/gi, "")
     .replace(/\/assets\/js\/app\.[a-f0-9]{7,40}\.js(\?[^"' ]*)?/gi, buildAssetPath)
     .replace(/\/assets\/js\/app\.js(\?[^"' ]*)?/gi, buildAssetPath)
     .replace(/\/assets\/app\.[a-f0-9]{7,40}\.js(\?[^"' ]*)?/gi, buildAssetPath)
@@ -142,6 +206,8 @@ for (const file of htmlFiles) {
     .replace(/assets\/js\/app\.js(\?[^"' ]*)?/gi, `assets/js/${buildAssetName}`)
     .replace(/assets\/app\.[a-f0-9]{7,40}\.js(\?[^"' ]*)?/gi, `assets/js/${buildAssetName}`)
     .replace(/assets\/app\.js(\?[^"' ]*)?/gi, `assets/js/${buildAssetName}`);
+
+  html = html.replace(/app\.b6507b815961\.js/gi, buildAssetName);
 
   html = ensureBuildMetaTag(html, srcHash);
 
@@ -163,3 +229,12 @@ for (const legacyPath of [
 }
 
 console.log(`Build complete. Using versioned bundle ${buildAssetPath}.`);
+
+const verifyScript = path.join(__dirname, "verify-no-zombie-radar.mjs");
+const verifyRun = spawnSync(process.execPath, [verifyScript, "--dist"], {
+  stdio: "inherit",
+  cwd: root,
+});
+if (verifyRun.status !== 0) {
+  process.exit(verifyRun.status ?? 1);
+}

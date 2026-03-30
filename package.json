@@ -1,0 +1,15 @@
+{
+  "name": "radartips",
+  "private": true,
+  "description": "Static site — use npm run dev for local preview",
+  "scripts": {
+    "dev": "node tools/dev-server.mjs",
+    "dev:open": "node tools/dev-server.mjs --open",
+    "dev:dist": "node tools/dev-server.mjs --root dist --port 4173",
+    "dev:dist:open": "node tools/dev-server.mjs --root dist --port 4173 --open",
+    "dev:ui": "node tools/dev-ui-session.mjs",
+    "dev:ui:open": "node tools/dev-ui-session.mjs --open",
+    "build": "node tools/build-static.mjs",
+    "verify": "node tools/verify-no-zombie-radar.mjs"
+  }
+}
