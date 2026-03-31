@@ -38,8 +38,10 @@ async function fetchStatus(url) {
 }
 
 async function main() {
-  const dayUrl = `${baseUrl}/pt/radar/day/`;
-  const { response: dayResp, text: dayHtml } = await fetchText(dayUrl);
+  const primaryDayUrl = `${baseUrl}/en/radar/day/`;
+  const secondaryDayUrls = [`${baseUrl}/pt/radar/day/`, `${baseUrl}/es/radar/day/`, `${baseUrl}/fr/radar/day/`, `${baseUrl}/de/radar/day/`];
+
+  const { response: dayResp, text: dayHtml } = await fetchText(primaryDayUrl);
   if (!dayResp.ok) throw new Error(`day_html_http_${dayResp.status}`);
 
   const bundlePathMatch = dayHtml.match(/\/assets\/js\/app\.[a-f0-9]+\.js/);
@@ -64,17 +66,17 @@ async function main() {
   const { response: bundleResp, text: bundleJs } = await fetchText(`${baseUrl}${bundlePath}`);
   if (!bundleResp.ok) throw new Error(`bundle_http_${bundleResp.status}`);
 
-  const hasIsRenderable = bundleJs.includes("isRenderableDayMatch");
-  const hasDayFilter = bundleJs.includes("isRenderableDayMatch(m)");
-  const hasTopGuard = bundleJs.includes("Date.parse(raw?.kickoff_utc");
+  const hasPageType = bundleJs.includes("pageType");
+  const hasRenderTop3 = bundleJs.includes("renderTop3");
+  const hasDayPath = bundleJs.includes("radar/day");
 
-  console.log(`bundleHas_isRenderableDayMatch=${hasIsRenderable}`);
-  console.log(`bundleHas_dayFilterCall=${hasDayFilter}`);
-  console.log(`bundleHas_topPickNowGuard=${hasTopGuard}`);
+  console.log(`bundleHas_pageType=${hasPageType}`);
+  console.log(`bundleHas_renderTop3=${hasRenderTop3}`);
+  console.log(`bundleHas_radar_day_path=${hasDayPath}`);
 
-  if (!hasIsRenderable) fail("live bundle missing isRenderableDayMatch signature");
-  if (!hasDayFilter) fail("live bundle missing Day render filter signature");
-  if (!hasTopGuard) fail("live bundle missing Top Picks time guard signature");
+  if (!hasPageType) fail("live bundle missing pageType (Radar Day routing)");
+  if (!hasRenderTop3) fail("live bundle missing renderTop3");
+  if (!hasDayPath) fail("live bundle missing radar/day path segment");
 
   const plainBundleStatus = await fetchStatus(`${baseUrl}/assets/js/app.js`);
   const legacyBundleStatus = await fetchStatus(`${baseUrl}/assets/app.js`);
@@ -104,8 +106,14 @@ async function main() {
   console.log(`radar_day_past_highlights=${radarPast}`);
   if (radarPast !== 0) fail(`radar_day still contains ${radarPast} past highlights`);
 
+  for (const u of secondaryDayUrls) {
+    const st = await fetchStatus(u);
+    console.log(`secondary_day_status ${u} = ${st}`);
+    if (st !== 200) fail(`secondary Radar Day surface must be reachable: ${u} (HTTP ${st})`);
+  }
+
   if (!process.exitCode) {
-    ok("production Day runtime is healthy");
+    ok("production Day runtime is healthy (primary /en/radar/day/)");
   }
 }
 

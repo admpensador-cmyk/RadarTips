@@ -5,7 +5,6 @@
  * Generates:
  *  - data/v1/calendar_2d.json
  *  - data/v1/radar_day.json
- *  - data/v1/radar_week.json (placeholder, safe)
  *
  * Keeps: form/gols enrichment.
  * Fixes:
@@ -39,7 +38,6 @@ const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
 const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
-const OUT_RADAR_WEEK = path.join(OUT_DIR, "radar_week.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
 const OUT_COVERAGE_REPORT = path.join(OUT_DIR, "calendar_coverage_report.json");
 const LEAGUE_PAGE_OUTPUTS = new Map(
@@ -1416,10 +1414,6 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   };
   writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
   console.log(`[CALENDAR] Wrote ${OUT_RADAR_DAY.replace(process.cwd(), ".")} highlights=${radarDayOut.highlights.length}`);
-
-  // Write radar_week.json (safe placeholder)
-  writeJsonAtomic(OUT_RADAR_WEEK, { generated_at_utc: generatedAtUtc, highlights: [] });
-  console.log(`[CALENDAR] Wrote ${OUT_RADAR_WEEK.replace(process.cwd(), ".")}`);
 
   const statsSupportedOut = {
     meta: {
