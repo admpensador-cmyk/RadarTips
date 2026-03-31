@@ -1,5 +1,7 @@
 # RadarTips (Cloudflare Pages)
 
+**Environments (development / preview / production), canonical route (`/en/radar/day/`), and deploy rules:** see [ENVIRONMENT.md](./ENVIRONMENT.md).
+
 Static multi-language site (EN/PT/ES/FR/DE) designed for:
 - Daily Radar (Top 3)
 - Weekly Radar
@@ -96,12 +98,11 @@ This validates:
 ## Data
 The UI prefers live data from the Worker API:
 - /api/v1/radar_day.json
-- /api/v1/radar_week.json
 - /api/v1/calendar_7d.json
+- /api/v1/calendar_2d.json (and merged locale variants where configured)
 
 If the Worker route is not available, it automatically falls back to static files:
 - /data/v1/radar_day.json
-- /data/v1/radar_week.json
 - /data/v1/calendar_7d.json
 
 ### Automated updates (GitHub Actions)
@@ -124,7 +125,6 @@ In GitHub: **Settings → Secrets and variables → Actions → New repository s
 When R2 secrets are present, the workflow uploads JSON to:
 - `v1/calendar_7d.json`
 - `v1/radar_day.json`
-- `v1/radar_week.json`
 
 The Worker reads these objects from R2 and serves them at `/api/v1/*.json`.
 
@@ -139,7 +139,6 @@ After a workflow run:
   - `/api/v1/calendar_2d.json?tz=America/Sao_Paulo` (**must return HTTP 200**)
   - `/api/v1/calendar_7d.json`
   - `/api/v1/radar_day.json`
-  - `/api/v1/radar_week.json`
 If those URLs return JSON, the UI should update automatically.
 
 

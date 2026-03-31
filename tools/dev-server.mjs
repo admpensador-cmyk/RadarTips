@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
  * Static dev preview for RadarTips.
- * Serves from repo root (source) or dist — paths like /assets/ and /data/v1/ work as in production.
+ * Default: repo root (source HTML). Paths like /assets/ and /data/v1/ mirror production.
+ *
+ * Serving dist/ requires RADARTIPS_ALLOW_DIST_ROOT=1 (use npm run dev:dist after build).
  *
  * Usage:
  *   node tools/dev-server.mjs
- *   node tools/dev-server.mjs --root dist --port 4173
  *   node tools/dev-server.mjs --open
  */
 
@@ -14,9 +15,41 @@ import path from "node:path";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import process from "node:process";
+
+import { loadRadartipsEnv } from "./load-radartips-env.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+
+loadRadartipsEnv(process.env.APP_ENV || "development");
+
+function assertSourceOnlyRoot(rootPath) {
+  const distResolved = path.resolve(repoRoot, "dist");
+  const resolved = path.resolve(rootPath);
+  if (resolved === distResolved || resolved.startsWith(distResolved + path.sep)) {
+    if (process.env.RADARTIPS_ALLOW_DIST_ROOT !== "1") {
+      console.error(
+        "[dev-server] Refusing to use dist/ as document root.\n" +
+          "  Use npm run dev (source HTML at repo root), or after npm run build use npm run dev:dist."
+      );
+      process.exit(1);
+    }
+  }
+}
+
+function assertPreviewUsesDist(rootPath) {
+  const distResolved = path.resolve(repoRoot, "dist");
+  const resolved = path.resolve(rootPath);
+  const appEnv = String(process.env.APP_ENV || "").trim();
+  if (appEnv === "preview" && resolved !== distResolved) {
+    console.error(
+      "[dev-server] APP_ENV=preview requires serving dist/ only.\n" +
+        "  Use: npm run dev:dist (after npm run build)."
+    );
+    process.exit(1);
+  }
+}
 
 function parseArgs(argv) {
   let root = repoRoot;
@@ -34,6 +67,10 @@ function parseArgs(argv) {
   }
   return { root, port, open };
 }
+
+const { root, port, open } = parseArgs(process.argv);
+assertSourceOnlyRoot(root);
+assertPreviewUsesDist(root);
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -102,8 +139,6 @@ function resolvePath(root, pathname) {
   return null;
 }
 
-const { root, port, open } = parseArgs(process.argv);
-
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
   let pathname = url.pathname;
@@ -128,13 +163,17 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, "127.0.0.1", () => {
   const base = `http://127.0.0.1:${port}`;
-  console.log(`RadarTips dev preview`);
+  const mode = String(process.env.PUBLIC_PAGES_MODE || "source");
+  const appEnv = String(process.env.APP_ENV || "development");
+  console.log(`RadarTips static server`);
+  console.log(`  APP_ENV=${appEnv} PUBLIC_PAGES_MODE=${mode}`);
   console.log(`  root: ${root}`);
+  console.log(`  Canonical surface: ${base}/en/radar/day/ (primary)`);
   console.log(`  ${base}/`);
-  console.log(`  ${base}/pt/radar/day/`);
-  console.log(`  Produção local: npm run dev:dist (raiz = pasta dist)`);
+  console.log(`  Localized: ${base}/pt/radar/day/ …`);
+  console.log(`  Dist preview: npm run dev:dist (after npm run build)`);
   if (open) {
-    const url = `${base}/pt/radar/day/`;
+    const url = `${base}/en/radar/day/`;
     const cmd = process.platform === "win32" ? "cmd" : "xdg-open";
     const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
     spawn(cmd, args, { detached: true, stdio: "ignore" }).unref();

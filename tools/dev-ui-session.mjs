@@ -15,9 +15,12 @@ import { spawn, execSync } from "node:child_process";
 import process from "node:process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadRadartipsEnv } from "./load-radartips-env.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
+
+loadRadartipsEnv("development");
 
 function parsePort(argv) {
   const i = argv.indexOf("--port");
@@ -44,8 +47,8 @@ try {
 const base = `http://127.0.0.1:${port}`;
 console.log("\n[dev-ui] Servidor de pré-visualização (raiz = repo, dados em /data/v1/)");
 console.log("--- URLs para validação manual ---");
-console.log(`  Radar Dia (PT):  ${base}/pt/radar/day/`);
-console.log(`  Radar Dia (EN):  ${base}/en/radar/day/`);
+console.log(`  Radar Day (EN, canonical): ${base}/en/radar/day/`);
+console.log(`  Radar Day (PT):            ${base}/pt/radar/day/`);
 console.log(`  Calendário (PT): ${base}/pt/calendar/`);
 console.log(`  Calendário (EN): ${base}/en/calendar/`);
 console.log("\n[dev-ui] Checklist rápido: Top 3 sem chip LOW; pick premium; calendário 2 colunas; tabs Hoje/Amanhã.");

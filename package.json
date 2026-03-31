@@ -3,13 +3,19 @@
   "private": true,
   "description": "Static site — use npm run dev for local preview",
   "scripts": {
-    "dev": "node tools/dev-server.mjs",
-    "dev:open": "node tools/dev-server.mjs --open",
-    "dev:dist": "node tools/dev-server.mjs --root dist --port 4173",
-    "dev:dist:open": "node tools/dev-server.mjs --root dist --port 4173 --open",
+    "dev": "node tools/with-env.mjs development -- node tools/dev-server.mjs",
+    "dev:open": "node tools/with-env.mjs development -- node tools/dev-server.mjs --open",
+    "dev:dist": "node tools/preview-dist.mjs",
+    "dev:dist:open": "node tools/preview-dist.mjs --open",
     "dev:ui": "node tools/dev-ui-session.mjs",
     "dev:ui:open": "node tools/dev-ui-session.mjs --open",
-    "build": "node tools/build-static.mjs",
-    "verify": "node tools/verify-no-zombie-radar.mjs"
+    "build": "node tools/with-env.mjs production -- node tools/build-static.mjs",
+    "preview:build": "node tools/with-env.mjs preview -- node tools/build-static.mjs",
+    "verify": "node tools/with-env.mjs development -- node tools/verify-no-zombie-radar.mjs",
+    "verify:dist": "node tools/with-env.mjs production -- node tools/verify-no-zombie-radar.mjs --dist",
+    "deploy:preview": "node tools/deploy-hint.mjs preview",
+    "deploy:prod": "node tools/deploy-hint.mjs production",
+    "migrate:r2-legacy-to-prod": "node tools/r2-migrate-legacy-to-prod-prefix.mjs",
+    "verify:r2-prod": "node tools/r2-verify-prod-prefix.mjs"
   }
 }

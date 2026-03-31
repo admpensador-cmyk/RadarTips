@@ -2,12 +2,14 @@
 // RadarTips build-static.mjs
 // Production output hardening: serve content-hash versioned app bundle.
 
-
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { loadRadartipsEnv } from "./load-radartips-env.mjs";
+
+loadRadartipsEnv(process.env.APP_ENV || "production");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +37,15 @@ function copyRecursive(src, dest) {
 
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
+
+    // Root package.json references tools/ (not copied to dist); avoid a broken npm surface in output.
+    if (
+      entry.isFile() &&
+      entry.name === "package.json" &&
+      path.resolve(srcPath) === path.resolve(root, "package.json")
+    ) {
+      continue;
+    }
 
     if (entry.isFile() && ["calendar_7d.json", "radar_day.json"].includes(entry.name.toLowerCase())) {
       continue;
@@ -237,4 +248,13 @@ const verifyRun = spawnSync(process.execPath, [verifyScript, "--dist"], {
 });
 if (verifyRun.status !== 0) {
   process.exit(verifyRun.status ?? 1);
+}
+
+const routesScript = path.join(__dirname, "verify-dist-routes.mjs");
+const routesRun = spawnSync(process.execPath, [routesScript], {
+  stdio: "inherit",
+  cwd: root,
+});
+if (routesRun.status !== 0) {
+  process.exit(routesRun.status ?? 1);
 }
