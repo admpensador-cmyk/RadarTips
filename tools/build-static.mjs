@@ -30,6 +30,11 @@ function copyRecursive(src, dest) {
       continue;
     }
 
+    // Never copy env files into Pages output (secrets + wrong runtime).
+    if (entry.name.startsWith(".env")) {
+      continue;
+    }
+
     // Never ship scratch artifacts or build-only tooling to Cloudflare Pages.
     if (entry.name === "tools" || entry.name.startsWith("tmp_")) {
       continue;
