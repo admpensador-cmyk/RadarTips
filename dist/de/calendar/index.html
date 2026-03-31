@@ -9,108 +9,65 @@
   <title>RadarTips • Kalender</title>
   <meta name="description" content="RadarTips: informational fixtures, quick suggestions and stats. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=11" />
-  <meta name="radartips-build" content="2987e9d29d75">
+  <link rel="stylesheet" href="/assets/css/style.css?v=13" />
+  <meta name="radartips-build" content="be771d37f402">
 </head>
-<body data-theme="dark" data-page="calendar">
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brandline">
-          <div class="logo">
-            <span id="brand">RadarTips</span>
-            <span class="badge-mini" id="disclaimer">—</span>
-          </div>
+<body data-page="calendar" data-shell="day-v2" data-rt-surface="calendar" data-theme="dark">
+  <div class="rt-day">
+    <header class="rt-header">
+      <div class="rt-header-top">
+        <div class="rt-brand-row">
+          <span id="brand" class="rt-brand-text">RadarTips</span>
+          <span class="badge-mini" id="disclaimer"></span>
         </div>
-        <div class="mini" id="subtitle"></div>
+        <p class="mini rt-tagline" id="subtitle"></p>
       </div>
-
-      <div class="nav">
-        <a class="pill" data-nav="day" href="#">—</a>
-
-        <span style="width:10px"></span>
-
-        
-        <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
-
-        <span class="lang" data-lang="en">EN</span>
-        <span class="lang" data-lang="pt">PT</span>
-        <span class="lang" data-lang="es">ES</span>
-        <span class="lang" data-lang="fr">FR</span>
-        <span class="lang" data-lang="de">DE</span>
-      </div>
-    </div>
-
-    <div class="hero">
-      <div class="hero-header">
-        <h1 id="hero_title">Radar</h1>
-        <p id="hero_sub">—</p>
-      </div>
-
-      <div class="grid">
-        <div class="card" data-slot="1">
-          <div class="row">
-            <span class="badge risk low">pt</span>
-            <span class="badge top" style="opacity:.75">TOP 1</span>
-          </div>
-          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
-          <div class="meta"></div>
-          <div class="suggestion-highlight">—</div>
-          <div class="lock"></div>
-        </div>
-
-        <div class="card" data-slot="2">
-          <div class="row">
-            <span class="badge risk med">pt</span>
-            <span class="badge top" style="opacity:.75">TOP 2</span>
-          </div>
-          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
-          <div class="meta"></div>
-          <div class="suggestion-highlight">—</div>
-          <div class="lock"></div>
-        </div>
-
-        <div class="card" data-slot="3">
-          <div class="row">
-            <span class="badge risk high">pt</span>
-            <span class="badge top" style="opacity:.75">TOP 3</span>
-          </div>
-          <h3><span>—</span> <span class="vs">vs</span> <span>—</span></h3>
-          <div class="meta"></div>
-          <div class="suggestion-highlight">—</div>
-          <div class="lock"></div>
+      <div class="rt-header-actions">
+        <nav class="rt-nav-pills" aria-label="Radar-Ansichten">
+          <a class="pill" data-nav="day" href="#"></a>
+          <a class="pill" data-nav="calendar" href="#"></a>
+        </nav>
+        <div class="rt-lang-tools">
+          <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Design">☾</button>
+          <span class="lang" data-lang="en">EN</span>
+          <span class="lang" data-lang="pt">PT</span>
+          <span class="lang" data-lang="es">ES</span>
+          <span class="lang" data-lang="fr">FR</span>
+          <span class="lang" data-lang="de">DE</span>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="section" id="calendar_section">
-      <h2 id="calendar_title">—</h2>
-      <div class="sub" id="calendar_sub">—</div>
+    <main class="rt-main">
+      <section class="rt-lead" aria-labelledby="hero_title">
+        <h1 id="hero_title"></h1>
+        <p id="hero_sub"></p>
+      </section>
 
-      <div class="controls">
-        <div class="toggle">
-          <button class="pill" id="btn_time" type="button">—</button>
-          <button class="pill" id="btn_country" type="button">—</button>
+      <section class="section rt-cal" id="calendar_section">
+        <h2 id="calendar_title"></h2>
+        <div class="sub" id="calendar_sub"></div>
+        <div class="controls">
+          <input class="input" id="search" type="search" autocomplete="off" />
         </div>
-        <input class="input" id="search" type="text" placeholder="—" />
+        <div class="cal" id="calendar"></div>
+      </section>
+    </main>
+
+    <footer class="footer rt-footer"></footer>
+  </div>
+
+  <div id="modal_backdrop" class="rt-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="rt-modal">
+      <div class="rt-modal-head">
+        <div id="modal_title" class="rt-modal-title"></div>
+        <button type="button" class="btn" id="modal_close">×</button>
       </div>
-
-      <div class="cal" id="calendar"></div>
-    </div>
-
-    <div class="footer">
-      © <span id="year"></span> RadarTips
+      <div id="modal_body" class="rt-modal-body"></div>
     </div>
   </div>
 
-  <script>
-    window.RT_LOCALE = "de";
-  </script>
-  <script src="/assets/js/app.2987e9d29d75.js"></script>
-  <link rel="stylesheet" href="/assets/match-radar-v2.0baab1022371.css" />
-
-<!-- build-badge -->
-<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.2987e9d29d75.js | 2026-03-29 17:54</div>
-<!-- /build-badge -->
+  <script>window.RT_LOCALE = "de";</script>
+  <script src="/assets/js/app.be771d37f402.js"></script>
 </body>
 </html>

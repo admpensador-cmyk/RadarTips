@@ -19,6 +19,31 @@ const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'radartips-data';
 
+const PREFIX = String(process.env.RADARTIPS_SNAPSHOT_PREFIX || '')
+  .trim()
+  .replace(/^\/+|\/+$/g, '');
+if (PREFIX !== 'prod' && PREFIX !== 'preview') {
+  throw new Error(
+    '[FAIL-CLOSED] RADARTIPS_SNAPSHOT_PREFIX must be set to prod or preview (isolated R2 namespaces).'
+  );
+}
+
+if (PREFIX === 'preview' && !process.env.CI && process.env.RADARTIPS_CONFIRM_PREVIEW_UPLOAD !== '1') {
+  throw new Error(
+    '[FAIL-CLOSED] Preview uploads require RADARTIPS_CONFIRM_PREVIEW_UPLOAD=1 when not running in CI (prevents accidental preview publish).'
+  );
+}
+
+if (PREFIX === 'prod' && process.env.RADARTIPS_DENY_PROD_UPLOAD === '1') {
+  throw new Error('[FAIL-CLOSED] RADARTIPS_DENY_PROD_UPLOAD=1 blocks production namespace writes');
+}
+
+/** @param {string} rel e.g. snapshots/calendar_2d.json */
+function remote(rel) {
+  const r = String(rel || '').replace(/^\/+/, '');
+  return `${PREFIX}/${r}`;
+}
+
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
 const RADAR_DAY_PATH = path.join(ROOT, 'data', 'v1', 'radar_day.json');
 const COVERAGE_ALLOWLIST_PATH = path.join(ROOT, 'data', 'coverage_allowlist.json');
@@ -32,7 +57,7 @@ const BLOCKED_7D_PATTERN = /calendar_7d/i;
 const LEAGUE_SNAPSHOT_TARGETS = LEAGUE_PAGE_V1_DEFINITIONS.map((entry) => ({
   slug: entry.slug,
   local: path.join(LEAGUES_DIR, `${entry.slug}.json`),
-  remote: `snapshots/leagues/${entry.slug}.json`,
+  remote: remote(`snapshots/leagues/${entry.slug}.json`),
   definition: entry
 }));
 const FIXTURE_MODEL_LAYER_FILES = [
@@ -150,7 +175,7 @@ if (uploadCalendarArtifacts) {
   baseDate = String(calendar?.meta?.base_date || '').trim();
   const safeGenerated = generatedAtUtc.replace(/[:.]/g, '-');
   const versionSuffix = `${baseDate || 'unknown'}_${safeGenerated}`;
-  versionedKey = `snapshots/calendar_2d_${versionSuffix}.json`;
+  versionedKey = remote(`snapshots/calendar_2d_${versionSuffix}.json`);
   versionedPath = path.join(SNAPSHOTS_DIR, `calendar_2d_${versionSuffix}.json`);
 
   fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(calendar, null, 2), 'utf8');
@@ -212,7 +237,7 @@ function loadFixtureModelAuxiliaryTargets(validSnapshots) {
       targets.push({
         slug: snapshotTarget.slug,
         local,
-        remote: `snapshots/leagues/${snapshotTarget.slug}/${fileName}`,
+        remote: remote(`snapshots/leagues/${snapshotTarget.slug}/${fileName}`),
         auxiliary: true
       });
     }
@@ -303,7 +328,7 @@ async function verifyMainSnapshot() {
     'object',
     'get',
     '--remote',
-    `${R2_BUCKET}/snapshots/calendar_2d.json`,
+    `${R2_BUCKET}/${remote('snapshots/calendar_2d.json')}`,
     '--file',
     'tmp_r2_calendar_2d_verify.json'
   ];
@@ -406,13 +431,14 @@ async function verifyUploadedJsonArtifact(target) {
       const size = fs.statSync(path.join(ROOT, 'tmp_r2_calendar_2d_verify.json')).size;
       console.log(`\n✅ Calendar snapshots uploaded to R2!`);
       console.log(`   Bucket: ${R2_BUCKET}`);
+      console.log(`   Prefix: ${PREFIX}`);
       console.log(`   Keys:`);
-      console.log(`   - snapshots/calendar_2d.json`);
-      console.log(`   - snapshots/latest_calendar_2d.json`);
+      console.log(`   - ${remote('snapshots/calendar_2d.json')}`);
+      console.log(`   - ${remote('snapshots/latest_calendar_2d.json')}`);
       console.log(`   - ${versionedKey}`);
-      console.log(`   - snapshots/radar_day.json`);
-      console.log(`   - snapshots/latest_radar_day.json`);
-      console.log(`   - data/coverage_allowlist.json`);
+      console.log(`   - ${remote('snapshots/radar_day.json')}`);
+      console.log(`   - ${remote('snapshots/latest_radar_day.json')}`);
+      console.log(`   - ${remote('data/coverage_allowlist.json')}`);
       console.log(`   Size(main): ${size} bytes`);
       console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
       console.log(`   radar_day.generated_at_utc: ${radarDay?.generated_at_utc || 'n/a'}`);

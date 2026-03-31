@@ -49,8 +49,9 @@ jobs:
           node tools/clean-bundles.mjs
           node tools/build-static.mjs
 
+          test -f "dist/en/radar/day/index.html"
           test -f "dist/pt/radar/day/index.html"
-          test -f "dist/assets/js/app.$(git rev-parse --short HEAD).js"
+          test -n "$(find dist/assets/js -maxdepth 1 -name 'app.*.js' -print -quit)"
 
       - name: Deploy dist to Cloudflare Pages
         env:

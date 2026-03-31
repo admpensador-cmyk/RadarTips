@@ -9,25 +9,42 @@
   <title>RadarTips • Conditions d’utilisation</title>
   <meta name="description" content="RadarTips: informational content. Not a bookmaker. 18+." />
   <link rel="icon" href="/assets/favicon.svg" />
-  <link rel="stylesheet" href="/assets/css/style.css?v=10" />
-  <meta name="radartips-build" content="2987e9d29d75">
+  <link rel="stylesheet" href="/assets/css/style.css?v=11" />
+  <meta name="radartips-build" content="be771d37f402">
 </head>
-<body data-theme="dark" data-page="legal">
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brandline">
-          <div class="logo">
-            <span id="brand">RadarTips</span>
-            <span class="badge-mini" id="disclaimer">—</span>
-          </div>
+<body data-page="legal" data-shell="day-v2" data-rt-surface="legal" data-theme="dark">
+  <div class="rt-day">
+    <header class="rt-header">
+      <div class="rt-header-top">
+        <div class="rt-brand-row">
+          <span id="brand" class="rt-brand-text">RadarTips</span>
+          <span class="badge-mini" id="disclaimer"></span>
         </div>
+        <p class="mini rt-tagline" id="subtitle"></p>
+      </div>
+      <div class="rt-header-actions">
+        <nav class="rt-nav-pills" aria-label="Vues du Radar">
+          <a class="pill" data-nav="day" href="#"></a>
+          <a class="pill" data-nav="calendar" href="#"></a>
+        </nav>
+        <div class="rt-lang-tools">
+          <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Thème">☾</button>
+          <span class="lang" data-lang="en">EN</span>
+          <span class="lang" data-lang="pt">PT</span>
+          <span class="lang" data-lang="es">ES</span>
+          <span class="lang" data-lang="fr">FR</span>
+          <span class="lang" data-lang="de">DE</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="rt-main rt-legal-main">
+</div>
         <div class="mini" id="subtitle"></div>
       </div>
 
       <div class="nav">
         <a class="pill" data-nav="day" href="#">—</a>
-        <a class="pill" data-nav="week" href="#">—</a>
         <a class="pill" data-nav="calendar" href="#">—</a>
 
         <span style="width:10px"></span>
@@ -52,16 +69,12 @@
         <p>Contenu informatif. Pas de garantie de résultats. 18+.</p>
       </div>
     </div>
+    </main>
 
-    <footer id="site_footer" class="site-footer"></footer>
+    <footer class="footer rt-footer"></footer>
   </div>
+  <script>window.RT_LOCALE = "fr";</script>
+  <script src="/assets/js/app.be771d37f402.js"></script>
 
-  
-  <link rel="stylesheet" href="/assets/match-radar-v2.0baab1022371.css" />
-  <script type="module" src="/assets/js/app.2987e9d29d75.js"></script>
-
-<!-- build-badge -->
-<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.2987e9d29d75.js | 2026-03-29 17:54</div>
-<!-- /build-badge -->
 </body>
 </html>

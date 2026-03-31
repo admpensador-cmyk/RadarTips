@@ -1,9 +1,43 @@
-const SNAPSHOT_KEYS = ["snapshots/latest_calendar_2d.json", "snapshots/calendar_2d.json"];
-const RADAR_DAY_KEYS = ["snapshots/latest_radar_day.json", "snapshots/radar_day.json"];
-const ALLOWLIST_KEY = "data/coverage_allowlist.json";
-const LEAGUE_SNAPSHOT_KEYS = {
-  "premier-league": ["snapshots/leagues/premier-league.json"]
+/** Relative paths inside bucket; resolved as `${prefix}/${rel}` — never shared between prod/preview. */
+const SNAPSHOT_RELATIVE = ["snapshots/latest_calendar_2d.json", "snapshots/calendar_2d.json"];
+const RADAR_DAY_RELATIVE = ["snapshots/latest_radar_day.json", "snapshots/radar_day.json"];
+const ALLOWLIST_RELATIVE = "data/coverage_allowlist.json";
+const LEAGUE_SNAPSHOT_RELATIVE = {
+  "premier-league": ["snapshots/leagues/premier-league.json"],
 };
+
+/**
+ * @param {Record<string, unknown>} env
+ * @returns {"prod"|"preview"|null}
+ */
+function getSnapshotPrefix(env) {
+  const p = String(env.RADARTIPS_SNAPSHOT_PREFIX || "").trim().replace(/^\/+|\/+$/g, "");
+  if (p === "prod" || p === "preview") return p;
+  return null;
+}
+
+/**
+ * @param {Record<string, unknown>} env
+ * @param {string} relativePath
+ */
+function resolveObjectKey(env, relativePath) {
+  const prefix = getSnapshotPrefix(env);
+  if (!prefix) return null;
+  const rel = String(relativePath || "").replace(/^\/+/, "");
+  return `${prefix}/${rel}`;
+}
+
+function misconfiguredResponse(env) {
+  return json(
+    env,
+    {
+      error: "misconfigured_snapshot_prefix",
+      required: "RADARTIPS_SNAPSHOT_PREFIX=prod|preview",
+      hint: "Worker must not read legacy shared snapshots/* keys; use isolated prod/ or preview/ namespaces."
+    },
+    503
+  );
+}
 const CACHE_MAX_AGE_SECONDS = 60;
 const CACHE_STALE_WHILE_REVALIDATE_SECONDS = 120;
 const HARD_STALE_HOURS = 24;
@@ -105,7 +139,9 @@ async function readCalendarSnapshot(env) {
   let parseErrorRaw = null;
   const candidates = [];
 
-  for (const key of SNAPSHOT_KEYS) {
+  for (const rel of SNAPSHOT_RELATIVE) {
+    const key = resolveObjectKey(env, rel);
+    if (!key) continue;
     const obj = await env.RADARTIPS_DATA.get(key);
     if (!obj) continue;
     const raw = await obj.text();
@@ -139,7 +175,9 @@ async function readRadarDaySnapshot(env) {
   let parseErrorRaw = null;
   const candidates = [];
 
-  for (const key of RADAR_DAY_KEYS) {
+  for (const rel of RADAR_DAY_RELATIVE) {
+    const key = resolveObjectKey(env, rel);
+    if (!key) continue;
     const obj = await env.RADARTIPS_DATA.get(key);
     if (!obj) continue;
     const raw = await obj.text();
@@ -169,14 +207,16 @@ async function readRadarDaySnapshot(env) {
 }
 
 async function readLeagueSnapshot(env, slug) {
-  const keys = LEAGUE_SNAPSHOT_KEYS[String(slug || "")] || null;
-  if (!keys) {
+  const rels = LEAGUE_SNAPSHOT_RELATIVE[String(slug || "")] || null;
+  if (!rels) {
     return { snapshot: null, raw: null, key: null, unsupported: true };
   }
 
   let parseErrorKey = null;
   let parseErrorRaw = null;
-  for (const key of keys) {
+  for (const rel of rels) {
+    const key = resolveObjectKey(env, rel);
+    if (!key) continue;
     const obj = await env.RADARTIPS_DATA.get(key);
     if (!obj) continue;
     const raw = await obj.text();
@@ -473,9 +513,13 @@ async function serveCalendar(request, env, ctx) {
 }
 
 async function serveAllowlist(env) {
-  const obj = await env.RADARTIPS_DATA.get(ALLOWLIST_KEY);
+  const key = resolveObjectKey(env, ALLOWLIST_RELATIVE);
+  if (!key) {
+    return misconfiguredResponse(env);
+  }
+  const obj = await env.RADARTIPS_DATA.get(key);
   if (!obj) {
-    return json(env, { error: "allowlist_not_found", key: ALLOWLIST_KEY }, 404);
+    return json(env, { error: "allowlist_not_found", key }, 404);
   }
   const raw = await obj.text();
   return new Response(raw, {
@@ -536,6 +580,10 @@ export default {
     const url = new URL(request.url);
     const p = url.pathname;
 
+    if (!getSnapshotPrefix(env)) {
+      return misconfiguredResponse(env);
+    }
+
     if (p === "/api/v1/calendar_7d" || p === "/api/v1/calendar_7d.json") {
       return json(env, {
         error: "endpoint_removed",
@@ -563,6 +611,8 @@ export default {
     if (p === "/api/v1/version") {
       return json(env, {
         worker_version: workerVersion(env),
+        snapshot_prefix: getSnapshotPrefix(env),
+        data_identity: String(env.RADARTIPS_DATA_IDENTITY || "").trim() || null,
         cache_max_age_seconds: CACHE_MAX_AGE_SECONDS,
         cache_swr_seconds: CACHE_STALE_WHILE_REVALIDATE_SECONDS,
         stale_hard_hours: HARD_STALE_HOURS
@@ -571,9 +621,12 @@ export default {
 
     if (p === "/api/v1/debug") {
       const health = await healthPayload(env);
+      const prefix = getSnapshotPrefix(env);
+      const snapshotResolved = SNAPSHOT_RELATIVE.map((rel) => resolveObjectKey(env, rel)).filter(Boolean);
       return json(env, {
         ...health.body,
-        snapshot_keys: SNAPSHOT_KEYS,
+        snapshot_prefix: prefix,
+        snapshot_keys_resolved: snapshotResolved,
         cache_policy: {
           max_age_seconds: CACHE_MAX_AGE_SECONDS,
           stale_while_revalidate_seconds: CACHE_STALE_WHILE_REVALIDATE_SECONDS
@@ -594,6 +647,10 @@ export default {
   },
 
   async scheduled(controller, env, ctx) {
+    if (!getSnapshotPrefix(env)) {
+      console.error("[radartips-worker] scheduled: RADARTIPS_SNAPSHOT_PREFIX missing (prod|preview required)");
+      return;
+    }
     await refreshSnapshotIfStale(env, ctx);
   }
 };

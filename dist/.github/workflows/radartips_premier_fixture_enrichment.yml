@@ -86,13 +86,13 @@ jobs:
           npx --yes wrangler@4.62.0 --version
 
           declare -a TARGETS=(
-            "data/v1/leagues/premier-league.json:snapshots/leagues/premier-league.json"
-            "data/v1/leagues/premier-league/meta.json:snapshots/leagues/premier-league/meta.json"
-            "data/v1/leagues/premier-league/raw-fixtures.json:snapshots/leagues/premier-league/raw-fixtures.json"
-            "data/v1/leagues/premier-league/fixture-stats.json:snapshots/leagues/premier-league/fixture-stats.json"
-            "data/v1/leagues/premier-league/raw-events.json:snapshots/leagues/premier-league/raw-events.json"
-            "data/v1/leagues/premier-league/team-facts.json:snapshots/leagues/premier-league/team-facts.json"
-            "data/v1/leagues/premier-league/team-aggregates.json:snapshots/leagues/premier-league/team-aggregates.json"
+            "data/v1/leagues/premier-league.json:prod/snapshots/leagues/premier-league.json"
+            "data/v1/leagues/premier-league/meta.json:prod/snapshots/leagues/premier-league/meta.json"
+            "data/v1/leagues/premier-league/raw-fixtures.json:prod/snapshots/leagues/premier-league/raw-fixtures.json"
+            "data/v1/leagues/premier-league/fixture-stats.json:prod/snapshots/leagues/premier-league/fixture-stats.json"
+            "data/v1/leagues/premier-league/raw-events.json:prod/snapshots/leagues/premier-league/raw-events.json"
+            "data/v1/leagues/premier-league/team-facts.json:prod/snapshots/leagues/premier-league/team-facts.json"
+            "data/v1/leagues/premier-league/team-aggregates.json:prod/snapshots/leagues/premier-league/team-aggregates.json"
           )
 
           for pair in "${TARGETS[@]}"; do

@@ -8,15 +8,37 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Contact • RadarTips</title>
   <meta name="description" content="Contact — RadarTips informational site." />
-  <link rel="stylesheet" href="/assets/style.css" />
-  <meta name="radartips-build" content="2987e9d29d75">
+  <link rel="icon" href="/assets/favicon.svg" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=11" />
+  <meta name="radartips-build" content="be771d37f402">
 </head>
-<body data-theme="dark">
-  <div class="app">
-    <div class="shell">
-      <header class="topbar" id="topbar"></header>
+<body data-page="legal" data-shell="day-v2" data-rt-surface="legal" data-theme="dark">
+  <div class="rt-day">
+    <header class="rt-header">
+      <div class="rt-header-top">
+        <div class="rt-brand-row">
+          <span id="brand" class="rt-brand-text">RadarTips</span>
+          <span class="badge-mini" id="disclaimer"></span>
+        </div>
+        <p class="mini rt-tagline" id="subtitle"></p>
+      </div>
+      <div class="rt-header-actions">
+        <nav class="rt-nav-pills" aria-label="Radar views">
+          <a class="pill" data-nav="day" href="#"></a>
+          <a class="pill" data-nav="calendar" href="#"></a>
+        </nav>
+        <div class="rt-lang-tools">
+          <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Theme">☾</button>
+          <span class="lang" data-lang="en">EN</span>
+          <span class="lang" data-lang="pt">PT</span>
+          <span class="lang" data-lang="es">ES</span>
+          <span class="lang" data-lang="fr">FR</span>
+          <span class="lang" data-lang="de">DE</span>
+        </div>
+      </div>
+    </header>
 
-      <main class="page">
+    <main class="rt-main rt-legal-main">
         <div class="hero">
           <h1>Contact</h1>
           <p class="muted">RadarTips is informational content. We are not a bookmaker. 18+</p>
@@ -27,20 +49,12 @@
             <p>Contact: <a href="mailto:contato@radartips.com">contato@radartips.com</a></p>
           </div>
         </div>
-      </main>
+    </main>
 
-      <div class="footer">
-        © <span id="year"></span> RadarTips
-      </div>
-    </div>
+    <footer class="footer rt-footer"></footer>
   </div>
+  <script>window.RT_LOCALE = "en";</script>
+  <script src="/assets/js/app.be771d37f402.js"></script>
 
-  
-  <link rel="stylesheet" href="/assets/match-radar-v2.0baab1022371.css" />
-  <script type="module" src="/assets/js/app.2987e9d29d75.js"></script>
-
-<!-- build-badge -->
-<div id="build-badge" style="position:fixed;right:10px;bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border-radius:6px;opacity:.75;z-index:2147483647">Build: app.2987e9d29d75.js | 2026-03-29 17:54</div>
-<!-- /build-badge -->
 </body>
 </html>

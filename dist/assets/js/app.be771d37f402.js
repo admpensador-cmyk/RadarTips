@@ -54,13 +54,45 @@ function detectLang(){
   return "en";
 }
 function pageType(){
-  // /{lang}/radar/day/ | /{lang}/radar/week/ | /{lang}/calendar/
   const parts = location.pathname.split("/").filter(Boolean);
   const p = parts.slice(1).join("/");
   if(p.startsWith("radar/day")) return "day";
-  if(p.startsWith("radar/week")) return "week";
   if(p.startsWith("calendar")) return "calendar";
-  return "day";
+  return null;
+}
+
+/** Explicit hydration contract on body (must match HTML + verify-no-zombie-radar.mjs). */
+function rtSurface(){
+  return (document.body && document.body.getAttribute("data-rt-surface")) || "";
+}
+
+function warnRtDomContract(p){
+  if(!document.body) return;
+  const shell = document.body.getAttribute("data-shell");
+  if(shell !== "day-v2"){
+    console.warn("[RadarTips] Radar product pages expect body[data-shell=day-v2].");
+    return;
+  }
+  const surface = rtSurface();
+  if(p === "day"){
+    if(surface !== "radar-day"){
+      console.warn("[RadarTips] radar/day: expected body[data-rt-surface=radar-day] (DOM contract).");
+    }
+    const n = qsa(".rt-slot[data-slot]").length;
+    if(n !== 3){
+      console.warn(`[RadarTips] radar/day: expected 3 .rt-slot[data-slot], found ${n}.`);
+    }
+  } else if(p === "calendar"){
+    if(surface !== "calendar"){
+      console.warn("[RadarTips] calendar: expected body[data-rt-surface=calendar] (DOM contract).");
+    }
+    if(qs(".rt-top3")){
+      console.warn("[RadarTips] calendar: .rt-top3 must not exist on calendar surface.");
+    }
+    if(qsa(".rt-slot").length){
+      console.warn("[RadarTips] calendar: .rt-slot must not exist on calendar surface.");
+    }
+  }
 }
 function fmtTime(isoUtc){
   try{
@@ -103,6 +135,27 @@ async function loadJSON(url, fallback){
     if(!r.ok) throw 0;
     return await r.json();
   }catch{ return fallback; }
+}
+
+/** Merge calendar_2d.json `today` + `tomorrow` into a flat matches list for CAL_MATCHES. */
+async function loadCalendar2dMerged(){
+  const raw = await loadJSON("/data/v1/calendar_2d.json", null);
+  if(!raw || typeof raw !== "object"){
+    return { matches:[], form_window:5, goals_window:5 };
+  }
+  const meta = raw.meta && typeof raw.meta === "object" ? raw.meta : {};
+  const t = Array.isArray(raw.today) ? raw.today : [];
+  const tm = Array.isArray(raw.tomorrow) ? raw.tomorrow : [];
+  const ymd = /^\d{4}-\d{2}-\d{2}$/;
+  const anchorToday = typeof meta.today === "string" && ymd.test(meta.today) ? meta.today : null;
+  const anchorTomorrow = typeof meta.tomorrow === "string" && ymd.test(meta.tomorrow) ? meta.tomorrow : null;
+  return {
+    matches: t.concat(tm),
+    form_window: Number(meta.form_window ?? 5),
+    goals_window: Number(meta.goals_window ?? 5),
+    anchorToday,
+    anchorTomorrow,
+  };
 }
 
 function setText(id, val){
@@ -251,14 +304,15 @@ function initTooltips(){
 function setNav(lang, t){
   const map = {
     day: `/${lang}/radar/day/`,
-    week: `/${lang}/radar/week/`,
     calendar: `/${lang}/calendar/`
   };
   qsa("[data-nav]").forEach(a=>{
     const k=a.getAttribute("data-nav");
-    a.href = map[k];
-    a.textContent = (k==="day") ? t.nav_day : (k==="week") ? t.nav_week : t.nav_calendar;
-    a.classList.toggle("active", location.pathname.startsWith(map[k]));
+    const href = map[k];
+    if(!href) return;
+    a.href = href;
+    a.textContent = k==="day" ? t.nav_day : t.nav_calendar;
+    a.classList.toggle("active", location.pathname.startsWith(href));
     a.setAttribute("data-tip", a.textContent);
     a.title = a.textContent;
   });
@@ -274,42 +328,137 @@ function matchKey(m){
   return encodeURIComponent(`${m.kickoff_utc}|${m.home}|${m.away}`);
 }
 
+function top3SlotSelector(){
+  return ".rt-slot[data-slot]";
+}
+
+function fmtDateShortFromDate(date){
+  try{
+    return new Intl.DateTimeFormat(LANG || undefined, { day:"2-digit", month:"2-digit" }).format(date);
+  }catch{ return ""; }
+}
+
+function filterMatches(matches, activeDateKey, query, countryFilter){
+  const q = normalize(query);
+  const bounds = getFilterDateBounds();
+  const useCountry = countryFilter !== undefined && countryFilter !== null && String(countryFilter).trim() !== "";
+  const cf = useCountry ? String(countryFilter).trim() : "";
+  return matches.filter(m=>{
+    const k = localDateKey(m.kickoff_utc);
+    if(activeDateKey === "both"){
+      if(k !== bounds.todayKey && k !== bounds.tomorrowKey) return false;
+    } else if(activeDateKey){
+      if(k !== activeDateKey) return false;
+    }
+    if(useCountry && normalize(m.country || "") !== normalize(cf)) return false;
+    if(!q) return true;
+    const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
+    return blob.includes(q);
+  });
+}
+
+function confidenceFromItem(item, t){
+  const raw = item.analysis;
+  const analysis = raw != null && String(raw).trim() ? String(raw).trim() : "";
+  const r = String(item.risk || "").toLowerCase();
+  let pct = 55;
+  if(r === "low") pct = 78;
+  else if(r === "high") pct = 38;
+  else if(r === "med" || r === "medium") pct = 52;
+  if(analysis) return { pct, note: analysis };
+  let note = t.confidence_note_med || "";
+  if(r === "low") note = t.confidence_note_low || note;
+  else if(r === "high") note = t.confidence_note_high || note;
+  return { pct, note };
+}
+
+function renderDayTabs(t, activeDateKey, query){
+  const el = qs("#dayboard_tabs");
+  if(!el) return;
+  const b = getFilterDateBounds();
+  const cToday = filterMatches(CAL_MATCHES, b.todayKey, query, undefined).length;
+  const cTom = filterMatches(CAL_MATCHES, b.tomorrowKey, query, undefined).length;
+  const d0 = fmtDateShortFromDate(b.today);
+  const d1 = fmtDateShortFromDate(b.tomorrow);
+  const selT = activeDateKey === b.todayKey;
+  const selM = activeDateKey === b.tomorrowKey;
+  el.innerHTML = `
+    <button type="button" role="tab" class="rt-day-tab${selT ? " active" : ""}" aria-selected="${selT}" data-date="${escAttr(b.todayKey)}">${escAttr(t.date_label_today || "Today")} ${escAttr(d0)} (${cToday})</button>
+    <button type="button" role="tab" class="rt-day-tab${selM ? " active" : ""}" aria-selected="${selM}" data-date="${escAttr(b.tomorrowKey)}">${escAttr(t.date_label_tomorrow || "Tomorrow")} ${escAttr(d1)} (${cTom})</button>
+  `;
+}
+
+function renderCountryList(t, activeDateKey, query, selectedCountry){
+  const el = qs("#country_list");
+  if(!el) return;
+  const base = filterMatches(CAL_MATCHES, activeDateKey, query, undefined);
+  const agg = new Map();
+  for(const m of base){
+    const c = (m.country || "—").trim() || "—";
+    agg.set(c, (agg.get(c) || 0) + 1);
+  }
+  const rows = [...agg.entries()].sort((a, b)=> a[0].localeCompare(b[0]));
+  const total = base.length;
+  const allOn = selectedCountry == null || String(selectedCountry).trim() === "";
+  let html = `<button type="button" class="rt-country-row${allOn ? " active" : ""}" data-country="">${escAttr(t.country_filter_all || "All")} <span class="rt-country-count">(${total})</span><span class="rt-chevron" aria-hidden="true">›</span></button>`;
+  for(const [name, cnt] of rows){
+    const on = selectedCountry != null && normalize(selectedCountry) === normalize(name);
+    html += `<button type="button" class="rt-country-row${on ? " active" : ""}" data-country="${escAttr(name)}"><span class="rt-country-name">${escAttr(name)}</span> <span class="rt-country-count">(${cnt})</span><span class="rt-chevron" aria-hidden="true">›</span></button>`;
+  }
+  el.innerHTML = html;
+}
+
+function bindLangSwitch(){
+  qsa("[data-lang]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const target = btn.getAttribute("data-lang");
+      const parts = location.pathname.split("/").filter(Boolean);
+      const rest = parts.slice(1).join("/");
+      const next = (rest ? `/${target}/${rest}` : `/${target}/`).replace(/\/+/g, "/");
+      location.href = next;
+    });
+  });
+}
+
 function renderTop3(t, data){
   const slots = data.highlights || [];
-  const cards = qsa(".card[data-slot]");
+  const cards = qsa(top3SlotSelector());
+  const prod = !!document.querySelector(".rt-slot-topbar");
 
   cards.forEach((card, idx)=>{
     const item = slots[idx];
-    const badge = card.querySelector(".badge.risk");
-    const top = card.querySelector(".badge.top");
+    card.removeAttribute("data-open");
+    card.removeAttribute("data-key");
+    card.removeAttribute("role");
+    card.removeAttribute("tabindex");
+    card.removeAttribute("aria-label");
+    card.querySelectorAll(".badge.top, .badge.rank").forEach((el)=> el.remove());
+    card.querySelectorAll(".badge.risk").forEach((el)=> el.remove());
+
+    const topbar = card.querySelector(".rt-slot-topbar");
     const h3 = card.querySelector("h3");
     const meta = card.querySelector(".meta");
     const lock = card.querySelector(".lock");
+    const sug = card.querySelector(".suggestion-highlight");
+    if(sug) sug.innerHTML = "";
+    if(topbar) topbar.innerHTML = "";
 
-    top.className = "badge top rank";
-    top.textContent = `#${idx+1}`;
-    top.setAttribute("title", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
-    top.setAttribute("data-tip", t.rank_tooltip || "Ranking do Radar (ordem de destaque).");
+    if(!h3 || !meta || !lock) return;
 
     if(!item){
-      badge.className = "badge risk high";
-      badge.textContent = t.risk_high;
-      badge.setAttribute("title", t.risk_tooltip || "");
-      badge.setAttribute("data-tip", t.risk_tooltip || "");
-
-      h3.textContent = t.empty_slot;
+      h3.textContent = "—";
       meta.innerHTML = "";
       lock.innerHTML = "";
       return;
     }
 
-    // Risk chip
-    badge.className = `badge risk ${riskClass(item.risk)}`;
-    badge.textContent = (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med;
-    badge.setAttribute("title", t.risk_tooltip || "");
-    badge.setAttribute("data-tip", t.risk_tooltip || "");
+    const key = matchKey(item);
+    card.setAttribute("data-open","match");
+    card.setAttribute("data-key", key);
+    card.setAttribute("role","button");
+    card.setAttribute("tabindex","0");
+    card.setAttribute("aria-label", `${t.match_radar || "Match"}: ${item.home} vs ${item.away}`);
 
-    // Title (football-first: crest + team name)
     h3.innerHTML = `
       <div class="match-title">
         <div class="teamline">${crestHTML(item.home)}<span>${escAttr(item.home)}</span></div>
@@ -318,7 +467,50 @@ function renderTop3(t, data){
       </div>
     `;
 
-    // Meta (chips + icons; avoids awkward wraps)
+    const suggestion = localizeMarket(item.suggestion_free, t) || "—";
+    const rankTip = t.rank_tooltip || "";
+
+    if(prod && topbar){
+      const top = document.createElement("span");
+      top.className = "badge top rank";
+      top.textContent = `#${idx+1}`;
+      top.setAttribute("title", rankTip);
+      top.setAttribute("data-tip", rankTip);
+      topbar.appendChild(top);
+
+      meta.innerHTML = `<div class="slot-league-line">${escAttr(item.competition)} — ${escAttr(fmtTime(item.kickoff_utc))}</div>`;
+
+      const pickPref = t.pick_prefix || "PICK:";
+      const { pct, note } = confidenceFromItem(item, t);
+      lock.innerHTML = `
+        <div class="slot-pick">${escAttr(pickPref)} <strong>${escAttr(suggestion)}</strong></div>
+        <div class="slot-confidence">
+          <div class="slot-confidence-head">${escAttr(t.confidence_label || "")}</div>
+          <div class="conf-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${escAttr(t.confidence_label || "")}">
+            <span class="conf-fill" style="width:${pct}%"></span>
+          </div>
+          <p class="slot-confidence-note">${escAttr(note)}</p>
+        </div>
+        <div class="callout-sub">
+          <span class="mini-chip mini-chip--free" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
+        </div>
+        <div class="callout-actions">
+          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar")}</span>${icoSpan("arrow")}</button>
+        </div>
+      `;
+      return;
+    }
+
+    const row = document.createElement("div");
+    row.className = "row";
+    const top = document.createElement("span");
+    top.className = "badge top rank";
+    top.textContent = `#${idx+1}`;
+    top.setAttribute("title", rankTip);
+    top.setAttribute("data-tip", rankTip);
+    row.appendChild(top);
+    card.insertBefore(row, h3);
+
     meta.innerHTML = `
       <div class="meta-chips">
         <span class="meta-chip" ${tipAttr(t.kickoff_tooltip || "")}>${icoSpan("clock")}<span>${fmtTime(item.kickoff_utc)}</span></span>
@@ -327,73 +519,24 @@ function renderTop3(t, data){
       </div>
       <div class="meta-actions">
         <button class="meta-link" type="button" data-open="competition" data-value="${escAttr(item.competition)}" ${tipAttr(t.competition_radar_tip || "")}>${icoSpan("trophy")}<span>${escAttr(t.competition_radar)}</span></button>
-        <button class="meta-link" type="button" data-open="country" data-value="${escAttr(item.country)}" ${tipAttr(t.country_radar_tip || "")}>${icoSpan("globe")}<span>${escAttr(t.country_radar)}</span></button>
       </div>
     `;
 
-    // FREE callout
-    const key = matchKey(item);
-    card.setAttribute("data-open","match");
-    card.setAttribute("data-key", key);
-    card.setAttribute("role","button");
-    card.setAttribute("tabindex","0");
-    card.setAttribute("aria-label", `${t.match_radar}: ${item.home} vs ${item.away}`);
-
-    const suggestion = localizeMarket(item.suggestion_free, t) || "—";
     lock.innerHTML = `
       <div class="callout">
         <div class="callout-top">
-          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugestão do Radar")}</span></span>
+          <span class="callout-label">${icoSpan("spark")}<span>${escAttr(t.suggestion_label || "Sugestão")}</span></span>
           <span class="callout-value" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(suggestion)}</span>
         </div>
         <div class="callout-sub">
-          <span class="mini-chip" ${tipAttr(t.risk_tooltip || "")}>${escAttr(t.risk_short_label || "Risco")}: <b>${ (item.risk==="low")?t.risk_low:(item.risk==="high")?t.risk_high:t.risk_med }</b></span>
-          <span class="mini-chip" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
+          <span class="mini-chip mini-chip--free" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
         </div>
         <div class="callout-actions">
-          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar do Jogo")}</span>${icoSpan("arrow")}</button>
+          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar")}</span>${icoSpan("arrow")}</button>
         </div>
       </div>
     `;
   });
-}
-
-
-function renderPitch(){
-  const bar = qs("#pitchbar");
-  if(bar) bar.hidden = false;
-  const kicker = qs("#pitch_kicker");
-  const freepro = qs("#pitch_free_pro");
-  const markets = qs("#pitch_markets");
-  const aboutBtn = qs("#btn_about");
-  const browseBtn = qs("#btn_browse");
-
-  if(kicker) kicker.textContent = T.pitch_kicker || "";
-  if(freepro) freepro.textContent = T.pitch_free_pro || "";
-  if(aboutBtn) aboutBtn.textContent = T.about_cta || "About";
-  if(browseBtn){
-    browseBtn.textContent = T.browse_cta || "Calendar";
-    const calSection = qs("#calendar_section");
-    browseBtn.setAttribute("href", calSection ? "#calendar_section" : `/${LANG}/calendar/`);
-  }
-  if(markets){
-    const chips = [
-      {k:"market_1x", tip:"market_1x_tip"},
-      {k:"market_under", tip:"market_under_tip"},
-      {k:"market_dnb", tip:"market_dnb_tip"},
-      {k:"market_handicap", tip:"market_handicap_tip"},
-    ];
-    markets.innerHTML = `
-      <div class="markets-label">${escAttr(T.markets_label || "")}</div>
-      <div class="markets-row">
-        ${chips.map(c=>{
-          const label = T[c.k] || "";
-          const tip = T[c.tip] || "";
-          return `<span class="mini-chip market" ${tipAttr(tip)}>${escAttr(label)}</span>`;
-        }).join("")}
-      </div>
-    `;
-  }
 }
 
 
@@ -404,17 +547,6 @@ function groupByTime(matches){
   const map = new Map();
   for(const m of sorted){
     const key = m.competition;
-    if(!map.has(key)) map.set(key, []);
-    map.get(key).push(m);
-  }
-  return [...map.entries()].map(([name, ms])=>({name, matches: ms}));
-}
-
-function groupByCountry(matches){
-  const sorted = [...matches].sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc));
-  const map = new Map();
-  for(const m of sorted){
-    const key = m.country;
     if(!map.has(key)) map.set(key, []);
     map.get(key).push(m);
   }
@@ -462,40 +594,27 @@ function buildFormSquares(t, details, windowN){
   return Array.from({length:n}).map(()=> `<span class="dot n" ${tipAttr(missing)}></span>`).join("");
 }
 
-function renderCalendar(t, matches, viewMode, query, activeDateKey){
+function renderCalendar(t, matches, query, activeDateKey, countryFilter){
   const root = qs("#calendar");
+  if(!root) return;
   root.innerHTML = "";
 
-  const q = normalize(query);
+  const filtered = filterMatches(matches, activeDateKey, query, countryFilter);
 
-  const filtered = matches.filter(m=>{
-    // Date filter (local timezone)
-    if(activeDateKey && activeDateKey !== "7d"){
-      if(localDateKey(m.kickoff_utc) !== activeDateKey) return false;
-    }
-
-    if(!q) return true;
-    const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
-    return blob.includes(q);
-  });
-
-  const groups = (viewMode==="country") ? groupByCountry(filtered) : groupByTime(filtered);
+  const groups = groupByTime(filtered);
 
   for(const g of groups){
     const box = document.createElement("div");
     box.className = "group";
 
-    // derive values for group actions
     const first = g.matches[0] || {};
-    const competitionValue = (viewMode==="country") ? (first.competition||"") : g.name;
-    const countryValue = (viewMode==="country") ? g.name : (first.country||"");
+    const competitionValue = first.competition || g.name;
 
     box.innerHTML = `
       <div class="group-head">
         <div class="group-title"><span class="flag"></span><span>${escAttr(g.name)}</span></div>
         <div class="group-actions">
           <span class="chip" data-open="competition" data-value="${escAttr(competitionValue)}" ${tipAttr(t.competition_radar_tip || "")}>${t.competition_radar}</span>
-          <span class="chip" data-open="country" data-value="${escAttr(countryValue)}" ${tipAttr(t.country_radar_tip || "")}>${t.country_radar}</span>
         </div>
       </div>
       <div class="matches"></div>
@@ -538,7 +657,7 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
 
       row.innerHTML = `
         <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
-        <div>
+        <div class="match-main">
           <div class="teams">
             <div class="teamline">${crestHTML(m.home)}<span>${escAttr(m.home)}</span></div>
             <div class="teamline">${crestHTML(m.away)}<span>${escAttr(m.away)}</span></div>
@@ -560,14 +679,19 @@ function renderCalendar(t, matches, viewMode, query, activeDateKey){
               ${goalsHTML}
             </div>
           </div>
+          <div class="match-pick" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")}</div>
         </div>
-        <div class="suggestion" ${tipAttr(t.suggestion_tooltip || "")}>${escAttr(localizeMarket(m.suggestion_free, t) || "—")} • ${ (m.risk==="low")?t.risk_low:(m.risk==="high")?t.risk_high:t.risk_med }</div>
       `;
 
       list.appendChild(row);
     }
 
     root.appendChild(box);
+  }
+
+  if(!root.childElementCount){
+    const msg = t.empty_calendar || "No matches for this filter or day.";
+    root.innerHTML = `<div class="cal-empty" role="status">${escAttr(msg)}</div>`;
   }
 }
 
@@ -580,6 +704,7 @@ function openModal(type, value){
   const back = qs("#modal_backdrop");
   const title = qs("#modal_title");
   const body = qs("#modal_body");
+  if(!back || !title || !body) return;
 
   // ABOUT / HOW IT WORKS
   if(type === "about"){
@@ -621,6 +746,7 @@ function openModal(type, value){
     const mComp = m?.competition || "—";
     const riskText = m ? ((m.risk==="low")?T.risk_low:(m.risk==="high")?T.risk_high:T.risk_med) : "—";
     const riskCls = m ? riskClass(m.risk) : "med";
+    const riskBadgeHtml = (m && m.risk === "low") ? "" : `<span class="badge risk ${riskCls}" ${tipAttr(T.risk_tooltip || "")}>${riskText}</span>`;
     const kickoff = m ? fmtTime(m.kickoff_utc) : "--:--";
     const suggestion = localizeMarket(m?.suggestion_free, T) || "—";
 
@@ -636,7 +762,7 @@ function openModal(type, value){
         <div style="display:flex;flex-direction:column;gap:6px">
           <div style="font-weight:950;color:#11244b">${escAttr(mComp)} • ${escAttr(mCountry)} • <span ${tipAttr(T.kickoff_tooltip || "")}>${kickoff}</span></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <span class="badge risk ${riskCls}" ${tipAttr(T.risk_tooltip || "")}>${riskText}</span>
+              ${riskBadgeHtml}
             <span class="badge" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(suggestion)}</b></span>
           </div>
         </div>
@@ -675,7 +801,6 @@ function openModal(type, value){
 
       <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <span class="chip" data-open="competition" data-value="${escAttr(mComp)}" ${tipAttr(T.competition_radar_tip || "")}>${T.competition_radar}</span>
-        <span class="chip" data-open="country" data-value="${escAttr(mCountry)}" ${tipAttr(T.country_radar_tip || "")}>${T.country_radar}</span>
       </div>
 
       <div style="margin-top:14px;padding:12px;border:1px dashed rgba(43,111,242,.35);border-radius:16px;background:rgba(43,111,242,.06);font-weight:800;color:#163261">
@@ -689,13 +814,12 @@ function openModal(type, value){
     return;
   }
 
-  // COUNTRY / COMPETITION RADAR (FREE)
-  const label = (type==="country") ? T.country_radar : T.competition_radar;
+  if(type !== "competition") return;
+
+  const label = T.competition_radar;
   title.textContent = value ? `${label}: ${value}` : label;
 
-  const list = (type==="country")
-    ? CAL_MATCHES.filter(m => normalize(m.country) === normalize(value))
-    : CAL_MATCHES.filter(m => normalize(m.competition) === normalize(value));
+  const list = CAL_MATCHES.filter(m => normalize(m.competition) === normalize(value));
 
   const rows = list
     .sort((a,b)=> new Date(a.kickoff_utc)-new Date(b.kickoff_utc))
@@ -707,7 +831,7 @@ function openModal(type, value){
           <div class="time">${fmtTime(m.kickoff_utc)}</div>
           <div>
             <div class="teams">${escAttr(m.home)}<br/>${escAttr(m.away)}</div>
-            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(localizeMarket(m.suggestion_free, t) || "—")}</b> • ${riskText}</div>
+            <div class="smallnote" style="margin-top:6px" ${tipAttr(T.suggestion_tooltip || "")}>${T.suggestion_label || "Sugestão"}: <b>${escAttr(localizeMarket(m.suggestion_free, T) || "—")}</b> • ${riskText}</div>
           </div>
         </div>
       `;
@@ -759,7 +883,7 @@ function bindModalClicks(){
 
 function closeModal(){
   const back = qs("#modal_backdrop");
-  back.style.display = "none";
+  if(back) back.style.display = "none";
 }
 
 function decorateLangPills(lang){
@@ -808,7 +932,7 @@ function decorateLangPills(lang){
 }
 
 function ensureDateStrip(t){
-  const section = qs(".section");
+  const section = qs("#calendar_section");
   if(!section) return null;
   if(qs("#dateStrip")) return qs("#dateStrip");
 
@@ -827,16 +951,44 @@ function ensureDateStrip(t){
   return strip;
 }
 
-function build7Days(){
+function localTodayTomorrowKeys(){
   const today = new Date();
-  today.setHours(0,0,0,0);
-  const days = [];
-  for(let i=0;i<7;i++){
-    const d = new Date(today);
-    d.setDate(today.getDate()+i);
-    days.push(d);
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const f = (d)=> new Intl.DateTimeFormat("en-CA", { year:"numeric", month:"2-digit", day:"2-digit" }).format(d);
+  return { today, tomorrow, todayKey: f(today), tomorrowKey: f(tomorrow) };
+}
+
+/** Parse YYYY-MM-DD to local Date (noon) for stable labels. */
+function parseISODateLocalYMD(s){
+  if(!s || typeof s !== "string") return null;
+  const m = s.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  const y = +m[1], mo = +m[2] - 1, d = +m[3];
+  const dt = new Date(y, mo, d, 12, 0, 0, 0);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+/**
+ * "Hoje/Amanhã" keys for filtering: prefer calendar_2d.json meta.today/tomorrow so local dev
+ * matches bundled snapshot data even when the PC clock is ahead of the JSON window.
+ */
+function getFilterDateBounds(){
+  const m = CAL_META || {};
+  if(m.anchorToday && m.anchorTomorrow){
+    const t0 = parseISODateLocalYMD(m.anchorToday);
+    const t1 = parseISODateLocalYMD(m.anchorTomorrow);
+    if(t0 && t1){
+      return {
+        today: t0,
+        tomorrow: t1,
+        todayKey: m.anchorToday,
+        tomorrowKey: m.anchorTomorrow,
+      };
+    }
   }
-  return days;
+  return localTodayTomorrowKeys();
 }
 
 function localizeMarket(raw, t){
@@ -964,98 +1116,96 @@ async function init(){
   T = dict[LANG] || dict.en;
 
   initThemeToggle(T);
+  initTooltips();
+
+  const p = pageType();
+  if(!p){
+    if(qs(".rt-header")){
+      setText("brand", T.brand);
+      setText("disclaimer", T.disclaimer);
+      setText("subtitle", T.subtitle || "");
+      setNav(LANG, T);
+      decorateLangPills(LANG);
+      bindLangSwitch();
+    }
+    renderComplianceFooter(LANG);
+    setText("year", String(new Date().getFullYear()));
+    return;
+  }
 
   setText("brand", T.brand);
   setText("disclaimer", T.disclaimer);
-
   setText("subtitle", T.subtitle || "");
 
   setNav(LANG, T);
   decorateLangPills(LANG);
-  initTooltips();
 
-  const p = pageType();
+  warnRtDomContract(p);
+
+  const isDayboard = !!qs("#dayboard_tabs");
+
   if(p==="day"){
-    setText("hero_title", T.hero_title_day);
-    setText("hero_sub", T.hero_sub_day);
-    renderPitch();
+    if(qs("#top3_heading")){
+      setText("top3_heading", T.top3_title || "");
+      setText("top3_sub", T.top3_sub || "");
+    } else {
+      setText("hero_title", T.hero_title_day);
+      setText("hero_sub", T.hero_sub_day);
+    }
     const radar = await loadJSON("/data/v1/radar_day.json", {highlights:[]});
     renderTop3(T, radar);
-  } else if(p==="week"){
-    setText("hero_title", T.hero_title_week);
-    setText("hero_sub", T.hero_sub_week);
-    renderPitch();
-    renderTop3(T, {highlights:[]});
   } else {
     setText("hero_title", T.hero_title_cal);
     setText("hero_sub", T.hero_sub_cal);
-    renderPitch();
     renderTop3(T, {highlights:[]});
   }
 
-  // Calendar controls always available
-  setText("calendar_title", T.calendar_title);
-  setText("calendar_sub", T.calendar_sub);
-  qs("#search").setAttribute("placeholder", T.search_placeholder);
-  qs("#btn_time").textContent = T.view_by_time;
-  qs("#btn_country").textContent = T.view_by_country;
+  if(!isDayboard){
+    setText("calendar_title", T.calendar_title);
+    setText("calendar_sub", T.calendar_sub);
+  }
 
-  let viewMode = "time";
+  const searchEl = qs("#search");
+  if(searchEl) searchEl.setAttribute("placeholder", T.search_placeholder);
+
   let q = "";
-  const data = await loadJSON("/data/v1/calendar_7d.json", {matches:[], form_window:5, goals_window:5});
+  const data = await loadCalendar2dMerged();
   CAL_MATCHES = data.matches || [];
-  CAL_META = { form_window: Number(data.form_window||5), goals_window: Number(data.goals_window||5) };
+  CAL_META = {
+    form_window: Number(data.form_window || 5),
+    goals_window: Number(data.goals_window || 5),
+    anchorToday: data.anchorToday || null,
+    anchorTomorrow: data.anchorTomorrow || null,
+  };
 
-  // Date strip
-  const strip = ensureDateStrip(T);
-  const days = build7Days();
-  let activeDate = "7d"; // default: next 7 days
+  const strip = isDayboard ? null : ensureDateStrip(T);
+  const boundsInit = getFilterDateBounds();
+  let activeDate = isDayboard ? boundsInit.todayKey : "both";
+  let selectedCountry = null;
 
   function renderStrip(){
     if(!strip) return;
-
-    const chips = [];
-
-    // 7d chip (range)
-    chips.push({key:"7d", label:(T.next7_label || "7D"), tip:(T.next7_tooltip || "Próximos 7 dias")});
-
-    for(const d of days){
-      const key = new Intl.DateTimeFormat("en-CA", {year:"numeric", month:"2-digit", day:"2-digit"}).format(d);
-      chips.push({
-        key,
-        label: fmtDateShortDDMM(d),
-        tip: fmtDateLong(d, LANG)
-      });
-    }
-
+    const b = getFilterDateBounds();
+    const chips = [
+      { key: "both", label: (T.date_filter_both || ""), tip: (T.date_filter_both_tip || "") },
+      { key: b.todayKey, label: (T.date_label_today || ""), tip: fmtDateLong(b.today, LANG) },
+      { key: b.tomorrowKey, label: (T.date_label_tomorrow || ""), tip: fmtDateLong(b.tomorrow, LANG) },
+    ];
     strip.innerHTML = chips.map(c=>{
       const cls = (c.key === activeDate) ? "date-chip active" : "date-chip";
       return `<button class="${cls}" type="button" data-date="${c.key}" ${tipAttr(c.tip)}>${escAttr(c.label)}</button>`;
     }).join("");
   }
 
-  function rerender(){
-    qs("#btn_time").classList.toggle("active", viewMode==="time");
-    qs("#btn_country").classList.toggle("active", viewMode==="country");
-    renderCalendar(T, CAL_MATCHES, viewMode, q, activeDate);
-
-    // bind open handlers after each render
-    bindOpenHandlers();
-  }
-
   function bindOpenHandlers(){
-    // any [data-open] outside modal (cards, chips, matches)
     qsa("[data-open]").forEach(el=>{
       el.addEventListener("click", (e)=>{
-        // Prevent nested [data-open] (e.g., inside a match card) from triggering multiple modals
         e.stopPropagation();
         const type = el.getAttribute("data-open");
         const val = el.getAttribute("data-value") || el.getAttribute("data-key") || "";
         openModal(type, val);
       }, {once:true});
     });
-
-    // keyboard on match rows
     qsa(".match[role='button']").forEach(el=>{
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
@@ -1064,9 +1214,7 @@ async function init(){
         }
       }, {once:true});
     });
-
-    // cards as buttons
-    qsa(".card[data-open='match']").forEach(el=>{
+    qsa(".rt-slot[data-open='match'], .card[data-open='match']").forEach(el=>{
       el.addEventListener("keydown", (e)=>{
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
@@ -1076,9 +1224,44 @@ async function init(){
     });
   }
 
-  qs("#btn_time").addEventListener("click", ()=>{ viewMode="time"; rerender(); });
-  qs("#btn_country").addEventListener("click", ()=>{ viewMode="country"; rerender(); });
-  qs("#search").addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
+  function rerender(){
+    if(isDayboard){
+      renderDayTabs(T, activeDate, q);
+      renderCountryList(T, activeDate, q, selectedCountry);
+      renderCalendar(T, CAL_MATCHES, q, activeDate, selectedCountry);
+    } else {
+      if(strip) renderStrip();
+      renderCalendar(T, CAL_MATCHES, q, activeDate, undefined);
+    }
+    bindOpenHandlers();
+  }
+
+  if(searchEl) searchEl.addEventListener("input", (e)=>{ q=e.target.value; rerender(); });
+
+  if(isDayboard){
+    const tabs = qs("#dayboard_tabs");
+    if(tabs && !tabs.dataset.rtBound){
+      tabs.dataset.rtBound = "1";
+      tabs.addEventListener("click", (e)=>{
+        const btn = e.target.closest("button[data-date]");
+        if(!btn) return;
+        activeDate = btn.getAttribute("data-date");
+        selectedCountry = null;
+        rerender();
+      });
+    }
+    const cl = qs("#country_list");
+    if(cl && !cl.dataset.rtBound){
+      cl.dataset.rtBound = "1";
+      cl.addEventListener("click", (e)=>{
+        const btn = e.target.closest("button[data-country]");
+        if(!btn) return;
+        const v = btn.getAttribute("data-country");
+        selectedCountry = (v == null || v === "") ? null : v;
+        rerender();
+      });
+    }
+  }
 
   if(strip){
     strip.addEventListener("click", (e)=>{
@@ -1090,30 +1273,24 @@ async function init(){
     });
   }
 
-  qs("#modal_close").addEventListener("click", closeModal);
-  qs("#modal_backdrop").addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+  const modalClose = qs("#modal_close");
+  const modalBackdrop = qs("#modal_backdrop");
+  if(modalClose) modalClose.addEventListener("click", closeModal);
+  if(modalBackdrop){
+    modalBackdrop.addEventListener("click", (e)=>{ if(e.target.id==="modal_backdrop") closeModal(); });
+  }
 
-  // language switch (preserve page)
-  qsa("[data-lang]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const target = btn.getAttribute("data-lang");
-      const rest = location.pathname.split("/").slice(2).join("/");
-      location.href = `/${target}/${rest}`.replace(/\/+$/g, "/").replace(/\/+/g,"/");
-    });
-  });
+  bindLangSwitch();
 
-<<<<<<< HEAD
-=======
-  // compliance footer
-  renderComplianceFooter(lang);
-
->>>>>>> c62aa79 (Melhorias UI)
-  // year
+  renderComplianceFooter(LANG);
   setText("year", String(new Date().getFullYear()));
 
-  renderStrip();
-  rerender();
-  bindOpenHandlers();
+  if(isDayboard){
+    rerender();
+  } else {
+    renderStrip();
+    rerender();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -12,6 +12,7 @@ routes = [
 [triggers]
 crons = ["0 */3 * * *"]
 
+# R2 data: production bucket. Preview/staging must use a separate bucket or isolated Worker env — see ENVIRONMENT.md.
 [[r2_buckets]]
 binding = "RADARTIPS_DATA"
 bucket_name = "radartips-data"
@@ -19,7 +20,12 @@ bucket_name = "radartips-data"
 [vars]
 SNAPSHOT_MAX_AGE = "12"
 WORKER_VERSION = "2026.03.15"
+# R2 object keys are `${RADARTIPS_SNAPSHOT_PREFIX}/snapshots/...` (prod | preview) — never legacy bare snapshots/
+RADARTIPS_SNAPSHOT_PREFIX = "prod"
+RADARTIPS_DATA_IDENTITY = "production"
 # Cron stale refresh dispatch metadata
 GITHUB_REPOSITORY = "admpensador-cmyk/RadarTips"
 GITHUB_WORKFLOW_FILE = "radartips_update_data_api_football.yml"
 GITHUB_WORKFLOW_REF = "main"
+
+# Preview: deploy a separate Worker with --var RADARTIPS_SNAPSHOT_PREFIX:preview (see ENVIRONMENT.md).
