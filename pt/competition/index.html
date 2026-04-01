@@ -17,18 +17,15 @@
 <body data-page="legal" data-shell="day-v2" data-rt-surface="legal" data-theme="dark">
   <div class="rt-day">
     <header class="rt-header">
-      <div class="rt-header-top">
-        <div class="rt-brand-row">
-          <span id="brand" class="rt-brand-text">RadarTips</span>
-          <span class="badge-mini" id="disclaimer"></span>
+      <div class="rt-header-bar">
+        <div class="rt-header-left">
+          <a class="rt-logo-link" id="header_home_link" href="#" aria-label="RadarTips">
+            <img class="rt-logo-img" id="header_logo" src="/assets/logo-radartips-dark.svg" alt="RadarTips" width="122" height="24" decoding="async" />
+          </a>
         </div>
-        <p class="mini rt-tagline" id="subtitle"></p>
-      </div>
-      <div class="rt-header-actions">
-        <nav class="rt-nav-pills" aria-label="Vistas do Radar">
-          <a class="pill" data-nav="day" href="#"></a>
-          <a class="pill" data-nav="calendar" href="#"></a>
-        </nav>
+        <div class="rt-header-center">
+          <p class="rt-header-value" id="header_value_line" aria-live="polite"></p>
+        </div>
         <div class="rt-lang-tools">
           <button class="lang theme-toggle" id="theme_toggle" type="button" aria-label="Tema">☾</button>
           <span class="lang" data-lang="en">EN</span>

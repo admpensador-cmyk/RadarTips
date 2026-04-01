@@ -137,6 +137,23 @@ h3{margin:8px 0 0;font-size:16px;letter-spacing:-.2px}
   box-shadow: 0 6px 16px rgba(0,0,0,.12);
   flex:0 0 auto;
 }
+.crest-wrap{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  width:22px;
+  height:22px;
+}
+.crest-img{
+  object-fit:contain;
+  padding:0;
+  position:absolute;
+  inset:0;
+  border-radius:6px;
+  background:transparent;
+}
 .card .crest{
   width:18px;
   height:18px;
@@ -843,6 +860,14 @@ body[data-shell="day-v2"][data-theme="light"]{
 body[data-shell="day-v2"] .rt-day{
   max-width:1240px;margin:0 auto;padding:16px 16px 72px;
 }
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-day{
+  padding-left:10px;
+  padding-right:10px;
+}
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-main{
+  margin-top:12px;
+  gap:12px;
+}
 body[data-shell="day-v2"] .rt-header{
   display:flex;flex-direction:column;gap:12px;
   padding:14px 16px;
@@ -855,6 +880,32 @@ body[data-shell="day-v2"][data-theme="light"] .rt-header{
   background:rgba(255,255,255,.78);
   border-color:var(--stroke);
 }
+/* Header bar: logo | flex-centered tagline | theme + languages (no absolute centering) */
+body[data-shell="day-v2"] .rt-header-bar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-width:0;
+}
+body[data-shell="day-v2"] .rt-header-left{
+  flex:0 0 auto;
+  min-width:0;
+}
+body[data-shell="day-v2"] .rt-header-center{
+  flex:1 1 0;
+  min-width:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:0 6px;
+}
+body[data-shell="day-v2"] .rt-header-value{
+  margin:0;
+  max-width:100%;
+  text-align:center;
+  line-height:1.35;
+}
 body[data-shell="day-v2"] .rt-brand-row{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 }
@@ -866,7 +917,15 @@ body[data-shell="day-v2"] .rt-header-actions{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
 }
 body[data-shell="day-v2"] .rt-nav-pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-body[data-shell="day-v2"] .rt-lang-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;}
+body[data-shell="day-v2"] .rt-lang-tools{
+  flex:0 0 auto;
+  min-width:0;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:flex-end;
+}
 body[data-shell="day-v2"] .rt-main{margin-top:18px;display:flex;flex-direction:column;gap:20px;}
 /* Hero shell: title block + Top 3 read as one premium container */
 body[data-shell="day-v2"] .rt-lead{
@@ -909,75 +968,292 @@ body[data-shell="day-v2"][data-theme="light"] .rt-top3{
   border-top:1px solid rgba(226,232,240,.95);
   box-shadow:0 14px 36px rgba(15,23,42,.1);
 }
-/* Radar Day production layout (Top 3 headline + dayboard: tabs + countries + matches; no Sinais column) */
+/* ========== Radar Day Top 3: poster cards (rd-poster*) — rebuild ========== */
 body[data-rt-surface="radar-day"] .rt-top3{
-  border-radius:22px;
-  border-top:1px solid rgba(100,116,139,.32);
+  border-radius:20px;
+  border-top:1px solid rgba(100,116,139,.28);
+  padding:6px 4px 14px;
+  margin-top:0;
 }
-body[data-rt-surface="radar-day"] .rt-top3-head{margin-bottom:14px;}
-body[data-rt-surface="radar-day"] .rt-top3-title{
-  margin:0;
-  font-size:clamp(17px,2.3vw,22px);
-  font-weight:950;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  color:rgba(248,250,252,.98);
-}
-body[data-rt-surface="radar-day"] .rt-top3-sub{
-  margin:8px 0 0;
-  font-size:13px;
-  font-weight:650;
-  color:rgba(226,232,240,.62);
-  line-height:1.4;
-}
-body[data-rt-surface="radar-day"] .rt-slot-topbar{
-  display:flex;
-  justify-content:flex-end;
-  align-items:flex-start;
-  min-height:22px;
-}
-body[data-rt-surface="radar-day"] .slot-league-line{
-  font-size:12px;
-  font-weight:750;
-  color:rgba(226,232,240,.72);
-}
-body[data-rt-surface="radar-day"] .slot-pick{
-  font-size:13px;
-  font-weight:850;
-  color:rgba(248,250,252,.96);
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(59,130,246,.42);
-  background:linear-gradient(180deg, rgba(37,99,235,.28), rgba(15,23,42,.55));
+body[data-rt-surface="radar-day"] .rt-top3-head{
+  margin:0 0 10px;
   text-align:center;
 }
-body[data-rt-surface="radar-day"] .slot-confidence{margin-top:10px;}
-body[data-rt-surface="radar-day"] .slot-confidence-head{
-  font-size:10px;
-  letter-spacing:.14em;
-  font-weight:850;
-  color:rgba(226,232,240,.55);
-  margin-bottom:6px;
+body[data-rt-surface="radar-day"] .rt-top3-title{
+  margin:0 auto;
+  font-size:clamp(18px,2.5vw,24px);
+  font-weight:950;
+  letter-spacing:.03em;
+  text-transform:none;
+  color:rgba(248,250,252,.98);
 }
-body[data-rt-surface="radar-day"] .conf-track{
-  height:8px;
+body[data-rt-surface="radar-day"] .rt-top3-sub{display:none;}
+body[data-rt-surface="radar-day"] .rt-top3-grid{
+  gap:4px;
+  align-items:stretch;
+}
+body[data-rt-surface="radar-day"] .rt-slot-topbar{display:none;}
+body[data-rt-surface="radar-day"] .rt-slot{
+  padding:clamp(16px,2.6vw,24px) clamp(8px,1.4vw,12px) clamp(22px,3.2vw,32px);
+  gap:0;
+  min-height:min(420px,52vh);
+  border-radius:16px;
+  align-items:stretch;
+}
+body[data-rt-surface="radar-day"] .rt-slot h3{
+  margin:0;
+  width:100%;
+  flex:1 1 auto;
+  min-height:0;
+  display:block;
+  font-size:inherit;
+  font-weight:inherit;
+  line-height:normal;
+}
+body[data-rt-surface="radar-day"] .rt-slot .meta{
+  margin-top:clamp(12px,2vw,18px);
+  width:100%;
+  text-align:center;
+  flex-shrink:0;
+}
+/* Subtle divider: confrontation (h3) vs info block (.meta + .lock) */
+body[data-rt-surface="radar-day"] .rt-slot[data-open="match"] .meta{
+  margin-top:clamp(14px,2.2vw,20px);
+  padding-top:clamp(14px,2.2vw,20px);
+  border-top:1px solid rgba(148,163,184,.14);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-slot[data-open="match"] .meta{
+  border-top-color:rgba(148,163,184,.22);
+}
+body[data-rt-surface="radar-day"] .rt-slot .lock{
+  margin-top:0;
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+  gap:clamp(16px,2.5vw,24px);
+  padding:0;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  border-radius:0;
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-top3-title{color:var(--ink);}
+
+/* Confronto: coluna — [crest+name] · vs · [crest+name]; escudos sem caixa */
+body[data-rt-surface="radar-day"] .rd-poster{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+}
+body[data-rt-surface="radar-day"] .rd-poster-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(12px,2vw,20px);
+  width:100%;
+}
+body[data-rt-surface="radar-day"] .rd-poster-team{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(6px,1.2vw,10px);
+  width:100%;
+  max-width:100%;
+}
+body[data-rt-surface="radar-day"] .rd-poster-crest{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  line-height:0;
+}
+body[data-rt-surface="radar-day"] .rd-poster-crest-slot{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  padding:0;
+}
+body[data-rt-surface="radar-day"] .rd-poster-crest-img{
+  display:block;
+  width:clamp(88px,24vw,120px);
+  height:clamp(88px,24vw,120px);
+  object-fit:contain;
+  object-position:center;
+  border:none;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  filter:drop-shadow(0 10px 24px rgba(0,0,0,.45));
+}
+body[data-rt-surface="radar-day"] .rd-poster-crest-fallback{
+  width:clamp(88px,24vw,120px);
+  height:clamp(88px,24vw,120px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:clamp(22px,5.5vw,34px);
+  font-weight:950;
+  letter-spacing:.06em;
+  color:rgba(248,250,252,.88);
+  text-shadow:0 4px 20px rgba(0,0,0,.5), 0 0 1px rgba(248,250,252,.25);
+  background:transparent;
+  border:none;
+  box-shadow:none;
+}
+body[data-rt-surface="radar-day"] .rd-poster-crest-fallback--solo{display:flex;}
+body[data-rt-surface="radar-day"] .rd-poster-vs{
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.24em;
+  text-transform:uppercase;
+  color:rgba(148,163,184,.88);
+  line-height:1;
+  text-align:center;
+  margin:2px 0;
+}
+body[data-rt-surface="radar-day"] .rd-poster-name{
+  display:block;
+  width:100%;
+  max-width:100%;
+  padding:0 8px;
+  box-sizing:border-box;
+  font-size:clamp(13px,2.1vw,17px);
+  font-weight:900;
+  line-height:1.2;
+  letter-spacing:-.02em;
+  color:rgba(248,250,252,.98);
+  text-align:center;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-name{color:var(--ink);}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-crest-fallback{
+  color:rgba(15,23,42,.82);
+  text-shadow:none;
+}
+
+/* País / liga / hora — centrado */
+body[data-rt-surface="radar-day"] .rd-poster-ctx{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:baseline;
+  gap:.25rem .5rem;
+  max-width:100%;
+  margin:0 auto;
+  font-size:clamp(10px,1.55vw,12px);
+  font-weight:720;
+  line-height:1.45;
+  color:rgba(226,232,240,.68);
+  text-align:center;
+}
+body[data-rt-surface="radar-day"] .rd-poster-ctx-country{
+  font-weight:820;
+  font-size:9px;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:rgba(148,163,184,.82);
+}
+body[data-rt-surface="radar-day"] .rd-poster-ctx-league{
+  font-weight:740;
+  color:rgba(226,232,240,.78);
+}
+body[data-rt-surface="radar-day"] .rd-poster-ctx-sep{opacity:.45;font-weight:600;}
+body[data-rt-surface="radar-day"] .rd-poster-ctx-time{
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+  color:rgba(147,197,253,.88);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-ctx{color:var(--muted);}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-ctx-country{color:rgba(100,116,139,.95);}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-ctx-league{color:var(--ink);}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-ctx-time{color:rgba(37,99,235,.95);}
+
+/* Pick / confiança / insight: direto no cartão, sem painel interno */
+body[data-rt-surface="radar-day"] .rd-poster-pick{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  text-align:center;
+  margin-top:clamp(6px,1.2vw,10px);
+}
+body[data-rt-surface="radar-day"] .rd-poster-pick-line{
+  display:inline-flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:baseline;
+  gap:.25em .4em;
+  max-width:min(100%,340px);
+  padding:7px 14px;
   border-radius:999px;
-  background:rgba(15,23,42,.85);
-  border:1px solid rgba(100,116,139,.35);
+  border:1px solid rgba(148,163,184,.32);
+  background:rgba(15,23,42,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  font-size:clamp(12px,1.85vw,15px);
+  font-weight:800;
+  line-height:1.3;
+  color:rgba(248,250,252,.92);
+  letter-spacing:-.012em;
+}
+body[data-rt-surface="radar-day"] .rd-poster-pick-line strong{
+  font-weight:950;
+  color:rgba(147,197,253,.98);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-pick-line{
+  color:var(--ink);
+  border-color:rgba(148,163,184,.42);
+  background:rgba(248,250,252,.72);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-pick-line strong{color:rgba(29,78,216,.95);}
+body[data-rt-surface="radar-day"] .rd-poster-confidence{
+  width:100%;
+  max-width:min(300px,92%);
+  margin:0 auto;
+  text-align:center;
+}
+body[data-rt-surface="radar-day"] .rd-poster-confidence-label{
+  font-size:9px;
+  letter-spacing:.14em;
+  font-weight:780;
+  text-transform:uppercase;
+  color:rgba(226,232,240,.42);
+  margin-bottom:7px;
+}
+body[data-rt-surface="radar-day"] .rd-poster-meter{
+  height:10px;
+  border-radius:999px;
+  background:rgba(15,23,42,.9);
+  border:1px solid rgba(100,116,139,.4);
   overflow:hidden;
 }
-body[data-rt-surface="radar-day"] .conf-fill{
+body[data-rt-surface="radar-day"] .rd-poster-meter-fill{
   display:block;
   height:100%;
   border-radius:999px;
-  background:linear-gradient(90deg, rgba(37,99,235,.85), rgba(96,165,250,.95));
+  background:linear-gradient(90deg, rgba(37,99,235,.92), rgba(96,165,250,.96));
 }
-body[data-rt-surface="radar-day"] .slot-confidence-note{
-  margin:8px 0 0;
+body[data-rt-surface="radar-day"] .rd-poster-insight{
+  margin:12px 0 0;
+  padding:12px 12px 0;
+  border-top:none;
   font-size:11px;
-  line-height:1.35;
-  color:rgba(226,232,240,.68);
-  font-weight:650;
+  line-height:1.52;
+  font-weight:600;
+  color:rgba(226,232,240,.58);
+  text-align:center;
+  max-width:min(320px,100%);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rd-poster-insight{
+  color:rgba(71,85,105,.78);
 }
 body[data-rt-surface="radar-day"] .rt-day-tabs{
   display:flex;
@@ -1010,13 +1286,267 @@ body[data-rt-surface="radar-day"] .rt-dayboard-split{
   gap:14px;
   align-items:start;
 }
-body[data-rt-surface="radar-day"] .rt-country-list{display:flex;flex-direction:column;gap:6px;}
-body[data-rt-surface="radar-day"] .rt-country-row{
+body[data-rt-surface="radar-day"] .rt-country-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-height:min(70vh, 620px);
+  min-height:0;
+  overflow:hidden;
+  border-radius:14px;
+  box-sizing:border-box;
+}
+body[data-rt-surface="radar-day"] .rt-nav-league-mode{
+  display:flex;
+  flex-direction:row;
+  gap:0;
+  width:100%;
+  padding:2px;
+  border-radius:11px;
+  border:1px solid rgba(100,116,139,.32);
+  background:rgba(6,10,20,.55);
+  box-sizing:border-box;
+}
+body[data-rt-surface="radar-day"] .rt-nav-mode-btn{
+  flex:1 1 0;
+  min-width:0;
+  margin:0;
+  padding:8px 6px;
+  border:none;
+  border-radius:9px;
+  background:transparent;
+  color:rgba(226,232,240,.72);
+  font-weight:800;
+  font-size:11px;
+  line-height:1.15;
+  letter-spacing:.02em;
+  text-align:center;
+  cursor:pointer;
+  transition:background .12s ease,color .12s ease;
+}
+body[data-rt-surface="radar-day"] .rt-nav-mode-btn:hover{
+  color:rgba(248,250,252,.9);
+  background:rgba(30,41,59,.35);
+}
+body[data-rt-surface="radar-day"] .rt-nav-mode-btn.active{
+  color:rgba(248,250,252,.96);
+  background:linear-gradient(180deg, rgba(37,99,235,.35), rgba(29,78,216,.22));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+body[data-rt-surface="radar-day"] .rt-nav-mode-btn:focus-visible{
+  outline:2px solid rgba(96,165,250,.6);
+  outline-offset:1px;
+}
+body[data-rt-surface="radar-day"] .rt-country-list-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:4px;
+  margin-right:0;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(100,116,139,.5) transparent;
+  border-radius:12px;
+}
+body[data-rt-surface="radar-day"] .rt-country-list-scroll::-webkit-scrollbar{width:6px;}
+body[data-rt-surface="radar-day"] .rt-country-list-scroll::-webkit-scrollbar-track{background:transparent;}
+body[data-rt-surface="radar-day"] .rt-country-list-scroll::-webkit-scrollbar-thumb{
+  background:rgba(100,116,139,.42);
+  border-radius:999px;
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-country-list-scroll{
+  scrollbar-color:rgba(100,116,139,.35) transparent;
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-country-list-scroll::-webkit-scrollbar-thumb{
+  background:rgba(100,116,139,.28);
+}
+body[data-rt-surface="radar-day"] .rt-nav-fallback{
+  padding:12px;
+  border-radius:12px;
+  border:1px dashed rgba(100,116,139,.45);
+  color:rgba(226,232,240,.72);
+  font-size:13px;
+  font-weight:650;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin-top:10px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--root{margin-bottom:2px;}
+body[data-rt-surface="radar-day"] .rt-country-list-scroll > .rt-nav-section--collapsible:first-child{margin-top:2px;}
+body[data-rt-surface="radar-day"] .rt-nav-section-title{
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:rgba(148,163,184,.82);
+  padding:4px 4px 2px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section--others{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin-top:10px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-others-heading{margin-top:0;padding-top:2px;}
+body[data-rt-surface="radar-day"] .rt-nav-section--collapsible > .rt-nav-section-head.rt-nav-category-head{
   display:flex;
   align-items:center;
-  justify-content:space-between;
   gap:10px;
   width:100%;
+  box-sizing:border-box;
+  padding:13px 12px 13px 12px;
+  border-radius:13px;
+  border:1px solid rgba(100,116,139,.42);
+  background:linear-gradient(165deg, rgba(30,41,59,.88), rgba(15,23,42,.94) 45%, rgba(6,10,20,.96));
+  color:rgba(248,250,252,.96);
+  font-size:14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 1px 0 rgba(0,0,0,.2);
+}
+body[data-rt-surface="radar-day"] .rt-nav-category-head--abstract{
+  padding:11px 11px 11px 10px;
+  gap:9px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-category-icon{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  background:rgba(15,23,42,.45);
+  border:1px solid rgba(148,163,184,.22);
+  color:rgba(226,232,240,.88);
+}
+body[data-rt-surface="radar-day"] .rt-nav-category-icon .ico{
+  width:18px;
+  height:18px;
+  opacity:.92;
+}
+body[data-rt-surface="radar-day"] .rt-nav-category-icon .ico svg{
+  width:18px;
+  height:18px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-category-icon--emoji{
+  font-size:15px;
+  line-height:1;
+  border:none;
+  background:rgba(15,23,42,.35);
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-toggle{
+  flex-shrink:0;
+  width:32px;
+  height:32px;
+  min-width:32px;
+  margin:0;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(148,163,184,.38);
+  border-radius:9px;
+  background:rgba(15,23,42,.72);
+  color:rgba(248,250,252,.92);
+  cursor:pointer;
+  opacity:1;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-toggle--contract{
+  position:relative;
+  z-index:2;
+  flex-shrink:0;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-toggle:hover{
+  background:rgba(30,41,59,.85);
+  border-color:rgba(186,230,253,.35);
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-toggle:focus-visible{
+  outline:2px solid rgba(96,165,250,.65);
+  outline-offset:1px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-toggle::before{
+  content:"▼";
+  font-size:11px;
+  line-height:1;
+  display:inline-block;
+  transition:transform .16s ease;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section--collapsed .rt-nav-section-toggle::before{
+  transform:rotate(-90deg);
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-main{
+  flex:1 1 auto;
+  min-width:0;
+  margin:0;
+  padding:0;
+  border:none;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  font-weight:950;
+  font-size:14px;
+  letter-spacing:-.01em;
+  text-align:left;
+  cursor:pointer;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-main-text{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-main.active{
+  color:rgba(147,197,253,.98);
+  box-shadow:none;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-label{
+  flex:1 1 auto;
+  min-width:0;
+  font-weight:950;
+  font-size:14px;
+  letter-spacing:-.01em;
+  text-align:left;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:rgba(248,250,252,.92);
+}
+body[data-rt-surface="radar-day"] .rt-nav-section-head .rt-country-count{
+  flex-shrink:0;
+  margin-left:auto;
+  opacity:.75;
+  font-weight:750;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section--collapsible .rt-nav-section-body{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin-top:6px;
+  padding-left:3px;
+  border-left:1px solid rgba(59,130,246,.22);
+  margin-left:3px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-section--collapsed .rt-nav-section-body{display:none;}
+body[data-rt-surface="radar-day"] .rt-nav-country-block{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-left:6px;
+  padding-left:8px;
+  border-left:1px solid rgba(100,116,139,.22);
+}
+body[data-rt-surface="radar-day"] .rt-nav-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  width:100%;
+  box-sizing:border-box;
   text-align:left;
   padding:12px 12px;
   border-radius:12px;
@@ -1027,13 +1557,249 @@ body[data-rt-surface="radar-day"] .rt-country-row{
   font-size:13px;
   cursor:pointer;
 }
-body[data-rt-surface="radar-day"] .rt-country-row.active{
+body[data-rt-surface="radar-day"] .rt-nav-flag{
+  flex-shrink:0;
+  width:1.35em;
+  text-align:center;
+  font-size:1.12em;
+  line-height:1;
+}
+body[data-rt-surface="radar-day"] .rt-nav-league-logo-wrap{
+  position:relative;
+  flex-shrink:0;
+  width:24px;
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+body[data-rt-surface="radar-day"] .rt-nav-league-logo-img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:6px;
+  background:rgba(15,23,42,.25);
+}
+body[data-rt-surface="radar-day"] .rt-nav-league-logo-fallback{
+  width:24px;
+  height:24px;
+  border-radius:7px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:1000;
+  font-size:9px;
+  letter-spacing:.02em;
+  color:rgba(255,255,255,.9);
+  background:linear-gradient(180deg, hsl(var(--h) 78% 48%), hsl(calc(var(--h) + 18) 78% 36%));
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+body[data-rt-surface="radar-day"] .rt-nav-row .rt-nav-label{
+  flex:1 1 auto;
+  min-width:0;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row .rt-country-count{
+  flex-shrink:0;
+  margin-left:auto;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row .rt-chevron{flex-shrink:0;}
+body[data-rt-surface="radar-day"] .rt-nav-row--root{
+  font-weight:950;
+  border-color:rgba(59,130,246,.35);
+  background:linear-gradient(180deg, rgba(37,99,235,.22), rgba(15,23,42,.88));
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--country{
+  font-weight:780;
+  font-size:12.5px;
+  padding:10px 11px;
+  border-color:rgba(100,116,139,.22);
+  background:linear-gradient(180deg, rgba(15,23,42,.55), rgba(6,10,20,.78));
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--subcategory{
+  border-color:rgba(100,116,139,.3);
+  background:linear-gradient(180deg, rgba(15,23,42,.62), rgba(6,10,20,.82));
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child{
+  font-weight:650;
+  font-size:11.5px;
+  line-height:1.2;
+  padding:5px 8px 5px 7px;
+  border-radius:8px;
+  border-color:rgba(71,85,105,.26);
+  background:linear-gradient(180deg, rgba(15,23,42,.34), rgba(6,10,20,.52));
+  color:rgba(226,232,240,.88);
+  align-items:center;
+  min-height:0;
+  gap:8px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-country-count{
+  opacity:.65;
+  font-size:11px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--nested{
+  font-weight:640;
+  font-size:11px;
+  padding:5px 8px 5px 8px;
+  margin-left:1px;
+  border-color:rgba(51,65,85,.38);
+  opacity:.98;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-nav-league-logo-wrap,
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-nav-league-logo-fallback{
+  width:20px;
+  height:20px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-nav-league-logo-fallback{
+  font-size:7px;
+  border-radius:6px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-nav-league-logo-img{
+  border-radius:5px;
+}
+body[data-rt-surface="radar-day"] .rt-nav-row.active{
   border-color:rgba(96,165,250,.5);
   box-shadow:inset 0 0 0 1px rgba(59,130,246,.25);
 }
+body[data-rt-surface="radar-day"] .rt-nav-section--collapsible:has(.rt-nav-section-main.active) > .rt-nav-section-head.rt-nav-category-head{
+  border-color:rgba(96,165,250,.45);
+  box-shadow:inset 0 0 0 1px rgba(59,130,246,.22);
+}
+body[data-rt-surface="radar-day"] .rt-nav-section--others > .rt-nav-section--collapsible{margin-top:0;}
 body[data-rt-surface="radar-day"] .rt-country-count{opacity:.75;font-weight:750;}
 body[data-rt-surface="radar-day"] .rt-chevron{opacity:.45;font-size:18px;line-height:1;}
+body[data-rt-surface="radar-day"] .rt-nav-label{min-width:0;text-align:left;}
 body[data-rt-surface="radar-day"] .rt-dayboard-matches{min-width:0;}
+
+/* Radar day main calendar: World / Internationals / Others → continent → country → league → matches */
+body[data-rt-surface="radar-day"] .rt-day-cal{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-group{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-group-head{
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:rgba(148,163,184,.88);
+  padding:2px 2px 4px;
+  border-bottom:1px solid rgba(100,116,139,.28);
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-continent{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:4px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-continent-head{
+  font-size:12px;
+  font-weight:900;
+  color:rgba(226,232,240,.82);
+  padding:4px 0 2px 2px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-country{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-left:4px;
+  padding-left:10px;
+  border-left:1px solid rgba(59,130,246,.2);
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-country-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:850;
+  color:rgba(248,250,252,.94);
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-cflag{
+  font-size:1.15em;
+  line-height:1;
+  flex-shrink:0;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-league{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-league-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:780;
+  color:rgba(226,232,240,.78);
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-league-head .rt-nav-league-logo-wrap{
+  width:20px;
+  height:20px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-league-head .rt-nav-league-logo-fallback{
+  width:20px;
+  height:20px;
+  font-size:7px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-lname{min-width:0;}
+body[data-rt-surface="radar-day"] .rt-day-cal-matches{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-left:2px;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-match{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(71,85,105,.35);
+  background:rgba(15,23,42,.45);
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-match-time{
+  font-size:12px;
+  font-weight:850;
+  font-variant-numeric:tabular-nums;
+  color:rgba(147,197,253,.95);
+  white-space:nowrap;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-match-teams{
+  min-width:0;
+  font-size:12px;
+  font-weight:750;
+  color:rgba(248,250,252,.92);
+  line-height:1.25;
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-match-teams span{vertical-align:middle;}
+body[data-rt-surface="radar-day"] .rt-day-cal-vs{
+  margin:0 4px;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:rgba(148,163,184,.75);
+}
+body[data-rt-surface="radar-day"] .rt-day-cal-radar-btn{
+  flex-shrink:0;
+  padding:6px 10px;
+  font-size:11px;
+  font-weight:850;
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-day-cal-match{
+  background:rgba(248,250,252,.75);
+  border-color:rgba(203,213,225,.85);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-day-cal-match-teams{color:var(--ink);}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-day-cal-group-head{color:rgba(100,116,139,.9);}
 body[data-shell="day-v2"] .rt-lead h1{margin:0;font-size:24px;letter-spacing:-.5px;color:rgba(248,250,252,.98);}
 body[data-shell="day-v2"][data-theme="light"] .rt-lead h1{color:var(--ink);}
 body[data-shell="day-v2"] .rt-lead p{margin:8px 0 0;color:rgba(226,232,240,.68);font-weight:650;font-size:14px;}
@@ -1061,12 +1827,37 @@ body[data-shell="day-v2"][data-theme="light"] .rt-slot{
   background:var(--card);
   border-color:var(--stroke);
 }
+/* Radar Day: vencer regras genéricas day-v2 (padding/gap do grid e slots) */
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-top3-grid{
+  gap:4px;
+}
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-slot{
+  padding:clamp(16px,2.6vw,24px) clamp(6px,1.2vw,10px) clamp(22px,3.2vw,32px);
+  gap:0;
+  min-height:min(420px,52vh);
+  border-radius:16px;
+}
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-slot h3{
+  margin:0;
+  width:100%;
+  flex:1 1 auto;
+  min-height:0;
+  display:block;
+  font-size:inherit;
+  font-weight:inherit;
+  line-height:normal;
+}
 body[data-shell="day-v2"] .rt-slot[data-open="match"]{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;}
 body[data-shell="day-v2"] .rt-slot[data-open="match"]:hover{
   transform:translateY(-2px);
   box-shadow:0 12px 32px rgba(0,0,0,.25);
 }
 body[data-shell="day-v2"] .rt-slot h3{margin:0;font-size:15px;font-weight:850;line-height:1.25;}
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-slot h3{
+  font-size:inherit;
+  font-weight:inherit;
+  line-height:normal;
+}
 body[data-shell="day-v2"] .rt-slot .row{margin-bottom:8px;}
 body[data-shell="day-v2"] .rt-slot .match-title{gap:8px;}
 body[data-shell="day-v2"] .rt-slot .match-title .vs{
@@ -1085,11 +1876,16 @@ body[data-shell="day-v2"] .rt-slot .crest{
   border-radius:8px;
   box-shadow:0 4px 12px rgba(0,0,0,.32);
 }
+/* Poster escudos: vence .rt-slot .crest genérico do day-v2 */
 body[data-shell="day-v2"] .rt-slot .meta{
   margin-top:0;
   opacity:1;
   font-size:11px;
   gap:6px;
+}
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-slot .meta{
+  margin-top:clamp(12px,2vw,18px);
+  text-align:center;
 }
 body[data-shell="day-v2"] .rt-slot .meta-chips{gap:6px;}
 body[data-shell="day-v2"] .rt-slot .meta-actions{margin-top:2px;}
@@ -1203,6 +1999,13 @@ body[data-shell="day-v2"] .rt-slot .lock{
   border-color:rgba(100,116,139,.22);
   background:linear-gradient(180deg, rgba(15,23,42,.4), rgba(8,12,22,.72));
   border-radius:14px;
+}
+body[data-shell="day-v2"][data-rt-surface="radar-day"] .rt-slot .lock{
+  border:none;
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+  margin-top:0;
 }
 body[data-shell="day-v2"] .rt-cal.section{
   margin-top:4px;
