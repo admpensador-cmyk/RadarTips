@@ -1627,6 +1627,13 @@ body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-country-count{
   opacity:.65;
   font-size:11px;
 }
+body[data-rt-surface="radar-day"] .rt-nav-row--league-child .rt-country-count--has-matches{
+  opacity:1;
+  color:rgba(147,197,253,.95);
+}
+body[data-rt-surface="radar-day"][data-theme="light"] .rt-nav-row--league-child .rt-country-count--has-matches{
+  color:rgba(29,78,216,.92);
+}
 body[data-rt-surface="radar-day"] .rt-nav-row--nested{
   font-weight:580;
   font-size:10.5px;
