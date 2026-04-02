@@ -18,6 +18,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'radartips-data';
+/** Pin to the same wrangler major line as .github/workflows (avoids npx resolving latest). */
+const WRANGLER_PKG = String(process.env.RADARTIPS_WRANGLER_PACKAGE || 'wrangler@4.62.0').trim();
+const UPLOAD_MAX_ATTEMPTS = Math.max(
+  1,
+  Math.min(10, Number.parseInt(String(process.env.RADARTIPS_R2_UPLOAD_RETRIES || '3'), 10) || 3)
+);
 
 const PREFIX = String(process.env.RADARTIPS_SNAPSHOT_PREFIX || '')
   .trim()
@@ -266,7 +272,7 @@ if (uploadLeagueArtifacts) {
 }
 
 // Now upload to R2 using wrangler
-console.log(`\n📤 Uploading to R2 using wrangler...`);
+console.log(`\n📤 Uploading to R2 using wrangler (${WRANGLER_PKG}, max ${UPLOAD_MAX_ATTEMPTS} attempts/object)...`);
 
 const uploadTargets = [];
 if (uploadCalendarArtifacts) {
@@ -284,102 +290,110 @@ if (uploadLeagueArtifacts) {
   uploadTargets.push(...leagueAuxiliaryTargets);
 }
 
-async function uploadTarget(target) {
-  const wranglerArgs = [
-    'wrangler',
-    'r2',
-    'object',
-    'put',
-    '--remote',
-    `${R2_BUCKET}/${target.remote}`,
-    '--file',
-    target.local,
-    '--content-type',
-    'application/json'
-  ];
-
-  assertNotBlocked7D(target.local, 'snapshot_file');
-  assertNotBlocked7D(`${R2_BUCKET}/${target.remote}`, 'remote_key');
-  for (const arg of wranglerArgs) {
-    assertNotBlocked7D(arg, 'wrangler_arg');
-  }
-
-  await new Promise((resolve, reject) => {
+function spawnWrangler(args) {
+  const wranglerArgs = ['--yes', WRANGLER_PKG, ...args];
+  return new Promise((resolve, reject) => {
     const proc = spawn('npx', wranglerArgs, {
       cwd: ROOT,
       stdio: 'inherit',
       env: process.env,
       shell: true,
     });
-    proc.on('close', (code) => {
+    proc.on('error', (err) => {
+      reject(new Error(`wrangler_spawn_failed: ${err?.message || err}`));
+    });
+    proc.on('close', (code, signal) => {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`upload_failed remote=${target.remote} code=${code}`));
+        const sig = signal ? ` signal=${signal}` : '';
+        reject(new Error(`wrangler_exit code=${code}${sig}`));
       }
     });
   });
 }
 
+async function uploadTargetOnce(target) {
+  const fullKey = `${R2_BUCKET}/${target.remote}`;
+  const wranglerArgs = [
+    'r2',
+    'object',
+    'put',
+    '--remote',
+    fullKey,
+    '--file',
+    target.local,
+    '--content-type',
+    'application/json',
+  ];
+
+  assertNotBlocked7D(target.local, 'snapshot_file');
+  assertNotBlocked7D(fullKey, 'remote_key');
+  for (const arg of wranglerArgs) {
+    assertNotBlocked7D(arg, 'wrangler_arg');
+  }
+
+  await spawnWrangler(wranglerArgs);
+}
+
+async function uploadTarget(target) {
+  const fullKey = `${R2_BUCKET}/${target.remote}`;
+  const label = target.slug ? `${fullKey} (league=${target.slug})` : fullKey;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= UPLOAD_MAX_ATTEMPTS; attempt += 1) {
+    console.log(
+      `[R2-UPLOAD] ${attempt}/${UPLOAD_MAX_ATTEMPTS} PUT ${label} local=${path.relative(ROOT, target.local) || target.local}`
+    );
+    try {
+      await uploadTargetOnce(target);
+      console.log(`[R2-UPLOAD] OK ${fullKey}`);
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.error(`[R2-UPLOAD] FAIL ${fullKey}: ${err?.message || err}`);
+      if (attempt < UPLOAD_MAX_ATTEMPTS) {
+        const delayMs = 2000 * attempt;
+        console.log(`[R2-UPLOAD] retry in ${delayMs}ms...`);
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+  }
+  throw new Error(`upload_failed after ${UPLOAD_MAX_ATTEMPTS} attempts remote=${target.remote} last=${lastErr?.message || lastErr}`);
+}
+
 async function verifyMainSnapshot() {
+  const fullKey = `${R2_BUCKET}/${remote('snapshots/calendar_2d.json')}`;
   const verifyArgs = [
-    'wrangler',
     'r2',
     'object',
     'get',
     '--remote',
-    `${R2_BUCKET}/${remote('snapshots/calendar_2d.json')}`,
+    fullKey,
     '--file',
-    'tmp_r2_calendar_2d_verify.json'
+    'tmp_r2_calendar_2d_verify.json',
   ];
 
   for (const arg of verifyArgs) {
     assertNotBlocked7D(arg, 'verify_arg');
   }
 
-  await new Promise((resolve, reject) => {
-    const verify = spawn('npx', verifyArgs, {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: process.env,
-      shell: true,
-    });
-    verify.on('close', (verifyCode) => {
-      if (verifyCode === 0) resolve();
-      else reject(new Error(`verify_failed code=${verifyCode}`));
-    });
-  });
+  console.log(`[R2-VERIFY] GET ${fullKey} -> tmp_r2_calendar_2d_verify.json`);
+  await spawnWrangler(verifyArgs);
+  console.log(`[R2-VERIFY] OK ${fullKey}`);
 }
 
 async function verifyUploadedLeagueSnapshot(target) {
   const localTmp = `tmp_verify_${target.slug}.json`;
-  const verifyArgs = [
-    'wrangler',
-    'r2',
-    'object',
-    'get',
-    '--remote',
-    `${R2_BUCKET}/${target.remote}`,
-    '--file',
-    localTmp
-  ];
+  const fullKey = `${R2_BUCKET}/${target.remote}`;
+  const verifyArgs = ['r2', 'object', 'get', '--remote', fullKey, '--file', localTmp];
 
   for (const arg of verifyArgs) {
     assertNotBlocked7D(arg, 'verify_arg');
   }
 
-  await new Promise((resolve, reject) => {
-    const verify = spawn('npx', verifyArgs, {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: process.env,
-      shell: true,
-    });
-    verify.on('close', (verifyCode) => {
-      if (verifyCode === 0) resolve();
-      else reject(new Error(`verify_failed remote=${target.remote} code=${verifyCode}`));
-    });
-  });
+  console.log(`[R2-VERIFY] GET ${fullKey} -> ${localTmp}`);
+  await spawnWrangler(verifyArgs);
+  console.log(`[R2-VERIFY] OK ${fullKey}`);
 
   const downloaded = JSON.parse(fs.readFileSync(path.join(ROOT, localTmp), 'utf8'));
   assertLeaguePageSnapshotUsesApiFootball(downloaded, target.definition);
@@ -388,39 +402,23 @@ async function verifyUploadedLeagueSnapshot(target) {
 
 async function verifyUploadedJsonArtifact(target) {
   const localTmp = `tmp_verify_${target.slug}_${path.basename(target.remote).replace(/[^a-z0-9.-]/gi, '_')}`;
-  const verifyArgs = [
-    'wrangler',
-    'r2',
-    'object',
-    'get',
-    '--remote',
-    `${R2_BUCKET}/${target.remote}`,
-    '--file',
-    localTmp
-  ];
+  const fullKey = `${R2_BUCKET}/${target.remote}`;
+  const verifyArgs = ['r2', 'object', 'get', '--remote', fullKey, '--file', localTmp];
 
   for (const arg of verifyArgs) {
     assertNotBlocked7D(arg, 'verify_arg');
   }
 
-  await new Promise((resolve, reject) => {
-    const verify = spawn('npx', verifyArgs, {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: process.env,
-      shell: true,
-    });
-    verify.on('close', (verifyCode) => {
-      if (verifyCode === 0) resolve();
-      else reject(new Error(`verify_failed remote=${target.remote} code=${verifyCode}`));
-    });
-  });
+  console.log(`[R2-VERIFY] GET ${fullKey} -> ${localTmp}`);
+  await spawnWrangler(verifyArgs);
+  console.log(`[R2-VERIFY] OK ${fullKey}`);
 
   JSON.parse(fs.readFileSync(path.join(ROOT, localTmp), 'utf8'));
 }
 
 (async () => {
   try {
+    console.log(`[R2-UPLOAD] queue=${uploadTargets.length} object(s) bucket=${R2_BUCKET} prefix=${PREFIX}/`);
     for (const target of uploadTargets) {
       await uploadTarget(target);
     }
