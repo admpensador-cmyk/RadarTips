@@ -494,7 +494,7 @@ function loadSidebarLeagueMode(){
     const v = String(sessionStorage.getItem(SIDEBAR_LEAGUE_MODE_KEY) || "").trim();
     if(v === "with_matches" || v === "all") return v;
   }catch(e){}
-  return "all";
+  return "with_matches";
 }
 
 function saveSidebarLeagueMode(mode){
@@ -514,8 +514,8 @@ function renderNavLeagueModeToggle(t, leagueListMode){
   const a = t.nav_leagues_list_all || "All leagues";
   const b = t.nav_leagues_with_matches || "Leagues with matches";
   return `<div class="rt-nav-league-mode" role="group" aria-label="${escAttr(group)}">
-  <button type="button" class="rt-nav-mode-btn${allOn ? " active" : ""}" data-rt-league-mode="all" aria-pressed="${allOn ? "true" : "false"}">${escAttr(a)}</button>
   <button type="button" class="rt-nav-mode-btn${!allOn ? " active" : ""}" data-rt-league-mode="with_matches" aria-pressed="${!allOn ? "true" : "false"}">${escAttr(b)}</button>
+  <button type="button" class="rt-nav-mode-btn${allOn ? " active" : ""}" data-rt-league-mode="all" aria-pressed="${allOn ? "true" : "false"}">${escAttr(a)}</button>
 </div>`;
 }
 
@@ -610,18 +610,107 @@ function sidebarLeagueDisplayName(leagueId, displayName){
   return s || `League ${id}`;
 }
 
+function normalizeDomesticCountryKey(country){
+  const c = String(country || "").trim();
+  if(!c) return "";
+  const low = c.toLowerCase();
+  if(low === "usa" || low === "u.s.a." || low === "u.s." || /^united states(\s+of\s+america)?$/i.test(low)) return "USA";
+  return c;
+}
+
+/** Canonical continent for domestic allowlist rows when `region` is missing or ambiguous. Never default all unknowns to Europe. */
 function domesticContinentKey(row){
   const region = String(row.region || "").trim();
-  if(region === "South America" || region === "North America") return "America";
+  if(region === "South America" || region === "North America" || region === "Central America" || region === "Caribbean") return "America";
   if(region === "Europe" || region === "Asia" || region === "Africa" || region === "Oceania") return region;
-  const country = String(row.country || "").trim();
-  const infer = {
-    Angola: "Africa", Cameroon: "Africa", "Costa Rica": "America", Ecuador: "America", Egypt: "Africa",
-    Ghana: "Africa", India: "Asia", Mexico: "America", Morocco: "Africa", Netherlands: "Europe",
-    Nigeria: "Africa", Paraguay: "America", Peru: "America", Senegal: "Africa", "South Korea": "Asia",
-    Uruguay: "America", Brazil: "America",
+  if(region === "Middle East") return "Asia";
+
+  const rawCountry = String(row.country || "").trim();
+  const country = normalizeDomesticCountryKey(rawCountry) || rawCountry;
+
+  const COUNTRY_CONTINENT = {
+    /* Americas */
+    USA: "America",
+    Canada: "America",
+    Mexico: "America",
+    Brazil: "America",
+    Argentina: "America",
+    Chile: "America",
+    Colombia: "America",
+    Uruguay: "America",
+    Paraguay: "America",
+    Peru: "America",
+    Ecuador: "America",
+    "Costa Rica": "America",
+    /* Europe */
+    England: "Europe",
+    Scotland: "Europe",
+    Wales: "Europe",
+    "Northern Ireland": "Europe",
+    Ireland: "Europe",
+    France: "Europe",
+    Germany: "Europe",
+    Italy: "Europe",
+    Spain: "Europe",
+    Portugal: "Europe",
+    Netherlands: "Europe",
+    Belgium: "Europe",
+    Austria: "Europe",
+    Switzerland: "Europe",
+    Poland: "Europe",
+    Greece: "Europe",
+    Turkey: "Europe",
+    Ukraine: "Europe",
+    Croatia: "Europe",
+    Serbia: "Europe",
+    Romania: "Europe",
+    Czechia: "Europe",
+    "Czech Republic": "Europe",
+    Sweden: "Europe",
+    Norway: "Europe",
+    Denmark: "Europe",
+    Finland: "Europe",
+    Russia: "Europe",
+    /* Asia */
+    Japan: "Asia",
+    "South Korea": "Asia",
+    Korea: "Asia",
+    China: "Asia",
+    India: "Asia",
+    "Saudi Arabia": "Asia",
+    Qatar: "Asia",
+    "United Arab Emirates": "Asia",
+    UAE: "Asia",
+    Iran: "Asia",
+    Iraq: "Asia",
+    Thailand: "Asia",
+    Vietnam: "Asia",
+    Indonesia: "Asia",
+    /* Oceania */
+    Australia: "Oceania",
+    "New Zealand": "Oceania",
+    /* Africa */
+    Egypt: "Africa",
+    Morocco: "Africa",
+    Nigeria: "Africa",
+    Ghana: "Africa",
+    Senegal: "Africa",
+    Cameroon: "Africa",
+    "South Africa": "Africa",
+    Angola: "Africa",
+    Algeria: "Africa",
+    Tunisia: "Africa",
+    Kenya: "Africa",
+    "Ivory Coast": "Africa",
   };
-  return infer[country] || "Europe";
+
+  if(COUNTRY_CONTINENT[country]) return COUNTRY_CONTINENT[country];
+  if(COUNTRY_CONTINENT[rawCountry]) return COUNTRY_CONTINENT[rawCountry];
+
+  if(typeof console !== "undefined" && console.warn){
+    console.warn("[RadarTips] domesticContinentKey: unmapped country — add to COUNTRY_CONTINENT; using Europe fallback", rawCountry, row && row.league_id);
+  }
+  return "Europe";
 }
 
 function domesticCountryLabel(row){
@@ -824,6 +913,32 @@ function renderCoverageNav(t, activeDateKey, query, selectedNav, leagueListMode)
   html += renderNavLeagueModeToggle(t, listMode);
   html += `<div class="rt-country-list-scroll">`;
 
+  const topLeagueIdSet = new Set(NAV_TOP_LEAGUE_IDS);
+  let topBody = "";
+  let topCount = 0;
+  for(const id of NAV_TOP_LEAGUE_IDS){
+    const row = M.leagueById.get(id);
+    if(!row) continue;
+    if(coverageBucket(row) !== "domestic") continue;
+    const wc = counts.get(id) || 0;
+    if(!navShowLeagueInSidebar(wc, listMode)) continue;
+    topCount += wc;
+    const nm = sidebarLeagueDisplayName(id, row.display_name || `League ${id}`);
+    topBody += navRowButton({ type: "league", id }, selK, nm, wc, ["rt-nav-row", "rt-nav-row--league", "rt-nav-row--league-child"], { leagueLogoHtml: navLeagueLogoHTML(id, nm), hideChevron: true });
+  }
+  if(listMode === "all" || topBody){
+    html += navCollapsibleSection(
+      "topLeagues",
+      navSectionExpandedState("topLeagues"),
+      t.nav_top_leagues || "Top leagues",
+      topCount,
+      null,
+      topBody,
+      selK,
+      `<span class="rt-nav-category-icon">${icoSpan("trophy")}</span>`,
+    );
+  }
+
   let worldBody = "";
   for(const row of M.worldRows){
     const id = Number(row.league_id);
@@ -865,9 +980,10 @@ function renderCoverageNav(t, activeDateKey, query, selectedNav, leagueListMode)
       const cids = M.countryAllIds.get(ckey) || new Set();
       const visibleLeagues = leagues.filter((row)=>{
         const id = Number(row.league_id);
+        if(topLeagueIdSet.has(id) && coverageBucket(row) === "domestic") return false;
         return navShowLeagueInSidebar(counts.get(id) || 0, listMode);
       });
-      if(listMode === "with_matches" && !visibleLeagues.length) continue;
+      if(!visibleLeagues.length) continue;
       contBody += `<div class="rt-nav-country-block">`;
       contBody += navRowButton({ type: "country", continent: cont, country }, selK, country, sumCountsForIds(cids, counts), ["rt-nav-row", "rt-nav-row--country", "rt-nav-row--subcategory"], { categoryFlagEmoji: countryFlagForCategory(country) });
       for(const row of visibleLeagues){
