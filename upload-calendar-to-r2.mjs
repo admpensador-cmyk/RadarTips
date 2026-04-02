@@ -271,12 +271,12 @@ console.log(`\n📤 Uploading to R2 using wrangler...`);
 const uploadTargets = [];
 if (uploadCalendarArtifacts) {
   uploadTargets.push(
-    { local: SNAPSHOT_PATH, remote: 'snapshots/calendar_2d.json' },
-    { local: SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_calendar_2d.json' },
+    { local: SNAPSHOT_PATH, remote: remote('snapshots/calendar_2d.json') },
+    { local: SNAPSHOT_LATEST_PATH, remote: remote('snapshots/latest_calendar_2d.json') },
     { local: versionedPath, remote: versionedKey },
-    { local: RADAR_DAY_SNAPSHOT_PATH, remote: 'snapshots/radar_day.json' },
-    { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: 'snapshots/latest_radar_day.json' },
-    { local: COVERAGE_ALLOWLIST_PATH, remote: 'data/coverage_allowlist.json' }
+    { local: RADAR_DAY_SNAPSHOT_PATH, remote: remote('snapshots/radar_day.json') },
+    { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: remote('snapshots/latest_radar_day.json') },
+    { local: COVERAGE_ALLOWLIST_PATH, remote: remote('data/coverage_allowlist.json') }
   );
 }
 if (uploadLeagueArtifacts) {
