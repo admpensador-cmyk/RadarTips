@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Quick upload calendar_2d.json to R2 snapshots
- * Upload calendar_2d.json como fonte única
+ * Publish calendar_2d to R2 at exactly `${prefix}/snapshots/calendar_2d.json` (Worker read path).
+ * Radar Day is embedded as `radar_day` inside that JSON — no separate radar R2 objects.
  */
 
 import fs from 'fs';
@@ -18,8 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'radartips-data';
-/** Pin to the same wrangler major line as .github/workflows (avoids npx resolving latest). */
-const WRANGLER_PKG = String(process.env.RADARTIPS_WRANGLER_PACKAGE || 'wrangler@4.62.0').trim();
+/** Pinned; do not override with latest wrangler (CI + local must match). */
+const WRANGLER_PKG = 'wrangler@4.62.0';
 const UPLOAD_MAX_ATTEMPTS = Math.max(
   1,
   Math.min(10, Number.parseInt(String(process.env.RADARTIPS_R2_UPLOAD_RETRIES || '3'), 10) || 3)
@@ -50,15 +50,22 @@ function remote(rel) {
   return `${PREFIX}/${r}`;
 }
 
+/** Worker + CI always read `${prefix}/snapshots/calendar_2d.json`. Unprefixed keys break validation and prod API. */
+function assertPrefixedR2Key(remoteKey, context) {
+  const key = String(remoteKey || '');
+  const expected = `${PREFIX}/`;
+  if (!key.startsWith(expected)) {
+    throw new Error(
+      `[FAIL-CLOSED] R2 object key must start with ${JSON.stringify(expected)} (${context}, got ${JSON.stringify(key)}).`
+    );
+  }
+}
+
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
-const RADAR_DAY_PATH = path.join(ROOT, 'data', 'v1', 'radar_day.json');
 const COVERAGE_ALLOWLIST_PATH = path.join(ROOT, 'data', 'coverage_allowlist.json');
 const LEAGUES_DIR = path.join(ROOT, 'data', 'v1', 'leagues');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
 const SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'calendar_2d.json');
-const SNAPSHOT_LATEST_PATH = path.join(SNAPSHOTS_DIR, 'latest_calendar_2d.json');
-const RADAR_DAY_SNAPSHOT_PATH = path.join(SNAPSHOTS_DIR, 'radar_day.json');
-const RADAR_DAY_SNAPSHOT_LATEST_PATH = path.join(SNAPSHOTS_DIR, 'latest_radar_day.json');
 const BLOCKED_7D_PATTERN = /calendar_7d/i;
 const LEAGUE_SNAPSHOT_TARGETS = LEAGUE_PAGE_V1_DEFINITIONS.map((entry) => ({
   slug: entry.slug,
@@ -154,7 +161,6 @@ if (!fs.existsSync(SNAPSHOTS_DIR)) {
 }
 
 let calendar = null;
-let radarDay = null;
 let allowlistIds = null;
 let generatedAtUtc = new Date().toISOString();
 let baseDate = '';
@@ -163,15 +169,17 @@ let versionedPath = null;
 
 if (uploadCalendarArtifacts) {
   calendar = JSON.parse(fs.readFileSync(CALENDAR_2D_PATH, 'utf8'));
-  radarDay = JSON.parse(fs.readFileSync(RADAR_DAY_PATH, 'utf8'));
   allowlistIds = readAllowlistLeagueIds();
 
   if (!Array.isArray(calendar?.today) || !Array.isArray(calendar?.tomorrow)) {
     throw new Error('[FAIL-CLOSED] Invalid calendar_2d shape: expected today/tomorrow arrays');
   }
 
-  if (!Array.isArray(radarDay?.highlights)) {
-    throw new Error('[FAIL-CLOSED] Invalid radar_day shape: expected highlights array');
+  if (!calendar?.radar_day || typeof calendar.radar_day !== 'object') {
+    throw new Error('[FAIL-CLOSED] calendar_2d must embed radar_day (single source of truth)');
+  }
+  if (!Array.isArray(calendar.radar_day.highlights)) {
+    throw new Error('[FAIL-CLOSED] calendar_2d.radar_day.highlights must be an array');
   }
 
   assertAllowed(calendar, allowlistIds);
@@ -185,18 +193,13 @@ if (uploadCalendarArtifacts) {
   versionedPath = path.join(SNAPSHOTS_DIR, `calendar_2d_${versionSuffix}.json`);
 
   fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(calendar, null, 2), 'utf8');
-  fs.writeFileSync(SNAPSHOT_LATEST_PATH, JSON.stringify(calendar, null, 2), 'utf8');
   fs.writeFileSync(versionedPath, JSON.stringify(calendar, null, 2), 'utf8');
-  fs.writeFileSync(RADAR_DAY_SNAPSHOT_PATH, JSON.stringify(radarDay, null, 2), 'utf8');
-  fs.writeFileSync(RADAR_DAY_SNAPSHOT_LATEST_PATH, JSON.stringify(radarDay, null, 2), 'utf8');
   console.log(`✓ Wrote snapshot to: ${SNAPSHOT_PATH}`);
-  console.log(`✓ Wrote latest pointer to: ${SNAPSHOT_LATEST_PATH}`);
   console.log(`✓ Wrote versioned snapshot to: ${versionedPath}`);
-  console.log(`✓ Wrote radar snapshot to: ${RADAR_DAY_SNAPSHOT_PATH}`);
-  console.log(`✓ Wrote radar latest pointer to: ${RADAR_DAY_SNAPSHOT_LATEST_PATH}`);
 
   const today = calendar.today || [];
-  console.log(`  Total matches today: ${today.length}`);
+  const hl = calendar.radar_day.highlights.length;
+  console.log(`  Total matches today: ${today.length}; radar_day highlights: ${hl}`);
   if (today.length > 0) {
     console.log(`  First match: ${today[0].home} vs ${today[0].away} (${today[0].kickoff_utc})`);
   } else {
@@ -274,20 +277,24 @@ if (uploadLeagueArtifacts) {
 // Now upload to R2 using wrangler
 console.log(`\n📤 Uploading to R2 using wrangler (${WRANGLER_PKG}, max ${UPLOAD_MAX_ATTEMPTS} attempts/object)...`);
 
+/** Canonical object path; must match workers reading `${prefix}/snapshots/calendar_2d.json` and CI `r2 object get`. */
+const CANONICAL_CALENDAR_REMOTE = remote('snapshots/calendar_2d.json');
+
 const uploadTargets = [];
 if (uploadCalendarArtifacts) {
   uploadTargets.push(
-    { local: SNAPSHOT_PATH, remote: remote('snapshots/calendar_2d.json') },
-    { local: SNAPSHOT_LATEST_PATH, remote: remote('snapshots/latest_calendar_2d.json') },
+    { local: SNAPSHOT_PATH, remote: CANONICAL_CALENDAR_REMOTE },
     { local: versionedPath, remote: versionedKey },
-    { local: RADAR_DAY_SNAPSHOT_PATH, remote: remote('snapshots/radar_day.json') },
-    { local: RADAR_DAY_SNAPSHOT_LATEST_PATH, remote: remote('snapshots/latest_radar_day.json') },
     { local: COVERAGE_ALLOWLIST_PATH, remote: remote('data/coverage_allowlist.json') }
   );
 }
 if (uploadLeagueArtifacts) {
   uploadTargets.push(...leagueSnapshots.map((entry) => ({ local: entry.local, remote: entry.remote, slug: entry.slug })));
   uploadTargets.push(...leagueAuxiliaryTargets);
+}
+
+for (const target of uploadTargets) {
+  assertPrefixedR2Key(target.remote, `upload target ${path.basename(target.local) || target.local}`);
 }
 
 function spawnWrangler(args) {
@@ -315,16 +322,17 @@ function spawnWrangler(args) {
 
 async function uploadTargetOnce(target) {
   const fullKey = `${R2_BUCKET}/${target.remote}`;
+  /** Wrangler 4.x: objectPath is positional `{bucket}/{key}`; `--remote` is a boolean flag (not a prefix to the path). */
   const wranglerArgs = [
     'r2',
     'object',
     'put',
-    '--remote',
     fullKey,
     '--file',
     target.local,
     '--content-type',
     'application/json',
+    '--remote',
   ];
 
   assertNotBlocked7D(target.local, 'snapshot_file');
@@ -362,15 +370,15 @@ async function uploadTarget(target) {
 }
 
 async function verifyMainSnapshot() {
-  const fullKey = `${R2_BUCKET}/${remote('snapshots/calendar_2d.json')}`;
+  const fullKey = `${R2_BUCKET}/${CANONICAL_CALENDAR_REMOTE}`;
   const verifyArgs = [
     'r2',
     'object',
     'get',
-    '--remote',
     fullKey,
     '--file',
     'tmp_r2_calendar_2d_verify.json',
+    '--remote',
   ];
 
   for (const arg of verifyArgs) {
@@ -385,7 +393,7 @@ async function verifyMainSnapshot() {
 async function verifyUploadedLeagueSnapshot(target) {
   const localTmp = `tmp_verify_${target.slug}.json`;
   const fullKey = `${R2_BUCKET}/${target.remote}`;
-  const verifyArgs = ['r2', 'object', 'get', '--remote', fullKey, '--file', localTmp];
+  const verifyArgs = ['r2', 'object', 'get', fullKey, '--file', localTmp, '--remote'];
 
   for (const arg of verifyArgs) {
     assertNotBlocked7D(arg, 'verify_arg');
@@ -403,7 +411,7 @@ async function verifyUploadedLeagueSnapshot(target) {
 async function verifyUploadedJsonArtifact(target) {
   const localTmp = `tmp_verify_${target.slug}_${path.basename(target.remote).replace(/[^a-z0-9.-]/gi, '_')}`;
   const fullKey = `${R2_BUCKET}/${target.remote}`;
-  const verifyArgs = ['r2', 'object', 'get', '--remote', fullKey, '--file', localTmp];
+  const verifyArgs = ['r2', 'object', 'get', fullKey, '--file', localTmp, '--remote'];
 
   for (const arg of verifyArgs) {
     assertNotBlocked7D(arg, 'verify_arg');
@@ -431,15 +439,13 @@ async function verifyUploadedJsonArtifact(target) {
       console.log(`   Bucket: ${R2_BUCKET}`);
       console.log(`   Prefix: ${PREFIX}`);
       console.log(`   Keys:`);
-      console.log(`   - ${remote('snapshots/calendar_2d.json')}`);
-      console.log(`   - ${remote('snapshots/latest_calendar_2d.json')}`);
+      console.log(`   - ${CANONICAL_CALENDAR_REMOTE} (canonical)`);
       console.log(`   - ${versionedKey}`);
-      console.log(`   - ${remote('snapshots/radar_day.json')}`);
-      console.log(`   - ${remote('snapshots/latest_radar_day.json')}`);
       console.log(`   - ${remote('data/coverage_allowlist.json')}`);
       console.log(`   Size(main): ${size} bytes`);
       console.log(`   meta.generated_at_utc: ${downloaded?.meta?.generated_at_utc || 'n/a'}`);
-      console.log(`   radar_day.generated_at_utc: ${radarDay?.generated_at_utc || 'n/a'}`);
+      const dh = downloaded?.radar_day?.highlights;
+      console.log(`   radar_day.highlights: ${Array.isArray(dh) ? dh.length : 'missing'}`);
     }
 
     if (uploadLeagueArtifacts) {
