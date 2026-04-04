@@ -62,6 +62,8 @@ function assertPrefixedR2Key(remoteKey, context) {
 }
 
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
+/** Legacy: older generators wrote radar only here; Worker + R2 expect it inside calendar_2d. */
+const RADAR_DAY_LEGACY_PATH = path.join(ROOT, 'data', 'v1', 'radar_day.json');
 const COVERAGE_ALLOWLIST_PATH = path.join(ROOT, 'data', 'coverage_allowlist.json');
 const LEAGUES_DIR = path.join(ROOT, 'data', 'v1', 'leagues');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
@@ -173,6 +175,19 @@ if (uploadCalendarArtifacts) {
 
   if (!Array.isArray(calendar?.today) || !Array.isArray(calendar?.tomorrow)) {
     throw new Error('[FAIL-CLOSED] Invalid calendar_2d shape: expected today/tomorrow arrays');
+  }
+
+  if (!calendar?.radar_day || typeof calendar.radar_day !== 'object') {
+    if (fs.existsSync(RADAR_DAY_LEGACY_PATH)) {
+      const legacy = JSON.parse(fs.readFileSync(RADAR_DAY_LEGACY_PATH, 'utf8'));
+      if (Array.isArray(legacy?.highlights)) {
+        calendar.radar_day = {
+          highlights: legacy.highlights,
+          generated_at_utc: String(legacy.generated_at_utc || calendar?.meta?.generated_at_utc || '')
+        };
+        console.log('✓ Embedded radar_day from data/v1/radar_day.json (legacy split artifact → single R2 payload)');
+      }
+    }
   }
 
   if (!calendar?.radar_day || typeof calendar.radar_day !== 'object') {
