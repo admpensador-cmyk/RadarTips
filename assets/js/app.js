@@ -212,10 +212,43 @@ function _initials(name){
   return out.slice(0, 3);
 }
 
-function crestHTML(teamName){
+function crestHTML(teamName, teamId){
   const hue = _hashHue(teamName);
   const ini = _initials(teamName);
-  return `<span class="crest" style="--h:${hue}" aria-hidden="true">${escAttr(ini)}</span>`;
+  const id = Number(teamId);
+  if(Number.isFinite(id) && id > 0){
+    const src = `https://media.api-sports.io/football/teams/${id}.png`;
+    return `<span class="crest-wrap" aria-hidden="true"><img class="crest crest-img" src="${escAttr(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="if(!this.naturalWidth||this.naturalWidth<8){this.style.display='none';}else{this.nextElementSibling.style.display='none';}" onerror="this.style.display='none';"><span class="crest crest-fallback" style="--h:${hue};display:inline-flex;">${escAttr(ini)}</span></span>`;
+  }
+  return `<span class="crest-wrap" aria-hidden="true"><span class="crest crest-fallback" style="--h:${hue};display:inline-flex;">${escAttr(ini)}</span></span>`;
+}
+
+/** Radar Day poster: crest image or lettermark only — no boxed tile (no .crest / .crest-wrap). */
+function rdPosterCrestHTML(teamName, teamId){
+  const ini = _initials(teamName);
+  const id = Number(teamId);
+  if(Number.isFinite(id) && id > 0){
+    const src = `https://media.api-sports.io/football/teams/${id}.png`;
+    return `<span class="rd-poster-crest-slot" aria-hidden="true">` +
+      `<img class="rd-poster-crest-img" src="${escAttr(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" ` +
+      `onload="this.nextElementSibling&&(this.nextElementSibling.style.display='none');" ` +
+      `onerror="this.style.display='none';var n=this.nextElementSibling;if(n)n.style.display='block';" />` +
+      `<span class="rd-poster-crest-fallback" style="display:none" aria-hidden="true">${escAttr(ini)}</span>` +
+      `</span>`;
+  }
+  return `<span class="rd-poster-crest-slot" aria-hidden="true"><span class="rd-poster-crest-fallback rd-poster-crest-fallback--solo">${escAttr(ini)}</span></span>`;
+}
+
+/** Competition logo for radar/day (API-Sports media); initials fallback, never empty. */
+function navLeagueLogoHTML(leagueId, displayName){
+  const hue = _hashHue(displayName);
+  const ini = _initials(displayName);
+  const id = Number(leagueId);
+  if(Number.isFinite(id) && id > 0){
+    const src = `https://media.api-sports.io/football/leagues/${id}.png`;
+    return `<span class="rt-nav-league-logo-wrap" aria-hidden="true"><img class="rt-nav-league-logo-img" src="${escAttr(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="if(!this.naturalWidth||this.naturalWidth<8){this.style.display='none';}else{this.nextElementSibling.style.display='none';}" onerror="this.style.display='none';"><span class="rt-nav-league-logo-fallback" style="--h:${hue};">${escAttr(ini)}</span></span>`;
+  }
+  return `<span class="rt-nav-league-logo-wrap" aria-hidden="true"><span class="rt-nav-league-logo-fallback" style="--h:${hue};">${escAttr(ini)}</span></span>`;
 }
 
 function ico(name){
@@ -301,6 +334,118 @@ function initTooltips(){
   });
 }
 
+function syncLangPillsActive(lang){
+  qsa("[data-lang]").forEach(b=>{
+    const L = b.getAttribute("data-lang");
+    b.classList.toggle("active", L === lang);
+  });
+}
+
+async function loadCoverageLeagueCount(){
+  const j = await loadJSON("/data/coverage_allowlist.json", null);
+  const n = j && Array.isArray(j.leagues) ? j.leagues.length : 0;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function headerLogoSrcForTheme(){
+  const light = document.body && document.body.dataset.theme === "light";
+  return light ? "/assets/logo-radartips.svg" : "/assets/logo-radartips-dark.svg";
+}
+
+function refreshHeaderLogo(){
+  const img = qs("#header_logo");
+  if(!img) return;
+  img.src = headerLogoSrcForTheme();
+}
+
+function formatHeaderValueLine(t, leagueCount){
+  const raw = (t && t.header_value_template) || "Football insights • {{count}} leagues • 5 continents";
+  const c = leagueCount > 0 ? String(leagueCount) : "—";
+  const parts = raw.split("{{count}}");
+  const span = `<span class="rt-header-value-num">${escAttr(c)}</span>`;
+  const html = parts.map((p)=> escAttr(p)).join(span);
+  const plain = parts.join(c);
+  return { html, plain };
+}
+
+function countryFlagFromValue(v){
+  const s = String(v || "").trim().replace(/-/g, " ");
+  if(!s) return "🏳️";
+  const up = s.toUpperCase();
+  if(/^[A-Z]{2}$/.test(up)){
+    const A = 0x1F1E6;
+    const c1 = up.charCodeAt(0) - 65;
+    const c2 = up.charCodeAt(1) - 65;
+    if(c1 >= 0 && c1 < 26 && c2 >= 0 && c2 < 26){
+      return String.fromCodePoint(A + c1, A + c2);
+    }
+  }
+  const map = {
+    australia:"AU", austria:"AT", belgium:"BE", brazil:"BR", canada:"CA", chile:"CL",
+    colombia:"CO", croatia:"HR", czechia:"CZ", denmark:"DK", ecuador:"EC", england:"GB",
+    europe:"EU", finland:"FI", france:"FR", germany:"DE", greece:"GR", ireland:"IE",
+    italy:"IT", japan:"JP", mexico:"MX", netherlands:"NL", norway:"NO", paraguay:"PY",
+    peru:"PE", poland:"PL", portugal:"PT", romania:"RO", scotland:"GB", serbia:"RS",
+    slovakia:"SK", slovenia:"SI", "south africa":"ZA", spain:"ES", sweden:"SE",
+    switzerland:"CH", turkey:"TR", ukraine:"UA", uruguay:"UY", usa:"US", "united states":"US"
+  };
+  const cc = map[s.toLowerCase()];
+  return cc ? countryFlagFromValue(cc) : "🏳️";
+}
+
+function competitionMetaIndicator(item){
+  const raw = String(item && item.country || "").trim();
+  const comp = String(item && item.competition || "").trim();
+  const compU = comp.toUpperCase();
+  const worldish = !raw || /^world$/i.test(raw) || /^international$/i.test(raw);
+  if(worldish){
+    if(/UEFA|CHAMPIONS LEAGUE|EUROPA LEAGUE|CONFERENCE LEAGUE|EUROPA CONFERENCE|SUPER CUP|EUROPEAN/.test(compU)) return countryFlagFromValue("EU");
+    if(/CONMEBOL|LIBERTADORES|SUDAMERICANA|RECOPA/.test(compU)) return "🌎";
+    if(/CONCACAF|LEAGUES CUP|GOLD CUP/.test(compU)) return "🌎";
+    if(/AFC|ASIAN CHAMPIONS|ACL\b/.test(compU)) return "🌏";
+    if(/CAF|AFCON|AFRICAN/.test(compU)) return "🌍";
+    return "🌍";
+  }
+  let f = countryFlagFromValue(raw);
+  if(f === "🏳️") f = countryFlagFromValue(raw.replace(/-/g, " "));
+  if(f === "🏳️") return "🌍";
+  return f;
+}
+
+function slotLeagueLineHTML(item){
+  const ind = competitionMetaIndicator(item);
+  const comp = escAttr(item.competition || "—");
+  const time = escAttr(fmtTime(item.kickoff_utc));
+  return `<div class="slot-league-line"><span class="slot-league-flag" aria-hidden="true">${escAttr(ind)}</span> <span class="slot-league-comp">${comp}</span> <span class="slot-league-sep">—</span> <span class="slot-league-time">${time}</span></div>`;
+}
+
+/** Radar Day poster card: contexto competição (país · liga — hora), centrado. */
+function slotRadarDayPosterContextHTML(item){
+  const country = String(item && item.country || "").trim() || "—";
+  const league = String(item && item.competition || "").trim() || "—";
+  const time = escAttr(fmtTime(item.kickoff_utc));
+  return `<div class="rd-poster-ctx">
+    <span class="rd-poster-ctx-country">${escAttr(country)}</span>
+    <span class="rd-poster-ctx-league">${escAttr(league)}</span>
+    <span class="rd-poster-ctx-sep" aria-hidden="true">—</span>
+    <span class="rd-poster-ctx-time">${time}</span>
+  </div>`;
+}
+
+async function applyShellHeader(lang, t){
+  if(!qs(".rt-header")) return;
+  const home = qs("#header_home_link");
+  if(home) home.href = `/${lang}/radar/day/`;
+  refreshHeaderLogo();
+  const leagueCount = await loadCoverageLeagueCount();
+  const valEl = qs("#header_value_line");
+  if(valEl){
+    const { html, plain } = formatHeaderValueLine(t, leagueCount);
+    valEl.innerHTML = html;
+    valEl.setAttribute("title", plain);
+  }
+}
+
 function setNav(lang, t){
   const map = {
     day: `/${lang}/radar/day/`,
@@ -338,11 +483,622 @@ function fmtDateShortFromDate(date){
   }catch{ return ""; }
 }
 
-function filterMatches(matches, activeDateKey, query, countryFilter){
+const COVERAGE_ALLOWLIST_URL = "/data/coverage_allowlist.json";
+const NAV_TOP_LEAGUE_IDS = [39, 140, 78, 135, 71, 61];
+const NAV_CONTINENT_ORDER = ["America", "Europe", "Asia", "Africa", "Oceania"];
+const NAV_SECTION_EXPANDED = new Map();
+const SIDEBAR_LEAGUE_MODE_KEY = "rt_sidebar_league_mode";
+
+function loadSidebarLeagueMode(){
+  try{
+    const v = String(sessionStorage.getItem(SIDEBAR_LEAGUE_MODE_KEY) || "").trim();
+    if(v === "with_matches" || v === "all") return v;
+  }catch(e){}
+  return "with_matches";
+}
+
+function saveSidebarLeagueMode(mode){
+  try{
+    sessionStorage.setItem(SIDEBAR_LEAGUE_MODE_KEY, mode);
+  }catch(e){}
+}
+
+function navShowLeagueInSidebar(matchCount, leagueListMode){
+  if(leagueListMode === "with_matches") return matchCount > 0;
+  return true;
+}
+
+function renderNavLeagueModeToggle(t, leagueListMode){
+  const allOn = leagueListMode === "all";
+  const group = t.nav_leagues_mode_group || "League list";
+  const a = t.nav_leagues_list_all || "All leagues";
+  const b = t.nav_leagues_with_matches || "Leagues with matches";
+  return `<div class="rt-nav-league-mode" role="group" aria-label="${escAttr(group)}">
+  <button type="button" class="rt-nav-mode-btn${!allOn ? " active" : ""}" data-rt-league-mode="with_matches" aria-pressed="${!allOn ? "true" : "false"}">${escAttr(b)}</button>
+  <button type="button" class="rt-nav-mode-btn${allOn ? " active" : ""}" data-rt-league-mode="all" aria-pressed="${allOn ? "true" : "false"}">${escAttr(a)}</button>
+</div>`;
+}
+
+function navSectionExpandedState(key){
+  if(!NAV_SECTION_EXPANDED.has(key)) NAV_SECTION_EXPANDED.set(key, true);
+  return NAV_SECTION_EXPANDED.get(key);
+}
+
+function navCollapsibleSection(sectionKey, expanded, title, count, mainSpec, bodyHtml, selKey, headIconSlotHtml){
+  const collapsed = !expanded;
+  const mainActive = mainSpec && navMatches(mainSpec, selKey) ? " active" : "";
+  const mainMiddle = mainSpec
+    ? `<button type="button" class="rt-nav-section-main${mainActive}" ${navDataAttrs(mainSpec)}><span class="rt-nav-section-main-text">${escAttr(title)}</span></button>`
+    : `<span class="rt-nav-section-label">${escAttr(title)}</span>`;
+  const icon = headIconSlotHtml || "";
+  const headMod = icon ? "" : " rt-nav-category-head--abstract";
+  return `<div class="rt-nav-section rt-nav-section--collapsible${collapsed ? " rt-nav-section--collapsed" : ""}" data-section-key="${escAttr(sectionKey)}">
+  <div class="rt-nav-section-head rt-nav-category-head${headMod}">
+    <button type="button" class="rt-nav-section-toggle rt-nav-section-toggle--contract" data-rt-nav-toggle="1" aria-expanded="${expanded ? "true" : "false"}" aria-label="Expand or collapse section"></button>
+    ${icon}
+    ${mainMiddle}
+    <span class="rt-country-count">(${count})</span>
+  </div>
+  <div class="rt-nav-section-body">${bodyHtml}</div>
+</div>`;
+}
+
+function continentCategoryEmoji(cont){
+  const map = { America:"🌎", Europe:"🇪🇺", Asia:"🌏", Africa:"🌍", Oceania:"🏝️" };
+  return map[cont] || "🌍";
+}
+
+function countryFlagForCategory(countryLabel){
+  const raw = String(countryLabel || "").trim();
+  let f = countryFlagFromValue(raw);
+  if(f === "🏳️") f = countryFlagFromValue(raw.replace(/-/g, " "));
+  if(f === "🏳️") return "🌍";
+  return f;
+}
+
+let COVERAGE_NAV_MODEL = null;
+
+function matchCompetitionId(m){
+  const raw = m && (m.competition_id != null ? m.competition_id : m.league_id);
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+const NAV_NT_CONFEDERATION_LEAGUE_IDS = new Set([4, 5, 9, 19, 22, 536, 806]);
+
+function nationalTeamInternationalRow(row){
+  const id = Number(row.league_id);
+  if(!Number.isFinite(id)) return false;
+  const nm = String(row.display_name || "").toLowerCase();
+  if(NAV_NT_CONFEDERATION_LEAGUE_IDS.has(id)) return true;
+  if(/\bnations league\b/i.test(nm) && !/champions|club/i.test(nm)) return true;
+  if(/\bliga das na[cç][oõ]es\b/i.test(nm)) return true;
+  if(/\beuro(pean)? championship\b/i.test(nm)) return true;
+  if(/\bcopa america\b/i.test(nm)) return true;
+  if(/\bafrica cup of nations\b|\bafcon\b/i.test(nm)) return true;
+  if(/\bgold cup\b/i.test(nm)) return true;
+  if(/\bofc nations cup\b/i.test(nm)) return true;
+  if(/\bfifa world cup\b/i.test(nm) && !/club/i.test(nm)) return true;
+  return false;
+}
+
+function coverageBucket(row){
+  const country = String(row.country || "").trim();
+  const id = Number(row.league_id);
+  if(country.startsWith("World / FIFA")){
+    if(id === 1) return "world";
+    return "international";
+  }
+  if(country === "World") return "international";
+  if(
+    country === "Europe / UEFA" ||
+    country.includes("CONMEBOL") ||
+    country.includes("CONCACAF") ||
+    country.includes("Africa / CAF") ||
+    country.includes("Oceania / OFC")
+  ){
+    if(nationalTeamInternationalRow(row)) return "world";
+    return "international";
+  }
+  return "domestic";
+}
+
+function sidebarLeagueDisplayName(leagueId, displayName){
+  const id = Number(leagueId);
+  if(id === 71) return "Brasileirão";
+  const s = String(displayName || "").trim();
+  return s || `League ${id}`;
+}
+
+function normalizeDomesticCountryKey(country){
+  const c = String(country || "").trim();
+  if(!c) return "";
+  const low = c.toLowerCase();
+  if(low === "usa" || low === "u.s.a." || low === "u.s." || /^united states(\s+of\s+america)?$/i.test(low)) return "USA";
+  return c;
+}
+
+/** Canonical continent for domestic allowlist rows when `region` is missing or ambiguous. Never default all unknowns to Europe. */
+function domesticContinentKey(row){
+  const region = String(row.region || "").trim();
+  if(region === "South America" || region === "North America" || region === "Central America" || region === "Caribbean") return "America";
+  if(region === "Europe" || region === "Asia" || region === "Africa" || region === "Oceania") return region;
+  if(region === "Middle East") return "Asia";
+
+  const rawCountry = String(row.country || "").trim();
+  const country = normalizeDomesticCountryKey(rawCountry) || rawCountry;
+
+  const COUNTRY_CONTINENT = {
+    /* Americas */
+    USA: "America",
+    Canada: "America",
+    Mexico: "America",
+    Brazil: "America",
+    Argentina: "America",
+    Chile: "America",
+    Colombia: "America",
+    Uruguay: "America",
+    Paraguay: "America",
+    Peru: "America",
+    Ecuador: "America",
+    "Costa Rica": "America",
+    /* Europe */
+    England: "Europe",
+    Scotland: "Europe",
+    Wales: "Europe",
+    "Northern Ireland": "Europe",
+    Ireland: "Europe",
+    France: "Europe",
+    Germany: "Europe",
+    Italy: "Europe",
+    Spain: "Europe",
+    Portugal: "Europe",
+    Netherlands: "Europe",
+    Belgium: "Europe",
+    Austria: "Europe",
+    Switzerland: "Europe",
+    Poland: "Europe",
+    Greece: "Europe",
+    Turkey: "Europe",
+    Ukraine: "Europe",
+    Croatia: "Europe",
+    Serbia: "Europe",
+    Romania: "Europe",
+    Czechia: "Europe",
+    "Czech Republic": "Europe",
+    Sweden: "Europe",
+    Norway: "Europe",
+    Denmark: "Europe",
+    Finland: "Europe",
+    Russia: "Europe",
+    /* Asia */
+    Japan: "Asia",
+    "South Korea": "Asia",
+    Korea: "Asia",
+    China: "Asia",
+    India: "Asia",
+    "Saudi Arabia": "Asia",
+    Qatar: "Asia",
+    "United Arab Emirates": "Asia",
+    UAE: "Asia",
+    Iran: "Asia",
+    Iraq: "Asia",
+    Thailand: "Asia",
+    Vietnam: "Asia",
+    Indonesia: "Asia",
+    /* Oceania */
+    Australia: "Oceania",
+    "New Zealand": "Oceania",
+    /* Africa */
+    Egypt: "Africa",
+    Morocco: "Africa",
+    Nigeria: "Africa",
+    Ghana: "Africa",
+    Senegal: "Africa",
+    Cameroon: "Africa",
+    "South Africa": "Africa",
+    Angola: "Africa",
+    Algeria: "Africa",
+    Tunisia: "Africa",
+    Kenya: "Africa",
+    "Ivory Coast": "Africa",
+  };
+
+  if(COUNTRY_CONTINENT[country]) return COUNTRY_CONTINENT[country];
+  if(COUNTRY_CONTINENT[rawCountry]) return COUNTRY_CONTINENT[rawCountry];
+
+  if(typeof console !== "undefined" && console.warn){
+    console.warn("[RadarTips] domesticContinentKey: unmapped country — add to COUNTRY_CONTINENT; using Europe fallback", rawCountry, row && row.league_id);
+  }
+  return "Europe";
+}
+
+function domesticCountryLabel(row){
+  return String(row.country || "").trim() || "—";
+}
+
+function buildCoverageNavModel(allowlist){
+  const rows = Array.isArray(allowlist && allowlist.leagues) ? allowlist.leagues : [];
+  if(!rows.length) return null;
+
+  const topSet = new Set(NAV_TOP_LEAGUE_IDS);
+  const leagueById = new Map();
+  const worldRows = [];
+  const intlRows = [];
+  const othersByContinent = new Map();
+  const worldIds = new Set();
+  const intlIds = new Set();
+  const continentAllIds = new Map();
+  const countryAllIds = new Map();
+
+  function ensureCont(cont){
+    if(!othersByContinent.has(cont)) othersByContinent.set(cont, new Map());
+    return othersByContinent.get(cont);
+  }
+  function addCountryRow(cont, country, row){
+    const m = ensureCont(cont);
+    if(!m.has(country)) m.set(country, []);
+    m.get(country).push(row);
+  }
+  function trackId(map, key, id){
+    if(!map.has(key)) map.set(key, new Set());
+    map.get(key).add(id);
+  }
+
+  for(const row of rows){
+    const id = Number(row.league_id);
+    if(!Number.isFinite(id)) continue;
+    leagueById.set(id, row);
+    const bucket = coverageBucket(row);
+    if(bucket === "world"){
+      worldIds.add(id);
+      worldRows.push(row);
+      continue;
+    }
+    if(bucket === "international"){
+      intlIds.add(id);
+      intlRows.push(row);
+      continue;
+    }
+    const cont = domesticContinentKey(row);
+    const country = domesticCountryLabel(row);
+    addCountryRow(cont, country, row);
+    trackId(continentAllIds, cont, id);
+    trackId(countryAllIds, `${cont}\0${country}`, id);
+  }
+
+  const cmpName = (a, b)=> String(a.display_name || "").localeCompare(String(b.display_name || ""), undefined, { sensitivity: "base" });
+  worldRows.sort(cmpName);
+  intlRows.sort(cmpName);
+  for(const [, countryMap] of othersByContinent){
+    for(const [, list] of countryMap){
+      list.sort((a, b)=>{
+        const ida = Number(a.league_id), idb = Number(b.league_id);
+        const ta = topSet.has(ida) ? 0 : 1, tb = topSet.has(idb) ? 0 : 1;
+        if(ta !== tb) return ta - tb;
+        return cmpName(a, b);
+      });
+    }
+  }
+
+  return {
+    worldIds, intlIds, worldRows, intlRows, othersByContinent, continentAllIds, countryAllIds, leagueById,
+  };
+}
+
+function navKey(nav){
+  if(!nav || nav.type === "all") return "all";
+  if(nav.type === "bucket") return `bucket:${nav.bucket}`;
+  if(nav.type === "league") return `league:${nav.id}`;
+  if(nav.type === "continent") return `continent:${nav.continent}`;
+  if(nav.type === "country") return `country:${nav.continent}|${nav.country}`;
+  return "all";
+}
+
+function navMatches(spec, selKey){
+  return navKey(spec) === selKey;
+}
+
+function resolveNavLeagueIds(navFilter){
+  if(navFilter == null || navFilter.type === "all") return null;
+  const M = COVERAGE_NAV_MODEL;
+  if(!M) return null;
+  if(navFilter.type === "league") return new Set([navFilter.id]);
+  if(navFilter.type === "bucket"){
+    if(navFilter.bucket === "world") return new Set(M.worldIds);
+    if(navFilter.bucket === "international") return new Set(M.intlIds);
+    return new Set();
+  }
+  if(navFilter.type === "continent"){
+    const s = M.continentAllIds.get(navFilter.continent);
+    return s ? new Set(s) : new Set();
+  }
+  if(navFilter.type === "country"){
+    const s = M.countryAllIds.get(`${navFilter.continent}\0${navFilter.country}`);
+    return s ? new Set(s) : new Set();
+  }
+  return null;
+}
+
+function matchIdsForNavCounting(x){
+  const ids = new Set();
+  const c = Number(x && x.competition_id);
+  const lid = Number(x && x.league_id);
+  if(Number.isFinite(c) && c > 0) ids.add(c);
+  if(Number.isFinite(lid) && lid > 0) ids.add(lid);
+  if(ids.size === 0){
+    const fb = matchCompetitionId(x);
+    if(Number.isFinite(fb) && fb > 0) ids.add(fb);
+  }
+  return ids;
+}
+
+function buildLeagueMatchCounts(matches, activeDateKey, query){
+  const m = new Map();
+  const base = filterMatches(matches, activeDateKey, query, undefined);
+  for(const x of base){
+    for(const id of matchIdsForNavCounting(x)){
+      m.set(id, (m.get(id) || 0) + 1);
+    }
+  }
+  return m;
+}
+
+function sumCountsForIds(idSet, counts){
+  let s = 0;
+  for(const id of idSet) s += (counts.get(id) || 0);
+  return s;
+}
+
+function continentNavLabel(t, continentKey){
+  if(continentKey === "America") return t.nav_america || "America";
+  if(continentKey === "Europe") return t.nav_europe || "Europe";
+  if(continentKey === "Asia") return t.nav_asia || "Asia";
+  if(continentKey === "Africa") return t.nav_africa || "Africa";
+  if(continentKey === "Oceania") return t.nav_oceania || "Oceania";
+  return continentKey;
+}
+
+function navDataAttrs(spec){
+  if(spec.type === "all") return `data-nav-type="all"`;
+  if(spec.type === "bucket") return `data-nav-type="bucket" data-bucket="${escAttr(spec.bucket)}"`;
+  if(spec.type === "league") return `data-nav-type="league" data-league-id="${spec.id}"`;
+  if(spec.type === "continent") return `data-nav-type="continent" data-continent="${escAttr(spec.continent)}"`;
+  if(spec.type === "country") return `data-nav-type="country" data-continent="${escAttr(spec.continent)}" data-country="${escAttr(spec.country)}"`;
+  return `data-nav-type="all"`;
+}
+
+function cmpLeagueRowsByDisplayName(a, b){
+  return String(a.display_name || "").localeCompare(String(b.display_name || ""), undefined, { sensitivity: "base" });
+}
+
+function cmpLeagueRowsForOthersNav(a, b){
+  const topSet = new Set(NAV_TOP_LEAGUE_IDS);
+  const ida = Number(a.league_id), idb = Number(b.league_id);
+  const ta = topSet.has(ida) ? 0 : 1, tb = topSet.has(idb) ? 0 : 1;
+  if(ta !== tb) return ta - tb;
+  return cmpLeagueRowsByDisplayName(a, b);
+}
+
+function cmpTopLeagueNavOrder(a, b){
+  const ia = NAV_TOP_LEAGUE_IDS.indexOf(Number(a.league_id));
+  const ib = NAV_TOP_LEAGUE_IDS.indexOf(Number(b.league_id));
+  return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+}
+
+/** In "all" mode: leagues with matches first; preserve secondary order. No-op order in "with_matches" mode. */
+function orderSidebarLeagueRows(rows, counts, listMode, secondaryCmp){
+  const arr = [...rows];
+  if(listMode !== "all") return arr;
+  arr.sort((a, b)=>{
+    const ida = Number(a.league_id), idb = Number(b.league_id);
+    const ca = counts.get(ida) || 0, cb = counts.get(idb) || 0;
+    const pa = ca > 0 ? 0 : 1, pb = cb > 0 ? 0 : 1;
+    if(pa !== pb) return pa - pb;
+    return secondaryCmp(a, b);
+  });
+  return arr;
+}
+
+function navRowButton(spec, selKey, label, count, classNames, opts){
+  const active = navMatches(spec, selKey) ? " active" : "";
+  const cls = classNames.join(" ");
+  const o = opts || {};
+  const cntAccent = !!o.leagueRowCountAccent && Number(count) > 0;
+  const cntClass = cntAccent ? "rt-country-count rt-country-count--has-matches" : "rt-country-count";
+  const cnt = ` <span class="${cntClass}">(${count})</span>`;
+  const hideChev = !!o.hideChevron;
+  const chev = hideChev ? "" : `<span class="rt-chevron" aria-hidden="true">›</span>`;
+  let lead = "";
+  if(o.leagueLogoHtml) lead = o.leagueLogoHtml;
+  else if(o.categoryFlagEmoji) lead = `<span class="rt-nav-flag" aria-hidden="true">${escAttr(o.categoryFlagEmoji)}</span>`;
+  return `<button type="button" class="${cls}${active}" ${navDataAttrs(spec)}>${lead}<span class="rt-nav-label">${escAttr(label)}</span>${cnt}${chev}</button>`;
+}
+
+function sortedCountryNamesForNav(countryMap){
+  const TOP = new Set(NAV_TOP_LEAGUE_IDS);
+  const names = [...countryMap.keys()];
+  names.sort((a, b)=>{
+    const leaguesA = countryMap.get(a) || [];
+    const leaguesB = countryMap.get(b) || [];
+    const aHas = leaguesA.some((row)=> TOP.has(Number(row.league_id)));
+    const bHas = leaguesB.some((row)=> TOP.has(Number(row.league_id)));
+    if(aHas !== bHas) return aHas ? -1 : 1;
+    return a.localeCompare(b, undefined, { sensitivity: "base" });
+  });
+  return names;
+}
+
+/** True if any league that would appear under this country in the sidebar has match count > 0. */
+function countryNavHasAnyMatch(leagues, counts, listMode, topLeagueIdSet){
+  for(const row of leagues || []){
+    const id = Number(row.league_id);
+    if(topLeagueIdSet.has(id) && coverageBucket(row) === "domestic") continue;
+    if(!navShowLeagueInSidebar(counts.get(id) || 0, listMode)) continue;
+    if((counts.get(id) || 0) > 0) return true;
+  }
+  return false;
+}
+
+/**
+ * Country order under a continent: in "all" mode, countries with any visible league with matches first;
+ * then existing secondary (top-tier country hint, then name). "with_matches" mode unchanged.
+ */
+function sortedCountryNamesForOthersNav(countryMap, listMode, counts, topLeagueIdSet){
+  const TOP = new Set(NAV_TOP_LEAGUE_IDS);
+  const names = [...countryMap.keys()];
+  names.sort((a, b)=>{
+    if(listMode === "all"){
+      const leaguesA = countryMap.get(a) || [];
+      const leaguesB = countryMap.get(b) || [];
+      const ma = countryNavHasAnyMatch(leaguesA, counts, listMode, topLeagueIdSet);
+      const mb = countryNavHasAnyMatch(leaguesB, counts, listMode, topLeagueIdSet);
+      if(ma !== mb) return ma ? -1 : 1;
+    }
+    const leaguesA = countryMap.get(a) || [];
+    const leaguesB = countryMap.get(b) || [];
+    const aHas = leaguesA.some((row)=> TOP.has(Number(row.league_id)));
+    const bHas = leaguesB.some((row)=> TOP.has(Number(row.league_id)));
+    if(aHas !== bHas) return aHas ? -1 : 1;
+    return a.localeCompare(b, undefined, { sensitivity: "base" });
+  });
+  return names;
+}
+
+function renderCoverageNav(t, activeDateKey, query, selectedNav, leagueListMode){
+  const el = qs("#country_list");
+  if(!el) return;
+  const listMode = leagueListMode === "with_matches" ? "with_matches" : "all";
+  if(!COVERAGE_NAV_MODEL){
+    el.innerHTML = `<div class="rt-nav-fallback">${escAttr(t.nav_coverage_unavailable || "Coverage unavailable.")}</div>`;
+    return;
+  }
+  const M = COVERAGE_NAV_MODEL;
+  const counts = buildLeagueMatchCounts(CAL_MATCHES, activeDateKey, query);
+  const selK = navKey(selectedNav);
+  const baseTotal = filterMatches(CAL_MATCHES, activeDateKey, query, undefined).length;
+
+  let html = "";
+  html += navRowButton({ type: "all" }, selK, t.nav_all_matches || "All matches", baseTotal, ["rt-nav-row", "rt-nav-row--root"]);
+  html += renderNavLeagueModeToggle(t, listMode);
+  html += `<div class="rt-country-list-scroll">`;
+
+  const topLeagueIdSet = new Set(NAV_TOP_LEAGUE_IDS);
+  const topRows = [];
+  for(const id of NAV_TOP_LEAGUE_IDS){
+    const row = M.leagueById.get(id);
+    if(!row) continue;
+    if(coverageBucket(row) !== "domestic") continue;
+    const wc = counts.get(id) || 0;
+    if(!navShowLeagueInSidebar(wc, listMode)) continue;
+    topRows.push(row);
+  }
+  const topOrdered = orderSidebarLeagueRows(topRows, counts, listMode, cmpTopLeagueNavOrder);
+  let topBody = "";
+  let topCount = 0;
+  for(const row of topOrdered){
+    const id = Number(row.league_id);
+    const wc = counts.get(id) || 0;
+    topCount += wc;
+    const nm = sidebarLeagueDisplayName(id, row.display_name || `League ${id}`);
+    topBody += navRowButton({ type: "league", id }, selK, nm, wc, ["rt-nav-row", "rt-nav-row--league", "rt-nav-row--league-child"], { leagueLogoHtml: navLeagueLogoHTML(id, nm), hideChevron: true, leagueRowCountAccent: listMode === "all" });
+  }
+  if(listMode === "all" || topBody){
+    html += navCollapsibleSection(
+      "topLeagues",
+      navSectionExpandedState("topLeagues"),
+      t.nav_top_leagues || "Top leagues",
+      topCount,
+      null,
+      topBody,
+      selK,
+      `<span class="rt-nav-category-icon">${icoSpan("trophy")}</span>`,
+    );
+  }
+
+  const worldVisible = M.worldRows.filter((row)=>{
+    const id = Number(row.league_id);
+    return navShowLeagueInSidebar(counts.get(id) || 0, listMode);
+  });
+  const worldOrdered = orderSidebarLeagueRows(worldVisible, counts, listMode, cmpLeagueRowsByDisplayName);
+  let worldBody = "";
+  for(const row of worldOrdered){
+    const id = Number(row.league_id);
+    const wc = counts.get(id) || 0;
+    const nm = sidebarLeagueDisplayName(id, row.display_name || `League ${id}`);
+    worldBody += navRowButton({ type: "league", id }, selK, nm, wc, ["rt-nav-row", "rt-nav-row--league", "rt-nav-row--league-child"], { leagueLogoHtml: navLeagueLogoHTML(id, nm), hideChevron: true, leagueRowCountAccent: listMode === "all" });
+  }
+  const worldCount = sumCountsForIds(M.worldIds, counts);
+  if(listMode === "all" || worldCount > 0){
+    html += navCollapsibleSection("world", navSectionExpandedState("world"), t.nav_world || "World", worldCount, { type: "bucket", bucket: "world" }, worldBody, selK, `<span class="rt-nav-category-icon">${icoSpan("globe")}</span>`);
+  }
+
+  const intlVisible = M.intlRows.filter((row)=>{
+    const id = Number(row.league_id);
+    return navShowLeagueInSidebar(counts.get(id) || 0, listMode);
+  });
+  const intlOrdered = orderSidebarLeagueRows(intlVisible, counts, listMode, cmpLeagueRowsByDisplayName);
+  let intlBody = "";
+  for(const row of intlOrdered){
+    const id = Number(row.league_id);
+    const ic = counts.get(id) || 0;
+    const nm = sidebarLeagueDisplayName(id, row.display_name || `League ${id}`);
+    intlBody += navRowButton({ type: "league", id }, selK, nm, ic, ["rt-nav-row", "rt-nav-row--league", "rt-nav-row--league-child"], { leagueLogoHtml: navLeagueLogoHTML(id, nm), hideChevron: true, leagueRowCountAccent: listMode === "all" });
+  }
+  const intlCount = sumCountsForIds(M.intlIds, counts);
+  if(listMode === "all" || intlCount > 0){
+    html += navCollapsibleSection("intl", navSectionExpandedState("intl"), t.nav_internationals || "Internationals", intlCount, { type: "bucket", bucket: "international" }, intlBody, selK);
+  }
+
+  let othersInner = "";
+  for(const cont of NAV_CONTINENT_ORDER){
+    const countryMap = M.othersByContinent.get(cont) || new Map();
+    const contIds = M.continentAllIds.get(cont) || new Set();
+    const contLabel = continentNavLabel(t, cont);
+    const contCount = sumCountsForIds(contIds, counts);
+    if(listMode === "with_matches" && contCount === 0) continue;
+    let contBody = "";
+    const countries = sortedCountryNamesForOthersNav(countryMap, listMode, counts, topLeagueIdSet);
+    for(const country of countries){
+      const leagues = countryMap.get(country) || [];
+      const ckey = `${cont}\0${country}`;
+      const cids = M.countryAllIds.get(ckey) || new Set();
+      const visibleLeagues = leagues.filter((row)=>{
+        const id = Number(row.league_id);
+        if(topLeagueIdSet.has(id) && coverageBucket(row) === "domestic") return false;
+        return navShowLeagueInSidebar(counts.get(id) || 0, listMode);
+      });
+      if(!visibleLeagues.length) continue;
+      const leaguesOrdered = orderSidebarLeagueRows(visibleLeagues, counts, listMode, cmpLeagueRowsForOthersNav);
+      contBody += `<div class="rt-nav-country-block">`;
+      contBody += navRowButton({ type: "country", continent: cont, country }, selK, country, sumCountsForIds(cids, counts), ["rt-nav-row", "rt-nav-row--country", "rt-nav-row--subcategory"], { categoryFlagEmoji: countryFlagForCategory(country) });
+      for(const row of leaguesOrdered){
+        const id = Number(row.league_id);
+        const nm = sidebarLeagueDisplayName(id, row.display_name || `League ${id}`);
+        const lc = counts.get(id) || 0;
+        contBody += navRowButton({ type: "league", id }, selK, nm, lc, ["rt-nav-row", "rt-nav-row--league", "rt-nav-row--nested", "rt-nav-row--league-child"], { leagueLogoHtml: navLeagueLogoHTML(id, nm), hideChevron: true, leagueRowCountAccent: listMode === "all" });
+      }
+      contBody += `</div>`;
+    }
+    const sk = `cont:${cont}`;
+    const contIcon = `<span class="rt-nav-category-icon rt-nav-category-icon--emoji" aria-hidden="true">${escAttr(continentCategoryEmoji(cont))}</span>`;
+    othersInner += navCollapsibleSection(sk, navSectionExpandedState(sk), contLabel, contCount, { type: "continent", continent: cont }, contBody, selK, contIcon);
+  }
+  if(listMode === "all" || othersInner){
+    html += `<div class="rt-nav-section rt-nav-section--others">`;
+    html += `<div class="rt-nav-section-title rt-nav-others-heading">${escAttr(t.nav_others || "Others")}</div>`;
+    html += othersInner;
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function filterMatches(matches, activeDateKey, query, navFilter){
   const q = normalize(query);
   const bounds = getFilterDateBounds();
-  const useCountry = countryFilter !== undefined && countryFilter !== null && String(countryFilter).trim() !== "";
-  const cf = useCountry ? String(countryFilter).trim() : "";
+  const leagueIds = resolveNavLeagueIds(navFilter);
   return matches.filter(m=>{
     const k = localDateKey(m.kickoff_utc);
     if(activeDateKey === "both"){
@@ -350,7 +1106,10 @@ function filterMatches(matches, activeDateKey, query, countryFilter){
     } else if(activeDateKey){
       if(k !== activeDateKey) return false;
     }
-    if(useCountry && normalize(m.country || "") !== normalize(cf)) return false;
+    if(leagueIds){
+      const mid = matchCompetitionId(m);
+      if(!Number.isFinite(mid) || !leagueIds.has(mid)) return false;
+    }
     if(!q) return true;
     const blob = `${m.country} ${m.competition} ${m.home} ${m.away}`.toLowerCase();
     return blob.includes(q);
@@ -386,26 +1145,6 @@ function renderDayTabs(t, activeDateKey, query){
     <button type="button" role="tab" class="rt-day-tab${selT ? " active" : ""}" aria-selected="${selT}" data-date="${escAttr(b.todayKey)}">${escAttr(t.date_label_today || "Today")} ${escAttr(d0)} (${cToday})</button>
     <button type="button" role="tab" class="rt-day-tab${selM ? " active" : ""}" aria-selected="${selM}" data-date="${escAttr(b.tomorrowKey)}">${escAttr(t.date_label_tomorrow || "Tomorrow")} ${escAttr(d1)} (${cTom})</button>
   `;
-}
-
-function renderCountryList(t, activeDateKey, query, selectedCountry){
-  const el = qs("#country_list");
-  if(!el) return;
-  const base = filterMatches(CAL_MATCHES, activeDateKey, query, undefined);
-  const agg = new Map();
-  for(const m of base){
-    const c = (m.country || "—").trim() || "—";
-    agg.set(c, (agg.get(c) || 0) + 1);
-  }
-  const rows = [...agg.entries()].sort((a, b)=> a[0].localeCompare(b[0]));
-  const total = base.length;
-  const allOn = selectedCountry == null || String(selectedCountry).trim() === "";
-  let html = `<button type="button" class="rt-country-row${allOn ? " active" : ""}" data-country="">${escAttr(t.country_filter_all || "All")} <span class="rt-country-count">(${total})</span><span class="rt-chevron" aria-hidden="true">›</span></button>`;
-  for(const [name, cnt] of rows){
-    const on = selectedCountry != null && normalize(selectedCountry) === normalize(name);
-    html += `<button type="button" class="rt-country-row${on ? " active" : ""}" data-country="${escAttr(name)}"><span class="rt-country-name">${escAttr(name)}</span> <span class="rt-country-count">(${cnt})</span><span class="rt-chevron" aria-hidden="true">›</span></button>`;
-  }
-  el.innerHTML = html;
 }
 
 function bindLangSwitch(){
@@ -457,49 +1196,53 @@ function renderTop3(t, data){
     card.setAttribute("data-key", key);
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
-    card.setAttribute("aria-label", `${t.match_radar || "Match"}: ${item.home} vs ${item.away}`);
-
-    h3.innerHTML = `
-      <div class="match-title">
-        <div class="teamline">${crestHTML(item.home)}<span>${escAttr(item.home)}</span></div>
-        <div class="vs">vs</div>
-        <div class="teamline">${crestHTML(item.away)}<span>${escAttr(item.away)}</span></div>
-      </div>
-    `;
+    card.setAttribute("aria-label", `${item.home} vs ${item.away}`);
 
     const suggestion = localizeMarket(item.suggestion_free, t) || "—";
     const rankTip = t.rank_tooltip || "";
 
     if(prod && topbar){
-      const top = document.createElement("span");
-      top.className = "badge top rank";
-      top.textContent = `#${idx+1}`;
-      top.setAttribute("title", rankTip);
-      top.setAttribute("data-tip", rankTip);
-      topbar.appendChild(top);
+      h3.innerHTML = `
+<div class="rd-poster">
+  <div class="rd-poster-stack">
+    <div class="rd-poster-team">
+      <div class="rd-poster-crest">${rdPosterCrestHTML(item.home, item.home_id)}</div>
+      <span class="rd-poster-name">${escAttr(item.home)}</span>
+    </div>
+    <div class="rd-poster-vs">vs</div>
+    <div class="rd-poster-team">
+      <div class="rd-poster-crest">${rdPosterCrestHTML(item.away, item.away_id)}</div>
+      <span class="rd-poster-name">${escAttr(item.away)}</span>
+    </div>
+  </div>
+</div>`;
 
-      meta.innerHTML = `<div class="slot-league-line">${escAttr(item.competition)} — ${escAttr(fmtTime(item.kickoff_utc))}</div>`;
+      meta.innerHTML = slotRadarDayPosterContextHTML(item);
 
       const pickPref = t.pick_prefix || "PICK:";
       const { pct, note } = confidenceFromItem(item, t);
+      const confLab = escAttr(t.confidence_label || "");
       lock.innerHTML = `
-        <div class="slot-pick">${escAttr(pickPref)} <strong>${escAttr(suggestion)}</strong></div>
-        <div class="slot-confidence">
-          <div class="slot-confidence-head">${escAttr(t.confidence_label || "")}</div>
-          <div class="conf-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${escAttr(t.confidence_label || "")}">
-            <span class="conf-fill" style="width:${pct}%"></span>
-          </div>
-          <p class="slot-confidence-note">${escAttr(note)}</p>
-        </div>
-        <div class="callout-sub">
-          <span class="mini-chip mini-chip--free" ${tipAttr(t.free_tooltip || (t.free_includes || ""))}>${escAttr(t.free_badge || "FREE")}</span>
-        </div>
-        <div class="callout-actions">
-          <button class="btn primary" type="button" data-open="match" data-key="${key}" ${tipAttr(t.match_radar_tip || "")}><span>${escAttr(t.match_radar || "Radar")}</span>${icoSpan("arrow")}</button>
-        </div>
-      `;
+<div class="rd-poster-pick">
+  <span class="rd-poster-pick-line">${escAttr(pickPref)} <strong>${escAttr(suggestion)}</strong></span>
+</div>
+<div class="rd-poster-confidence">
+  <div class="rd-poster-confidence-label">${confLab}</div>
+  <div class="rd-poster-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${confLab}">
+    <span class="rd-poster-meter-fill" style="width:${pct}%"></span>
+  </div>
+  <p class="rd-poster-insight">${escAttr(note)}</p>
+</div>`;
       return;
     }
+
+    h3.innerHTML = `
+      <div class="match-title">
+        <div class="teamline">${crestHTML(item.home, item.home_id)}<span>${escAttr(item.home)}</span></div>
+        <div class="vs">vs</div>
+        <div class="teamline">${crestHTML(item.away, item.away_id)}<span>${escAttr(item.away)}</span></div>
+      </div>
+    `;
 
     const row = document.createElement("div");
     row.className = "row";
@@ -553,6 +1296,158 @@ function groupByTime(matches){
   return [...map.entries()].map(([name, ms])=>({name, matches: ms}));
 }
 
+function sortCalendarCountryLeagueEntries(countryMap){
+  const TOP = new Set(NAV_TOP_LEAGUE_IDS);
+  const arr = [...countryMap.entries()];
+  arr.sort((a, b)=>{
+    const aHas = [...a[1].keys()].some((lid)=> TOP.has(lid));
+    const bHas = [...b[1].keys()].some((lid)=> TOP.has(lid));
+    if(aHas !== bHas) return aHas ? -1 : 1;
+    return a[0].localeCompare(b[0], undefined, { sensitivity: "base" });
+  });
+  return arr;
+}
+
+function sortCalendarLeagueIdEntries(leagueMap, M){
+  const TOP = new Set(NAV_TOP_LEAGUE_IDS);
+  const arr = [...leagueMap.entries()];
+  arr.sort((a, b)=>{
+    const at = TOP.has(a[0]) ? 0 : 1, bt = TOP.has(b[0]) ? 0 : 1;
+    if(at !== bt) return at - bt;
+    const na = sidebarLeagueDisplayName(a[0], M.leagueById.get(a[0])?.display_name);
+    const nb = sidebarLeagueDisplayName(b[0], M.leagueById.get(b[0])?.display_name);
+    return na.localeCompare(nb, undefined, { sensitivity: "base" });
+  });
+  return arr;
+}
+
+function buildRadarDayCalendarTree(filtered, M){
+  const world = new Map();
+  const intl = new Map();
+  const others = new Map();
+  if(!M) return { world, intl, others };
+
+  function pushLeague(countryMap, country, leagueId, m){
+    if(!countryMap.has(country)) countryMap.set(country, new Map());
+    const lm = countryMap.get(country);
+    if(!lm.has(leagueId)) lm.set(leagueId, []);
+    lm.get(leagueId).push(m);
+  }
+
+  for(const m of filtered){
+    const lid = matchCompetitionId(m);
+    if(!Number.isFinite(lid)) continue;
+    const row = M.leagueById.get(lid);
+    if(!row){
+      const cont = domesticContinentKey({ country: m.country, region: m.region || "" });
+      const country = String(m.country || "—").trim() || "—";
+      if(!others.has(cont)) others.set(cont, new Map());
+      pushLeague(others.get(cont), country, lid, m);
+      continue;
+    }
+    const bucket = coverageBucket(row);
+    if(bucket === "world"){
+      const country = String(row.country || m.country || "World").trim() || "World";
+      pushLeague(world, country, lid, m);
+    } else if(bucket === "international"){
+      const country = String(row.country || m.country || "World").trim() || "World";
+      pushLeague(intl, country, lid, m);
+    } else {
+      const cont = domesticContinentKey(row);
+      const country = domesticCountryLabel(row);
+      if(!others.has(cont)) others.set(cont, new Map());
+      pushLeague(others.get(cont), country, lid, m);
+    }
+  }
+  return { world, intl, others };
+}
+
+function emitRadarDayMatchRow(t, m){
+  const key = escAttr(matchKey(m));
+  const lab = escAttr(t.match_radar || "Match radar");
+  return `<div class="rt-day-cal-match">
+  <div class="rt-day-cal-match-time">${escAttr(fmtTime(m.kickoff_utc))}</div>
+  <div class="rt-day-cal-match-teams"><span>${escAttr(m.home)}</span> <span class="rt-day-cal-vs">vs</span> <span>${escAttr(m.away)}</span></div>
+  <button type="button" class="rt-day-cal-radar-btn chip" data-open="match" data-key="${key}">${lab}</button>
+</div>`;
+}
+
+function emitRadarDayCountryBlock(t, M, country, leagueMap){
+  const flag = countryFlagForCategory(country);
+  let h = `<div class="rt-day-cal-country">`;
+  h += `<div class="rt-day-cal-country-head"><span class="rt-day-cal-cflag" aria-hidden="true">${escAttr(flag)}</span><span class="rt-day-cal-cname">${escAttr(country)}</span></div>`;
+  for(const [leagueId, ms] of sortCalendarLeagueIdEntries(leagueMap, M)){
+    ms.sort((a, b)=> (Date.parse(a.kickoff_utc) || 0) - (Date.parse(b.kickoff_utc) || 0));
+    const lname = sidebarLeagueDisplayName(leagueId, M.leagueById.get(leagueId)?.display_name);
+    h += `<div class="rt-day-cal-league">`;
+    h += `<div class="rt-day-cal-league-head">${navLeagueLogoHTML(leagueId, lname)}<span class="rt-day-cal-lname">${escAttr(lname)}</span></div>`;
+    h += `<div class="rt-day-cal-matches">`;
+    for(const mm of ms) h += emitRadarDayMatchRow(t, mm);
+    h += `</div></div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+function renderRadarDayCalendar(t, filtered, root){
+  if(!filtered.length){
+    root.innerHTML = `<div class="cal-empty" role="status">${escAttr(t.empty_calendar || "No matches for this filter or day.")}</div>`;
+    return;
+  }
+  const M = COVERAGE_NAV_MODEL;
+  if(!M){
+    root.innerHTML = `<div class="cal-empty" role="status">${escAttr(t.empty_calendar || "No matches for this filter or day.")}</div>`;
+    return;
+  }
+  const tree = buildRadarDayCalendarTree(filtered, M);
+  const othersAny = [...tree.others.values()].some((cm)=> cm && cm.size > 0);
+  if(!tree.world.size && !tree.intl.size && !othersAny){
+    root.innerHTML = `<div class="cal-empty" role="status">${escAttr(t.empty_calendar || "No matches for this filter or day.")}</div>`;
+    return;
+  }
+
+  let html = `<div class="rt-day-cal rt-cal">`;
+
+  if(tree.world.size){
+    html += `<section class="rt-day-cal-group" data-rt-cal-group="world">`;
+    html += `<div class="rt-day-cal-group-head">${escAttr(t.nav_world || "World")}</div>`;
+    for(const [country, leagueMap] of sortCalendarCountryLeagueEntries(tree.world)){
+      html += emitRadarDayCountryBlock(t, M, country, leagueMap);
+    }
+    html += `</section>`;
+  }
+
+  if(tree.intl.size){
+    html += `<section class="rt-day-cal-group" data-rt-cal-group="internationals">`;
+    html += `<div class="rt-day-cal-group-head">${escAttr(t.nav_internationals || "Internationals")}</div>`;
+    for(const [country, leagueMap] of sortCalendarCountryLeagueEntries(tree.intl)){
+      html += emitRadarDayCountryBlock(t, M, country, leagueMap);
+    }
+    html += `</section>`;
+  }
+
+  let othersOpen = false;
+  for(const cont of NAV_CONTINENT_ORDER){
+    const cMap = tree.others.get(cont);
+    if(!cMap || !cMap.size) continue;
+    if(!othersOpen){
+      html += `<section class="rt-day-cal-group" data-rt-cal-group="others">`;
+      html += `<div class="rt-day-cal-group-head">${escAttr(t.nav_others || "Others")}</div>`;
+      othersOpen = true;
+    }
+    html += `<div class="rt-day-cal-continent">`;
+    html += `<div class="rt-day-cal-continent-head">${escAttr(continentNavLabel(t, cont))}</div>`;
+    for(const [country, leagueMap] of sortCalendarCountryLeagueEntries(cMap)){
+      html += emitRadarDayCountryBlock(t, M, country, leagueMap);
+    }
+    html += `</div>`;
+  }
+  if(othersOpen) html += `</section>`;
+
+  html += `</div>`;
+  root.innerHTML = html;
+}
+
 function resultLabel(ch, t){
   if(ch==="W") return t.result_green || "Vitória";
   if(ch==="D") return t.result_pending || "Empate";
@@ -594,12 +1489,17 @@ function buildFormSquares(t, details, windowN){
   return Array.from({length:n}).map(()=> `<span class="dot n" ${tipAttr(missing)}></span>`).join("");
 }
 
-function renderCalendar(t, matches, query, activeDateKey, countryFilter){
+function renderCalendar(t, matches, query, activeDateKey, navFilter){
   const root = qs("#calendar");
   if(!root) return;
   root.innerHTML = "";
 
-  const filtered = filterMatches(matches, activeDateKey, query, countryFilter);
+  const filtered = filterMatches(matches, activeDateKey, query, navFilter);
+
+  if(rtSurface() === "radar-day"){
+    renderRadarDayCalendar(t, filtered, root);
+    return;
+  }
 
   const groups = groupByTime(filtered);
 
@@ -659,8 +1559,8 @@ function renderCalendar(t, matches, query, activeDateKey, countryFilter){
         <div class="time" ${tipAttr(t.kickoff_tooltip || "")}>${fmtTime(m.kickoff_utc)}</div>
         <div class="match-main">
           <div class="teams">
-            <div class="teamline">${crestHTML(m.home)}<span>${escAttr(m.home)}</span></div>
-            <div class="teamline">${crestHTML(m.away)}<span>${escAttr(m.away)}</span></div>
+            <div class="teamline">${crestHTML(m.home, m.home_id)}<span>${escAttr(m.home)}</span></div>
+            <div class="teamline">${crestHTML(m.away, m.away_id)}<span>${escAttr(m.away)}</span></div>
           </div>
           <div class="subline">
             <div>
@@ -799,9 +1699,9 @@ function openModal(type, value){
         </div>
       </div>
 
-      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      ${rtSurface() === "radar-day" ? "" : `<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <span class="chip" data-open="competition" data-value="${escAttr(mComp)}" ${tipAttr(T.competition_radar_tip || "")}>${T.competition_radar}</span>
-      </div>
+      </div>`}
 
       <div style="margin-top:14px;padding:12px;border:1px dashed rgba(43,111,242,.35);border-radius:16px;background:rgba(43,111,242,.06);font-weight:800;color:#163261">
         ${T.free_includes || "FREE: sugestão + risco + forma + gols."}<br/>
@@ -1075,6 +1975,7 @@ function pickDefaultTheme(){
 
 function setTheme(theme, t){
   applyTheme(theme);
+  refreshHeaderLogo();
   const btn = qs("#theme_toggle");
   if(!btn) return;
 
@@ -1126,6 +2027,8 @@ async function init(){
       setText("subtitle", T.subtitle || "");
       setNav(LANG, T);
       decorateLangPills(LANG);
+      await applyShellHeader(LANG, T);
+      syncLangPillsActive(LANG);
       bindLangSwitch();
     }
     renderComplianceFooter(LANG);
@@ -1139,6 +2042,8 @@ async function init(){
 
   setNav(LANG, T);
   decorateLangPills(LANG);
+  await applyShellHeader(LANG, T);
+  syncLangPillsActive(LANG);
 
   warnRtDomContract(p);
 
@@ -1146,8 +2051,13 @@ async function init(){
 
   if(p==="day"){
     if(qs("#top3_heading")){
-      setText("top3_heading", T.top3_title || "");
-      setText("top3_sub", T.top3_sub || "");
+      if(rtSurface() === "radar-day"){
+        setText("top3_heading", T.radar_day_title || "Radar Day");
+        setText("top3_sub", "");
+      } else {
+        setText("top3_heading", T.top3_title || "");
+        setText("top3_sub", T.top3_sub || "");
+      }
     } else {
       setText("hero_title", T.hero_title_day);
       setText("hero_sub", T.hero_sub_day);
@@ -1169,7 +2079,10 @@ async function init(){
   if(searchEl) searchEl.setAttribute("placeholder", T.search_placeholder);
 
   let q = "";
-  const data = await loadCalendar2dMerged();
+  const [data, covRaw] = await Promise.all([
+    loadCalendar2dMerged(),
+    loadJSON(COVERAGE_ALLOWLIST_URL, null),
+  ]);
   CAL_MATCHES = data.matches || [];
   CAL_META = {
     form_window: Number(data.form_window || 5),
@@ -1177,11 +2090,13 @@ async function init(){
     anchorToday: data.anchorToday || null,
     anchorTomorrow: data.anchorTomorrow || null,
   };
+  COVERAGE_NAV_MODEL = buildCoverageNavModel(covRaw);
 
   const strip = isDayboard ? null : ensureDateStrip(T);
   const boundsInit = getFilterDateBounds();
   let activeDate = isDayboard ? boundsInit.todayKey : "both";
-  let selectedCountry = null;
+  let selectedNav = { type: "all" };
+  let sidebarLeagueListMode = isDayboard ? loadSidebarLeagueMode() : "all";
 
   function renderStrip(){
     if(!strip) return;
@@ -1227,8 +2142,8 @@ async function init(){
   function rerender(){
     if(isDayboard){
       renderDayTabs(T, activeDate, q);
-      renderCountryList(T, activeDate, q, selectedCountry);
-      renderCalendar(T, CAL_MATCHES, q, activeDate, selectedCountry);
+      renderCoverageNav(T, activeDate, q, selectedNav, sidebarLeagueListMode);
+      renderCalendar(T, CAL_MATCHES, q, activeDate, selectedNav);
     } else {
       if(strip) renderStrip();
       renderCalendar(T, CAL_MATCHES, q, activeDate, undefined);
@@ -1246,7 +2161,7 @@ async function init(){
         const btn = e.target.closest("button[data-date]");
         if(!btn) return;
         activeDate = btn.getAttribute("data-date");
-        selectedCountry = null;
+        selectedNav = { type: "all" };
         rerender();
       });
     }
@@ -1254,12 +2169,42 @@ async function init(){
     if(cl && !cl.dataset.rtBound){
       cl.dataset.rtBound = "1";
       cl.addEventListener("click", (e)=>{
-        const btn = e.target.closest("button[data-country]");
+        const modeBtn = e.target && e.target.closest && e.target.closest("[data-rt-league-mode]");
+        if(modeBtn){
+          e.preventDefault();
+          e.stopPropagation();
+          const m = String(modeBtn.getAttribute("data-rt-league-mode") || "").trim();
+          if(m === "all" || m === "with_matches"){
+            sidebarLeagueListMode = m;
+            saveSidebarLeagueMode(m);
+            rerender();
+          }
+          return;
+        }
+        const tgl = e.target.closest("[data-rt-nav-toggle]");
+        if(tgl){
+          e.preventDefault();
+          e.stopPropagation();
+          const sec = tgl.closest(".rt-nav-section[data-section-key]");
+          if(!sec) return;
+          const key = sec.getAttribute("data-section-key") || "";
+          sec.classList.toggle("rt-nav-section--collapsed");
+          const collapsed = sec.classList.contains("rt-nav-section--collapsed");
+          NAV_SECTION_EXPANDED.set(key, !collapsed);
+          tgl.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          return;
+        }
+        const btn = e.target.closest("button[data-nav-type]");
         if(!btn) return;
-        const v = btn.getAttribute("data-country");
-        selectedCountry = (v == null || v === "") ? null : v;
+        const nt = btn.getAttribute("data-nav-type");
+        if(nt === "all") selectedNav = { type: "all" };
+        else if(nt === "bucket") selectedNav = { type: "bucket", bucket: btn.getAttribute("data-bucket") || "" };
+        else if(nt === "league") selectedNav = { type: "league", id: Number(btn.getAttribute("data-league-id")) };
+        else if(nt === "continent") selectedNav = { type: "continent", continent: btn.getAttribute("data-continent") || "" };
+        else if(nt === "country") selectedNav = { type: "country", continent: btn.getAttribute("data-continent") || "", country: btn.getAttribute("data-country") || "" };
+        else selectedNav = { type: "all" };
         rerender();
-      });
+      }, true);
     }
   }
 
