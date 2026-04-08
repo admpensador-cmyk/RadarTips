@@ -1,0 +1,365 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "entity": "team_season_page",
+    "team_id": 33,
+    "season": 2025,
+    "generated_at_utc": "2026-04-03T18:20:00Z",
+    "coverage_tier": 1,
+    "stats_completeness": {
+      "results_core": true,
+      "standings": true,
+      "goals_markets": true,
+      "shots": true,
+      "corners": true,
+      "cards": true,
+      "advanced_trends": true,
+      "goalkeeper": true,
+      "market_model": false
+    },
+    "data_source_policy": "derived_from_finished_fixtures_only"
+  },
+  "team": {
+    "team_id": 33,
+    "name": "Manchester United",
+    "short_name": "Man United",
+    "country": "England",
+    "country_code": "GB",
+    "logo_url": "https://media.api-sports.io/football/teams/33.png",
+    "founded": 1878,
+    "city": "Manchester",
+    "stadium": "Old Trafford"
+  },
+  "team_profile": {
+    "attacking_power": "Strong",
+    "defensive_power": "Balanced",
+    "play_style": "Direct transitions, wide overloads",
+    "tempo": "High",
+    "goal_tendency": "Open, end-to-end games"
+  },
+  "overview_form": {
+    "last5": {
+      "sequence": "WWDWL",
+      "points": 10,
+      "gf": 8,
+      "ga": 5
+    },
+    "mini_matches": [
+      {
+        "kickoff_utc": "2026-03-30T15:30:00.000Z",
+        "label": "vs Chelsea (H)",
+        "score": "2–1",
+        "result": "W"
+      },
+      {
+        "kickoff_utc": "2026-03-22T16:00:00.000Z",
+        "label": "vs Liverpool (A)",
+        "score": "1–1",
+        "result": "D"
+      },
+      {
+        "kickoff_utc": "2026-03-15T12:30:00.000Z",
+        "label": "vs Brighton (H)",
+        "score": "3–0",
+        "result": "W"
+      }
+    ]
+  },
+  "chart_series": {
+    "round_labels": [
+      "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"
+    ],
+    "goals_for_by_round": [2, 1, 0, 3, 1, 2, 1, 1, 2, 0, 2, 3, 1, 2, 1, 4, 2, 1, 0, 2, 3, 1, 2, 1, 2, 1, 0, 2, 1, 3, 2, 1],
+    "goals_against_by_round": [1, 1, 2, 0, 2, 1, 0, 1, 1, 3, 1, 0, 2, 1, 1, 1, 2, 0, 1, 1, 2, 2, 1, 0, 1, 2, 1, 1, 0, 2, 1, 1],
+    "btts_rolling_5": [0.4, 0.5, 0.6, 0.55, 0.5, 0.45, 0.5, 0.55, 0.6, 0.58, 0.56, 0.54, 0.52, 0.55, 0.57, 0.56, 0.55, 0.54, 0.56, 0.58, 0.57, 0.56, 0.55, 0.56, 0.57, 0.56, 0.55, 0.56, 0.57, 0.56, 0.56, 0.56],
+    "over25_rolling_5": [0.45, 0.5, 0.48, 0.52, 0.55, 0.53, 0.5, 0.52, 0.54, 0.53, 0.52, 0.51, 0.5, 0.52, 0.53, 0.54, 0.53, 0.52, 0.53, 0.55, 0.54, 0.53, 0.52, 0.51, 0.52, 0.53, 0.52, 0.53, 0.54, 0.53, 0.53, 0.53],
+    "points_cumulative": [3, 4, 4, 7, 8, 11, 14, 15, 18, 18, 21, 24, 25, 28, 29, 32, 35, 36, 36, 39, 42, 43, 46, 47, 50, 51, 51, 54, 55, 58, 61, 62]
+  },
+  "header": {
+    "team_name": "Manchester United",
+    "season": 2025,
+    "competitions_played": [
+      {
+        "competition_id": 39,
+        "competition_name": "Premier League",
+        "competition_type": "league",
+        "country": "England",
+        "country_code": "GB",
+        "logo_url": "https://media.api-sports.io/football/leagues/39.png",
+        "is_primary_context": true
+      },
+      {
+        "competition_id": 45,
+        "competition_name": "FA Cup",
+        "competition_type": "cup",
+        "country": "England",
+        "country_code": "GB",
+        "logo_url": "https://media.api-sports.io/football/leagues/45.png",
+        "is_primary_context": false
+      }
+    ]
+  },
+  "season_overview": {
+    "splits": {
+      "total": {
+        "matches": 32,
+        "wins": 17,
+        "draws": 8,
+        "losses": 7,
+        "goals_for": 52,
+        "goals_against": 38,
+        "btts_rate": 0.56,
+        "over25_rate": 0.53,
+        "under25_rate": 0.47,
+        "goals_0_1_rate": 0.19,
+        "goals_2_3_rate": 0.5,
+        "goals_4_plus_rate": 0.31,
+        "clean_sheets": 9,
+        "won_to_nil": 7,
+        "scored_first_rate": 0.59,
+        "lead_at_ht_rate": 0.44,
+        "comeback_wins": 3,
+        "failed_to_score": 5,
+        "over15_rate": 0.78,
+        "over35_rate": 0.22,
+        "team_over_05_rate": 0.91,
+        "team_over_15_rate": 0.69,
+        "team_over_25_rate": 0.41,
+        "conceded_over_05_rate": 0.84,
+        "conceded_over_15_rate": 0.5,
+        "conceded_over_25_rate": 0.28,
+        "conceded_first_rate": 0.34,
+        "ht_record": "9-12-11",
+        "ht_goals_for_avg": 0.72,
+        "ht_goals_against_avg": 0.56
+      },
+      "home": {
+        "matches": 16,
+        "wins": 10,
+        "draws": 4,
+        "losses": 2,
+        "goals_for": 30,
+        "goals_against": 14,
+        "btts_rate": 0.5,
+        "over25_rate": 0.56,
+        "under25_rate": 0.44,
+        "goals_0_1_rate": 0.12,
+        "goals_2_3_rate": 0.44,
+        "goals_4_plus_rate": 0.44,
+        "clean_sheets": 6,
+        "won_to_nil": 5,
+        "scored_first_rate": 0.62,
+        "lead_at_ht_rate": 0.5,
+        "comeback_wins": 1,
+        "failed_to_score": 2,
+        "over15_rate": 0.81,
+        "over35_rate": 0.25,
+        "team_over_05_rate": 0.94,
+        "team_over_15_rate": 0.75,
+        "team_over_25_rate": 0.5,
+        "conceded_over_05_rate": 0.69,
+        "conceded_over_15_rate": 0.38,
+        "conceded_over_25_rate": 0.19,
+        "conceded_first_rate": 0.31,
+        "ht_record": "6-5-5",
+        "ht_goals_for_avg": 0.88,
+        "ht_goals_against_avg": 0.44
+      },
+      "away": {
+        "matches": 16,
+        "wins": 7,
+        "draws": 4,
+        "losses": 5,
+        "goals_for": 22,
+        "goals_against": 24,
+        "btts_rate": 0.62,
+        "over25_rate": 0.5,
+        "under25_rate": 0.5,
+        "goals_0_1_rate": 0.25,
+        "goals_2_3_rate": 0.56,
+        "goals_4_plus_rate": 0.19,
+        "clean_sheets": 3,
+        "won_to_nil": 2,
+        "scored_first_rate": 0.56,
+        "lead_at_ht_rate": 0.38,
+        "comeback_wins": 2,
+        "failed_to_score": 3,
+        "over15_rate": 0.75,
+        "over35_rate": 0.19,
+        "team_over_05_rate": 0.88,
+        "team_over_15_rate": 0.62,
+        "team_over_25_rate": 0.31,
+        "conceded_over_05_rate": 0.94,
+        "conceded_over_15_rate": 0.62,
+        "conceded_over_25_rate": 0.38,
+        "conceded_first_rate": 0.38,
+        "ht_record": "3-7-6",
+        "ht_goals_for_avg": 0.56,
+        "ht_goals_against_avg": 0.69
+      }
+    },
+    "trends": {
+      "total": {
+        "goals_per_game": 1.63,
+        "conceded_per_game": 1.19,
+        "shots_per_game": 14.8,
+        "sot_per_game": 5.4,
+        "shots_conceded_pg": 11.6,
+        "sot_conceded_pg": 4.1,
+        "corners_per_game": 6.1,
+        "corners_against_pg": 5.2,
+        "yellows_per_game": 2.2,
+        "reds_per_game": 0.06,
+        "cards_for_pg": 2.28,
+        "cards_against_pg": 2.05,
+        "xg_for_pg": 1.55,
+        "xg_against_pg": 1.22,
+        "fouls_drawn_pg": 11.4,
+        "fouls_committed_pg": 10.8,
+        "offsides_pg": 1.9,
+        "saves_per_game": 3.1,
+        "save_rate": 0.74
+      },
+      "home": {
+        "goals_per_game": 1.88,
+        "conceded_per_game": 0.88,
+        "shots_per_game": 16.2,
+        "sot_per_game": 6.0,
+        "shots_conceded_pg": 10.1,
+        "sot_conceded_pg": 3.6,
+        "corners_per_game": 6.8,
+        "corners_against_pg": 4.8,
+        "yellows_per_game": 1.9,
+        "reds_per_game": 0.0,
+        "cards_for_pg": 1.94,
+        "cards_against_pg": 1.88,
+        "xg_for_pg": 1.72,
+        "xg_against_pg": 1.05,
+        "fouls_drawn_pg": 12.1,
+        "fouls_committed_pg": 9.9,
+        "offsides_pg": 2.1
+      },
+      "away": {
+        "goals_per_game": 1.38,
+        "conceded_per_game": 1.5,
+        "shots_per_game": 13.4,
+        "sot_per_game": 4.8,
+        "shots_conceded_pg": 13.1,
+        "sot_conceded_pg": 4.6,
+        "corners_per_game": 5.4,
+        "corners_against_pg": 5.6,
+        "yellows_per_game": 2.5,
+        "reds_per_game": 0.12,
+        "cards_for_pg": 2.62,
+        "cards_against_pg": 2.22,
+        "xg_for_pg": 1.38,
+        "xg_against_pg": 1.39,
+        "fouls_drawn_pg": 10.7,
+        "fouls_committed_pg": 11.7,
+        "offsides_pg": 1.7,
+        "saves_per_game": 3.5,
+        "save_rate": 0.71
+      }
+    },
+    "recent_matches": {
+      "total": [
+        {
+          "fixture_id": 1035001,
+          "kickoff_utc": "2026-03-30T15:30:00.000Z",
+          "competition_id": 39,
+          "competition_name": "Premier League",
+          "home_team_id": 33,
+          "away_team_id": 49,
+          "home_name": "Man United",
+          "away_name": "Chelsea",
+          "score_home": 2,
+          "score_away": 1,
+          "venue": "home",
+          "result": "W"
+        },
+        {
+          "fixture_id": 1035002,
+          "kickoff_utc": "2026-03-22T16:00:00.000Z",
+          "competition_id": 39,
+          "competition_name": "Premier League",
+          "home_team_id": 40,
+          "away_team_id": 33,
+          "home_name": "Liverpool",
+          "away_name": "Man United",
+          "score_home": 1,
+          "score_away": 1,
+          "venue": "away",
+          "result": "D"
+        },
+        {
+          "fixture_id": 1035003,
+          "kickoff_utc": "2026-03-15T12:30:00.000Z",
+          "competition_id": 45,
+          "competition_name": "FA Cup",
+          "home_team_id": 33,
+          "away_team_id": 51,
+          "home_name": "Man United",
+          "away_name": "Brighton",
+          "score_home": 3,
+          "score_away": 0,
+          "venue": "home",
+          "result": "W"
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1035001,
+          "kickoff_utc": "2026-03-30T15:30:00.000Z",
+          "competition_id": 39,
+          "competition_name": "Premier League",
+          "home_team_id": 33,
+          "away_team_id": 49,
+          "home_name": "Man United",
+          "away_name": "Chelsea",
+          "score_home": 2,
+          "score_away": 1,
+          "venue": "home",
+          "result": "W"
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1035002,
+          "kickoff_utc": "2026-03-22T16:00:00.000Z",
+          "competition_id": 39,
+          "competition_name": "Premier League",
+          "home_team_id": 40,
+          "away_team_id": 33,
+          "home_name": "Liverpool",
+          "away_name": "Man United",
+          "score_home": 1,
+          "score_away": 1,
+          "venue": "away",
+          "result": "D"
+        }
+      ]
+    }
+  },
+  "competition_index": [
+    {
+      "competition_id": 39,
+      "competition_name": "Premier League",
+      "competition_type": "league",
+      "matches_played": 28,
+      "points": 52,
+      "goals_for": 46,
+      "goals_against": 31,
+      "detail_path": "/data/team-competitions/33/39/2025.json"
+    },
+    {
+      "competition_id": 45,
+      "competition_name": "FA Cup",
+      "competition_type": "cup",
+      "matches_played": 4,
+      "points": null,
+      "goals_for": 6,
+      "goals_against": 2,
+      "detail_path": "/data/team-competitions/33/45/2025.json"
+    }
+  ]
+}

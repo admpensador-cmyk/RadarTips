@@ -100,7 +100,7 @@ jobs:
             remote_key="${pair##*:}"
             if [[ -f "${local_file}" ]]; then
               echo "[UPLOAD] ${local_file} -> ${R2_BUCKET_NAME}/${remote_key}"
-              npx --yes wrangler@4.62.0 r2 object put --remote "${R2_BUCKET_NAME}/${remote_key}" --file "${local_file}" --content-type application/json
+              npx --yes wrangler@4.62.0 r2 object put "${R2_BUCKET_NAME}/${remote_key}" --file "${local_file}" --content-type application/json --remote
             else
               echo "[WARN] Missing optional file: ${local_file}"
             fi

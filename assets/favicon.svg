@@ -1,13 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RadarTips favicon: R + radar, transparent -->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 120 120" fill="none" aria-hidden="true">
   <defs>
-    <linearGradient id="rtFavGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2F80FF"/>
-      <stop offset="100%" stop-color="#56CCF2"/>
+    <linearGradient id="rtFavG" x1="12%" y1="10%" x2="88%" y2="92%">
+      <stop offset="0%" stop-color="#D9F99D"/>
+      <stop offset="42%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#2563EB"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="6" width="52" height="52" rx="14" fill="#0B1220"/>
-  <path d="M17 49V15h17.5c8.8 0 13.8 4.8 13.8 12.3 0 5.8-2.8 9.8-7.8 11.8L48 49h-9.2l-6.9-9.5H26V49h-9zM26 31.8h7.6c3.8 0 6-1.9 6-4.9 0-3-2.2-4.9-6-4.9H26v9.8z" fill="url(#rtFavGrad)"/>
-  <circle cx="42" cy="22" r="2" fill="#56CCF2"/>
-  <path d="M34 22a8 8 0 0 1 8-8" fill="none" stroke="#56CCF2" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M30.2 22A11.8 11.8 0 0 1 42 10.2" fill="none" stroke="#2F80FF" stroke-width="2.1" stroke-linecap="round" opacity=".95"/>
+  <g transform="translate(14 10) skewX(-10)">
+    <path fill="url(#rtFavG)" d="M18 16 L18 92 L34 92 L34 66 L40 66 L60 92 L78 92 L52 56
+      C66 52 76 42 76 28 C76 14 62 16 46 16 Z"/>
+    <g>
+      <circle cx="54" cy="74" r="3.2" fill="#F0FDFA"/>
+      <path d="M54 70.5 C62.5 67.5 69.5 60.5 74 50.5" stroke="#A5F3FC" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M54 70.5 C64.5 66 73 55.5 78.5 42" stroke="#67E8F9" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M54 70.5 C66.5 64.5 77 52 84 36" stroke="#22D3EE" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
 </svg>

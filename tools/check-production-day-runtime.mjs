@@ -98,13 +98,17 @@ async function main() {
   console.log(`calendar2d_past_in_today_tomorrow=${calendarPast}`);
   if (calendarPast !== 0) fail(`calendar_2d still contains ${calendarPast} past matches in today/tomorrow`);
 
-  const { response: radarResp, text: radarText } = await fetchText(`${baseUrl}/api/v1/radar_day`);
-  if (!radarResp.ok) throw new Error(`radar_day_http_${radarResp.status}`);
-  const radar = mustParseJson(radarText, "radar_day");
-  const radarPast = countPastMatches(radar?.highlights || []);
-  console.log(`radar_day_generated_at_utc=${radar?.generated_at_utc || "missing"}`);
-  console.log(`radar_day_past_highlights=${radarPast}`);
-  if (radarPast !== 0) fail(`radar_day still contains ${radarPast} past highlights`);
+  const highlights = calendar?.radar_day?.highlights;
+  if (!Array.isArray(highlights)) fail("calendar_2d missing radar_day.highlights (unified payload)");
+  const radarPast = countPastMatches(highlights);
+  console.log(`radar_day_embedded_generated_at_utc=${calendar?.radar_day?.generated_at_utc || calendar?.meta?.generated_at_utc || "missing"}`);
+  console.log(`radar_day_embedded_past_highlights=${radarPast}`);
+  if (radarPast !== 0) fail(`embedded radar_day still contains ${radarPast} past highlights`);
+
+  const legacyRadarStatus = await fetchStatus(`${baseUrl}/api/v1/radar_day`);
+  if (legacyRadarStatus !== 404) {
+    fail(`/api/v1/radar_day must not exist (use calendar_2d.radar_day only), got HTTP ${legacyRadarStatus}`);
+  }
 
   for (const u of secondaryDayUrls) {
     const st = await fetchStatus(u);

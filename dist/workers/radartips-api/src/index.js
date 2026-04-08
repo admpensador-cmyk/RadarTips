@@ -1,9 +1,9 @@
-/** Relative paths inside bucket; resolved as `${prefix}/${rel}` — never shared between prod/preview. */
-const SNAPSHOT_RELATIVE = ["snapshots/latest_calendar_2d.json", "snapshots/calendar_2d.json"];
-const RADAR_DAY_RELATIVE = ["snapshots/latest_radar_day.json", "snapshots/radar_day.json"];
+/** Single R2 object `calendar_2d` embeds `radar_day`; no separate radar API route or radar_* snapshot keys. */
+const SNAPSHOT_RELATIVE = ["snapshots/calendar_2d.json"];
 const ALLOWLIST_RELATIVE = "data/coverage_allowlist.json";
 const LEAGUE_SNAPSHOT_RELATIVE = {
   "premier-league": ["snapshots/leagues/premier-league.json"],
+  brasileirao: ["snapshots/leagues/brasileirao.json"]
 };
 
 /**
@@ -140,42 +140,6 @@ async function readCalendarSnapshot(env) {
   const candidates = [];
 
   for (const rel of SNAPSHOT_RELATIVE) {
-    const key = resolveObjectKey(env, rel);
-    if (!key) continue;
-    const obj = await env.RADARTIPS_DATA.get(key);
-    if (!obj) continue;
-    const raw = await obj.text();
-    try {
-      const snapshot = JSON.parse(raw);
-      const generatedMs = parseGeneratedAt(snapshot);
-      candidates.push({ snapshot, raw, key, generatedMs: Number.isFinite(generatedMs) ? generatedMs : -1 });
-    } catch {
-      if (!parseErrorKey) {
-        parseErrorKey = key;
-        parseErrorRaw = raw;
-      }
-    }
-  }
-
-  if (candidates.length > 0) {
-    candidates.sort((a, b) => b.generatedMs - a.generatedMs);
-    const freshest = candidates[0];
-    return { snapshot: freshest.snapshot, raw: freshest.raw, key: freshest.key };
-  }
-
-  if (parseErrorKey) {
-    return { snapshot: null, raw: parseErrorRaw, key: parseErrorKey, parse_error: true };
-  }
-
-  return { snapshot: null, raw: null, key: null };
-}
-
-async function readRadarDaySnapshot(env) {
-  let parseErrorKey = null;
-  let parseErrorRaw = null;
-  const candidates = [];
-
-  for (const rel of RADAR_DAY_RELATIVE) {
     const key = resolveObjectKey(env, rel);
     if (!key) continue;
     const obj = await env.RADARTIPS_DATA.get(key);
@@ -457,23 +421,6 @@ async function buildCalendarResponse(env) {
   };
 }
 
-async function serveRadarDay(env) {
-  const { snapshot, key, parse_error } = await readRadarDaySnapshot(env);
-  if (!snapshot) {
-    const code = parse_error ? "snapshot_invalid_json" : "snapshot_not_found";
-    const status = parse_error ? 500 : 404;
-    return json(env, { error: code, key, pipeline_status: "critical" }, status);
-  }
-
-  return json(env, {
-    ...snapshot,
-    snapshot_source_key: key,
-    pipeline_status: "healthy"
-  }, 200, {
-    "cache-control": `public, max-age=${CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${CACHE_STALE_WHILE_REVALIDATE_SECONDS}`
-  });
-}
-
 async function serveCalendar(request, env, ctx) {
   const cache = caches.default;
   const key = calendarCacheKey(request);
@@ -595,12 +542,12 @@ export default {
       return serveCalendar(request, env, ctx);
     }
 
-    if (p === "/api/v1/radar_day" || p === "/api/v1/radar_day.json") {
-      return serveRadarDay(env);
-    }
-
     if (p === "/api/v1/leagues/premier-league" || p === "/api/v1/leagues/premier-league.json") {
       return serveLeagueSnapshot(env, "premier-league");
+    }
+
+    if (p === "/api/v1/leagues/brasileirao" || p === "/api/v1/leagues/brasileirao.json") {
+      return serveLeagueSnapshot(env, "brasileirao");
     }
 
     if (p === "/api/v1/calendar_health" || p === "/api/v1/health") {

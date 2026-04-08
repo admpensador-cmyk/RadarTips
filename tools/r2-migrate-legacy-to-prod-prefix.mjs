@@ -24,8 +24,6 @@ if (PREFIX !== "prod") {
 const LEGACY_KEYS = [
   "snapshots/calendar_2d.json",
   "snapshots/latest_calendar_2d.json",
-  "snapshots/radar_day.json",
-  "snapshots/latest_radar_day.json",
   "data/coverage_allowlist.json",
   "snapshots/leagues/premier-league.json",
 ];

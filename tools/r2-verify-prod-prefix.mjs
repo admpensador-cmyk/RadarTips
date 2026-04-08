@@ -15,9 +15,6 @@ const PREFIX = "prod";
 
 const REQUIRED = [
   `${PREFIX}/snapshots/calendar_2d.json`,
-  `${PREFIX}/snapshots/latest_calendar_2d.json`,
-  `${PREFIX}/snapshots/radar_day.json`,
-  `${PREFIX}/snapshots/latest_radar_day.json`,
   `${PREFIX}/data/coverage_allowlist.json`,
   `${PREFIX}/snapshots/leagues/premier-league.json`,
 ];
@@ -30,7 +27,7 @@ function getObject(key) {
   const local = path.join(tmp, key.replace(/\//g, "_"));
   const r = spawnSync(
     "npx",
-    ["--yes", "wrangler@4.62.0", "r2", "object", "get", "--remote", `${BUCKET}/${key}`, "--file", local],
+    ["--yes", "wrangler@4.62.0", "r2", "object", "get", `${BUCKET}/${key}`, "--file", local, "--remote"],
     { stdio: "pipe", shell: process.platform === "win32", env: process.env }
   );
   if (r.status !== 0) {

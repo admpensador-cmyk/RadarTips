@@ -117,6 +117,24 @@ function removeLegacyPath(targetPath) {
   }
 }
 
+function copyCountryFlagSvgs() {
+  const srcDir = path.join(root, "node_modules", "flag-icons", "flags", "4x3");
+  const destDir = path.join(dist, "assets", "flags", "countries");
+  if (!fs.existsSync(srcDir)) {
+    console.error(
+      "[build-static] FAIL: flag-icons SVGs missing. Run npm install (devDependency flag-icons)."
+    );
+    process.exit(1);
+  }
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const name of fs.readdirSync(srcDir)) {
+    if (!name.toLowerCase().endsWith(".svg")) continue;
+    fs.copyFileSync(path.join(srcDir, name), path.join(destDir, name));
+  }
+}
+
+copyCountryFlagSvgs();
+
 const htmlFiles = walk(dist).filter((f) => f.endsWith(".html"));
 
 

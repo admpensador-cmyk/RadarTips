@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RadarTips mark: transparent + glow for dark UI (navy header) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="rtMarkGradD" x1="12%" y1="10%" x2="88%" y2="92%">
+      <stop offset="0%" stop-color="#E8FEBE"/>
+      <stop offset="40%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#60A5FA"/>
+    </linearGradient>
+    <filter id="rtMarkGlow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="b"/>
+      <feFlood flood-color="#E0F2FE" flood-opacity="0.55" result="f"/>
+      <feComposite in="f" in2="b" operator="in" result="g"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#rtMarkGlow)" transform="translate(14 10) skewX(-10)">
+    <path fill="url(#rtMarkGradD)" stroke="rgba(255,255,255,0.22)" stroke-width="0.45" paint-order="stroke fill"
+      d="M18 16 L18 92 L34 92 L34 66 L40 66 L60 92 L78 92 L52 56
+      C66 52 76 42 76 28 C76 14 62 16 46 16 Z"/>
+    <g>
+      <circle cx="54" cy="74" r="3.2" fill="#F0FDFA"/>
+      <path d="M54 70.5 C62.5 67.5 69.5 60.5 74 50.5" stroke="#A5F3FC" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M54 70.5 C64.5 66 73 55.5 78.5 42" stroke="#67E8F9" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M54 70.5 C66.5 64.5 77 52 84 36" stroke="#22D3EE" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

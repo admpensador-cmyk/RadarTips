@@ -18,8 +18,10 @@ on:
 permissions:
   contents: write
 
+# One in-flight run per branch + R2 namespace. Prevents duplicate work on the same target
+# without cancelling e.g. dev vs main (previously shared group radartips-data-daily).
 concurrency:
-  group: radartips-data-daily
+  group: radartips-data-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.snapshot_prefix || 'prod' }}
   cancel-in-progress: true
 
 jobs:
@@ -65,7 +67,6 @@ jobs:
 
           test -f "data/v1/calendar_day.json"
           test -f "data/v1/calendar_2d.json"
-          test -f "data/v1/radar_day.json"
           LEGACY_JSON="data/v1/$(printf '%s_%s' radar week).json"
           test ! -e "$LEGACY_JSON"
 
@@ -92,27 +93,19 @@ jobs:
             remote_key="${R2_BUCKET_NAME}/${PFX}/snapshots/leagues/premier-league/${file}"
             local_path="data/v1/leagues/premier-league/${file}"
             echo "[HYDRATE] ${remote_key} -> ${local_path}"
-            if ! npx --yes wrangler@4.62.0 r2 object get --remote "${remote_key}" --file "${local_path}"; then
+            if ! npx --yes wrangler@4.62.0 r2 object get "${remote_key}" --file "${local_path}" --remote; then
               echo "[WARN] Missing optional layer in R2: ${remote_key}"
             fi
           done
 
-      - name: Generate fixed league snapshots (API-FOOTBALL, independent of calendar)
-        env:
-          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          node tools/update-data-api-football.mjs --standings
-
-          test -f "data/v1/leagues/premier-league.json"
-
+      # Publish calendar before standings (~12+ min) so prod API/Radar Day update immediately after generation.
       - name: Publish calendar artifacts to R2 (mandatory when present)
-        if: ${{ always() && hashFiles('data/v1/calendar_2d.json') != '' && hashFiles('data/v1/radar_day.json') != '' }}
+        if: ${{ always() && hashFiles('data/v1/calendar_2d.json') != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_BUCKET_NAME: radartips-data
+          RADARTIPS_SNAPSHOT_PREFIX: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.snapshot_prefix || 'prod' }}
         run: |
           set -euo pipefail
 
@@ -130,38 +123,17 @@ jobs:
 
           node upload-calendar-to-r2.mjs --calendar-only
 
-          npx --yes wrangler@4.62.0 r2 object get --remote "${R2_BUCKET_NAME}/${RADARTIPS_SNAPSHOT_PREFIX:-prod}/snapshots/calendar_2d.json" --file "/tmp/r2_calendar_2d_uploaded.json"
+          npx --yes wrangler@4.62.0 r2 object get "${R2_BUCKET_NAME}/${RADARTIPS_SNAPSHOT_PREFIX:-prod}/snapshots/calendar_2d.json" --file "/tmp/r2_calendar_2d_uploaded.json" --remote
 
           echo "=== R2 published snapshot validation (fail-closed) ==="
-          node -e 'const fs=require("fs"); const crypto=require("crypto"); const localPath="data/v1/calendar_2d.json"; const remotePath="/tmp/r2_calendar_2d_uploaded.json"; const localRaw=fs.readFileSync(localPath,"utf8"); const remoteRaw=fs.readFileSync(remotePath,"utf8"); let local; let remote; try{ local=JSON.parse(localRaw); }catch(e){ console.error("[FATAL] Local JSON invalid:",e.message); process.exit(1);} try{ remote=JSON.parse(remoteRaw); }catch(e){ console.error("[FATAL] Remote JSON invalid:",e.message); process.exit(1);} const req=["generated_at_utc","base_date","today","tomorrow","tz"]; for(const f of req){ if(!remote?.meta?.[f]){ console.error(`[FATAL] remote.meta.${f} missing`); process.exit(1);} } const iso=/^\d{4}-\d{2}-\d{2}$/; if(!iso.test(String(remote.meta.base_date))||!iso.test(String(remote.meta.today))||!iso.test(String(remote.meta.tomorrow))){ console.error("[FATAL] Invalid date format in remote meta. Expected YYYY-MM-DD"); process.exit(1);} const plusOne=(d)=>{const [y,m,dd]=String(d).split("-").map(Number);const dt=new Date(Date.UTC(y,m-1,dd));dt.setUTCDate(dt.getUTCDate()+1);return dt.toISOString().slice(0,10);}; if(String(remote.meta.today)!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.today must equal remote.meta.base_date"); process.exit(1);} if(String(remote.meta.tomorrow)!==plusOne(remote.meta.base_date)){ console.error("[FATAL] remote.meta.tomorrow is inconsistent with base_date + 1 day"); process.exit(1);} if(String(remote.meta.tz)!=="America/Bahia"){ console.error("[FATAL] remote.meta.tz must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_timezone||"")!=="America/Bahia"){ console.error("[FATAL] remote.meta.generated_for_timezone must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_local_date||"")!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.generated_for_local_date must equal base_date"); process.exit(1);} if(String(remote.meta.generated_at_utc)!==String(local?.meta?.generated_at_utc)){ console.error("[FATAL] Published snapshot mismatch: generated_at_utc differs from local artifact"); process.exit(1);} const localHash=crypto.createHash("sha256").update(localRaw).digest("hex"); const remoteHash=crypto.createHash("sha256").update(remoteRaw).digest("hex"); console.log("local_sha256="+localHash); console.log("remote_sha256="+remoteHash); console.log("meta.generated_at_utc="+remote.meta.generated_at_utc); console.log("meta.base_date="+remote.meta.base_date); console.log("meta.today="+remote.meta.today); console.log("meta.tomorrow="+remote.meta.tomorrow); console.log("meta.tz="+remote.meta.tz); console.log("meta.leagues_source="+(remote?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(remote?.meta?.leagues_count||"")); console.log("[OK] Published snapshot validation passed.");'
-
-      - name: Publish league snapshots to R2 (mandatory when present)
-        if: ${{ always() && hashFiles('data/v1/leagues/*.json') != '' }}
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          R2_BUCKET_NAME: radartips-data
-        run: |
-          set -euo pipefail
-
-          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "[FATAL] Missing required Cloudflare secrets for publication."
-            echo "[FATAL] Required: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
-            exit 1
-          fi
-
-          npx --yes wrangler@4.62.0 --version
-          node upload-calendar-to-r2.mjs --leagues-only
-          npx --yes wrangler@4.62.0 r2 object get --remote "${R2_BUCKET_NAME}/${RADARTIPS_SNAPSHOT_PREFIX:-prod}/snapshots/leagues/premier-league.json" --file "/tmp/r2_premier_league_uploaded.json"
-
-          echo "=== R2 published league snapshot validation (fail-closed) ==="
-          node -e 'const fs=require("fs"); const crypto=require("crypto"); const raw=fs.readFileSync("/tmp/r2_premier_league_uploaded.json","utf8"); let snapshot; try{ snapshot=JSON.parse(raw); }catch(e){ console.error("[FATAL] Remote Premier League snapshot invalid:",e.message); process.exit(1);} const source=snapshot?.meta?.source||{}; const resources=Array.isArray(source.resources)?source.resources:[]; const payload=JSON.stringify(snapshot).toLowerCase(); const forbidden=["openfootball","football.json","standings_39_2025.json","compstats_39_2025.json"]; const matchesCount=Number(snapshot?.summary?.matches_count||snapshot?.statistics?.league?.matches_count||0); const goalsPerGame=Number(snapshot?.summary?.goals_per_game||snapshot?.statistics?.league?.goals_per_game||0); const teamsCount=Array.isArray(snapshot?.statistics?.teams)?snapshot.statistics.teams.length:0; if(String(source.provider)!=="api-football"){ console.error("[FATAL] Premier League source.provider must be api-football"); process.exit(1);} if(Number(source.league_id)!==39){ console.error("[FATAL] Premier League source.league_id must be 39"); process.exit(1);} if(!resources.includes("/standings")){ console.error("[FATAL] Premier League source.resources missing /standings"); process.exit(1);} if(!resources.includes("/teams/statistics") && !resources.includes("/fixtures")){ console.error("[FATAL] Premier League source.resources must include /teams/statistics or /fixtures"); process.exit(1);} if(matchesCount<=0){ console.error(`[FATAL] Premier League matches_count must be > 0 (received ${matchesCount})`); process.exit(1);} if(goalsPerGame<=0){ console.error(`[FATAL] Premier League goals_per_game must be > 0 (received ${goalsPerGame})`); process.exit(1);} if(teamsCount<=0){ console.error("[FATAL] Premier League snapshot must include statistics.teams rows"); process.exit(1);} for(const token of forbidden){ if(payload.includes(token)){ console.error(`[FATAL] Forbidden legacy token in Premier League snapshot: ${token}`); process.exit(1);} } const hash=crypto.createHash("sha256").update(raw).digest("hex"); console.log("premier_league_sha256="+hash); console.log("premier_league_generated_at_utc="+(snapshot?.meta?.generated_at_utc||"")); console.log("premier_league_provider="+source.provider); console.log("premier_league_resources="+resources.join(",")); console.log("premier_league_matches_count="+matchesCount); console.log("premier_league_goals_per_game="+goalsPerGame); console.log("premier_league_teams_count="+teamsCount); console.log("[OK] Remote Premier League snapshot validation passed.");'
+          node -e 'const fs=require("fs"); const crypto=require("crypto"); const localPath="data/v1/snapshots/calendar_2d.json"; const remotePath="/tmp/r2_calendar_2d_uploaded.json"; const localRaw=fs.readFileSync(localPath,"utf8"); const remoteRaw=fs.readFileSync(remotePath,"utf8"); let local; let remote; try{ local=JSON.parse(localRaw); }catch(e){ console.error("[FATAL] Local JSON invalid:",e.message); process.exit(1);} try{ remote=JSON.parse(remoteRaw); }catch(e){ console.error("[FATAL] Remote JSON invalid:",e.message); process.exit(1);} if(!Array.isArray(local?.radar_day?.highlights)){ console.error("[FATAL] local calendar_2d missing radar_day.highlights"); process.exit(1);} if(!Array.isArray(remote?.radar_day?.highlights)){ console.error("[FATAL] remote calendar_2d missing radar_day.highlights"); process.exit(1);} const al=remote?.meta?.allowlist_league_ids; if(!Array.isArray(al)||!al.length){ console.error("[FATAL] remote.meta.allowlist_league_ids missing or empty (Worker contract)"); process.exit(1);} const req=["generated_at_utc","base_date","today","tomorrow","tz"]; for(const f of req){ if(!remote?.meta?.[f]){ console.error(`[FATAL] remote.meta.${f} missing`); process.exit(1);} } const iso=/^\d{4}-\d{2}-\d{2}$/; if(!iso.test(String(remote.meta.base_date))||!iso.test(String(remote.meta.today))||!iso.test(String(remote.meta.tomorrow))){ console.error("[FATAL] Invalid date format in remote meta. Expected YYYY-MM-DD"); process.exit(1);} const plusOne=(d)=>{const [y,m,dd]=String(d).split("-").map(Number);const dt=new Date(Date.UTC(y,m-1,dd));dt.setUTCDate(dt.getUTCDate()+1);return dt.toISOString().slice(0,10);}; if(String(remote.meta.today)!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.today must equal remote.meta.base_date"); process.exit(1);} if(String(remote.meta.tomorrow)!==plusOne(remote.meta.base_date)){ console.error("[FATAL] remote.meta.tomorrow is inconsistent with base_date + 1 day"); process.exit(1);} if(String(remote.meta.tz)!=="America/Bahia"){ console.error("[FATAL] remote.meta.tz must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_timezone||"")!=="America/Bahia"){ console.error("[FATAL] remote.meta.generated_for_timezone must be America/Bahia"); process.exit(1);} if(String(remote?.meta?.generated_for_local_date||"")!==String(remote.meta.base_date)){ console.error("[FATAL] remote.meta.generated_for_local_date must equal base_date"); process.exit(1);} if(String(remote.meta.generated_at_utc)!==String(local?.meta?.generated_at_utc)){ console.error("[FATAL] Published snapshot mismatch: generated_at_utc differs from local artifact"); process.exit(1);} const localHash=crypto.createHash("sha256").update(localRaw).digest("hex"); const remoteHash=crypto.createHash("sha256").update(remoteRaw).digest("hex"); console.log("local_sha256="+localHash); console.log("remote_sha256="+remoteHash); console.log("meta.generated_at_utc="+remote.meta.generated_at_utc); console.log("meta.base_date="+remote.meta.base_date); console.log("meta.today="+remote.meta.today); console.log("meta.tomorrow="+remote.meta.tomorrow); console.log("meta.tz="+remote.meta.tz); console.log("meta.allowlist_league_ids_count="+al.length); console.log("meta.leagues_source="+(remote?.meta?.leagues_source||"")); console.log("meta.leagues_count="+(remote?.meta?.leagues_count||"")); console.log("[OK] Published snapshot validation passed.");'
 
       - name: Verify production calendar sync (fail-closed)
         if: ${{ always() && hashFiles('data/v1/calendar_2d.json') != '' }}
         env:
           RADARTIPS_BASE_URL: https://radartips.com
           RADARTIPS_EXPECTED_CALENDAR_PATH: data/v1/calendar_2d.json
+          RADARTIPS_SNAPSHOT_PREFIX: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.snapshot_prefix || 'prod' }}
         run: |
           set -euo pipefail
           if [ "${RADARTIPS_SNAPSHOT_PREFIX:-}" != "prod" ]; then
@@ -174,6 +146,7 @@ jobs:
         if: ${{ always() && hashFiles('data/v1/calendar_2d.json') != '' }}
         env:
           RADARTIPS_BASE_URL: https://radartips.com
+          RADARTIPS_SNAPSHOT_PREFIX: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.snapshot_prefix || 'prod' }}
         run: |
           set -euo pipefail
           if [ "${RADARTIPS_SNAPSHOT_PREFIX:-}" != "prod" ]; then
@@ -182,10 +155,44 @@ jobs:
           fi
           node tools/verify-production-data-consistency.mjs
 
+      - name: Generate fixed league snapshots (API-FOOTBALL, independent of calendar)
+        env:
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node tools/update-data-api-football.mjs --standings
+
+          test -f "data/v1/leagues/premier-league.json"
+
+      - name: Publish league snapshots to R2 (mandatory when present)
+        if: ${{ always() && hashFiles('data/v1/leagues/*.json') != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET_NAME: radartips-data
+          RADARTIPS_SNAPSHOT_PREFIX: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.snapshot_prefix || 'prod' }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo "[FATAL] Missing required Cloudflare secrets for publication."
+            echo "[FATAL] Required: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
+            exit 1
+          fi
+
+          npx --yes wrangler@4.62.0 --version
+          node upload-calendar-to-r2.mjs --leagues-only
+          npx --yes wrangler@4.62.0 r2 object get "${R2_BUCKET_NAME}/${RADARTIPS_SNAPSHOT_PREFIX:-prod}/snapshots/leagues/premier-league.json" --file "/tmp/r2_premier_league_uploaded.json" --remote
+
+          echo "=== R2 published league snapshot validation (fail-closed) ==="
+          node -e 'const fs=require("fs"); const crypto=require("crypto"); const raw=fs.readFileSync("/tmp/r2_premier_league_uploaded.json","utf8"); let snapshot; try{ snapshot=JSON.parse(raw); }catch(e){ console.error("[FATAL] Remote Premier League snapshot invalid:",e.message); process.exit(1);} const source=snapshot?.meta?.source||{}; const resources=Array.isArray(source.resources)?source.resources:[]; const payload=JSON.stringify(snapshot).toLowerCase(); const forbidden=["openfootball","football.json","standings_39_2025.json","compstats_39_2025.json"]; const matchesCount=Number(snapshot?.summary?.matches_count||snapshot?.statistics?.league?.matches_count||0); const goalsPerGame=Number(snapshot?.summary?.goals_per_game||snapshot?.statistics?.league?.goals_per_game||0); const teamsCount=Array.isArray(snapshot?.statistics?.teams)?snapshot.statistics.teams.length:0; if(String(source.provider)!=="api-football"){ console.error("[FATAL] Premier League source.provider must be api-football"); process.exit(1);} if(Number(source.league_id)!==39){ console.error("[FATAL] Premier League source.league_id must be 39"); process.exit(1);} if(!resources.includes("/standings")){ console.error("[FATAL] Premier League source.resources missing /standings"); process.exit(1);} if(!resources.includes("/teams/statistics") && !resources.includes("/fixtures")){ console.error("[FATAL] Premier League source.resources must include /teams/statistics or /fixtures"); process.exit(1);} if(matchesCount<=0){ console.error(`[FATAL] Premier League matches_count must be > 0 (received ${matchesCount})`); process.exit(1);} if(goalsPerGame<=0){ console.error(`[FATAL] Premier League goals_per_game must be > 0 (received ${goalsPerGame})`); process.exit(1);} if(teamsCount<=0){ console.error("[FATAL] Premier League snapshot must include statistics.teams rows"); process.exit(1);} for(const token of forbidden){ if(payload.includes(token)){ console.error(`[FATAL] Forbidden legacy token in Premier League snapshot: ${token}`); process.exit(1);} } const hash=crypto.createHash("sha256").update(raw).digest("hex"); console.log("premier_league_sha256="+hash); console.log("premier_league_generated_at_utc="+(snapshot?.meta?.generated_at_utc||"")); console.log("premier_league_provider="+source.provider); console.log("premier_league_resources="+resources.join(",")); console.log("premier_league_matches_count="+matchesCount); console.log("premier_league_goals_per_game="+goalsPerGame); console.log("premier_league_teams_count="+teamsCount); console.log("[OK] Remote Premier League snapshot validation passed.");'
+
       - name: Verify production Premier League snapshot (fail-closed)
         if: ${{ always() && hashFiles('data/v1/leagues/premier-league.json') != '' }}
         env:
           RADARTIPS_BASE_URL: https://radartips.com
+          RADARTIPS_SNAPSHOT_PREFIX: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.snapshot_prefix || 'prod' }}
         run: |
           set -euo pipefail
           if [ "${RADARTIPS_SNAPSHOT_PREFIX:-}" != "prod" ]; then

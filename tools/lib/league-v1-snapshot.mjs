@@ -1,3 +1,5 @@
+import { buildLeagueAnalyticsPackage } from "./league-analytics-engine.mjs";
+
 export const LEAGUE_PAGE_V1_DEFINITIONS = Object.freeze([
   {
     slug: "premier-league",
@@ -36,8 +38,9 @@ export const LEAGUE_PAGE_V1_DEFINITIONS = Object.freeze([
   {
     slug: "brasileirao",
     leagueId: 71,
-    defaultName: "Brasileirao",
-    defaultCountry: "Brazil"
+    defaultName: "Brasileirão Série A",
+    defaultCountry: "Brazil",
+    useFixtureModel: true
   }
 ]);
 
@@ -162,6 +165,7 @@ function toNumber(value, fallback = 0) {
 }
 
 function formatNumber(value, digits = 1) {
+  if (value === null || value === undefined) return "n/a";
   const num = Number(value);
   return Number.isFinite(num) ? num.toFixed(digits) : "n/a";
 }
@@ -260,23 +264,35 @@ function buildFixtures(fixturesPayload) {
     .sort((a, b) => Date.parse(a.kickoff_utc) - Date.parse(b.kickoff_utc));
 
   const now = Date.now();
-  const recent = normalized
+
+  /** All finished matches for the season (competition payload) — analytical source of truth. Chronological. */
+  const finishedAsc = normalized
     .filter((fixture) => fixture.hasResult && Date.parse(fixture.kickoff_utc) <= now)
+    .sort((a, b) => Date.parse(a.kickoff_utc) - Date.parse(b.kickoff_utc));
+
+  const finished = finishedAsc.map((fixture) => ({
+    fixture_id: fixture.fixture_id,
+    round: fixture.round,
+    kickoff_utc: fixture.kickoff_utc,
+    status: fixture.status,
+    home: fixture.home,
+    away: fixture.away,
+    score: `${fixture.home_goals}-${fixture.away_goals}`
+  }));
+
+  /**
+   * Display-only: most recent completed games (newest first). Must not be used for analytics.
+   * Derived from `finished` — cap is UI-only, not an analytical window.
+   */
+  const DISPLAY_RECENT_FIXTURES = 8;
+  const recent = finished
+    .slice()
     .sort((a, b) => Date.parse(b.kickoff_utc) - Date.parse(a.kickoff_utc))
-    .slice(0, 8)
-    .map((fixture) => ({
-      fixture_id: fixture.fixture_id,
-      round: fixture.round,
-      kickoff_utc: fixture.kickoff_utc,
-      status: fixture.status,
-      home: fixture.home,
-      away: fixture.away,
-      score: `${fixture.home_goals}-${fixture.away_goals}`
-    }));
+    .slice(0, DISPLAY_RECENT_FIXTURES);
 
   const upcoming = normalized
     .filter((fixture) => !fixture.hasResult || Date.parse(fixture.kickoff_utc) > now)
-    .slice(0, 8)
+    .sort((a, b) => Date.parse(a.kickoff_utc) - Date.parse(b.kickoff_utc))
     .map((fixture) => ({
       fixture_id: fixture.fixture_id,
       round: fixture.round,
@@ -286,7 +302,7 @@ function buildFixtures(fixturesPayload) {
       away: fixture.away
     }));
 
-  return { normalized, recent, upcoming };
+  return { normalized, finished, recent, upcoming };
 }
 
 function valueAtPath(obj, path) {
@@ -302,8 +318,10 @@ function valueAtPath(obj, path) {
 }
 
 function toPercentNumber(value) {
+  if (value === null || value === undefined) return null;
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  const normalized = String(value ?? "").replace("%", "").trim();
+  const normalized = String(value).replace("%", "").trim();
+  if (normalized === "" || normalized.toLowerCase() === "null") return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -424,7 +442,9 @@ function weightedAverage(rows, selector) {
   let weighted = 0;
   let totalWeight = 0;
   for (const row of rows) {
-    const value = Number(selector(row));
+    const raw = selector(row);
+    if (raw === null || raw === undefined) continue;
+    const value = Number(raw);
     const weight = Number(row?.played || row?.matches || 0);
     if (!Number.isFinite(value) || !Number.isFinite(weight) || weight <= 0) continue;
     weighted += value * weight;
@@ -523,7 +543,9 @@ function buildTeamRankings(teams) {
   function mapRankingRows(rows, valueSelector) {
     return rows
       .map((row) => {
-        const value = Number(valueSelector(row));
+        const raw = valueSelector(row);
+        if (raw === null || raw === undefined) return null;
+        const value = Number(raw);
         if (!Number.isFinite(value)) return null;
         return {
       team_id: Number.isFinite(Number(row?.team_id)) ? Number(row.team_id) : null,
@@ -666,7 +688,7 @@ function buildTrendCards(summary) {
 
 function buildTeamProfiles(standingsRows, teamRankings) {
   const byTeam = new Map(teamRankings.map((row) => [teamKey(row.team), row]));
-  return standingsRows.slice(0, 12).map((row) => {
+  return standingsRows.map((row) => {
     const stats = byTeam.get(teamKey(row.team)) || null;
     const tags = [];
 
@@ -692,12 +714,18 @@ function buildTeamProfiles(standingsRows, teamRankings) {
 function deriveCurrentRound(fixtures) {
   const upcomingRound = fixtures.upcoming[0]?.round;
   if (upcomingRound) return upcomingRound;
+  const fin = fixtures.finished;
+  if (Array.isArray(fin) && fin.length) {
+    return fin[fin.length - 1]?.round || "Matchday";
+  }
   return fixtures.recent[0]?.round || "Matchday";
 }
 
 function rankingRowsFromTeams(teams, selector, descending = true) {
   const source = (Array.isArray(teams) ? teams : []).filter((row) => {
-    const value = Number(selector(row));
+    const raw = selector(row);
+    if (raw === null || raw === undefined) return false;
+    const value = Number(raw);
     return Number.isFinite(value);
   });
   source.sort((a, b) => {
@@ -713,10 +741,19 @@ function rankingRowsFromTeams(teams, selector, descending = true) {
   }));
 }
 
+/** Integer ≥ 0 for optional count fields; undefined if absent/invalid. */
+function optionalNonNegativeInt(value) {
+  if (value === null || value === undefined) return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return Math.round(n);
+}
+
 export function enforceLeagueV1StatisticsContract(snapshot) {
   const out = snapshot && typeof snapshot === "object" ? snapshot : {};
   const statistics = out.statistics && typeof out.statistics === "object" ? out.statistics : {};
   const standings = Array.isArray(out.standings) ? out.standings : [];
+  const fixtureDerived = String(out.meta?.source?.model || "").trim() === "fixture_derived_v1";
 
   const standingsByTeam = new Map();
   for (const row of standings) {
@@ -737,16 +774,34 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
     const over15 = toPercentNumber(row?.over_15_pct);
     const over25 = toPercentNumber(row?.over_25_pct);
     const over35 = toPercentNumber(row?.over_35_pct);
+    const under25 = toPercentNumber(row?.under_25_pct);
     const btts = toPercentNumber(row?.btts_pct);
     const cleanSheets = toPercentNumber(row?.clean_sheets_pct);
     const failedToScore = toPercentNumber(row?.failed_to_score_pct);
 
-    if (!Number.isFinite(played) || played <= 0) {
+    if (!Number.isFinite(played) || played < 0 || (!fixtureDerived && played <= 0)) {
       throw new Error(`[LEAGUE-V1] Invalid played for team=${String(row?.team || "unknown")}`);
     }
-    if (!Number.isFinite(goalsFor) || !Number.isFinite(goalsAgainst)) {
+    if (fixtureDerived && played === 0) {
+      if (goalsFor !== 0 || goalsAgainst !== 0) {
+        throw new Error(`[LEAGUE-V1] Zero-played team must have 0 goals: ${String(row?.team || "unknown")}`);
+      }
+    } else if (!Number.isFinite(goalsFor) || !Number.isFinite(goalsAgainst)) {
       throw new Error(`[LEAGUE-V1] Invalid goals totals for team=${String(row?.team || "unknown")}`);
     }
+
+    const gForPg =
+      played > 0 && Number.isFinite(Number(row?.goals_for_per_game))
+        ? Number(row.goals_for_per_game)
+        : played > 0
+          ? Number((goalsFor / played).toFixed(3))
+          : null;
+    const gAgainstPg =
+      played > 0 && Number.isFinite(Number(row?.goals_against_per_game))
+        ? Number(row.goals_against_per_game)
+        : played > 0
+          ? Number((goalsAgainst / played).toFixed(3))
+          : null;
 
     return {
       team_id: Number.isFinite(Number(row?.team_id)) ? Number(row.team_id) : null,
@@ -755,16 +810,39 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
       matches: played,
       goals_for: goalsFor,
       goals_against: goalsAgainst,
-      goals_for_per_game: Number.isFinite(Number(row?.goals_for_per_game)) ? Number(row.goals_for_per_game) : Number((goalsFor / played).toFixed(3)),
-      goals_against_per_game: Number.isFinite(Number(row?.goals_against_per_game)) ? Number(row.goals_against_per_game) : Number((goalsAgainst / played).toFixed(3)),
+      goals_for_per_game: gForPg,
+      goals_against_per_game: gAgainstPg,
+      ...(optionalNonNegativeInt(row?.over_15_count) !== undefined
+        ? { over_15_count: optionalNonNegativeInt(row.over_15_count) }
+        : {}),
+      ...(optionalNonNegativeInt(row?.over_25_count) !== undefined
+        ? { over_25_count: optionalNonNegativeInt(row.over_25_count) }
+        : {}),
+      ...(optionalNonNegativeInt(row?.over_35_count) !== undefined
+        ? { over_35_count: optionalNonNegativeInt(row.over_35_count) }
+        : {}),
+      ...(optionalNonNegativeInt(row?.under_25_count) !== undefined
+        ? { under_25_count: optionalNonNegativeInt(row.under_25_count) }
+        : {}),
+      ...(optionalNonNegativeInt(row?.btts_count) !== undefined ? { btts_count: optionalNonNegativeInt(row.btts_count) } : {}),
+      ...(optionalNonNegativeInt(row?.clean_sheets_count) !== undefined
+        ? { clean_sheets_count: optionalNonNegativeInt(row.clean_sheets_count) }
+        : {}),
+      ...(optionalNonNegativeInt(row?.failed_to_score_count) !== undefined
+        ? { failed_to_score_count: optionalNonNegativeInt(row.failed_to_score_count) }
+        : {}),
       over_15_pct: over15,
       over_25_pct: over25,
       over_35_pct: over35,
+      under_25_pct: under25,
       btts_pct: btts,
       clean_sheets_pct: cleanSheets,
       failed_to_score_pct: failedToScore,
       goals_scored: goalsFor,
       goals_conceded: goalsAgainst,
+      ...(row?.discipline && typeof row.discipline === "object" ? { discipline: row.discipline } : {}),
+      ...(row?.corners && typeof row.corners === "object" ? { corners: row.corners } : {}),
+      ...(row?.goalkeeper && typeof row.goalkeeper === "object" ? { goalkeeper: row.goalkeeper } : {}),
       // Pass through extended fixture-model fields (home/away splits per team,
       // corners and cards averages). These are null when not yet bootstrapped.
       ...(row?.home && typeof row.home === "object" ? { home: row.home } : {}),
@@ -792,9 +870,9 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
     : {
         by_goals_for: rankingRowsFromTeams(teams, (row) => row?.goals_for ?? row?.goals_scored ?? 0, true),
         by_goals_against: rankingRowsFromTeams(teams, (row) => row?.goals_against ?? row?.goals_conceded ?? 0, false),
-        by_btts_pct: rankingRowsFromTeams(teams, (row) => row?.btts_pct ?? 0, true),
-        by_over_25_pct: rankingRowsFromTeams(teams, (row) => row?.over_25_pct ?? 0, true),
-        by_clean_sheets_pct: rankingRowsFromTeams(teams, (row) => row?.clean_sheets_pct ?? 0, true)
+        by_btts_pct: rankingRowsFromTeams(teams, (row) => row?.btts_pct, true),
+        by_over_25_pct: rankingRowsFromTeams(teams, (row) => row?.over_25_pct, true),
+        by_clean_sheets_pct: rankingRowsFromTeams(teams, (row) => row?.clean_sheets_pct, true)
       };
 
   const splitsIn = statistics.home_away_splits && typeof statistics.home_away_splits === "object"
@@ -840,6 +918,50 @@ export function enforceLeagueV1StatisticsContract(snapshot) {
   };
 
   return out;
+}
+
+/**
+ * Fail-closed checks for fixture_derived_v1: no /teams/statistics, team rows reconcile to league.
+ */
+export function assertFixtureDerivedStatisticsReconciles(snapshot) {
+  if (String(snapshot?.meta?.source?.model || "").trim() !== "fixture_derived_v1") {
+    return snapshot;
+  }
+  const teams = snapshot?.statistics?.teams;
+  const league = snapshot?.statistics?.league;
+  if (!Array.isArray(teams) || !league) {
+    throw new Error("[LEAGUE-V1] assertFixtureDerivedStatisticsReconciles: missing statistics.teams/league");
+  }
+  const resources = Array.isArray(snapshot.meta?.source?.resources)
+    ? snapshot.meta.source.resources.map((r) => String(r || "").trim())
+    : [];
+  if (resources.includes("/teams/statistics")) {
+    throw new Error("[LEAGUE-V1] Fixture-derived snapshot must not list /teams/statistics as a resource");
+  }
+
+  const matchesCount = Number(league.matches_count);
+  const sumPlayed = teams.reduce((s, t) => s + Number(t.played ?? t.matches ?? 0), 0);
+  if (!Number.isFinite(matchesCount) || matchesCount < 0) {
+    throw new Error("[LEAGUE-V1] assertFixtureDerivedStatisticsReconciles: invalid league.matches_count");
+  }
+  if (sumPlayed !== 2 * matchesCount) {
+    throw new Error(
+      `[LEAGUE-V1] Fixture-derived reconcile: sum(team.played)=${sumPlayed} expected 2*matches_count=${2 * matchesCount}`
+    );
+  }
+  const sumGF = teams.reduce((s, t) => s + Number(t.goals_for ?? 0), 0);
+  const sumGA = teams.reduce((s, t) => s + Number(t.goals_against ?? 0), 0);
+  if (sumGF !== sumGA) {
+    throw new Error(
+      `[LEAGUE-V1] Fixture-derived reconcile: sum(goals_for)=${sumGF} !== sum(goals_against)=${sumGA}`
+    );
+  }
+  if (Number(league.goals_for_total) !== sumGF || Number(league.goals_against_total) !== sumGA) {
+    throw new Error(
+      `[LEAGUE-V1] Fixture-derived reconcile: league totals goals_for_total=${league.goals_for_total} goals_against_total=${league.goals_against_total} vs sums ${sumGF}/${sumGA}`
+    );
+  }
+  return snapshot;
 }
 
 export function buildLeagueV1Snapshot({
@@ -891,6 +1013,7 @@ export function buildLeagueV1Snapshot({
     summary,
     standings: standingsRows,
     fixtures: {
+      finished: fixtures.finished,
       upcoming: fixtures.upcoming,
       recent: fixtures.recent
     },
@@ -953,9 +1076,14 @@ export function buildLeagueV1Snapshot({
     }
   };
 
-  return assertLeaguePageSnapshotHasCoreData(
+  const finalized = assertLeaguePageSnapshotHasCoreData(
     assertLeaguePageSnapshotUsesApiFootball(enforceLeagueV1StatisticsContract(snapshot), leagueDefinition)
   );
+  const leaguePkg = buildLeagueAnalyticsPackage(finalized);
+  finalized.league_analytics = leaguePkg.league_analytics;
+  finalized.league_page_ui = leaguePkg.league_page_ui;
+  finalized.team_page_ui_by_team_id = leaguePkg.team_page_ui_by_team_id;
+  return finalized;
 }
 
 export function buildPremierLeagueV1Snapshot(args) {
@@ -987,13 +1115,15 @@ export function buildPremierLeagueV1Snapshot(args) {
  * @param {object}   opts.standingsPayload   - raw /standings API response
  * @param {Array}    opts.allSeasonFixtures  - raw /fixtures response items (all statuses)
  * @param {string}   opts.generatedAtUtc
+ * @param {string[]} [opts.apiFootballResources] - listed in meta.source.resources (default standings+fixtures)
  */
 export function buildLeagueV1SnapshotFromTeamAggregates({
   leagueDefinition = PREMIER_LEAGUE_V1,
   teamAggregates,
   standingsPayload,
   allSeasonFixtures = [],
-  generatedAtUtc = new Date().toISOString()
+  generatedAtUtc = new Date().toISOString(),
+  apiFootballResources = null
 }) {
   const aggregatesArray = Object.values(teamAggregates || {});
   if (!aggregatesArray.length) {
@@ -1009,6 +1139,30 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
   const fixturesWrapped = buildFixtures({ response: allSeasonFixtures });
 
   // ── map team aggregates to statistics.teams format ───────────────────────
+  function splitCountsBlock(s) {
+    return {
+      played: s.played,
+      goals_for: s.goals_for,
+      goals_against: s.goals_against,
+      goals_for_per_game: s.goals_for_per_game,
+      goals_against_per_game: s.goals_against_per_game,
+      over_15_count: s.over_15_count,
+      over_15_pct: s.over_15_pct,
+      over_25_count: s.over_25_count,
+      over_25_pct: s.over_25_pct,
+      over_35_count: s.over_35_count,
+      over_35_pct: s.over_35_pct,
+      under_25_count: s.under_25_count,
+      under_25_pct: s.under_25_pct,
+      btts_count: s.btts_count,
+      btts_pct: s.btts_pct,
+      clean_sheets_count: s.clean_sheets_count,
+      clean_sheets_pct: s.clean_sheets_pct,
+      failed_to_score_count: s.failed_to_score_count,
+      failed_to_score_pct: s.failed_to_score_pct
+    };
+  }
+
   const teamStats = aggregatesArray.map((agg) => {
     const total = agg.total;
     const home = agg.home;
@@ -1023,36 +1177,24 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
       goals_against: total.goals_against,
       goals_for_per_game: total.goals_for_per_game,
       goals_against_per_game: total.goals_against_per_game,
+      over_15_count: total.over_15_count,
       over_15_pct: total.over_15_pct,
+      over_25_count: total.over_25_count,
       over_25_pct: total.over_25_pct,
+      over_35_count: total.over_35_count,
       over_35_pct: total.over_35_pct,
-      under_25_pct: total.over_25_pct !== null ? Number((100 - total.over_25_pct).toFixed(2)) : null,
+      under_25_count: total.under_25_count,
+      under_25_pct: total.under_25_pct,
+      btts_count: total.btts_count,
       btts_pct: total.btts_pct,
+      clean_sheets_count: total.clean_sheets_count,
       clean_sheets_pct: total.clean_sheets_pct,
+      failed_to_score_count: total.failed_to_score_count,
       failed_to_score_pct: total.failed_to_score_pct,
       goals_scored: total.goals_for,
       goals_conceded: total.goals_against,
-      // Extended: per-team home/away splits (fully populated from fixture data)
-      home: {
-        played: home.played,
-        goals_for: home.goals_for,
-        goals_against: home.goals_against,
-        goals_for_per_game: home.goals_for_per_game,
-        btts_pct: home.btts_pct,
-        over_25_pct: home.over_25_pct,
-        clean_sheets_pct: home.clean_sheets_pct,
-        failed_to_score_pct: home.failed_to_score_pct
-      },
-      away: {
-        played: away.played,
-        goals_for: away.goals_for,
-        goals_against: away.goals_against,
-        goals_for_per_game: away.goals_for_per_game,
-        btts_pct: away.btts_pct,
-        over_25_pct: away.over_25_pct,
-        clean_sheets_pct: away.clean_sheets_pct,
-        failed_to_score_pct: away.failed_to_score_pct
-      },
+      home: splitCountsBlock(home),
+      away: splitCountsBlock(away),
       // Advanced stats (null if fixture stats not yet bootstrapped)
       corners_for_avg: total.corners_for_avg ?? null,
       corners_against_avg: total.corners_against_avg ?? null,
@@ -1068,9 +1210,17 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
       fouls_for_avg: total.fouls_for_avg ?? null,
       fouls_against_avg: total.fouls_against_avg ?? null,
       offsides_for_avg: total.offsides_for_avg ?? null,
-      offsides_against_avg: total.offsides_against_avg ?? null
+      offsides_against_avg: total.offsides_against_avg ?? null,
+      discipline: agg.discipline || null,
+      corners: agg.corners || null,
+      goalkeeper: agg.goalkeeper || null
     };
   });
+
+  const resourcesList =
+    Array.isArray(apiFootballResources) && apiFootballResources.length
+      ? apiFootballResources.map((r) => String(r || "").trim()).filter(Boolean)
+      : ["/standings", "/fixtures"];
 
   // ── league-level statistics from aggregates ──────────────────────────────
   // Each match is represented in two team facts (home + away). We use only
@@ -1080,6 +1230,7 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
   const matchesCount = totalHomePlayed; // each home team = one unique match
 
   const totalGoalsForAll = aggregatesArray.reduce((s, a) => s + a.total.goals_for, 0);
+  const totalGoalsAgainstAll = aggregatesArray.reduce((s, a) => s + a.total.goals_against, 0);
   const goalsPerGame = matchesCount > 0 ? Number((totalGoalsForAll / matchesCount).toFixed(3)) : null;
 
   // BTTS: from home team perspective (each match counted once)
@@ -1091,11 +1242,12 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
   const totalOver15 = homeAggs.reduce((s, h) => s + h.over_15_count, 0);
   const totalOver25 = homeAggs.reduce((s, h) => s + h.over_25_count, 0);
   const totalOver35 = homeAggs.reduce((s, h) => s + h.over_35_count, 0);
+  const totalUnder25 = matchesCount - totalOver25;
   const leagueOver05Pct = matchesCount > 0 ? Number(((totalOver05 / matchesCount) * 100).toFixed(2)) : null;
   const leagueOver15Pct = matchesCount > 0 ? Number(((totalOver15 / matchesCount) * 100).toFixed(2)) : null;
   const leagueOver25Pct = matchesCount > 0 ? Number(((totalOver25 / matchesCount) * 100).toFixed(2)) : null;
   const leagueOver35Pct = matchesCount > 0 ? Number(((totalOver35 / matchesCount) * 100).toFixed(2)) : null;
-  const leagueUnder25Pct = leagueOver25Pct !== null ? Number((100 - leagueOver25Pct).toFixed(2)) : null;
+  const leagueUnder25Pct = matchesCount > 0 ? Number(((totalUnder25 / matchesCount) * 100).toFixed(2)) : null;
 
   // Clean sheets / failed to score: sum across ALL team appearances (both home+away)
   // "league clean_sheets_pct" = % of team-games where the team kept a clean sheet
@@ -1119,15 +1271,17 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
   const awayGoalsAvg = totalAwayPlayed > 0 ? Number((awayGoalsTotal / totalAwayPlayed).toFixed(3)) : null;
 
   const homeBttsPct = matchesCount > 0 ? Number(((totalBtts / matchesCount) * 100).toFixed(2)) : null;
-  const awayBttsPct = homeBttsPct; // BTTS is symmetric
+  const awayBttsPct = homeBttsPct;
 
   const totalHomeClean = homeAggs.reduce((s, h) => s + h.clean_sheets_count, 0);
   const totalAwayClean = awayAggs.reduce((s, a) => s + a.clean_sheets_count, 0);
   const homeCleanSheetsPct = totalHomePlayed > 0 ? Number(((totalHomeClean / totalHomePlayed) * 100).toFixed(2)) : null;
   const awayCleanSheetsPct = totalAwayPlayed > 0 ? Number(((totalAwayClean / totalAwayPlayed) * 100).toFixed(2)) : null;
 
-  const homeOver25Pct = leagueOver25Pct; // same match, just different perspective
-  const awayOver25Pct = leagueOver25Pct;
+  const homeOver25Sum = homeAggs.reduce((s, h) => s + h.over_25_count, 0);
+  const awayOver25Sum = awayAggs.reduce((s, a) => s + a.over_25_count, 0);
+  const homeOver25Pct = totalHomePlayed > 0 ? Number(((homeOver25Sum / totalHomePlayed) * 100).toFixed(2)) : null;
+  const awayOver25Pct = totalAwayPlayed > 0 ? Number(((awayOver25Sum / totalAwayPlayed) * 100).toFixed(2)) : null;
 
   // Corners average (only if fixture stats were bootstrapped)
   const homeCornerAggs = homeAggs.filter((h) => h.corners_for_total !== null);
@@ -1182,12 +1336,19 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
   const summary = {
     matches_count: matchesCount,
     goals_per_game: goalsPerGame,
-    btts_pct: leagueBttsPct,
+    over_15_count: totalOver15,
     over_15_pct: leagueOver15Pct,
+    over_25_count: totalOver25,
     over_25_pct: leagueOver25Pct,
+    over_35_count: totalOver35,
     over_35_pct: leagueOver35Pct,
+    under_25_count: totalUnder25,
     under_25_pct: leagueUnder25Pct,
+    btts_count: totalBtts,
+    btts_pct: leagueBttsPct,
+    clean_sheets_count: totalCleanSheets,
     clean_sheets_pct: leagueCleanSheetsPct,
+    failed_to_score_count: totalFailed,
     failed_to_score_pct: leagueFailedPct
   };
 
@@ -1247,17 +1408,25 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
   const league = {
     matches_count: matchesCount,
     goals_for_total: totalGoalsForAll,
-    goals_against_total: totalGoalsForAll,
+    goals_against_total: totalGoalsAgainstAll,
     goals_per_game: goalsPerGame,
     home_goals_avg: homeGoalsAvg,
     away_goals_avg: awayGoalsAvg,
+    over_05_count: totalOver05,
     over_05_pct: leagueOver05Pct,
+    over_15_count: totalOver15,
     over_15_pct: leagueOver15Pct,
+    over_25_count: totalOver25,
     over_25_pct: leagueOver25Pct,
+    over_35_count: totalOver35,
     over_35_pct: leagueOver35Pct,
+    under_25_count: totalUnder25,
     under_25_pct: leagueUnder25Pct,
+    btts_count: totalBtts,
     btts_pct: leagueBttsPct,
+    clean_sheets_count: totalCleanSheets,
     clean_sheets_pct: leagueCleanSheetsPct,
+    failed_to_score_count: totalFailed,
     failed_to_score_pct: leagueFailedPct,
     home_btts_pct: homeBttsPct,
     away_btts_pct: awayBttsPct,
@@ -1330,6 +1499,7 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
     summary,
     standings: standingsRows,
     fixtures: {
+      finished: fixturesWrapped.finished,
       upcoming: fixturesWrapped.upcoming,
       recent: fixturesWrapped.recent
     },
@@ -1357,7 +1527,7 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
         provider: "api-football",
         league_id: leagueDefinition.leagueId,
         season: seasonStr,
-        resources: ["/standings", "/fixtures"],
+        resources: resourcesList,
         model: "fixture_derived_v1"
       },
       version: "league_page_v1",
@@ -1365,7 +1535,34 @@ export function buildLeagueV1SnapshotFromTeamAggregates({
     }
   };
 
-  return assertLeaguePageSnapshotHasCoreData(
-    assertLeaguePageSnapshotUsesApiFootball(enforceLeagueV1StatisticsContract(snapshot), leagueDefinition)
-  );
+  const enforced = enforceLeagueV1StatisticsContract(snapshot);
+  assertFixtureDerivedStatisticsReconciles(enforced);
+  assertFinishedFixturesAlignWithFixtureDerivedSnapshot(enforced);
+  const finalized = assertLeaguePageSnapshotHasCoreData(assertLeaguePageSnapshotUsesApiFootball(enforced, leagueDefinition));
+  const leaguePkg = buildLeagueAnalyticsPackage(finalized);
+  finalized.league_analytics = leaguePkg.league_analytics;
+  finalized.league_page_ui = leaguePkg.league_page_ui;
+  finalized.team_page_ui_by_team_id = leaguePkg.team_page_ui_by_team_id;
+  return finalized;
+}
+
+/**
+ * fixture_derived_v1: every finished league match must appear exactly once in fixtures.finished
+ * (same cardinality as summary.matches_count).
+ */
+function assertFinishedFixturesAlignWithFixtureDerivedSnapshot(snapshot) {
+  if (String(snapshot?.meta?.source?.model || "").trim() !== "fixture_derived_v1") {
+    return snapshot;
+  }
+  const expected = Number(snapshot?.summary?.matches_count);
+  const fin = Array.isArray(snapshot?.fixtures?.finished) ? snapshot.fixtures.finished : [];
+  if (!Number.isFinite(expected) || expected <= 0) {
+    throw new Error("[LEAGUE-V1] fixture_derived snapshot missing valid summary.matches_count");
+  }
+  if (fin.length !== expected) {
+    throw new Error(
+      `[LEAGUE-V1] Data integrity: fixtures.finished length ${fin.length} !== summary.matches_count ${expected}`
+    );
+  }
+  return snapshot;
 }

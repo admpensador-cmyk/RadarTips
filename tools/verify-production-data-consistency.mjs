@@ -102,6 +102,20 @@ async function main() {
     });
   }
 
+  const embedRows = Array.isArray(calendar?.meta?.allowlist_leagues) ? calendar.meta.allowlist_leagues : [];
+  if (!embedRows.length) {
+    fail("calendar_2d.meta.allowlist_leagues is missing or empty (embed full rows in calendar pipeline)");
+  }
+  const embedIdSet = toNumericSet(embedRows.map((r) => r?.league_id));
+  const idsNotEmbed = difference(calendarIds, embedIdSet);
+  const embedNotIds = difference(embedIdSet, calendarIds);
+  if (idsNotEmbed.length > 0 || embedNotIds.length > 0) {
+    fail("meta.allowlist_leagues must contain exactly the same league_ids as meta.allowlist_league_ids", {
+      only_in_allowlist_league_ids: idsNotEmbed,
+      only_in_allowlist_leagues: embedNotIds
+    });
+  }
+
   console.log(`[OK] calendar_2d status=200 and allowlist status=200`);
   console.log(`[OK] coverage_allowlist tier field present in all ${leagues.length} entries`);
   console.log(`[OK] critical league_ids present: ${CRITICAL_IDS.join(",")}`);

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brasileirão preview (static snapshots)</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 52rem; margin: 2rem auto; padding: 0 1rem; color: #111; }
+    h1 { font-size: 1.25rem; }
+    pre { background: #f4f4f5; padding: 1rem; overflow: auto; font-size: 0.8rem; border-radius: 8px; }
+    .ok { color: #15803d; }
+    .err { color: #b91c1c; }
+    p.note { color: #52525b; font-size: 0.9rem; }
+  </style>
+  <meta name="radartips-build" content="715524529942">
+</head>
+<body>
+  <h1>Brasileirão — preview pipeline (static JSON)</h1>
+  <p class="note">Loads only <code>/data/preview/brasileirao/competition.json</code> and <code>team-stats.json</code>. No API-Football calls from the browser.</p>
+  <p id="status">Loading…</p>
+  <h2>Competition meta</h2>
+  <pre id="comp-meta">—</pre>
+  <h2>Counts</h2>
+  <pre id="counts">—</pre>
+  <h2>Team-stats source (preview / debug)</h2>
+  <pre id="stats-source">—</pre>
+  <h2>Discipline sample (Bahia if present)</h2>
+  <pre id="discipline-sample">—</pre>
+  <script>
+    (async function () {
+      const status = document.getElementById("status");
+      const compMeta = document.getElementById("comp-meta");
+      const counts = document.getElementById("counts");
+      const statsSource = document.getElementById("stats-source");
+      const disciplineSample = document.getElementById("discipline-sample");
+      const base = "/data/preview/brasileirao/";
+      try {
+        const [c, s] = await Promise.all([
+          fetch(base + "competition.json", { cache: "no-store" }),
+          fetch(base + "team-stats.json", { cache: "no-store" })
+        ]);
+        if (!c.ok) throw new Error("competition.json HTTP " + c.status);
+        if (!s.ok) throw new Error("team-stats.json HTTP " + s.status);
+        const comp = await c.json();
+        const stats = await s.json();
+        status.innerHTML = '<span class="ok">OK — snapshots loaded from static data/</span>';
+        compMeta.textContent = JSON.stringify(
+          {
+            generated_at_utc: comp.meta?.generated_at_utc,
+            league_id: comp.meta?.league_id,
+            season: comp.meta?.season,
+            schema: comp.meta?.schema
+          },
+          null,
+          2
+        );
+        const teams = Array.isArray(stats.teams) ? stats.teams : [];
+        const withDisc = teams.filter(function (t) { return t && t.discipline != null; });
+        counts.textContent = JSON.stringify(
+          {
+            team_stats_schema: stats.meta?.schema ?? null,
+            standings_rows: Array.isArray(comp.standings) ? comp.standings.length : 0,
+            fixtures_upcoming: comp.fixtures?.upcoming?.length ?? 0,
+            fixtures_recent: comp.fixtures?.recent?.length ?? 0,
+            stats_teams: teams.length,
+            teams_with_discipline_block: withDisc.length
+          },
+          null,
+          2
+        );
+        statsSource.textContent = JSON.stringify(
+          {
+            schema: stats.meta?.schema ?? null,
+            source_resources: stats.meta?.source?.resources ?? null
+          },
+          null,
+          2
+        );
+        const bahia = teams.find(function (t) {
+          return t && t.identity && String(t.identity.team || "").toLowerCase() === "bahia";
+        });
+        disciplineSample.textContent = JSON.stringify(
+          bahia && bahia.discipline != null
+            ? { team: bahia.identity?.team ?? null, discipline: bahia.discipline }
+            : { team: null, discipline: null, note: "Bahia or discipline block missing" },
+          null,
+          2
+        );
+      } catch (e) {
+        status.innerHTML = '<span class="err">Failed: ' + (e && e.message ? e.message : String(e)) + "</span>";
+      }
+    })();
+  </script>
+</body>
+</html>

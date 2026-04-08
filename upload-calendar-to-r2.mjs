@@ -44,6 +44,16 @@ if (PREFIX === 'prod' && process.env.RADARTIPS_DENY_PROD_UPLOAD === '1') {
   throw new Error('[FAIL-CLOSED] RADARTIPS_DENY_PROD_UPLOAD=1 blocks production namespace writes');
 }
 
+// Wrangler and the Cloudflare REST API expect these names; map common aliases before any R2 calls.
+(function normalizeWranglerAuthAliases() {
+  const tok = String(process.env.CLOUDFLARE_API_TOKEN || '').trim();
+  const cfTok = String(process.env.CF_API_TOKEN || '').trim();
+  if (!tok && cfTok) process.env.CLOUDFLARE_API_TOKEN = cfTok;
+  const acct = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
+  const cfAcct = String(process.env.CF_ACCOUNT_ID || '').trim();
+  if (!acct && cfAcct) process.env.CLOUDFLARE_ACCOUNT_ID = cfAcct;
+})();
+
 /** @param {string} rel e.g. snapshots/calendar_2d.json */
 function remote(rel) {
   const r = String(rel || '').replace(/^\/+/, '');
@@ -62,8 +72,6 @@ function assertPrefixedR2Key(remoteKey, context) {
 }
 
 const CALENDAR_2D_PATH = path.join(ROOT, 'data', 'v1', 'calendar_2d.json');
-/** Legacy: older generators wrote radar only here; Worker + R2 expect it inside calendar_2d. */
-const RADAR_DAY_LEGACY_PATH = path.join(ROOT, 'data', 'v1', 'radar_day.json');
 const COVERAGE_ALLOWLIST_PATH = path.join(ROOT, 'data', 'coverage_allowlist.json');
 const LEAGUES_DIR = path.join(ROOT, 'data', 'v1', 'leagues');
 const SNAPSHOTS_DIR = path.join(ROOT, 'data', 'v1', 'snapshots');
@@ -173,25 +181,24 @@ if (uploadCalendarArtifacts) {
   calendar = JSON.parse(fs.readFileSync(CALENDAR_2D_PATH, 'utf8'));
   allowlistIds = readAllowlistLeagueIds();
 
+  if (!calendar.meta || typeof calendar.meta !== 'object') {
+    throw new Error('[FAIL-CLOSED] calendar_2d.meta must be an object');
+  }
+  /** Worker validateCalendarAllowlist requires non-empty meta.allowlist_league_ids (same scope as coverage_allowlist.json). */
+  const allowlistSorted = Array.from(allowlistIds).sort((a, b) => a - b);
+  if (!allowlistSorted.length) {
+    throw new Error('[FAIL-CLOSED] coverage allowlist yielded no league ids');
+  }
+  calendar.meta.allowlist_league_ids = allowlistSorted;
+
   if (!Array.isArray(calendar?.today) || !Array.isArray(calendar?.tomorrow)) {
     throw new Error('[FAIL-CLOSED] Invalid calendar_2d shape: expected today/tomorrow arrays');
   }
 
   if (!calendar?.radar_day || typeof calendar.radar_day !== 'object') {
-    if (fs.existsSync(RADAR_DAY_LEGACY_PATH)) {
-      const legacy = JSON.parse(fs.readFileSync(RADAR_DAY_LEGACY_PATH, 'utf8'));
-      if (Array.isArray(legacy?.highlights)) {
-        calendar.radar_day = {
-          highlights: legacy.highlights,
-          generated_at_utc: String(legacy.generated_at_utc || calendar?.meta?.generated_at_utc || '')
-        };
-        console.log('✓ Embedded radar_day from data/v1/radar_day.json (legacy split artifact → single R2 payload)');
-      }
-    }
-  }
-
-  if (!calendar?.radar_day || typeof calendar.radar_day !== 'object') {
-    throw new Error('[FAIL-CLOSED] calendar_2d must embed radar_day (single source of truth)');
+    throw new Error(
+      '[FAIL-CLOSED] calendar_2d must embed radar_day (derive highlights in the calendar pipeline only; no separate radar_day.json)'
+    );
   }
   if (!Array.isArray(calendar.radar_day.highlights)) {
     throw new Error('[FAIL-CLOSED] calendar_2d.radar_day.highlights must be an array');
@@ -335,6 +342,48 @@ function spawnWrangler(args) {
   });
 }
 
+function maskAccountId(id) {
+  const s = String(id || '').trim();
+  if (s.length <= 8) return s ? '(set)' : '(missing)';
+  return `${s.slice(0, 4)}…${s.slice(-4)}`;
+}
+
+/** Cheap R2 permission check before multi-object upload. Set RADARTIPS_SKIP_R2_PREFLIGHT=1 to skip. */
+async function preflightR2ApiAccess() {
+  if (String(process.env.RADARTIPS_SKIP_R2_PREFLIGHT || '').trim() === '1') {
+    return;
+  }
+  const token = String(process.env.CLOUDFLARE_API_TOKEN || '').trim();
+  if (!token) {
+    throw new Error(
+      '[R2-PREFLIGHT] Missing CLOUDFLARE_API_TOKEN (or CF_API_TOKEN). Add to .env.production.local or export in the shell.'
+    );
+  }
+  const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
+  if (!accountId) {
+    throw new Error(
+      '[R2-PREFLIGHT] Missing CLOUDFLARE_ACCOUNT_ID (or CF_ACCOUNT_ID). Required for R2 API calls.'
+    );
+  }
+  console.log(
+    `[R2-PREFLIGHT] account_id=${maskAccountId(accountId)} bucket=${R2_BUCKET} prefix=${PREFIX}/ (Workers R2 Storage: Edit required)`
+  );
+  try {
+    // wrangler 4.x: `r2 bucket list` has no --remote (unlike `r2 object put/get`).
+    await spawnWrangler(['r2', 'bucket', 'list']);
+  } catch (e) {
+    console.error('\n[R2-PREFLIGHT] wrangler r2 bucket list failed.');
+    console.error(
+      'HTTP 403 or API error 10000 here usually means the token cannot use R2 (e.g. Pages-only token).'
+    );
+    console.error('Dashboard → My Profile → API Tokens → Edit token → Permissions:');
+    console.error('  • Account → Workers R2 Storage → Edit');
+    console.error(`  • Scope includes bucket "${R2_BUCKET}" (or all buckets in this account)`);
+    console.error('  • Account ID on the token must match CLOUDFLARE_ACCOUNT_ID for that bucket.\n');
+    throw e;
+  }
+}
+
 async function uploadTargetOnce(target) {
   const fullKey = `${R2_BUCKET}/${target.remote}`;
   /** Wrangler 4.x: objectPath is positional `{bucket}/{key}`; `--remote` is a boolean flag (not a prefix to the path). */
@@ -441,6 +490,7 @@ async function verifyUploadedJsonArtifact(target) {
 
 (async () => {
   try {
+    await preflightR2ApiAccess();
     console.log(`[R2-UPLOAD] queue=${uploadTargets.length} object(s) bucket=${R2_BUCKET} prefix=${PREFIX}/`);
     for (const target of uploadTargets) {
       await uploadTarget(target);
@@ -484,8 +534,9 @@ async function verifyUploadedJsonArtifact(target) {
     console.error(`\n❌ Upload failed: ${err.message}`);
     console.error('Make sure you have:');
     console.error('   - npx/wrangler available');
-    console.error('   - CLOUDFLARE_ACCOUNT_ID environment variable set');
-    console.error('   - Proper R2 perms with API token (via .env.local or env var)');
+    console.error('   - CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID (.env.production.local or shell)');
+    console.error('   - Token permission: Account → Workers R2 Storage → Edit (Pages-only tokens get 403 on R2)');
+    console.error('   - R2_BUCKET_NAME=radartips-data if your bucket name differs');
     process.exit(1);
   }
 })();

@@ -30,5 +30,20 @@ if (!fs.existsSync(dist)) {
 mustExist(PRIMARY);
 for (const rel of SECONDARY) mustExist(rel);
 
+for (const rel of [
+  "assets/logo-radartips-mark-official.png",
+  "assets/favicon.svg",
+  "assets/logo-mark.svg",
+  "assets/logo-mark-on-dark.svg",
+  "assets/logo-radartips-dark.svg",
+  "assets/logo-radartips.svg",
+  "assets/flags/countries/gb.svg",
+  "assets/flags/countries/cl.svg",
+  "assets/flags/countries/eu.svg",
+  "_worker.js"
+]) {
+  mustExist(rel);
+}
+
 console.log(`[verify-dist-routes] OK primary=${PRIMARY} secondary=${SECONDARY.length} locales`);
 process.exit(0);

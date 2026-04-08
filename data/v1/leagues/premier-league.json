@@ -1574,7 +1574,7 @@
     "summary_text": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
   },
   "meta": {
-    "generated_at_utc": "2026-03-26T21:21:15.772Z",
+    "generated_at_utc": "2026-04-08T02:41:26.913Z",
     "source": {
       "standings": "https://radartips.com/data/v1/standings_39_2025.json",
       "compstats": "https://radartips.com/data/v1/compstats_39_2025.json",
@@ -1582,5 +1582,4793 @@
     },
     "version": "league_page_v1",
     "schema": 1
+  },
+  "league_analytics": {
+    "schema": "league_analytics_v1",
+    "competition_id": 39,
+    "season": "2025",
+    "slug": "premier-league",
+    "summary_metrics": {
+      "matches_count": 291,
+      "goals_per_game": 2.773,
+      "over_15_pct": 79.38,
+      "over_25_pct": 53.95,
+      "under_25_pct": 46.05,
+      "btts_pct": 56.36,
+      "clean_sheets_pct": 43.64,
+      "failed_to_score_pct": 25.26
+    },
+    "team_rankings": {
+      "by_goals_for": [
+        {
+          "team_id": 0,
+          "team": "Manchester City FC",
+          "value": 59,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Arsenal FC",
+          "value": 59,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Chelsea FC",
+          "value": 53,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester United FC",
+          "value": 51,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Liverpool FC",
+          "value": 48,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "AFC Bournemouth",
+          "value": 44,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brentford FC",
+          "value": 44,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Newcastle United FC",
+          "value": 42,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Fulham FC",
+          "value": 40,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Aston Villa FC",
+          "value": 39,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Tottenham Hotspur FC",
+          "value": 39,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Brighton & Hove Albion FC",
+          "value": 38,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Leeds United FC",
+          "value": 37,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "West Ham United FC",
+          "value": 35,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Everton FC",
+          "value": 34,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Crystal Palace FC",
+          "value": 33,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Burnley FC",
+          "value": 32,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Sunderland AFC",
+          "value": 30,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Nottingham Forest FC",
+          "value": 28,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Wolverhampton Wanderers FC",
+          "value": 22,
+          "matches": 0
+        }
+      ],
+      "by_goals_against": [
+        {
+          "team_id": 0,
+          "team": "Arsenal FC",
+          "value": 22,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester City FC",
+          "value": 27,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Everton FC",
+          "value": 33,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Chelsea FC",
+          "value": 34,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Aston Villa FC",
+          "value": 34,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Sunderland AFC",
+          "value": 34,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Crystal Palace FC",
+          "value": 35,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brighton & Hove Albion FC",
+          "value": 36,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Liverpool FC",
+          "value": 39,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester United FC",
+          "value": 40,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brentford FC",
+          "value": 40,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Newcastle United FC",
+          "value": 43,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Fulham FC",
+          "value": 43,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Nottingham Forest FC",
+          "value": 43,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "AFC Bournemouth",
+          "value": 46,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Tottenham Hotspur FC",
+          "value": 46,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Leeds United FC",
+          "value": 48,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Wolverhampton Wanderers FC",
+          "value": 52,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "West Ham United FC",
+          "value": 54,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Burnley FC",
+          "value": 58,
+          "matches": 26
+        }
+      ],
+      "by_btts_pct": [
+        {
+          "team_id": 0,
+          "team": "Manchester United FC",
+          "value": 72.41,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Chelsea FC",
+          "value": 68.97,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "AFC Bournemouth",
+          "value": 65.52,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Newcastle United FC",
+          "value": 65.52,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Liverpool FC",
+          "value": 62.07,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Fulham FC",
+          "value": 62.07,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Tottenham Hotspur FC",
+          "value": 62.07,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Brighton & Hove Albion FC",
+          "value": 62.07,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Leeds United FC",
+          "value": 62.07,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "West Ham United FC",
+          "value": 58.62,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Burnley FC",
+          "value": 58.62,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brentford FC",
+          "value": 51.72,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Aston Villa FC",
+          "value": 51.72,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Crystal Palace FC",
+          "value": 51.72,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Arsenal FC",
+          "value": 50,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester City FC",
+          "value": 48.28,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Everton FC",
+          "value": 44.83,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Sunderland AFC",
+          "value": 44.83,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Wolverhampton Wanderers FC",
+          "value": 43.33,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Nottingham Forest FC",
+          "value": 41.38,
+          "matches": 26
+        }
+      ],
+      "by_over_25_pct": [
+        {
+          "team_id": 0,
+          "team": "Tottenham Hotspur FC",
+          "value": 68.97,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Chelsea FC",
+          "value": 65.52,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Newcastle United FC",
+          "value": 65.52,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester City FC",
+          "value": 62.07,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Liverpool FC",
+          "value": 62.07,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "West Ham United FC",
+          "value": 62.07,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester United FC",
+          "value": 58.62,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Fulham FC",
+          "value": 58.62,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "AFC Bournemouth",
+          "value": 55.17,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Leeds United FC",
+          "value": 55.17,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Arsenal FC",
+          "value": 53.33,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Burnley FC",
+          "value": 51.72,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Nottingham Forest FC",
+          "value": 51.72,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brentford FC",
+          "value": 48.28,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Aston Villa FC",
+          "value": 48.28,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Crystal Palace FC",
+          "value": 48.28,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brighton & Hove Albion FC",
+          "value": 44.83,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Wolverhampton Wanderers FC",
+          "value": 43.33,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Sunderland AFC",
+          "value": 41.38,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Everton FC",
+          "value": 34.48,
+          "matches": 26
+        }
+      ],
+      "by_clean_sheets_pct": [
+        {
+          "team_id": 0,
+          "team": "Arsenal FC",
+          "value": 46.67,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester City FC",
+          "value": 41.38,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Everton FC",
+          "value": 34.48,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Crystal Palace FC",
+          "value": 34.48,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Chelsea FC",
+          "value": 31.03,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Liverpool FC",
+          "value": 31.03,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Sunderland AFC",
+          "value": 31.03,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "AFC Bournemouth",
+          "value": 27.59,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Aston Villa FC",
+          "value": 27.59,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Brentford FC",
+          "value": 24.14,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Newcastle United FC",
+          "value": 24.14,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Tottenham Hotspur FC",
+          "value": 24.14,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Brighton & Hove Albion FC",
+          "value": 20.69,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Nottingham Forest FC",
+          "value": 20.69,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Manchester United FC",
+          "value": 17.24,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Fulham FC",
+          "value": 17.24,
+          "matches": 26
+        },
+        {
+          "team_id": 0,
+          "team": "Leeds United FC",
+          "value": 13.79,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "West Ham United FC",
+          "value": 13.79,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Wolverhampton Wanderers FC",
+          "value": 13.33,
+          "matches": 0
+        },
+        {
+          "team_id": 0,
+          "team": "Burnley FC",
+          "value": 10.34,
+          "matches": 26
+        }
+      ]
+    },
+    "home_away_splits": {
+      "goals_home": 441,
+      "goals_away": 366,
+      "btts_home_pct": 56.36,
+      "btts_away_pct": 56.36,
+      "over_25_home_pct": 53.95,
+      "over_25_away_pct": 53.95,
+      "clean_sheets_home_pct": 27.49,
+      "clean_sheets_away_pct": 23.02,
+      "home": {
+        "goals_avg": 0,
+        "btts_pct": 56.36,
+        "over_25_pct": 53.95,
+        "clean_sheets_pct": 27.49
+      },
+      "away": {
+        "goals_avg": 0,
+        "btts_pct": 56.36,
+        "over_25_pct": 53.95,
+        "clean_sheets_pct": 23.02
+      }
+    },
+    "trend_cards": [
+      {
+        "title": "Goal pressure",
+        "value": "2.77 goals/game",
+        "note": "Over profile above neutral line"
+      },
+      {
+        "title": "BTTS cadence",
+        "value": "56.4%",
+        "note": "Frequent bilateral scoring"
+      },
+      {
+        "title": "Clean sheet footprint",
+        "value": "43.6%",
+        "note": "Defenses concede often"
+      },
+      {
+        "title": "Failed to score",
+        "value": "25.3%",
+        "note": "Higher blank-match incidence"
+      }
+    ],
+    "team_profiles_tags": [
+      {
+        "team": "Arsenal",
+        "position": 1,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "defensive stable",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Manchester City",
+        "position": 2,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "defensive stable",
+          "over profile",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Aston Villa",
+        "position": 3,
+        "profile": "top-zone pressure",
+        "tags": [
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Manchester United",
+        "position": 4,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "BTTS profile",
+          "over profile",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Chelsea",
+        "position": 5,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "BTTS profile",
+          "over profile",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Liverpool",
+        "position": 6,
+        "profile": "offensive strong",
+        "tags": [
+          "offensive strong",
+          "BTTS profile",
+          "over profile",
+          "top-zone pressure"
+        ]
+      },
+      {
+        "team": "Brentford",
+        "position": 7,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Everton",
+        "position": 8,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Bournemouth",
+        "position": 9,
+        "profile": "BTTS profile",
+        "tags": [
+          "BTTS profile",
+          "over profile"
+        ]
+      },
+      {
+        "team": "Newcastle",
+        "position": 10,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Sunderland",
+        "position": 11,
+        "profile": "balanced profile",
+        "tags": [
+          "balanced profile"
+        ]
+      },
+      {
+        "team": "Fulham",
+        "position": 12,
+        "profile": "BTTS profile",
+        "tags": [
+          "BTTS profile",
+          "over profile"
+        ]
+      }
+    ],
+    "summary_text": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile.",
+    "team_analytics_by_team_id": {
+      "900000": {
+        "schema": "team_analytics_v1",
+        "team_id": 900000,
+        "team": "Manchester City FC",
+        "profile_scores": {
+          "overall": 80.63,
+          "attack": 68.37,
+          "defense": 90.11,
+          "control": 84.82,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 92.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900001": {
+        "schema": "team_analytics_v1",
+        "team_id": 900001,
+        "team": "Arsenal FC",
+        "profile_scores": {
+          "overall": 81.92,
+          "attack": 68.37,
+          "defense": 96.7,
+          "control": 80.06,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 97.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900002": {
+        "schema": "team_analytics_v1",
+        "team_id": 900002,
+        "team": "Chelsea FC",
+        "profile_scores": {
+          "overall": 61.53,
+          "attack": 63.78,
+          "defense": 66.67,
+          "control": 50.45,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 72.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900003": {
+        "schema": "team_analytics_v1",
+        "team_id": 900003,
+        "team": "Manchester United FC",
+        "profile_scores": {
+          "overall": 44.1,
+          "attack": 60.71,
+          "defense": 25.82,
+          "control": 46.58,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 25
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900004": {
+        "schema": "team_analytics_v1",
+        "team_id": 900004,
+        "team": "Liverpool FC",
+        "profile_scores": {
+          "overall": 58.39,
+          "attack": 57.65,
+          "defense": 57.88,
+          "control": 60.27,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 72.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900005": {
+        "schema": "team_analytics_v1",
+        "team_id": 900005,
+        "team": "AFC Bournemouth",
+        "profile_scores": {
+          "overall": 38.25,
+          "attack": 53.06,
+          "defense": 34.07,
+          "control": 22.32,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 60
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900006": {
+        "schema": "team_analytics_v1",
+        "team_id": 900006,
+        "team": "Brentford FC",
+        "profile_scores": {
+          "overall": 52.24,
+          "attack": 53.06,
+          "defense": 37.55,
+          "control": 73.07,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 47.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900007": {
+        "schema": "team_analytics_v1",
+        "team_id": 900007,
+        "team": "Newcastle United FC",
+        "profile_scores": {
+          "overall": 48.75,
+          "attack": 50,
+          "defense": 47.5,
+          "control": null,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 47.5
+        },
+        "data_quality": "D",
+        "available_features": [
+          "failed_to_score_pct",
+          "clean_sheet_pct"
+        ],
+        "missing_features": [
+          "goals_for_per_game",
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_0_5_plus_pct",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "goals_against_per_game",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "conceded_at_least_one_pct",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "win_rate",
+          "points_per_game",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "draw_rate",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 0,
+          "variance_sample_factor": 0
+        }
+      },
+      "900008": {
+        "schema": "team_analytics_v1",
+        "team_id": 900008,
+        "team": "Fulham FC",
+        "profile_scores": {
+          "overall": 40.28,
+          "attack": 48.47,
+          "defense": 19.96,
+          "control": 58.48,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 25
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900009": {
+        "schema": "team_analytics_v1",
+        "team_id": 900009,
+        "team": "Aston Villa FC",
+        "profile_scores": {
+          "overall": 58.76,
+          "attack": 45.41,
+          "defense": 57.51,
+          "control": 80.65,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 60
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900010": {
+        "schema": "team_analytics_v1",
+        "team_id": 900010,
+        "team": "Tottenham Hotspur FC",
+        "profile_scores": {
+          "overall": 48.75,
+          "attack": 50,
+          "defense": 47.5,
+          "control": null,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 47.5
+        },
+        "data_quality": "D",
+        "available_features": [
+          "failed_to_score_pct",
+          "clean_sheet_pct"
+        ],
+        "missing_features": [
+          "goals_for_per_game",
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_0_5_plus_pct",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "goals_against_per_game",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "conceded_at_least_one_pct",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "win_rate",
+          "points_per_game",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "draw_rate",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 0,
+          "variance_sample_factor": 0
+        }
+      },
+      "900011": {
+        "schema": "team_analytics_v1",
+        "team_id": 900011,
+        "team": "Brighton & Hove Albion FC",
+        "profile_scores": {
+          "overall": 42.5,
+          "attack": 50,
+          "defense": 35,
+          "control": null,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 35
+        },
+        "data_quality": "D",
+        "available_features": [
+          "failed_to_score_pct",
+          "clean_sheet_pct"
+        ],
+        "missing_features": [
+          "goals_for_per_game",
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_0_5_plus_pct",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "goals_against_per_game",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "conceded_at_least_one_pct",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "win_rate",
+          "points_per_game",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "draw_rate",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 0,
+          "variance_sample_factor": 0
+        }
+      },
+      "900012": {
+        "schema": "team_analytics_v1",
+        "team_id": 900012,
+        "team": "Leeds United FC",
+        "profile_scores": {
+          "overall": 32.5,
+          "attack": 50,
+          "defense": 15,
+          "control": null,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 15
+        },
+        "data_quality": "D",
+        "available_features": [
+          "failed_to_score_pct",
+          "clean_sheet_pct"
+        ],
+        "missing_features": [
+          "goals_for_per_game",
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_0_5_plus_pct",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "goals_against_per_game",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "conceded_at_least_one_pct",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "win_rate",
+          "points_per_game",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "draw_rate",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 0,
+          "variance_sample_factor": 0
+        }
+      },
+      "900013": {
+        "schema": "team_analytics_v1",
+        "team_id": 900013,
+        "team": "West Ham United FC",
+        "profile_scores": {
+          "overall": 32.5,
+          "attack": 50,
+          "defense": 15,
+          "control": null,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 15
+        },
+        "data_quality": "D",
+        "available_features": [
+          "failed_to_score_pct",
+          "clean_sheet_pct"
+        ],
+        "missing_features": [
+          "goals_for_per_game",
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_0_5_plus_pct",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "goals_against_per_game",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "conceded_at_least_one_pct",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "win_rate",
+          "points_per_game",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "draw_rate",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 0,
+          "variance_sample_factor": 0
+        }
+      },
+      "900014": {
+        "schema": "team_analytics_v1",
+        "team_id": 900014,
+        "team": "Everton FC",
+        "profile_scores": {
+          "overall": 56.85,
+          "attack": 42.35,
+          "defense": 81.68,
+          "control": 41.37,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 85
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900015": {
+        "schema": "team_analytics_v1",
+        "team_id": 900015,
+        "team": "Crystal Palace FC",
+        "profile_scores": {
+          "overall": 46.55,
+          "attack": 39.29,
+          "defense": 69.96,
+          "control": 22.32,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 85
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900016": {
+        "schema": "team_analytics_v1",
+        "team_id": 900016,
+        "team": "Burnley FC",
+        "profile_scores": {
+          "overall": 21.29,
+          "attack": 36.22,
+          "defense": 3.3,
+          "control": 25.89,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 2.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900017": {
+        "schema": "team_analytics_v1",
+        "team_id": 900017,
+        "team": "Sunderland AFC",
+        "profile_scores": {
+          "overall": 43.35,
+          "attack": 33.16,
+          "defense": 66.67,
+          "control": 23.66,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 72.5
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900018": {
+        "schema": "team_analytics_v1",
+        "team_id": 900018,
+        "team": "Nottingham Forest FC",
+        "profile_scores": {
+          "overall": 28.59,
+          "attack": 30.1,
+          "defense": 26.1,
+          "control": 30.06,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 35
+        },
+        "data_quality": "C",
+        "available_features": [
+          "goals_for_per_game",
+          "team_scored_0_5_plus_pct",
+          "failed_to_score_pct",
+          "goals_against_per_game",
+          "clean_sheet_pct",
+          "conceded_at_least_one_pct",
+          "win_rate",
+          "points_per_game",
+          "draw_rate"
+        ],
+        "missing_features": [
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 26,
+          "variance_sample_factor": 1
+        }
+      },
+      "900019": {
+        "schema": "team_analytics_v1",
+        "team_id": 900019,
+        "team": "Wolverhampton Wanderers FC",
+        "profile_scores": {
+          "overall": 28.75,
+          "attack": 50,
+          "defense": 7.5,
+          "control": null,
+          "consistency": null,
+          "aggressiveness": null,
+          "goalkeeper": 7.5
+        },
+        "data_quality": "D",
+        "available_features": [
+          "failed_to_score_pct",
+          "clean_sheet_pct"
+        ],
+        "missing_features": [
+          "goals_for_per_game",
+          "shots_per_game",
+          "shots_on_target_per_game",
+          "xg_per_game",
+          "team_scored_0_5_plus_pct",
+          "team_scored_1_5_plus_pct",
+          "shots_per_goal",
+          "shots_on_target_per_goal",
+          "goals_against_per_game",
+          "shots_conceded_per_game",
+          "shots_on_target_conceded_per_game",
+          "xga_per_game",
+          "conceded_at_least_one_pct",
+          "shots_conceded_per_goal_allowed",
+          "shots_on_target_conceded_per_goal_allowed",
+          "goals_conceded_stddev",
+          "scored_first_pct",
+          "leading_ht_pct",
+          "win_rate",
+          "points_per_game",
+          "wins_to_nil_pct",
+          "comeback_wins_pct",
+          "conceded_first_pct",
+          "goals_scored_stddev",
+          "btts_rate_variance",
+          "over_25_rate_variance",
+          "result_entropy_norm",
+          "fouls_committed_per_game",
+          "fouls_suffered_per_game",
+          "yellow_cards_per_game",
+          "red_cards_per_game",
+          "saves_per_game",
+          "save_rate",
+          "goals_conceded_per_shot_on_target_faced",
+          "draw_rate",
+          "clean_sheet_freq_variance",
+          "failed_to_score_freq_variance"
+        ],
+        "meta": {
+          "competition_id": 39,
+          "season": 2025,
+          "split": "total",
+          "engine_version": "v1",
+          "normalization_method": "winsorized_percentile_v1",
+          "matches_played": 0,
+          "variance_sample_factor": 0
+        }
+      }
+    }
+  },
+  "league_page_ui": {
+    "schema": 1,
+    "engine_version": "league_analytics_engine_v1",
+    "hero_metrics": [
+      {
+        "label": "Goals / match",
+        "value": "2.77",
+        "trend": "steady"
+      },
+      {
+        "label": "BTTS",
+        "value": "56.4%",
+        "trend": "steady"
+      },
+      {
+        "label": "Over 2.5",
+        "value": "54.0%",
+        "trend": "steady"
+      },
+      {
+        "label": "Clean sheets",
+        "value": "43.6%",
+        "trend": "steady"
+      }
+    ],
+    "overview_competition_summary": [
+      {
+        "label": "Average goals",
+        "value": "2.77",
+        "insight": "from finished season fixtures (snapshot)"
+      },
+      {
+        "label": "BTTS",
+        "value": "56.4%",
+        "insight": "both teams to score ratio"
+      },
+      {
+        "label": "Over 1.5",
+        "value": "79.4%",
+        "insight": "goal floor consistency"
+      },
+      {
+        "label": "Over 2.5",
+        "value": "54.0%",
+        "insight": "primary totals trigger"
+      },
+      {
+        "label": "Under 2.5",
+        "value": "46.0%",
+        "insight": "controlled-game counterweight"
+      }
+    ],
+    "overview_global_trends": [
+      {
+        "title": "Goal trend",
+        "value": "2.77 goals/game",
+        "note": "high-volume phase"
+      },
+      {
+        "title": "BTTS trend",
+        "value": "56.4%",
+        "note": "bilateral scoring above baseline"
+      },
+      {
+        "title": "Home edge",
+        "value": "56.4%",
+        "note": "home-away split monitored"
+      },
+      {
+        "title": "Over/Under shape",
+        "value": "54.0% over 2.5",
+        "note": "defensive resistance still present"
+      }
+    ],
+    "quick_rankings": [
+      {
+        "label": "Best attack",
+        "team": "Manchester City FC"
+      },
+      {
+        "label": "Best defense",
+        "team": "Arsenal FC"
+      },
+      {
+        "label": "Most over 2.5",
+        "team": "Tottenham Hotspur FC"
+      },
+      {
+        "label": "Most BTTS",
+        "team": "Manchester United FC"
+      },
+      {
+        "label": "Most clean sheets",
+        "team": "Arsenal FC"
+      }
+    ],
+    "statistics_league_cards": [
+      {
+        "label": "Goals / game",
+        "value": "2.77"
+      },
+      {
+        "label": "Over 2.5",
+        "value": "54.0%"
+      },
+      {
+        "label": "BTTS",
+        "value": "56.4%"
+      },
+      {
+        "label": "Clean sheets",
+        "value": "43.6%"
+      }
+    ],
+    "statistics_ranking_groups": [
+      {
+        "title": "Top ataques",
+        "rows": [
+          {
+            "team": "Manchester City FC",
+            "value": 59,
+            "matches": 26
+          },
+          {
+            "team": "Arsenal FC",
+            "value": 59,
+            "matches": 26
+          },
+          {
+            "team": "Chelsea FC",
+            "value": 53,
+            "matches": 26
+          },
+          {
+            "team": "Manchester United FC",
+            "value": 51,
+            "matches": 26
+          },
+          {
+            "team": "Liverpool FC",
+            "value": 48,
+            "matches": 26
+          }
+        ]
+      },
+      {
+        "title": "Melhores defesas",
+        "rows": [
+          {
+            "team": "Arsenal FC",
+            "value": 22,
+            "matches": 26
+          },
+          {
+            "team": "Manchester City FC",
+            "value": 27,
+            "matches": 26
+          },
+          {
+            "team": "Everton FC",
+            "value": 33,
+            "matches": 26
+          },
+          {
+            "team": "Chelsea FC",
+            "value": 34,
+            "matches": 26
+          },
+          {
+            "team": "Aston Villa FC",
+            "value": 34,
+            "matches": 26
+          }
+        ]
+      },
+      {
+        "title": "Mais BTTS",
+        "rows": [
+          {
+            "team": "Manchester United FC",
+            "value": 72.41,
+            "matches": 26
+          },
+          {
+            "team": "Chelsea FC",
+            "value": 68.97,
+            "matches": 26
+          },
+          {
+            "team": "AFC Bournemouth",
+            "value": 65.52,
+            "matches": 26
+          },
+          {
+            "team": "Newcastle United FC",
+            "value": 65.52,
+            "matches": 0
+          },
+          {
+            "team": "Liverpool FC",
+            "value": 62.07,
+            "matches": 26
+          }
+        ]
+      },
+      {
+        "title": "Mais Over 2.5",
+        "rows": [
+          {
+            "team": "Tottenham Hotspur FC",
+            "value": 68.97,
+            "matches": 0
+          },
+          {
+            "team": "Chelsea FC",
+            "value": 65.52,
+            "matches": 26
+          },
+          {
+            "team": "Newcastle United FC",
+            "value": 65.52,
+            "matches": 0
+          },
+          {
+            "team": "Manchester City FC",
+            "value": 62.07,
+            "matches": 26
+          },
+          {
+            "team": "Liverpool FC",
+            "value": 62.07,
+            "matches": 26
+          }
+        ]
+      },
+      {
+        "title": "Mais clean sheets",
+        "rows": [
+          {
+            "team": "Arsenal FC",
+            "value": 46.67,
+            "matches": 26
+          },
+          {
+            "team": "Manchester City FC",
+            "value": 41.38,
+            "matches": 26
+          },
+          {
+            "team": "Everton FC",
+            "value": 34.48,
+            "matches": 26
+          },
+          {
+            "team": "Crystal Palace FC",
+            "value": 34.48,
+            "matches": 26
+          },
+          {
+            "team": "Chelsea FC",
+            "value": 31.03,
+            "matches": 26
+          }
+        ]
+      }
+    ],
+    "statistics_splits": [
+      {
+        "metric": "Goals avg",
+        "home_label": "0.00",
+        "away_label": "0.00",
+        "bar_home": 0,
+        "bar_away": 0
+      },
+      {
+        "metric": "Share of goals",
+        "home_label": "54.6% (441)",
+        "away_label": "45.4% (366)",
+        "bar_home": 54.646840148698885,
+        "bar_away": 45.353159851301115
+      },
+      {
+        "metric": "Over 2.5",
+        "home_label": "54.0%",
+        "away_label": "54.0%",
+        "bar_home": 53.95,
+        "bar_away": 53.95
+      },
+      {
+        "metric": "Clean sheets",
+        "home_label": "27.5%",
+        "away_label": "23.0%",
+        "bar_home": 27.49,
+        "bar_away": 23.02
+      }
+    ],
+    "teams_index": [
+      {
+        "team": "Arsenal",
+        "position": 1,
+        "form": "DWWLD",
+        "goalsFor": 50,
+        "goalsAgainst": 18,
+        "btts": "50.0%",
+        "profile": "offensive strong"
+      },
+      {
+        "team": "Manchester City",
+        "position": 2,
+        "form": "WWDWL",
+        "goalsFor": 54,
+        "goalsAgainst": 24,
+        "btts": "48.3%",
+        "profile": "offensive strong"
+      },
+      {
+        "team": "Aston Villa",
+        "position": 3,
+        "form": "WDLWL",
+        "goalsFor": 37,
+        "goalsAgainst": 27,
+        "btts": "51.7%",
+        "profile": "top-zone pressure"
+      },
+      {
+        "team": "Manchester United",
+        "position": 4,
+        "form": "DWWWW",
+        "goalsFor": 47,
+        "goalsAgainst": 37,
+        "btts": "72.4%",
+        "profile": "offensive strong"
+      },
+      {
+        "team": "Chelsea",
+        "position": 5,
+        "form": "DWWWW",
+        "goalsFor": 47,
+        "goalsAgainst": 30,
+        "btts": "69.0%",
+        "profile": "offensive strong"
+      },
+      {
+        "team": "Liverpool",
+        "position": 6,
+        "form": "WLWLD",
+        "goalsFor": 41,
+        "goalsAgainst": 35,
+        "btts": "62.1%",
+        "profile": "offensive strong"
+      },
+      {
+        "team": "Brentford",
+        "position": 7,
+        "form": "DWWLL",
+        "goalsFor": 40,
+        "goalsAgainst": 35,
+        "btts": "51.7%",
+        "profile": "balanced profile"
+      },
+      {
+        "team": "Everton",
+        "position": 8,
+        "form": "LWDDW",
+        "goalsFor": 29,
+        "goalsAgainst": 30,
+        "btts": "44.8%",
+        "profile": "balanced profile"
+      },
+      {
+        "team": "Bournemouth",
+        "position": 9,
+        "form": "WDWWD",
+        "goalsFor": 43,
+        "goalsAgainst": 45,
+        "btts": "65.5%",
+        "profile": "BTTS profile"
+      },
+      {
+        "team": "Newcastle",
+        "position": 10,
+        "form": "WLLLD",
+        "goalsFor": 37,
+        "goalsAgainst": 37,
+        "btts": "0.0%",
+        "profile": "balanced profile"
+      },
+      {
+        "team": "Sunderland",
+        "position": 11,
+        "form": "LLWLW",
+        "goalsFor": 27,
+        "goalsAgainst": 30,
+        "btts": "44.8%",
+        "profile": "balanced profile"
+      },
+      {
+        "team": "Fulham",
+        "position": 12,
+        "form": "LLLWL",
+        "goalsFor": 35,
+        "goalsAgainst": 40,
+        "btts": "62.1%",
+        "profile": "BTTS profile"
+      },
+      {
+        "team": "Crystal Palace",
+        "position": 13,
+        "form": "LWDLL",
+        "goalsFor": 28,
+        "goalsAgainst": 32,
+        "btts": "51.7%",
+        "profile": "—"
+      },
+      {
+        "team": "Brighton",
+        "position": 14,
+        "form": "LLDLD",
+        "goalsFor": 34,
+        "goalsAgainst": 34,
+        "btts": "0.0%",
+        "profile": "—"
+      },
+      {
+        "team": "Leeds",
+        "position": 15,
+        "form": "DWLDW",
+        "goalsFor": 36,
+        "goalsAgainst": 45,
+        "btts": "0.0%",
+        "profile": "—"
+      },
+      {
+        "team": "Tottenham",
+        "position": 16,
+        "form": "LLDDL",
+        "goalsFor": 36,
+        "goalsAgainst": 37,
+        "btts": "0.0%",
+        "profile": "—"
+      },
+      {
+        "team": "Nottingham Forest",
+        "position": 17,
+        "form": "DLDWD",
+        "goalsFor": 25,
+        "goalsAgainst": 38,
+        "btts": "41.4%",
+        "profile": "—"
+      },
+      {
+        "team": "West Ham",
+        "position": 18,
+        "form": "DWLWW",
+        "goalsFor": 32,
+        "goalsAgainst": 49,
+        "btts": "0.0%",
+        "profile": "—"
+      },
+      {
+        "team": "Burnley",
+        "position": 19,
+        "form": "WLLDD",
+        "goalsFor": 28,
+        "goalsAgainst": 51,
+        "btts": "58.6%",
+        "profile": "—"
+      },
+      {
+        "team": "Wolves",
+        "position": 20,
+        "form": "DLLLD",
+        "goalsFor": 16,
+        "goalsAgainst": 48,
+        "btts": "0.0%",
+        "profile": "—"
+      }
+    ],
+    "team_profile_comparison": {
+      "rows": [
+        {
+          "team": "Arsenal",
+          "team_id": 900001,
+          "scores": {
+            "overall": 81.92,
+            "attack": 68.37,
+            "defense": 96.7,
+            "control": 80.06,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 97.5
+          }
+        },
+        {
+          "team": "Manchester City",
+          "team_id": 900000,
+          "scores": {
+            "overall": 80.63,
+            "attack": 68.37,
+            "defense": 90.11,
+            "control": 84.82,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 92.5
+          }
+        },
+        {
+          "team": "Aston Villa",
+          "team_id": 900009,
+          "scores": {
+            "overall": 58.76,
+            "attack": 45.41,
+            "defense": 57.51,
+            "control": 80.65,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 60
+          }
+        },
+        {
+          "team": "Manchester United",
+          "team_id": 900003,
+          "scores": {
+            "overall": 44.1,
+            "attack": 60.71,
+            "defense": 25.82,
+            "control": 46.58,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 25
+          }
+        },
+        {
+          "team": "Chelsea",
+          "team_id": 900002,
+          "scores": {
+            "overall": 61.53,
+            "attack": 63.78,
+            "defense": 66.67,
+            "control": 50.45,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 72.5
+          }
+        },
+        {
+          "team": "Liverpool",
+          "team_id": 900004,
+          "scores": {
+            "overall": 58.39,
+            "attack": 57.65,
+            "defense": 57.88,
+            "control": 60.27,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 72.5
+          }
+        },
+        {
+          "team": "Brentford",
+          "team_id": 900006,
+          "scores": {
+            "overall": 52.24,
+            "attack": 53.06,
+            "defense": 37.55,
+            "control": 73.07,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 47.5
+          }
+        },
+        {
+          "team": "Everton",
+          "team_id": 900014,
+          "scores": {
+            "overall": 56.85,
+            "attack": 42.35,
+            "defense": 81.68,
+            "control": 41.37,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 85
+          }
+        },
+        {
+          "team": "Bournemouth",
+          "team_id": 900005,
+          "scores": {
+            "overall": 38.25,
+            "attack": 53.06,
+            "defense": 34.07,
+            "control": 22.32,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 60
+          }
+        },
+        {
+          "team": "Newcastle",
+          "team_id": 830009,
+          "scores": null
+        },
+        {
+          "team": "Sunderland",
+          "team_id": 900017,
+          "scores": {
+            "overall": 43.35,
+            "attack": 33.16,
+            "defense": 66.67,
+            "control": 23.66,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 72.5
+          }
+        },
+        {
+          "team": "Fulham",
+          "team_id": 900008,
+          "scores": {
+            "overall": 40.28,
+            "attack": 48.47,
+            "defense": 19.96,
+            "control": 58.48,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 25
+          }
+        },
+        {
+          "team": "Crystal Palace",
+          "team_id": 900015,
+          "scores": {
+            "overall": 46.55,
+            "attack": 39.29,
+            "defense": 69.96,
+            "control": 22.32,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 85
+          }
+        },
+        {
+          "team": "Brighton",
+          "team_id": 830013,
+          "scores": null
+        },
+        {
+          "team": "Leeds",
+          "team_id": 830014,
+          "scores": null
+        },
+        {
+          "team": "Tottenham",
+          "team_id": 830015,
+          "scores": null
+        },
+        {
+          "team": "Nottingham Forest",
+          "team_id": 900018,
+          "scores": {
+            "overall": 28.59,
+            "attack": 30.1,
+            "defense": 26.1,
+            "control": 30.06,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 35
+          }
+        },
+        {
+          "team": "West Ham",
+          "team_id": 830017,
+          "scores": null
+        },
+        {
+          "team": "Burnley",
+          "team_id": 900016,
+          "scores": {
+            "overall": 21.29,
+            "attack": 36.22,
+            "defense": 3.3,
+            "control": 25.89,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 2.5
+          }
+        },
+        {
+          "team": "Wolves",
+          "team_id": 830019,
+          "scores": null
+        },
+        {
+          "team": "Newcastle United FC",
+          "team_id": 900007,
+          "scores": {
+            "overall": 48.75,
+            "attack": 50,
+            "defense": 47.5,
+            "control": null,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 47.5
+          }
+        },
+        {
+          "team": "Tottenham Hotspur FC",
+          "team_id": 900010,
+          "scores": {
+            "overall": 48.75,
+            "attack": 50,
+            "defense": 47.5,
+            "control": null,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 47.5
+          }
+        },
+        {
+          "team": "Brighton & Hove Albion FC",
+          "team_id": 900011,
+          "scores": {
+            "overall": 42.5,
+            "attack": 50,
+            "defense": 35,
+            "control": null,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 35
+          }
+        },
+        {
+          "team": "Leeds United FC",
+          "team_id": 900012,
+          "scores": {
+            "overall": 32.5,
+            "attack": 50,
+            "defense": 15,
+            "control": null,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 15
+          }
+        },
+        {
+          "team": "West Ham United FC",
+          "team_id": 900013,
+          "scores": {
+            "overall": 32.5,
+            "attack": 50,
+            "defense": 15,
+            "control": null,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 15
+          }
+        },
+        {
+          "team": "Wolverhampton Wanderers FC",
+          "team_id": 900019,
+          "scores": {
+            "overall": 28.75,
+            "attack": 50,
+            "defense": 7.5,
+            "control": null,
+            "consistency": null,
+            "aggressiveness": null,
+            "goalkeeper": 7.5
+          }
+        }
+      ],
+      "leaders": {
+        "overall": {
+          "team": "Arsenal",
+          "value": 81.92
+        },
+        "attack": {
+          "team": "Arsenal",
+          "value": 68.37
+        },
+        "defense": {
+          "team": "Arsenal",
+          "value": 96.7
+        },
+        "control": {
+          "team": "Manchester City",
+          "value": 84.82
+        },
+        "goalkeeper": {
+          "team": "Arsenal",
+          "value": 97.5
+        }
+      },
+      "show_gk_column": true,
+      "has_overall_score": true
+    }
+  },
+  "team_page_ui_by_team_id": {
+    "900000": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900000,
+      "team": "Manchester City FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Manchester City FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "offensive strong",
+        "tags_line": "offensive strong · defensive stable · over profile · top-zone pressure",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "81",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "68",
+          "bar_width_pct": 68.37
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "90",
+          "bar_width_pct": 90.11
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "85",
+          "bar_width_pct": 84.82
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "93",
+          "bar_width_pct": 92.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "2nd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "2nd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "2nd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "Best in cohort",
+          "note": "Manchester City"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "2nd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "2nd of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900001": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900001,
+      "team": "Arsenal FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Arsenal FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "offensive strong",
+        "tags_line": "offensive strong · defensive stable · top-zone pressure",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "82",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "68",
+          "bar_width_pct": 68.37
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "97",
+          "bar_width_pct": 96.7
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "80",
+          "bar_width_pct": 80.06
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "98",
+          "bar_width_pct": 97.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "Best in cohort",
+          "note": "Arsenal"
+        },
+        {
+          "label": "Attack",
+          "value_text": "Best in cohort",
+          "note": "Arsenal"
+        },
+        {
+          "label": "Defense",
+          "value_text": "Best in cohort",
+          "note": "Arsenal"
+        },
+        {
+          "label": "Control",
+          "value_text": "3rd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "1st of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "Best in cohort",
+          "note": "Arsenal"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900002": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900002,
+      "team": "Chelsea FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Chelsea FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "offensive strong",
+        "tags_line": "offensive strong · BTTS profile · over profile · top-zone pressure",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "62",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "64",
+          "bar_width_pct": 63.78
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "67",
+          "bar_width_pct": 66.67
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "50",
+          "bar_width_pct": 50.45
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "73",
+          "bar_width_pct": 72.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "3rd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "3rd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "5th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "7th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "5th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "5th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900003": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900003,
+      "team": "Manchester United FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Manchester United FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "offensive strong",
+        "tags_line": "offensive strong · BTTS profile · over profile · top-zone pressure",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "44",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "61",
+          "bar_width_pct": 60.71
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "26",
+          "bar_width_pct": 25.82
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "47",
+          "bar_width_pct": 46.58
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "25",
+          "bar_width_pct": 25
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "11th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "4th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "15th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "8th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "4th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "15th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900004": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900004,
+      "team": "Liverpool FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Liverpool FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "offensive strong",
+        "tags_line": "offensive strong · BTTS profile · over profile · top-zone pressure",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "58",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "58",
+          "bar_width_pct": 57.65
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "58",
+          "bar_width_pct": 57.88
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "60",
+          "bar_width_pct": 60.27
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "73",
+          "bar_width_pct": 72.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "5th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "5th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "7th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "5th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "6th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "6th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900005": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900005,
+      "team": "AFC Bournemouth",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "AFC Bournemouth",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "BTTS profile",
+        "tags_line": "BTTS profile · over profile",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "38",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "53",
+          "bar_width_pct": 53.06
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "34",
+          "bar_width_pct": 34.07
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "22",
+          "bar_width_pct": 22.32
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "60",
+          "bar_width_pct": 60
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "15th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "7th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "13th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "13th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "9th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "9th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900006": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900006,
+      "team": "Brentford FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Brentford FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "balanced profile",
+        "tags_line": "balanced profile",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "52",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "53",
+          "bar_width_pct": 53.06
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "38",
+          "bar_width_pct": 37.55
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "73",
+          "bar_width_pct": 73.07
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "48",
+          "bar_width_pct": 47.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "7th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "6th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "11th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "4th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "7th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "10th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900007": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900007,
+      "team": "Newcastle United FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Newcastle United FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "49",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "50",
+          "bar_width_pct": 50
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "48",
+          "bar_width_pct": 47.5
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "48",
+          "bar_width_pct": 47.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "8th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "8th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "9th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "15th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "15th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "11th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "D"
+    },
+    "900008": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900008,
+      "team": "Fulham FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Fulham FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "BTTS profile",
+        "tags_line": "BTTS profile · over profile",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "40",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "48",
+          "bar_width_pct": 48.47
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "20",
+          "bar_width_pct": 19.96
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "58",
+          "bar_width_pct": 58.48
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "25",
+          "bar_width_pct": 25
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "14th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "14th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "16th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "6th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "11th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "16th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900009": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900009,
+      "team": "Aston Villa FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Aston Villa FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "top-zone pressure",
+        "tags_line": "top-zone pressure",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "59",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "45",
+          "bar_width_pct": 45.41
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "58",
+          "bar_width_pct": 57.51
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "81",
+          "bar_width_pct": 80.65
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "60",
+          "bar_width_pct": 60
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "4th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "15th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "8th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "2nd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "3rd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "8th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900010": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900010,
+      "team": "Tottenham Hotspur FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Tottenham Hotspur FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "49",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "50",
+          "bar_width_pct": 50
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "48",
+          "bar_width_pct": 47.5
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "48",
+          "bar_width_pct": 47.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "9th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "9th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "10th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "16th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "16th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "12th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "D"
+    },
+    "900011": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900011,
+      "team": "Brighton & Hove Albion FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Brighton & Hove Albion FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "43",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "50",
+          "bar_width_pct": 50
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "35",
+          "bar_width_pct": 35
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "35",
+          "bar_width_pct": 35
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "13th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "10th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "12th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "17th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "17th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "14th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "D"
+    },
+    "900012": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900012,
+      "team": "Leeds United FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Leeds United FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "33",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "50",
+          "bar_width_pct": 50
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "15",
+          "bar_width_pct": 15
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "15",
+          "bar_width_pct": 15
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "16th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "11th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "17th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "18th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "18th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "17th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "D"
+    },
+    "900013": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900013,
+      "team": "West Ham United FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "West Ham United FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "33",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "50",
+          "bar_width_pct": 50
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "15",
+          "bar_width_pct": 15
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "15",
+          "bar_width_pct": 15
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "17th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "12th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "18th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "19th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "19th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "18th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "D"
+    },
+    "900014": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900014,
+      "team": "Everton FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Everton FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "balanced profile",
+        "tags_line": "balanced profile",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "57",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "42",
+          "bar_width_pct": 42.35
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "82",
+          "bar_width_pct": 81.68
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "41",
+          "bar_width_pct": 41.37
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "85",
+          "bar_width_pct": 85
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "6th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "16th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "3rd of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "9th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "8th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "3rd of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900015": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900015,
+      "team": "Crystal Palace FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Crystal Palace FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "47",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "39",
+          "bar_width_pct": 39.29
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "70",
+          "bar_width_pct": 69.96
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "22",
+          "bar_width_pct": 22.32
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "85",
+          "bar_width_pct": 85
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "10th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "17th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "4th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "14th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "12th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "4th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900016": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900016,
+      "team": "Burnley FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Burnley FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "21",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "36",
+          "bar_width_pct": 36.22
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "3",
+          "bar_width_pct": 3.3
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "26",
+          "bar_width_pct": 25.89
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "3",
+          "bar_width_pct": 2.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "20th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "18th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "20th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "11th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "14th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "20th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900017": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900017,
+      "team": "Sunderland AFC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Sunderland AFC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "balanced profile",
+        "tags_line": "balanced profile",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "43",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "33",
+          "bar_width_pct": 33.16
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "67",
+          "bar_width_pct": 66.67
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "24",
+          "bar_width_pct": 23.66
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "73",
+          "bar_width_pct": 72.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "12th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "19th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "6th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "12th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "10th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "7th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900018": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900018,
+      "team": "Nottingham Forest FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Nottingham Forest FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "29",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "30",
+          "bar_width_pct": 30.1
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "26",
+          "bar_width_pct": 26.1
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "30",
+          "bar_width_pct": 30.06
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "35",
+          "bar_width_pct": 35
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "19th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "20th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "14th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "10th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "13th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "13th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "C"
+    },
+    "900019": {
+      "contract": "team_page_ui_v2",
+      "schema": 2,
+      "team_id": 900019,
+      "team": "Wolverhampton Wanderers FC",
+      "header": {
+        "competition_name": "Premier League",
+        "season": "2025",
+        "country": "England",
+        "team_name": "Wolverhampton Wanderers FC",
+        "position_text": "—",
+        "points_text": "—",
+        "form_display": "—"
+      },
+      "summary_cards": [],
+      "trends_reading": {
+        "primary_text": "—",
+        "tags_line": "—",
+        "league_context_line": "Premier League 2025 shows 2.77 goals per game with BTTS at 56.4%. Over 2.5 sits at 54.0%, while clean-sheet occurrence is 43.6%, indicating a mixed attack-defense profile."
+      },
+      "overall_text": "29",
+      "profile_rows": [
+        {
+          "key": "attack",
+          "label": "Attack",
+          "value_text": "50",
+          "bar_width_pct": 50
+        },
+        {
+          "key": "defense",
+          "label": "Defense",
+          "value_text": "8",
+          "bar_width_pct": 7.5
+        },
+        {
+          "key": "control",
+          "label": "Control",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "consistency",
+          "label": "Consistency",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "aggressiveness",
+          "label": "Aggressiveness",
+          "value_text": "—",
+          "bar_width_pct": 0
+        },
+        {
+          "key": "goalkeeper",
+          "label": "Goalkeeper",
+          "value_text": "8",
+          "bar_width_pct": 7.5
+        }
+      ],
+      "comparison_rows": [
+        {
+          "label": "Overall profile",
+          "value_text": "18th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Attack",
+          "value_text": "13th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Defense",
+          "value_text": "19th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Control",
+          "value_text": "20th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Consistency",
+          "value_text": "20th of 20",
+          "note": "Cohort rank by model score"
+        },
+        {
+          "label": "Goalkeeper",
+          "value_text": "19th of 20",
+          "note": "Cohort rank by model score"
+        }
+      ],
+      "data_quality": "D"
+    }
   }
 }

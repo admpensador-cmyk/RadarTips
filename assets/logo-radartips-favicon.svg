@@ -1,34 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Compact favicon: R + ball on dark tile (6464) -->
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+<!-- Same mark as favicon.svg (duplicate for tooling / references) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 120 120" fill="none" aria-hidden="true">
   <defs>
-    <linearGradient id="rtFavG" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1E4A8C"/>
-      <stop offset="100%" stop-color="#4DB8FF"/>
+    <linearGradient id="rtFavG2" x1="12%" y1="10%" x2="88%" y2="92%">
+      <stop offset="0%" stop-color="#D9F99D"/>
+      <stop offset="42%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#2563EB"/>
     </linearGradient>
-    <filter id="rtFavS" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000" flood-opacity="0.35"/>
-    </filter>
   </defs>
-  <rect x="4" y="4" width="56" height="56" rx="12" fill="#0B1220"/>
-  <g transform="translate(8, 9)" filter="url(#rtFavS)">
-    <path
-      fill="url(#rtFavG)"
-      d="M 16 4
-         L 16 36
-         L 24 36
-         L 24 24
-         L 26 24
-         L 38 36
-         L 46 36
-         L 30 22
-         C 36 20 40 16 40 10
-         C 40 6 36 4 30 4
-         Z"/>
-    <!-- Baseline y=36: center (34,32) + r=4 -->
-    <g transform="translate(34, 32)">
-      <circle cx="0" cy="0" r="4" fill="#ECECEC" stroke="#0A0A0A" stroke-width="0.55"/>
-      <path d="M 0 -2.1 L 1.95 -0.65 L 1.15 1.75 L -1.15 1.75 L -1.95 -0.65 Z" fill="#0A0A0A"/>
+  <g transform="translate(14 10) skewX(-10)">
+    <path fill="url(#rtFavG2)" d="M18 16 L18 92 L34 92 L34 66 L40 66 L60 92 L78 92 L52 56
+      C66 52 76 42 76 28 C76 14 62 16 46 16 Z"/>
+    <g>
+      <circle cx="54" cy="74" r="3.2" fill="#F0FDFA"/>
+      <path d="M54 70.5 C62.5 67.5 69.5 60.5 74 50.5" stroke="#A5F3FC" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M54 70.5 C64.5 66 73 55.5 78.5 42" stroke="#67E8F9" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M54 70.5 C66.5 64.5 77 52 84 36" stroke="#22D3EE" stroke-width="1.7" fill="none" stroke-linecap="round"/>
     </g>
   </g>
 </svg>

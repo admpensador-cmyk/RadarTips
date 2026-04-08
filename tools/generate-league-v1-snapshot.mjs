@@ -70,8 +70,10 @@ async function main() {
 
   console.log(`Saved: ${OUT_FILE}`);
   console.log(`Standings rows: ${snapshot.standings.length}`);
+  const finN = Array.isArray(snapshot.fixtures.finished) ? snapshot.fixtures.finished.length : 0;
+  console.log(`Fixtures finished (full): ${finN}`);
   console.log(`Fixtures upcoming: ${snapshot.fixtures.upcoming.length}`);
-  console.log(`Fixtures recent: ${snapshot.fixtures.recent.length}`);
+  console.log(`Fixtures recent (display): ${snapshot.fixtures.recent.length}`);
   console.log(`Matches counted in summary: ${snapshot.summary.matches_count}`);
 }
 

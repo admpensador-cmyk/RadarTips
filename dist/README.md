@@ -96,14 +96,9 @@ This validates:
 - `i18n/strings.json` integrity
 
 ## Data
-The UI prefers live data from the Worker API:
-- /api/v1/radar_day.json
-- /api/v1/calendar_7d.json
-- /api/v1/calendar_2d.json (and merged locale variants where configured)
+The UI loads live data from the Worker API. **Calendar is the single source of truth:** `/api/v1/calendar_2d` embeds `radar_day.highlights` (no separate radar endpoint or static radar JSON).
 
-If the Worker route is not available, it automatically falls back to static files:
-- /data/v1/radar_day.json
-- /data/v1/calendar_7d.json
+Legacy endpoints return **410 Gone** where removed (e.g. `/api/v1/calendar_7d`).
 
 ### Automated updates (GitHub Actions)
 
@@ -122,11 +117,11 @@ In GitHub: **Settings → Secrets and variables → Actions → New repository s
    - `CLOUDFLARE_ACCOUNT_ID`
    - `R2_BUCKET_NAME`
 
-When R2 secrets are present, the workflow uploads JSON to:
-- `v1/calendar_7d.json`
-- `v1/radar_day.json`
+When R2 secrets are present, the workflow uploads under `${prefix}/snapshots/` (e.g. `prod/snapshots/calendar_2d.json`), which includes embedded `radar_day`. The Worker serves `/api/v1/calendar_2d` from that object.
 
-The Worker reads these objects from R2 and serves them at `/api/v1/*.json`.
+3) Pages deploy (`deploy_pages.yml` uses the same `CLOUDFLARE_*` secrets)
+   - Optional repository **Variable** `RADARTIPS_PAGES_PROJECT_NAME` (Pages project slug) so you can run the workflow with an empty project input.
+   - Local deploy: `npm run build` then `npm run pages:deploy` — put token, account id, and project slug in **`.env.production.local`** (see `ENVIRONMENT.md` / `.env.example`).
 
 #### Commit fallback (optional)
 By default, workflows do **not** commit JSON back to the repo (to avoid Cloudflare Pages rebuild/deploy limits).
@@ -134,12 +129,8 @@ If you ever want the fallback, set `COMMIT_FALLBACK=1` in the workflow env.
 
 #### Quick smoke test
 After a workflow run:
-- Open Cloudflare R2 bucket and confirm `v1/` contains the JSON files.
-- Hit the API routes in the browser:
-  - `/api/v1/calendar_2d.json?tz=America/Sao_Paulo` (**must return HTTP 200**)
-  - `/api/v1/calendar_7d.json`
-  - `/api/v1/radar_day.json`
-If those URLs return JSON, the UI should update automatically.
+- Open Cloudflare R2 and confirm `${prefix}/snapshots/calendar_2d.json` exists.
+- Hit `/api/v1/calendar_2d` (**HTTP 200**) and confirm `radar_day.highlights` is present in the JSON.
 
 
 ## Match markets (analysis)

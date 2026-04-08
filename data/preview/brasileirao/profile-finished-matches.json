@@ -1,0 +1,4057 @@
+{
+  "meta": {
+    "schema": "preview_brasileirao_profile_finished_matches_v2",
+    "league_id": 71,
+    "season": "2026",
+    "generated_at_utc": "2026-04-07T22:22:56.051Z",
+    "data_integrity": "real_fixtures_only",
+    "sources": [
+      "/fixtures",
+      "/fixtures/statistics",
+      "/fixtures/events"
+    ],
+    "source_note": "One row per finished fixture (FT/AET/PEN) per team appearance. Control flags from API halftime and/or goal events only — no standings or goal-total synthesis."
+  },
+  "by_team_id": {
+    "118": {
+      "total": [
+        {
+          "fixture_id": 1492113,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492121,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492138,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492152,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492166,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492172,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492186,
+          "gf": 1,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492190,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492201,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492121,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492152,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492172,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492190,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492201,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492113,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492138,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492166,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492186,
+          "gf": 1,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "119": {
+      "total": [
+        {
+          "fixture_id": 1492116,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492124,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492135,
+          "gf": 1,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492148,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492151,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492166,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492178,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492185,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492197,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492203,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492116,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492135,
+          "gf": 1,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492166,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492185,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492197,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492124,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492148,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492151,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492178,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492203,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "120": {
+      "total": [
+        {
+          "fixture_id": 1492111,
+          "gf": 4,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492125,
+          "gf": 3,
+          "ga": 5,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492134,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492160,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492177,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492181,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492150,
+          "gf": 1,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492191,
+          "gf": 3,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492209,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492111,
+          "gf": 4,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492160,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492191,
+          "gf": 3,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492125,
+          "gf": 3,
+          "ga": 5,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492134,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492177,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492181,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492150,
+          "gf": 1,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492209,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "121": {
+      "total": [
+        {
+          "fixture_id": 1492110,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492126,
+          "gf": 5,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492135,
+          "gf": 3,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492147,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492159,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492167,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492177,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492187,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492198,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492201,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492126,
+          "gf": 5,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492147,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492167,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492177,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492198,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492110,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492135,
+          "gf": 3,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492159,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492187,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492201,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "124": {
+      "total": [
+        {
+          "fixture_id": 1492115,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492121,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492134,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492147,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492157,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492165,
+          "gf": 3,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492179,
+          "gf": 2,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492184,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492196,
+          "gf": 3,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492204,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492115,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492134,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492165,
+          "gf": 3,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492184,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492196,
+          "gf": 3,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492121,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492147,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492157,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492179,
+          "gf": 2,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492204,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "126": {
+      "total": [
+        {
+          "fixture_id": 1492118,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492128,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492137,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492143,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492158,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492161,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492171,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492187,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492197,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492208,
+          "gf": 4,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492118,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492137,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492158,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492187,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492208,
+          "gf": 4,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492128,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492143,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492161,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492171,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492197,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "127": {
+      "total": [
+        {
+          "fixture_id": 1492118,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492124,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492139,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492154,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492160,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492174,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492182,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492192,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492205,
+          "gf": 3,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492124,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492154,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492174,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492205,
+          "gf": 3,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492118,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492139,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492160,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492182,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492192,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "128": {
+      "total": [
+        {
+          "fixture_id": 1492112,
+          "gf": 2,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492128,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492130,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492149,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492156,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492168,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492178,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492183,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492199,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492205,
+          "gf": 1,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492128,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492149,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492168,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492178,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492199,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492112,
+          "gf": 2,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492130,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492156,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492183,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492205,
+          "gf": 1,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "130": {
+      "total": [
+        {
+          "fixture_id": 1492115,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492125,
+          "gf": 5,
+          "ga": 3,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492137,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492146,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492155,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492162,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492175,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492188,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492198,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492206,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492125,
+          "gf": 5,
+          "ga": 3,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492146,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492155,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492175,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492206,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492115,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492137,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492162,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492188,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492198,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "131": {
+      "total": [
+        {
+          "fixture_id": 1492113,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492133,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492120,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492144,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492153,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492168,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492173,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492182,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492196,
+          "gf": 1,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492203,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492113,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492133,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492153,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492182,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492203,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492120,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492144,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492168,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492173,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492196,
+          "gf": 1,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "132": {
+      "total": [
+        {
+          "fixture_id": 1492112,
+          "gf": 4,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492129,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492132,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492158,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492162,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492173,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492185,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492193,
+          "gf": 0,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492202,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492112,
+          "gf": 4,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492132,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492162,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492173,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492193,
+          "gf": 0,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492202,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492129,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492158,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492185,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "133": {
+      "total": [
+        {
+          "fixture_id": 1492117,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492129,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492138,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492149,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492159,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492164,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492179,
+          "gf": 3,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492188,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492194,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492209,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492129,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492138,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492159,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492179,
+          "gf": 3,
+          "ga": 2,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": true
+        },
+        {
+          "fixture_id": 1492188,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492209,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492117,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492149,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492164,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492194,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "134": {
+      "total": [
+        {
+          "fixture_id": 1492116,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492130,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492120,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492142,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492165,
+          "gf": 2,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492170,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492180,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492150,
+          "gf": 4,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492190,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492200,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492130,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492120,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492170,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492180,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492150,
+          "gf": 4,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492116,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492142,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492165,
+          "gf": 2,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492190,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492200,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "135": {
+      "total": [
+        {
+          "fixture_id": 1492111,
+          "gf": 0,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492123,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492136,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492144,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492154,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492164,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492170,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492183,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492195,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492208,
+          "gf": 1,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492123,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492144,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492164,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492183,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492195,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492111,
+          "gf": 0,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492136,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492154,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492170,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492208,
+          "gf": 1,
+          "ga": 4,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "136": {
+      "total": [
+        {
+          "fixture_id": 1492119,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492126,
+          "gf": 1,
+          "ga": 5,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492139,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492152,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492169,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492175,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492189,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492195,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492202,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492119,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492139,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492169,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492189,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492126,
+          "gf": 1,
+          "ga": 5,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492152,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492175,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492195,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492202,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "147": {
+      "total": [
+        {
+          "fixture_id": 1492114,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492123,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492132,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492143,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492153,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492163,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492176,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492180,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492194,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492204,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492114,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492143,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492163,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492194,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492204,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492123,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492132,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492153,
+          "gf": 2,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492176,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492180,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    },
+    "794": {
+      "total": [
+        {
+          "fixture_id": 1492114,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492122,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492133,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492142,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492155,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492161,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492172,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492181,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492192,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492207,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492122,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492142,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492161,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492181,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492192,
+          "gf": 3,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492114,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492133,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492155,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492172,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492207,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "1062": {
+      "total": [
+        {
+          "fixture_id": 1492110,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492122,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492131,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492146,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492151,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492169,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492171,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492184,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492193,
+          "gf": 4,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492200,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492110,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492131,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492151,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492171,
+          "gf": 1,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492200,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492122,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492146,
+          "gf": 1,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492169,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492184,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492193,
+          "gf": 4,
+          "ga": 0,
+          "result": "W",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "1198": {
+      "total": [
+        {
+          "fixture_id": 1492119,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492127,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492131,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492148,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492157,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492163,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492174,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492186,
+          "gf": 4,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492199,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492206,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492127,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492148,
+          "gf": 1,
+          "ga": 1,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492157,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492186,
+          "gf": 4,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492119,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492131,
+          "gf": 3,
+          "ga": 3,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492163,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492174,
+          "gf": 0,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492199,
+          "gf": 0,
+          "ga": 2,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492206,
+          "gf": 0,
+          "ga": 0,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": false,
+          "comeback_win": false
+        }
+      ]
+    },
+    "7848": {
+      "total": [
+        {
+          "fixture_id": 1492117,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492127,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492136,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492156,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492167,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492176,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492189,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492191,
+          "gf": 2,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492207,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 1492117,
+          "gf": 2,
+          "ga": 1,
+          "result": "W",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492136,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492156,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": true,
+          "scored_first": true,
+          "conceded_first": false,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492176,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492207,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 1492127,
+          "gf": 2,
+          "ga": 2,
+          "result": "D",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492167,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492189,
+          "gf": 0,
+          "ga": 1,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        },
+        {
+          "fixture_id": 1492191,
+          "gf": 2,
+          "ga": 3,
+          "result": "L",
+          "leading_ht": false,
+          "scored_first": false,
+          "conceded_first": true,
+          "comeback_win": false
+        }
+      ]
+    }
+  }
+}

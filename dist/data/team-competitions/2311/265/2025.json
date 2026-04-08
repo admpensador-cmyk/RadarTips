@@ -1,0 +1,603 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "entity": "team_competition_detail",
+    "team_id": 2311,
+    "competition_id": 265,
+    "season": 2025,
+    "generated_at_utc": "2026-04-03T19:05:00Z",
+    "coverage_tier": 3,
+    "stats_completeness": {
+      "results_core": true,
+      "standings": true,
+      "goals_markets": true,
+      "shots": false,
+      "corners": false,
+      "cards": false,
+      "advanced_trends": false,
+      "market_model": false
+    },
+    "data_source_policy": "derived_from_finished_fixtures_only"
+  },
+  "team": {
+    "team_id": 2311,
+    "name": "Colo-Colo",
+    "short_name": "Colo-Colo",
+    "country": "Chile",
+    "country_code": "CL",
+    "logo_url": "https://media.api-sports.io/football/teams/2311.png"
+  },
+  "competition": {
+    "competition_id": 265,
+    "name": "Primera División",
+    "competition_type": "league",
+    "country": "Chile",
+    "country_code": "CL",
+    "logo_url": "https://media.api-sports.io/football/leagues/265.png",
+    "season": 2025
+  },
+  "competition_overview": {
+    "table_context": {
+      "position": 2,
+      "matches_played": 22,
+      "wins": 12,
+      "draws": 5,
+      "losses": 5,
+      "points": 41,
+      "goal_diff": 9
+    },
+    "splits": {
+      "total": {
+        "matches": 22,
+        "wins": 12,
+        "draws": 5,
+        "losses": 5,
+        "goals_for": 31,
+        "goals_against": 22,
+        "btts_rate": 0.45,
+        "over25_rate": 0.41,
+        "under25_rate": 0.59,
+        "clean_sheets": 8,
+        "won_to_nil": 6,
+        "scored_first_rate": 0.5,
+        "lead_at_ht_rate": 0.41,
+        "comeback_wins": 2,
+        "failed_to_score": 4,
+        "over15_rate": 0.68,
+        "over35_rate": 0.14,
+        "team_over_05_rate": 0.82,
+        "team_over_15_rate": 0.55,
+        "team_over_25_rate": 0.27,
+        "conceded_over_05_rate": 0.77,
+        "conceded_over_15_rate": 0.45,
+        "conceded_over_25_rate": 0.18,
+        "conceded_first_rate": 0.41,
+        "ht_record": "5-8-9",
+        "ht_goals_for_avg": 0.59,
+        "ht_goals_against_avg": 0.5
+      },
+      "home": {
+        "matches": 11,
+        "wins": 8,
+        "draws": 2,
+        "losses": 1,
+        "goals_for": 19,
+        "goals_against": 8,
+        "btts_rate": 0.36,
+        "over25_rate": 0.45,
+        "under25_rate": 0.55,
+        "clean_sheets": 5,
+        "won_to_nil": 4,
+        "scored_first_rate": 0.55,
+        "lead_at_ht_rate": 0.45,
+        "comeback_wins": 1,
+        "failed_to_score": 1,
+        "over15_rate": 0.73,
+        "over35_rate": 0.18,
+        "team_over_05_rate": 0.91,
+        "team_over_15_rate": 0.64,
+        "team_over_25_rate": 0.36,
+        "conceded_over_05_rate": 0.64,
+        "conceded_over_15_rate": 0.27,
+        "conceded_over_25_rate": 0.09,
+        "conceded_first_rate": 0.36,
+        "ht_record": "4-4-3",
+        "ht_goals_for_avg": 0.73,
+        "ht_goals_against_avg": 0.36
+      },
+      "away": {
+        "matches": 11,
+        "wins": 4,
+        "draws": 3,
+        "losses": 4,
+        "goals_for": 12,
+        "goals_against": 14,
+        "btts_rate": 0.55,
+        "over25_rate": 0.36,
+        "under25_rate": 0.64,
+        "clean_sheets": 3,
+        "won_to_nil": 2,
+        "scored_first_rate": 0.45,
+        "lead_at_ht_rate": 0.36,
+        "comeback_wins": 1,
+        "failed_to_score": 3,
+        "over15_rate": 0.64,
+        "over35_rate": 0.09,
+        "team_over_05_rate": 0.73,
+        "team_over_15_rate": 0.45,
+        "team_over_25_rate": 0.18,
+        "conceded_over_05_rate": 0.91,
+        "conceded_over_15_rate": 0.64,
+        "conceded_over_25_rate": 0.27,
+        "conceded_first_rate": 0.45,
+        "ht_record": "1-4-6",
+        "ht_goals_for_avg": 0.45,
+        "ht_goals_against_avg": 0.64
+      }
+    },
+    "form": {
+      "last5": {
+        "sequence": "WDWLW",
+        "points": 10,
+        "gf": 7,
+        "ga": 4
+      },
+      "last10": {
+        "sequence": "WDWLWDLWWD",
+        "points": 17,
+        "gf": 14,
+        "ga": 12
+      }
+    },
+    "trends": {
+      "total": {
+        "goals_per_game": 1.41,
+        "conceded_per_game": 1
+      },
+      "home": {
+        "goals_per_game": 1.73,
+        "conceded_per_game": 0.73
+      },
+      "away": {
+        "goals_per_game": 1.09,
+        "conceded_per_game": 1.27
+      }
+    },
+    "recent_matches": {
+      "total": [
+        {
+          "fixture_id": 2044101,
+          "kickoff_utc": "2026-03-29T21:00:00.000Z",
+          "competition_id": 265,
+          "competition_name": "Primera División",
+          "home_team_id": 2311,
+          "away_team_id": 2323,
+          "home_name": "Colo-Colo",
+          "away_name": "Universidad Católica",
+          "score_home": 2,
+          "score_away": 0,
+          "venue": "home",
+          "result": "W"
+        },
+        {
+          "fixture_id": 2044102,
+          "kickoff_utc": "2026-03-22T23:30:00.000Z",
+          "competition_id": 265,
+          "competition_name": "Primera División",
+          "home_team_id": 2320,
+          "away_team_id": 2311,
+          "home_name": "O'Higgins",
+          "away_name": "Colo-Colo",
+          "score_home": 1,
+          "score_away": 1,
+          "venue": "away",
+          "result": "D"
+        }
+      ],
+      "home": [
+        {
+          "fixture_id": 2044101,
+          "kickoff_utc": "2026-03-29T21:00:00.000Z",
+          "competition_id": 265,
+          "competition_name": "Primera División",
+          "home_team_id": 2311,
+          "away_team_id": 2323,
+          "home_name": "Colo-Colo",
+          "away_name": "Universidad Católica",
+          "score_home": 2,
+          "score_away": 0,
+          "venue": "home",
+          "result": "W"
+        }
+      ],
+      "away": [
+        {
+          "fixture_id": 2044102,
+          "kickoff_utc": "2026-03-22T23:30:00.000Z",
+          "competition_id": 265,
+          "competition_name": "Primera División",
+          "home_team_id": 2320,
+          "away_team_id": 2311,
+          "home_name": "O'Higgins",
+          "away_name": "Colo-Colo",
+          "score_home": 1,
+          "score_away": 1,
+          "venue": "away",
+          "result": "D"
+        }
+      ]
+    }
+  },
+  "profile_engine": {
+    "cohort": [
+      {
+        "team_id": 2320,
+        "competition_overview": {
+          "splits": {
+            "total": {
+              "matches": 22,
+              "wins": 9,
+              "draws": 6,
+              "losses": 7,
+              "goals_for": 26,
+              "goals_against": 28,
+              "btts_rate": 0.5,
+              "over25_rate": 0.45,
+              "under25_rate": 0.55,
+              "clean_sheets": 6,
+              "won_to_nil": 4,
+              "scored_first_rate": 0.45,
+              "lead_at_ht_rate": 0.36,
+              "comeback_wins": 2,
+              "failed_to_score": 5,
+              "over15_rate": 0.64,
+              "over35_rate": 0.18,
+              "team_over_05_rate": 0.77,
+              "team_over_15_rate": 0.5,
+              "team_over_25_rate": 0.27,
+              "conceded_over_05_rate": 0.82,
+              "conceded_over_15_rate": 0.5,
+              "conceded_over_25_rate": 0.23,
+              "conceded_first_rate": 0.45
+            },
+            "home": {
+              "matches": 11,
+              "wins": 6,
+              "draws": 3,
+              "losses": 2,
+              "goals_for": 16,
+              "goals_against": 11,
+              "btts_rate": 0.45,
+              "over25_rate": 0.55,
+              "under25_rate": 0.45,
+              "clean_sheets": 3,
+              "won_to_nil": 2,
+              "scored_first_rate": 0.55,
+              "lead_at_ht_rate": 0.45,
+              "comeback_wins": 1,
+              "failed_to_score": 2,
+              "over15_rate": 0.73,
+              "over35_rate": 0.18,
+              "team_over_05_rate": 0.82,
+              "team_over_15_rate": 0.55,
+              "team_over_25_rate": 0.27,
+              "conceded_over_05_rate": 0.73,
+              "conceded_over_15_rate": 0.36,
+              "conceded_over_25_rate": 0.09,
+              "conceded_first_rate": 0.36
+            },
+            "away": {
+              "matches": 11,
+              "wins": 3,
+              "draws": 3,
+              "losses": 5,
+              "goals_for": 10,
+              "goals_against": 17,
+              "btts_rate": 0.55,
+              "over25_rate": 0.36,
+              "under25_rate": 0.64,
+              "clean_sheets": 3,
+              "won_to_nil": 2,
+              "scored_first_rate": 0.36,
+              "lead_at_ht_rate": 0.27,
+              "comeback_wins": 1,
+              "failed_to_score": 3,
+              "over15_rate": 0.55,
+              "over35_rate": 0.18,
+              "team_over_05_rate": 0.73,
+              "team_over_15_rate": 0.45,
+              "team_over_25_rate": 0.27,
+              "conceded_over_05_rate": 0.91,
+              "conceded_over_15_rate": 0.64,
+              "conceded_over_25_rate": 0.36,
+              "conceded_first_rate": 0.55
+            }
+          },
+          "trends": {
+            "total": {
+              "goals_per_game": 1.18,
+              "conceded_per_game": 1.27
+            },
+            "home": {
+              "goals_per_game": 1.45,
+              "conceded_per_game": 1
+            },
+            "away": {
+              "goals_per_game": 0.91,
+              "conceded_per_game": 1.55
+            }
+          },
+          "recent_matches": {
+            "total": [
+              {
+                "fixture_id": 2045001,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2320,
+                "away_team_id": 2311,
+                "home_name": "O'Higgins",
+                "away_name": "Colo-Colo",
+                "score_home": 1,
+                "score_away": 1,
+                "venue": "home",
+                "result": "D"
+              },
+              {
+                "fixture_id": 2045002,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2320,
+                "away_team_id": 2323,
+                "home_name": "O'Higgins",
+                "away_name": "U. Católica",
+                "score_home": 0,
+                "score_away": 2,
+                "venue": "home",
+                "result": "L"
+              },
+              {
+                "fixture_id": 2045003,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2311,
+                "away_team_id": 2320,
+                "home_name": "Colo-Colo",
+                "away_name": "O'Higgins",
+                "score_home": 2,
+                "score_away": 0,
+                "venue": "away",
+                "result": "L"
+              }
+            ],
+            "home": [
+              {
+                "fixture_id": 2045001,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2320,
+                "away_team_id": 2311,
+                "home_name": "O'Higgins",
+                "away_name": "Colo-Colo",
+                "score_home": 1,
+                "score_away": 1,
+                "venue": "home",
+                "result": "D"
+              }
+            ],
+            "away": [
+              {
+                "fixture_id": 2045003,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2311,
+                "away_team_id": 2320,
+                "home_name": "Colo-Colo",
+                "away_name": "O'Higgins",
+                "score_home": 2,
+                "score_away": 0,
+                "venue": "away",
+                "result": "L"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "team_id": 2323,
+        "competition_overview": {
+          "splits": {
+            "total": {
+              "matches": 22,
+              "wins": 11,
+              "draws": 5,
+              "losses": 6,
+              "goals_for": 29,
+              "goals_against": 24,
+              "btts_rate": 0.55,
+              "over25_rate": 0.5,
+              "under25_rate": 0.5,
+              "clean_sheets": 7,
+              "won_to_nil": 5,
+              "scored_first_rate": 0.55,
+              "lead_at_ht_rate": 0.45,
+              "comeback_wins": 1,
+              "failed_to_score": 4,
+              "over15_rate": 0.73,
+              "over35_rate": 0.14,
+              "team_over_05_rate": 0.82,
+              "team_over_15_rate": 0.59,
+              "team_over_25_rate": 0.32,
+              "conceded_over_05_rate": 0.77,
+              "conceded_over_15_rate": 0.45,
+              "conceded_over_25_rate": 0.18,
+              "conceded_first_rate": 0.36
+            },
+            "home": {
+              "matches": 11,
+              "wins": 7,
+              "draws": 2,
+              "losses": 2,
+              "goals_for": 18,
+              "goals_against": 9,
+              "btts_rate": 0.45,
+              "over25_rate": 0.45,
+              "under25_rate": 0.55,
+              "clean_sheets": 4,
+              "won_to_nil": 3,
+              "scored_first_rate": 0.64,
+              "lead_at_ht_rate": 0.5,
+              "comeback_wins": 0,
+              "failed_to_score": 1,
+              "over15_rate": 0.73,
+              "over35_rate": 0.09,
+              "team_over_05_rate": 0.91,
+              "team_over_15_rate": 0.64,
+              "team_over_25_rate": 0.36,
+              "conceded_over_05_rate": 0.64,
+              "conceded_over_15_rate": 0.27,
+              "conceded_over_25_rate": 0.09,
+              "conceded_first_rate": 0.27
+            },
+            "away": {
+              "matches": 11,
+              "wins": 4,
+              "draws": 3,
+              "losses": 4,
+              "goals_for": 11,
+              "goals_against": 15,
+              "btts_rate": 0.64,
+              "over25_rate": 0.55,
+              "under25_rate": 0.45,
+              "clean_sheets": 3,
+              "won_to_nil": 2,
+              "scored_first_rate": 0.45,
+              "lead_at_ht_rate": 0.36,
+              "comeback_wins": 1,
+              "failed_to_score": 3,
+              "over15_rate": 0.73,
+              "over35_rate": 0.18,
+              "team_over_05_rate": 0.73,
+              "team_over_15_rate": 0.55,
+              "team_over_25_rate": 0.27,
+              "conceded_over_05_rate": 0.91,
+              "conceded_over_15_rate": 0.64,
+              "conceded_over_25_rate": 0.27,
+              "conceded_first_rate": 0.45
+            }
+          },
+          "trends": {
+            "total": {
+              "goals_per_game": 1.32,
+              "conceded_per_game": 1.09
+            },
+            "home": {
+              "goals_per_game": 1.64,
+              "conceded_per_game": 0.82
+            },
+            "away": {
+              "goals_per_game": 1,
+              "conceded_per_game": 1.36
+            }
+          },
+          "recent_matches": {
+            "total": [
+              {
+                "fixture_id": 2046001,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2311,
+                "away_team_id": 2323,
+                "home_name": "Colo-Colo",
+                "away_name": "U. Católica",
+                "score_home": 2,
+                "score_away": 0,
+                "venue": "home",
+                "result": "L"
+              },
+              {
+                "fixture_id": 2046002,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2323,
+                "away_team_id": 2320,
+                "home_name": "U. Católica",
+                "away_name": "O'Higgins",
+                "score_home": 2,
+                "score_away": 1,
+                "venue": "home",
+                "result": "W"
+              },
+              {
+                "fixture_id": 2046003,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2323,
+                "away_team_id": 2311,
+                "home_name": "U. Católica",
+                "away_name": "Colo-Colo",
+                "score_home": 1,
+                "score_away": 1,
+                "venue": "home",
+                "result": "D"
+              }
+            ],
+            "home": [
+              {
+                "fixture_id": 2046002,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2323,
+                "away_team_id": 2320,
+                "home_name": "U. Católica",
+                "away_name": "O'Higgins",
+                "score_home": 2,
+                "score_away": 1,
+                "venue": "home",
+                "result": "W"
+              },
+              {
+                "fixture_id": 2046003,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2323,
+                "away_team_id": 2311,
+                "home_name": "U. Católica",
+                "away_name": "Colo-Colo",
+                "score_home": 1,
+                "score_away": 1,
+                "venue": "home",
+                "result": "D"
+              }
+            ],
+            "away": [
+              {
+                "fixture_id": 2046001,
+                "kickoff_utc": "2026-03-15T12:00:00.000Z",
+                "competition_id": 265,
+                "competition_name": "Primera División",
+                "home_team_id": 2311,
+                "away_team_id": 2323,
+                "home_name": "Colo-Colo",
+                "away_name": "U. Católica",
+                "score_home": 2,
+                "score_away": 0,
+                "venue": "away",
+                "result": "L"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

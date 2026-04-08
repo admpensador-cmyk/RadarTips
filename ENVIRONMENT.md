@@ -22,8 +22,9 @@ Optional files (loaded by `tools/load-radartips-env.mjs`):
 - `.env.development` — local dev defaults (committed)
 - `.env.preview` — dist preview defaults (committed)
 - `.env.production` — production labels (committed; **no secrets**)
+- `.env.<APP_ENV>.local` — **optional overrides** (e.g. `.env.production.local`, gitignored via `.env.*.local`). Merged after the base file; same keys in `.local` win. Shell environment still wins over both files.
 - `.env.example` — template
-- **Local overrides:** `.env.local` / `.env.*.local` (gitignored; not loaded automatically unless you copy keys into the files above)
+- **Note:** `.env.local` alone is **not** read by the loader; use `.env.development.local` / `.env.production.local` / `.env.preview.local` as needed.
 
 ### Variables
 
@@ -59,6 +60,7 @@ Internal:
 | `npm run verify:dist` | Zombie radar checks on **dist** (requires build) |
 | `npm run deploy:preview` | Prints **preview** deploy rules (no silent deploy) |
 | `npm run deploy:prod` | Prints **production** deploy rules (single path: GitHub Actions) |
+| `npm run pages:deploy` | **`npm run build` first** — deploys `dist/` to Cloudflare Pages via wrangler; requires `.env.production.local` (or shell) with Cloudflare token, account id, project slug |
 
 ## Source vs `dist`
 
@@ -71,7 +73,7 @@ All calendar/radar/league JSON in R2 uses an **explicit prefix** — never share
 
 | Namespace | R2 key pattern | Writer | Reader |
 |-----------|----------------|--------|--------|
-| **Production** | `prod/snapshots/calendar_2d.json`, `prod/snapshots/radar_day.json`, `prod/data/coverage_allowlist.json`, `prod/snapshots/leagues/...` | `upload-calendar-to-r2.mjs` with `RADARTIPS_SNAPSHOT_PREFIX=prod` (GitHub Actions default) | Production Worker (`RADARTIPS_SNAPSHOT_PREFIX=prod` in `wrangler.toml`) |
+| **Production** | `prod/snapshots/calendar_2d.json` (embeds `radar_day`), `prod/data/coverage_allowlist.json`, `prod/snapshots/leagues/...` | `upload-calendar-to-r2.mjs` with `RADARTIPS_SNAPSHOT_PREFIX=prod` (GitHub Actions default) | Production Worker (`RADARTIPS_SNAPSHOT_PREFIX=prod` in `wrangler.toml`) |
 | **Preview** | `preview/snapshots/...` (same relative paths under `preview/`) | Same uploader with `RADARTIPS_SNAPSHOT_PREFIX=preview` (workflow dispatch) + `RADARTIPS_CONFIRM_PREVIEW_UPLOAD=1` in CI | Preview Worker deployment with `RADARTIPS_SNAPSHOT_PREFIX=preview` |
 
 - **Worker** resolves keys as `` `${RADARTIPS_SNAPSHOT_PREFIX}/${relativePath}` `` where `relativePath` is e.g. `snapshots/calendar_2d.json`. If `RADARTIPS_SNAPSHOT_PREFIX` is missing or not `prod`/`preview`, the Worker returns **503** `misconfigured_snapshot_prefix` (fail-closed).
@@ -83,6 +85,35 @@ All calendar/radar/league JSON in R2 uses an **explicit prefix** — never share
 
 - **Production (Pages):** `.github/workflows/deploy_pages.yml` — `workflow_dispatch`, builds `dist/`, checks `dist/en/radar/day/index.html` (primary) and `dist/pt/radar/day/index.html`, deploys `dist/`, then `tools/check-production-day-runtime.mjs`.
 - **Worker:** `.github/workflows/deploy-worker.yml` — separate from Pages.
+
+### Cloudflare credentials (Pages + R2 + Worker)
+
+| Where | Variables |
+|-------|-----------|
+| **GitHub Actions** (repository **Secrets**) | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| **GitHub Actions** (optional **Variables**) | `RADARTIPS_PAGES_PROJECT_NAME` — Pages project slug; used when workflow input `pages_project_name` is left empty |
+| **Local** `npm run pages:deploy` | Same names in **`.env.production.local`** (recommended) or in the shell. Aliases accepted: `CF_API_TOKEN` → token, `CF_ACCOUNT_ID` → account id, `RADARTIPS_PAGES_PROJECT_NAME` → project slug. |
+
+The committed **`.env.production`** file only holds public labels (`PUBLIC_SITE_URL`, etc.). It does **not** contain API tokens by design.
+
+**API token permissions (one token or two):**
+
+| Operation | Required permission (typical) |
+|-----------|--------------------------------|
+| `npm run pages:deploy` | **Account → Cloudflare Pages → Edit** |
+| `upload-calendar-to-r2.mjs` / `wrangler r2 object put` | **Account → Workers R2 Storage → Edit** on the account that owns **`radartips-data`** |
+
+If `pages deploy` works but R2 returns **HTTP 403** on `/accounts/.../r2/buckets/...`, the token is authenticated but **missing R2** — add **Workers R2 Storage → Edit** (all buckets or include `radartips-data`). Optional: use a dedicated upload token with R2 + account id, and keep a narrower token for Pages-only workflows.
+
+**Other errors:** `Authentication error [code: 10000]` or `9106` → wrong/expired token or wrong account id. **`R2_BUCKET_NAME`** defaults to `radartips-data`; override only if your bucket name differs.
+
+### Cloudflare Pages `_worker.js` and `*.pages.dev`
+
+The **custom domain** (`radartips.com` / `www.radartips.com`) routes `/api/v1/*` to the **R2-backed Worker** via `workers/radartips-api/wrangler.toml`.
+
+**`*.pages.dev` preview URLs** do not use those zone routes, so the Pages **`_worker.js`** proxies `/api/v1/*` and `/data/coverage_allowlist.json` to production JSON by default:
+
+- Default upstream: `https://radartips.com` (override with **`RADARTIPS_API_ORIGIN`** on the Pages project if you need a different API origin).
 
 ## Guards
 

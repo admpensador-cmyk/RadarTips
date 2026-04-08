@@ -1,4 +1,12 @@
 node_modules/
 .env.local
 .env.*.local
+.env.production
 node_modules/.cache/
+
+# Local scratch / screenshots (never ship)
+tmp_*.json
+dev-*.png
+dev-header-*.png
+Novo*.txt
+dist/package-lock.json

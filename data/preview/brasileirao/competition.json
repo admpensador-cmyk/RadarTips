@@ -1,0 +1,3631 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-04-07T22:22:56.051Z",
+    "schema": "preview_brasileirao_competition_v1",
+    "league_id": 71,
+    "season": "2026",
+    "pipeline": "preview-only",
+    "source": {
+      "provider": "api-football",
+      "league_id": 71,
+      "season": "2026",
+      "resources": [
+        "/standings",
+        "/fixtures",
+        "/fixtures/statistics",
+        "/fixtures/events"
+      ],
+      "model": "fixture_derived_v1"
+    }
+  },
+  "competition": {
+    "slug": "brasileirao",
+    "competition_id": 71,
+    "name": "Serie A",
+    "country": "Brazil",
+    "season": "2026",
+    "current_round": "Regular Season - 4",
+    "generated_at_utc": "2026-04-07T22:22:56.051Z"
+  },
+  "teams": [
+    {
+      "team_id": 121,
+      "team": "Palmeiras",
+      "position": 1
+    },
+    {
+      "team_id": 126,
+      "team": "Sao Paulo",
+      "position": 2
+    },
+    {
+      "team_id": 124,
+      "team": "Fluminense",
+      "position": 3
+    },
+    {
+      "team_id": 127,
+      "team": "Flamengo",
+      "position": 4
+    },
+    {
+      "team_id": 118,
+      "team": "Bahia",
+      "position": 5
+    },
+    {
+      "team_id": 134,
+      "team": "Atletico Paranaense",
+      "position": 6
+    },
+    {
+      "team_id": 147,
+      "team": "Coritiba",
+      "position": 7
+    },
+    {
+      "team_id": 1062,
+      "team": "Atletico-MG",
+      "position": 8
+    },
+    {
+      "team_id": 794,
+      "team": "RB Bragantino",
+      "position": 9
+    },
+    {
+      "team_id": 120,
+      "team": "Botafogo",
+      "position": 10
+    },
+    {
+      "team_id": 130,
+      "team": "Gremio",
+      "position": 11
+    },
+    {
+      "team_id": 133,
+      "team": "Vasco DA Gama",
+      "position": 12
+    },
+    {
+      "team_id": 119,
+      "team": "Internacional",
+      "position": 13
+    },
+    {
+      "team_id": 136,
+      "team": "Vitoria",
+      "position": 14
+    },
+    {
+      "team_id": 128,
+      "team": "Santos",
+      "position": 15
+    },
+    {
+      "team_id": 131,
+      "team": "Corinthians",
+      "position": 16
+    },
+    {
+      "team_id": 132,
+      "team": "Chapecoense-sc",
+      "position": 17
+    },
+    {
+      "team_id": 1198,
+      "team": "Remo",
+      "position": 18
+    },
+    {
+      "team_id": 135,
+      "team": "Cruzeiro",
+      "position": 19
+    },
+    {
+      "team_id": 7848,
+      "team": "Mirassol",
+      "position": 20
+    }
+  ],
+  "standings": [
+    {
+      "position": 1,
+      "team": "Palmeiras",
+      "team_id": 121,
+      "points": 25,
+      "played": 10,
+      "wins": 8,
+      "draws": 1,
+      "losses": 1,
+      "goals_for": 21,
+      "goals_against": 10,
+      "goal_diff": 11,
+      "form_last5": "WWWWW"
+    },
+    {
+      "position": 2,
+      "team": "Sao Paulo",
+      "team_id": 126,
+      "points": 20,
+      "played": 10,
+      "wins": 6,
+      "draws": 2,
+      "losses": 2,
+      "goals_for": 15,
+      "goals_against": 7,
+      "goal_diff": 8,
+      "form_last5": "WDLLW"
+    },
+    {
+      "position": 3,
+      "team": "Fluminense",
+      "team_id": 124,
+      "points": 20,
+      "played": 10,
+      "wins": 6,
+      "draws": 2,
+      "losses": 2,
+      "goals_for": 17,
+      "goals_against": 11,
+      "goal_diff": 6,
+      "form_last5": "DWWLW"
+    },
+    {
+      "position": 4,
+      "team": "Flamengo",
+      "team_id": 127,
+      "points": 17,
+      "played": 9,
+      "wins": 5,
+      "draws": 2,
+      "losses": 2,
+      "goals_for": 16,
+      "goals_against": 9,
+      "goal_diff": 7,
+      "form_last5": "WLDWW"
+    },
+    {
+      "position": 5,
+      "team": "Bahia",
+      "team_id": 118,
+      "points": 17,
+      "played": 9,
+      "wins": 5,
+      "draws": 2,
+      "losses": 2,
+      "goals_for": 13,
+      "goals_against": 9,
+      "goal_diff": 4,
+      "form_last5": "LWLWW"
+    },
+    {
+      "position": 6,
+      "team": "Atletico Paranaense",
+      "team_id": 134,
+      "points": 16,
+      "played": 10,
+      "wins": 5,
+      "draws": 1,
+      "losses": 4,
+      "goals_for": 15,
+      "goals_against": 13,
+      "goal_diff": 2,
+      "form_last5": "LLWWW"
+    },
+    {
+      "position": 7,
+      "team": "Coritiba",
+      "team_id": 147,
+      "points": 15,
+      "played": 10,
+      "wins": 4,
+      "draws": 3,
+      "losses": 3,
+      "goals_for": 11,
+      "goals_against": 10,
+      "goal_diff": 1,
+      "form_last5": "DDLWW"
+    },
+    {
+      "position": 8,
+      "team": "Atletico-MG",
+      "team_id": 1062,
+      "points": 14,
+      "played": 10,
+      "wins": 4,
+      "draws": 2,
+      "losses": 4,
+      "goals_for": 14,
+      "goals_against": 12,
+      "goal_diff": 2,
+      "form_last5": "WWLWL"
+    },
+    {
+      "position": 9,
+      "team": "RB Bragantino",
+      "team_id": 794,
+      "points": 14,
+      "played": 10,
+      "wins": 4,
+      "draws": 2,
+      "losses": 4,
+      "goals_for": 10,
+      "goals_against": 10,
+      "goal_diff": 0,
+      "form_last5": "WWLLL"
+    },
+    {
+      "position": 10,
+      "team": "Botafogo",
+      "team_id": 120,
+      "points": 12,
+      "played": 9,
+      "wins": 4,
+      "draws": 0,
+      "losses": 5,
+      "goals_for": 16,
+      "goals_against": 19,
+      "goal_diff": -3,
+      "form_last5": "WWLWL"
+    },
+    {
+      "position": 11,
+      "team": "Gremio",
+      "team_id": 130,
+      "points": 12,
+      "played": 10,
+      "wins": 3,
+      "draws": 3,
+      "losses": 4,
+      "goals_for": 14,
+      "goals_against": 14,
+      "goal_diff": 0,
+      "form_last5": "DLLWD"
+    },
+    {
+      "position": 12,
+      "team": "Vasco DA Gama",
+      "team_id": 133,
+      "points": 12,
+      "played": 10,
+      "wins": 3,
+      "draws": 3,
+      "losses": 4,
+      "goals_for": 15,
+      "goals_against": 16,
+      "goal_diff": -1,
+      "form_last5": "LDWWD"
+    },
+    {
+      "position": 13,
+      "team": "Internacional",
+      "team_id": 119,
+      "points": 12,
+      "played": 10,
+      "wins": 3,
+      "draws": 3,
+      "losses": 4,
+      "goals_for": 9,
+      "goals_against": 10,
+      "goal_diff": -1,
+      "form_last5": "WDWWL"
+    },
+    {
+      "position": 14,
+      "team": "Vitoria",
+      "team_id": 136,
+      "points": 11,
+      "played": 9,
+      "wins": 3,
+      "draws": 2,
+      "losses": 4,
+      "goals_for": 9,
+      "goals_against": 14,
+      "goal_diff": -5,
+      "form_last5": "DLWLW"
+    },
+    {
+      "position": 15,
+      "team": "Santos",
+      "team_id": 128,
+      "points": 10,
+      "played": 10,
+      "wins": 2,
+      "draws": 4,
+      "losses": 4,
+      "goals_for": 13,
+      "goals_against": 16,
+      "goal_diff": -3,
+      "form_last5": "LWDLD"
+    },
+    {
+      "position": 16,
+      "team": "Corinthians",
+      "team_id": 131,
+      "points": 10,
+      "played": 10,
+      "wins": 2,
+      "draws": 4,
+      "losses": 4,
+      "goals_for": 8,
+      "goals_against": 11,
+      "goal_diff": -3,
+      "form_last5": "LLDDD"
+    },
+    {
+      "position": 17,
+      "team": "Chapecoense-sc",
+      "team_id": 132,
+      "points": 8,
+      "played": 9,
+      "wins": 1,
+      "draws": 5,
+      "losses": 3,
+      "goals_for": 10,
+      "goals_against": 16,
+      "goal_diff": -6,
+      "form_last5": "DLLDD"
+    },
+    {
+      "position": 18,
+      "team": "Remo",
+      "team_id": 1198,
+      "points": 7,
+      "played": 10,
+      "wins": 1,
+      "draws": 4,
+      "losses": 5,
+      "goals_for": 10,
+      "goals_against": 17,
+      "goal_diff": -7,
+      "form_last5": "DLWLL"
+    },
+    {
+      "position": 19,
+      "team": "Cruzeiro",
+      "team_id": 135,
+      "points": 7,
+      "played": 10,
+      "wins": 1,
+      "draws": 4,
+      "losses": 5,
+      "goals_for": 12,
+      "goals_against": 20,
+      "goal_diff": -8,
+      "form_last5": "LWDLD"
+    },
+    {
+      "position": 20,
+      "team": "Mirassol",
+      "team_id": 7848,
+      "points": 6,
+      "played": 9,
+      "wins": 1,
+      "draws": 3,
+      "losses": 5,
+      "goals_for": 10,
+      "goals_against": 14,
+      "goal_diff": -4,
+      "form_last5": "LLLLL"
+    }
+  ],
+  "fixtures": {
+    "finished": [
+      {
+        "fixture_id": 1492116,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Internacional",
+        "away": "Atletico Paranaense",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492119,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Vitoria",
+        "away": "Remo",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492114,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Coritiba",
+        "away": "RB Bragantino",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492110,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico-MG",
+        "away": "Palmeiras",
+        "score": "2-2"
+      },
+      {
+        "fixture_id": 1492115,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Fluminense",
+        "away": "Gremio",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492113,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Corinthians",
+        "away": "Bahia",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492112,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-28T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Santos",
+        "score": "4-2"
+      },
+      {
+        "fixture_id": 1492118,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-29T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Sao Paulo",
+        "away": "Flamengo",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492117,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-29T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Mirassol",
+        "away": "Vasco DA Gama",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492111,
+        "round": "Regular Season - 1",
+        "kickoff_utc": "2026-01-30T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Botafogo",
+        "away": "Cruzeiro",
+        "score": "4-0"
+      },
+      {
+        "fixture_id": 1492124,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-04T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Flamengo",
+        "away": "Internacional",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492122,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-04T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "RB Bragantino",
+        "away": "Atletico-MG",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492128,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-04T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Santos",
+        "away": "Sao Paulo",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492127,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-04T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Remo",
+        "away": "Mirassol",
+        "score": "2-2"
+      },
+      {
+        "fixture_id": 1492126,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-05T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Palmeiras",
+        "away": "Vitoria",
+        "score": "5-1"
+      },
+      {
+        "fixture_id": 1492125,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-05T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Gremio",
+        "away": "Botafogo",
+        "score": "5-3"
+      },
+      {
+        "fixture_id": 1492121,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-05T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Bahia",
+        "away": "Fluminense",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492129,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-05T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Chapecoense-sc",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492123,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-06T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Cruzeiro",
+        "away": "Coritiba",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492139,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-11T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Vitoria",
+        "away": "Flamengo",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492132,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-11T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Coritiba",
+        "score": "3-3"
+      },
+      {
+        "fixture_id": 1492136,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-11T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Mirassol",
+        "away": "Cruzeiro",
+        "score": "2-2"
+      },
+      {
+        "fixture_id": 1492131,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-11T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico-MG",
+        "away": "Remo",
+        "score": "3-3"
+      },
+      {
+        "fixture_id": 1492137,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-12T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Sao Paulo",
+        "away": "Gremio",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492138,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-12T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Bahia",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492130,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-12T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico Paranaense",
+        "away": "Santos",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492134,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-12T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Fluminense",
+        "away": "Botafogo",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492133,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-12T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Corinthians",
+        "away": "RB Bragantino",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492135,
+        "round": "Regular Season - 3",
+        "kickoff_utc": "2026-02-13T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Internacional",
+        "away": "Palmeiras",
+        "score": "1-3"
+      },
+      {
+        "fixture_id": 1492120,
+        "round": "Regular Season - 2",
+        "kickoff_utc": "2026-02-19T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico Paranaense",
+        "away": "Corinthians",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492142,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "RB Bragantino",
+        "away": "Atletico Paranaense",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492148,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Remo",
+        "away": "Internacional",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492143,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Coritiba",
+        "away": "Sao Paulo",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492144,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Cruzeiro",
+        "away": "Corinthians",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492147,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-26T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Palmeiras",
+        "away": "Fluminense",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492146,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-26T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Gremio",
+        "away": "Atletico-MG",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492149,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-26T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Santos",
+        "away": "Vasco DA Gama",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492156,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-11T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Mirassol",
+        "away": "Santos",
+        "score": "2-2"
+      },
+      {
+        "fixture_id": 1492151,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-11T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico-MG",
+        "away": "Internacional",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492152,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-11T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Bahia",
+        "away": "Vitoria",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492154,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-12T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Flamengo",
+        "away": "Cruzeiro",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492153,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-12T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Corinthians",
+        "away": "Coritiba",
+        "score": "0-2"
+      },
+      {
+        "fixture_id": 1492157,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-12T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Remo",
+        "away": "Fluminense",
+        "score": "0-2"
+      },
+      {
+        "fixture_id": 1492159,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-12T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Palmeiras",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492158,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-12T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Sao Paulo",
+        "away": "Chapecoense-sc",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492155,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-13T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Gremio",
+        "away": "RB Bragantino",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492169,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-14T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Vitoria",
+        "away": "Atletico-MG",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492160,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-14T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Botafogo",
+        "away": "Flamengo",
+        "score": "0-3"
+      },
+      {
+        "fixture_id": 1492166,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Internacional",
+        "away": "Bahia",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492165,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Fluminense",
+        "away": "Atletico Paranaense",
+        "score": "3-2"
+      },
+      {
+        "fixture_id": 1492168,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Santos",
+        "away": "Corinthians",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492167,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Palmeiras",
+        "away": "Mirassol",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492163,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Coritiba",
+        "away": "Remo",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492164,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Cruzeiro",
+        "away": "Vasco DA Gama",
+        "score": "3-3"
+      },
+      {
+        "fixture_id": 1492161,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-15T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "RB Bragantino",
+        "away": "Sao Paulo",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492162,
+        "round": "Regular Season - 6",
+        "kickoff_utc": "2026-03-16T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Gremio",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492172,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-18T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Bahia",
+        "away": "RB Bragantino",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492177,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-18T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Palmeiras",
+        "away": "Botafogo",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492170,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-18T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico Paranaense",
+        "away": "Cruzeiro",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492171,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-18T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico-MG",
+        "away": "Sao Paulo",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492176,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-18T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Mirassol",
+        "away": "Coritiba",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492178,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-19T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Santos",
+        "away": "Internacional",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492179,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-19T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Fluminense",
+        "score": "3-2"
+      },
+      {
+        "fixture_id": 1492175,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-19T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Gremio",
+        "away": "Vitoria",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492174,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-19T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Flamengo",
+        "away": "Remo",
+        "score": "3-0"
+      },
+      {
+        "fixture_id": 1492173,
+        "round": "Regular Season - 7",
+        "kickoff_utc": "2026-03-20T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Corinthians",
+        "score": "0-0"
+      },
+      {
+        "fixture_id": 1492181,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-21T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "RB Bragantino",
+        "away": "Botafogo",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492184,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-21T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Fluminense",
+        "away": "Atletico-MG",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492187,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T00:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Sao Paulo",
+        "away": "Palmeiras",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492188,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Gremio",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492180,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico Paranaense",
+        "away": "Coritiba",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492183,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Cruzeiro",
+        "away": "Santos",
+        "score": "0-0"
+      },
+      {
+        "fixture_id": 1492186,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Remo",
+        "away": "Bahia",
+        "score": "4-1"
+      },
+      {
+        "fixture_id": 1492185,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Internacional",
+        "away": "Chapecoense-sc",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492189,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Vitoria",
+        "away": "Mirassol",
+        "score": "1-0"
+      },
+      {
+        "fixture_id": 1492182,
+        "round": "Regular Season - 8",
+        "kickoff_utc": "2026-03-22T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Corinthians",
+        "away": "Flamengo",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492150,
+        "round": "Regular Season - 5",
+        "kickoff_utc": "2026-03-29T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico Paranaense",
+        "away": "Botafogo",
+        "score": "4-1"
+      },
+      {
+        "fixture_id": 1492197,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-01T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Internacional",
+        "away": "Sao Paulo",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492191,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-01T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Botafogo",
+        "away": "Mirassol",
+        "score": "3-2"
+      },
+      {
+        "fixture_id": 1492190,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-01T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Bahia",
+        "away": "Atletico Paranaense",
+        "score": "3-0"
+      },
+      {
+        "fixture_id": 1492195,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-01T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Cruzeiro",
+        "away": "Vitoria",
+        "score": "3-0"
+      },
+      {
+        "fixture_id": 1492194,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-01T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Coritiba",
+        "away": "Vasco DA Gama",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492196,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-02T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Fluminense",
+        "away": "Corinthians",
+        "score": "3-1"
+      },
+      {
+        "fixture_id": 1492199,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-02T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Santos",
+        "away": "Remo",
+        "score": "2-0"
+      },
+      {
+        "fixture_id": 1492193,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-02T22:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Atletico-MG",
+        "score": "0-4"
+      },
+      {
+        "fixture_id": 1492198,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-03T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Palmeiras",
+        "away": "Gremio",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492192,
+        "round": "Regular Season - 9",
+        "kickoff_utc": "2026-04-03T00:30:00.000Z",
+        "status": "Match Finished",
+        "home": "RB Bragantino",
+        "away": "Flamengo",
+        "score": "3-0"
+      },
+      {
+        "fixture_id": 1492208,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-04T21:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Sao Paulo",
+        "away": "Cruzeiro",
+        "score": "4-1"
+      },
+      {
+        "fixture_id": 1492204,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-04T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Coritiba",
+        "away": "Fluminense",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492209,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T00:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Botafogo",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492202,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Vitoria",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492205,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T20:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Flamengo",
+        "away": "Santos",
+        "score": "3-1"
+      },
+      {
+        "fixture_id": 1492200,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T20:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico-MG",
+        "away": "Atletico Paranaense",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492201,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Bahia",
+        "away": "Palmeiras",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492203,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Corinthians",
+        "away": "Internacional",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492207,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Mirassol",
+        "away": "RB Bragantino",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492206,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Gremio",
+        "away": "Remo",
+        "score": "0-0"
+      }
+    ],
+    "upcoming": [
+      {
+        "fixture_id": 1492140,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T21:00:00.000Z",
+        "status": "Match Postponed",
+        "home": "Bahia",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492141,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T21:00:00.000Z",
+        "status": "Match Postponed",
+        "home": "Botafogo",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492145,
+        "round": "Regular Season - 4",
+        "kickoff_utc": "2026-02-25T21:00:00.000Z",
+        "status": "Match Postponed",
+        "home": "Flamengo",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492219,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-11T19:30:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492217,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-11T19:30:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492214,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-11T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492216,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-11T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492218,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-11T23:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492215,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-11T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492210,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-12T14:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492211,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-12T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492212,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-12T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492213,
+        "round": "Regular Season - 11",
+        "kickoff_utc": "2026-04-12T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492221,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-18T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492228,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-18T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492229,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-18T23:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492223,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-18T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492225,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-19T14:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492227,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-19T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492222,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-19T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492226,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-19T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492220,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-19T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492224,
+        "round": "Regular Season - 12",
+        "kickoff_utc": "2026-04-19T22:30:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492232,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-25T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492233,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-25T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492238,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-25T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492239,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T00:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492237,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492235,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492230,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492234,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492236,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492231,
+        "round": "Regular Season - 13",
+        "kickoff_utc": "2026-04-26T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492241,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-02T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492249,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-02T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492247,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-02T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492240,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-02T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492243,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-03T00:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492248,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-03T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492244,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-03T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492245,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-03T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492242,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-03T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492246,
+        "round": "Regular Season - 14",
+        "kickoff_utc": "2026-05-03T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492253,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-09T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492254,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-09T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492251,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T00:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492250,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492257,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492258,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492252,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492256,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492255,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T22:30:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492259,
+        "round": "Regular Season - 15",
+        "kickoff_utc": "2026-05-10T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492267,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-16T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492261,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-16T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492266,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-16T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492268,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T00:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492269,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T14:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492262,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492263,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492265,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492264,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492260,
+        "round": "Regular Season - 16",
+        "kickoff_utc": "2026-05-17T22:30:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492277,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492279,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492274,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-23T22:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492275,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-23T22:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492273,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-24T00:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492272,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-24T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492276,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-24T19:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492270,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-24T21:30:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492278,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-24T23:30:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492271,
+        "round": "Regular Season - 17",
+        "kickoff_utc": "2026-05-25T23:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492281,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492286,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492284,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492288,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492285,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492289,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492280,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492283,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492282,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492287,
+        "round": "Regular Season - 18",
+        "kickoff_utc": "2026-05-31T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492296,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492291,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492295,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492298,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492293,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492292,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492299,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492294,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492290,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492297,
+        "round": "Regular Season - 19",
+        "kickoff_utc": "2026-07-22T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492301,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492306,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492304,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492308,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492305,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492309,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492300,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492303,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492302,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492307,
+        "round": "Regular Season - 20",
+        "kickoff_utc": "2026-07-26T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492316,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492311,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492315,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492318,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492313,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492312,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492319,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492314,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492310,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492317,
+        "round": "Regular Season - 21",
+        "kickoff_utc": "2026-07-29T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492320,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492321,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492327,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492325,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492329,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492326,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492324,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492323,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492322,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492328,
+        "round": "Regular Season - 22",
+        "kickoff_utc": "2026-08-09T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492335,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492334,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492337,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492333,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492332,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492338,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492330,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492339,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492331,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492336,
+        "round": "Regular Season - 23",
+        "kickoff_utc": "2026-08-16T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492346,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492340,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492347,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492345,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492348,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492342,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492344,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492349,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492343,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492341,
+        "round": "Regular Season - 24",
+        "kickoff_utc": "2026-08-23T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492352,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492358,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492354,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492355,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492353,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492359,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492350,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492351,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492357,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492356,
+        "round": "Regular Season - 25",
+        "kickoff_utc": "2026-08-30T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492366,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492360,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492365,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492368,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492362,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492364,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492369,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492363,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492361,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492367,
+        "round": "Regular Season - 26",
+        "kickoff_utc": "2026-09-06T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492371,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492372,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492378,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492375,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492379,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492376,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492373,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492374,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492370,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492377,
+        "round": "Regular Season - 27",
+        "kickoff_utc": "2026-09-13T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492387,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492383,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492384,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492382,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492388,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492380,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492389,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492381,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492386,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492385,
+        "round": "Regular Season - 28",
+        "kickoff_utc": "2026-09-20T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492395,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492391,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492396,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492394,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492398,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492390,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492393,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492399,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492392,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492397,
+        "round": "Regular Season - 29",
+        "kickoff_utc": "2026-10-07T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492401,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492407,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492408,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492405,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492406,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492403,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492409,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492404,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492402,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492400,
+        "round": "Regular Season - 30",
+        "kickoff_utc": "2026-10-11T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492412,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492413,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492415,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492419,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492416,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492414,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492410,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492411,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492418,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492417,
+        "round": "Regular Season - 31",
+        "kickoff_utc": "2026-10-18T20:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492424,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492426,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492423,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492427,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492420,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492428,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492422,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492429,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492421,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492425,
+        "round": "Regular Season - 32",
+        "kickoff_utc": "2026-10-25T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492431,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492435,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492438,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492436,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492433,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492439,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492434,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492432,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492430,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492437,
+        "round": "Regular Season - 33",
+        "kickoff_utc": "2026-10-28T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492446,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492441,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492447,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492448,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492445,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492443,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492440,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492444,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492449,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492442,
+        "round": "Regular Season - 34",
+        "kickoff_utc": "2026-11-04T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492457,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492453,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492454,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492450,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492458,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492452,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492459,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492451,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492456,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492455,
+        "round": "Regular Season - 35",
+        "kickoff_utc": "2026-11-18T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492462,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492467,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492463,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492468,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492466,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492469,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492465,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492460,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492464,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492461,
+        "round": "Regular Season - 36",
+        "kickoff_utc": "2026-11-22T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Corinthians"
+      },
+      {
+        "fixture_id": 1492476,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Internacional",
+        "away": "RB Bragantino"
+      },
+      {
+        "fixture_id": 1492471,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Botafogo",
+        "away": "Bahia"
+      },
+      {
+        "fixture_id": 1492475,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Fluminense",
+        "away": "Cruzeiro"
+      },
+      {
+        "fixture_id": 1492478,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Sao Paulo",
+        "away": "Remo"
+      },
+      {
+        "fixture_id": 1492473,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Corinthians",
+        "away": "Gremio"
+      },
+      {
+        "fixture_id": 1492472,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Chapecoense-sc",
+        "away": "Palmeiras"
+      },
+      {
+        "fixture_id": 1492479,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vitoria",
+        "away": "Santos"
+      },
+      {
+        "fixture_id": 1492474,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Coritiba",
+        "away": "Flamengo"
+      },
+      {
+        "fixture_id": 1492470,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico-MG",
+        "away": "Vasco DA Gama"
+      },
+      {
+        "fixture_id": 1492477,
+        "round": "Regular Season - 37",
+        "kickoff_utc": "2026-11-29T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Mirassol",
+        "away": "Atletico Paranaense"
+      },
+      {
+        "fixture_id": 1492481,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Bahia",
+        "away": "Atletico-MG"
+      },
+      {
+        "fixture_id": 1492486,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Palmeiras",
+        "away": "Coritiba"
+      },
+      {
+        "fixture_id": 1492484,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Flamengo",
+        "away": "Chapecoense-sc"
+      },
+      {
+        "fixture_id": 1492488,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Santos",
+        "away": "Botafogo"
+      },
+      {
+        "fixture_id": 1492485,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Gremio",
+        "away": "Mirassol"
+      },
+      {
+        "fixture_id": 1492489,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Vasco DA Gama",
+        "away": "Vitoria"
+      },
+      {
+        "fixture_id": 1492480,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Atletico Paranaense",
+        "away": "Sao Paulo"
+      },
+      {
+        "fixture_id": 1492483,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Cruzeiro",
+        "away": "Internacional"
+      },
+      {
+        "fixture_id": 1492482,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "RB Bragantino",
+        "away": "Fluminense"
+      },
+      {
+        "fixture_id": 1492487,
+        "round": "Regular Season - 38",
+        "kickoff_utc": "2026-12-02T21:00:00.000Z",
+        "status": "Not Started",
+        "home": "Remo",
+        "away": "Corinthians"
+      }
+    ],
+    "recent": [
+      {
+        "fixture_id": 1492206,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T23:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Gremio",
+        "away": "Remo",
+        "score": "0-0"
+      },
+      {
+        "fixture_id": 1492207,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T23:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Mirassol",
+        "away": "RB Bragantino",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492201,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Bahia",
+        "away": "Palmeiras",
+        "score": "1-2"
+      },
+      {
+        "fixture_id": 1492203,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T22:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Corinthians",
+        "away": "Internacional",
+        "score": "0-1"
+      },
+      {
+        "fixture_id": 1492205,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T20:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Flamengo",
+        "away": "Santos",
+        "score": "3-1"
+      },
+      {
+        "fixture_id": 1492200,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T20:30:00.000Z",
+        "status": "Match Finished",
+        "home": "Atletico-MG",
+        "away": "Atletico Paranaense",
+        "score": "2-1"
+      },
+      {
+        "fixture_id": 1492202,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T19:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Chapecoense-sc",
+        "away": "Vitoria",
+        "score": "1-1"
+      },
+      {
+        "fixture_id": 1492209,
+        "round": "Regular Season - 10",
+        "kickoff_utc": "2026-04-05T00:00:00.000Z",
+        "status": "Match Finished",
+        "home": "Vasco DA Gama",
+        "away": "Botafogo",
+        "score": "1-2"
+      }
+    ]
+  }
+}

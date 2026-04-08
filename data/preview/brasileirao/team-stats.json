@@ -1,0 +1,5824 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-04-07T22:22:56.051Z",
+    "schema": "preview_brasileirao_team_stats_v6",
+    "league_id": 71,
+    "season": "2026",
+    "pipeline": "preview-only",
+    "source": {
+      "provider": "api-football",
+      "league_id": 71,
+      "season": "2026",
+      "resources": [
+        "/standings",
+        "/fixtures",
+        "/fixtures/statistics",
+        "/fixtures/events"
+      ],
+      "model": "fixture_derived_v1"
+    }
+  },
+  "league_summary": {
+    "matches_count": 97,
+    "goals_for_total": 258,
+    "goals_against_total": 258,
+    "goals_per_game": 2.66,
+    "home_goals_avg": 1.598,
+    "away_goals_avg": 1.062,
+    "over_05_count": 94,
+    "over_05_pct": 96.91,
+    "over_15_count": 76,
+    "over_15_pct": 78.35,
+    "over_25_count": 47,
+    "over_25_pct": 48.45,
+    "over_35_count": 21,
+    "over_35_pct": 21.65,
+    "under_25_count": 50,
+    "under_25_pct": 51.55,
+    "btts_count": 56,
+    "btts_pct": 57.73,
+    "clean_sheets_count": 44,
+    "clean_sheets_pct": 22.68,
+    "failed_to_score_count": 44,
+    "failed_to_score_pct": 22.68,
+    "home_btts_pct": 57.73,
+    "away_btts_pct": 57.73,
+    "home_over_25_pct": 48.45,
+    "away_over_25_pct": 48.45,
+    "home_clean_sheets_pct": 27.84,
+    "away_clean_sheets_pct": 17.53,
+    "corners_avg": 10.28,
+    "yellow_cards_avg": 4.65,
+    "red_cards_avg": 0.24,
+    "shots_avg": null,
+    "possession_avg": null
+  },
+  "summary": {
+    "matches_count": 97,
+    "goals_per_game": 2.66,
+    "over_15_count": 76,
+    "over_15_pct": 78.35,
+    "over_25_count": 47,
+    "over_25_pct": 48.45,
+    "over_35_count": 21,
+    "over_35_pct": 21.65,
+    "under_25_count": 50,
+    "under_25_pct": 51.55,
+    "btts_count": 56,
+    "btts_pct": 57.73,
+    "clean_sheets_count": 44,
+    "clean_sheets_pct": 22.68,
+    "failed_to_score_count": 44,
+    "failed_to_score_pct": 22.68
+  },
+  "teams": [
+    {
+      "identity": {
+        "team_id": 118,
+        "team": "Bahia"
+      },
+      "totals": {
+        "goals_for": 13,
+        "goals_against": 9
+      },
+      "counts": {
+        "matches": 9,
+        "over_15_count": 7,
+        "over_25_count": 4,
+        "over_35_count": 1,
+        "under_25_count": 5,
+        "btts_count": 5,
+        "clean_sheets_count": 4,
+        "failed_to_score_count": 0
+      },
+      "rates": {
+        "goals_for_per_game": 1.444,
+        "goals_against_per_game": 1,
+        "over_15_pct": 77.78,
+        "over_25_pct": 44.44,
+        "over_35_pct": 11.11,
+        "under_25_pct": 55.56,
+        "btts_pct": 55.56,
+        "clean_sheets_pct": 44.44,
+        "failed_to_score_pct": 0
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 8,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 2,
+            "over_35_count": 0,
+            "under_25_count": 3,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.6,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 100,
+            "over_25_pct": 40,
+            "over_35_pct": 0,
+            "under_25_pct": 60,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 5,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 4,
+            "over_15_count": 2,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 2,
+            "btts_count": 2,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.25,
+            "goals_against_per_game": 1.25,
+            "over_15_pct": 50,
+            "over_25_pct": 50,
+            "over_35_pct": 25,
+            "under_25_pct": 50,
+            "btts_pct": 50,
+            "clean_sheets_pct": 50,
+            "failed_to_score_pct": 0
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 21,
+          "red_cards": 2
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_1plus_yellow_count": 8,
+          "matches_with_2plus_yellows_count": 6,
+          "matches_with_red_count": 2
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.333,
+          "red_cards_per_game": 0.222,
+          "matches_with_1plus_yellow_pct": 88.89,
+          "matches_with_2plus_yellows_pct": 66.67,
+          "matches_with_red_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 8,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.6,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 13,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3.25,
+              "red_cards_per_game": 0.25,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 75,
+              "matches_with_red_pct": 25
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 50,
+          "corners_against": 44
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 6,
+          "matches_with_7plus_corners_for_count": 4
+        },
+        "rates": {
+          "corners_for_per_game": 5.556,
+          "corners_against_per_game": 4.889,
+          "matches_with_3plus_corners_for_pct": 88.89,
+          "matches_with_5plus_corners_for_pct": 66.67,
+          "matches_with_7plus_corners_for_pct": 44.44
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 30,
+              "corners_against": 20
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 4,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 6,
+              "corners_against_per_game": 4,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 80,
+              "matches_with_7plus_corners_for_pct": 60
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 20,
+              "corners_against": 24
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 5,
+              "corners_against_per_game": 6,
+              "matches_with_3plus_corners_for_pct": 75,
+              "matches_with_5plus_corners_for_pct": 50,
+              "matches_with_7plus_corners_for_pct": 25
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 31
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_saves_count": 7,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 3.444,
+          "save_pct": 79.49,
+          "matches_with_3plus_saves_pct": 77.78,
+          "matches_with_5plus_saves_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 15
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 4,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 3,
+              "save_pct": 83.33,
+              "matches_with_3plus_saves_pct": 80,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 16
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 4,
+              "save_pct": 76.19,
+              "matches_with_3plus_saves_pct": 75,
+              "matches_with_5plus_saves_pct": 25
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 119,
+        "team": "Internacional"
+      },
+      "totals": {
+        "goals_for": 9,
+        "goals_against": 10
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 6,
+        "over_25_count": 2,
+        "over_35_count": 1,
+        "under_25_count": 8,
+        "btts_count": 5,
+        "clean_sheets_count": 2,
+        "failed_to_score_count": 3
+      },
+      "rates": {
+        "goals_for_per_game": 0.9,
+        "goals_against_per_game": 1,
+        "over_15_pct": 60,
+        "over_25_pct": 20,
+        "over_35_pct": 10,
+        "under_25_pct": 80,
+        "btts_pct": 50,
+        "clean_sheets_pct": 20,
+        "failed_to_score_pct": 30
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 4,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 1,
+            "over_35_count": 1,
+            "under_25_count": 4,
+            "btts_count": 2,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.8,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 60,
+            "over_25_pct": 20,
+            "over_35_pct": 20,
+            "under_25_pct": 80,
+            "btts_pct": 40,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 40
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 5,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 1,
+            "over_35_count": 0,
+            "under_25_count": 4,
+            "btts_count": 3,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 60,
+            "over_25_pct": 20,
+            "over_35_pct": 0,
+            "under_25_pct": 80,
+            "btts_pct": 60,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 22,
+          "red_cards": 0
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 10,
+          "matches_with_2plus_yellows_count": 7,
+          "matches_with_red_count": 0
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.2,
+          "red_cards_per_game": 0,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 70,
+          "matches_with_red_pct": 0
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 10,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 12,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.4,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 84,
+          "corners_against": 45
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 9,
+          "matches_with_5plus_corners_for_count": 6,
+          "matches_with_7plus_corners_for_count": 6
+        },
+        "rates": {
+          "corners_for_per_game": 8.4,
+          "corners_against_per_game": 4.5,
+          "matches_with_3plus_corners_for_pct": 90,
+          "matches_with_5plus_corners_for_pct": 60,
+          "matches_with_7plus_corners_for_pct": 60
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 43,
+              "corners_against": 21
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 8.6,
+              "corners_against_per_game": 4.2,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 60
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 41,
+              "corners_against": 24
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 8.2,
+              "corners_against_per_game": 4.8,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 60
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 22
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 3,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 2.2,
+          "save_pct": 68.75,
+          "matches_with_3plus_saves_pct": 30,
+          "matches_with_5plus_saves_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 8
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 1,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 1.6,
+              "save_pct": 61.54,
+              "matches_with_3plus_saves_pct": 20,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 14
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 2.8,
+              "save_pct": 73.68,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 120,
+        "team": "Botafogo"
+      },
+      "totals": {
+        "goals_for": 16,
+        "goals_against": 19
+      },
+      "counts": {
+        "matches": 9,
+        "over_15_count": 8,
+        "over_25_count": 8,
+        "over_35_count": 4,
+        "under_25_count": 1,
+        "btts_count": 6,
+        "clean_sheets_count": 1,
+        "failed_to_score_count": 2
+      },
+      "rates": {
+        "goals_for_per_game": 1.778,
+        "goals_against_per_game": 2.111,
+        "over_15_pct": 88.89,
+        "over_25_pct": 88.89,
+        "over_35_pct": 44.44,
+        "under_25_pct": 11.11,
+        "btts_pct": 66.67,
+        "clean_sheets_pct": 11.11,
+        "failed_to_score_pct": 22.22
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 7,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 3,
+            "over_15_count": 3,
+            "over_25_count": 3,
+            "over_35_count": 2,
+            "under_25_count": 0,
+            "btts_count": 1,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 2.333,
+            "goals_against_per_game": 1.667,
+            "over_15_pct": 100,
+            "over_25_pct": 100,
+            "over_35_pct": 66.67,
+            "under_25_pct": 0,
+            "btts_pct": 33.33,
+            "clean_sheets_pct": 33.33,
+            "failed_to_score_pct": 33.33
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 9,
+            "goals_against": 14
+          },
+          "counts": {
+            "matches": 6,
+            "over_15_count": 5,
+            "over_25_count": 5,
+            "over_35_count": 2,
+            "under_25_count": 1,
+            "btts_count": 5,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.5,
+            "goals_against_per_game": 2.333,
+            "over_15_pct": 83.33,
+            "over_25_pct": 83.33,
+            "over_35_pct": 33.33,
+            "under_25_pct": 16.67,
+            "btts_pct": 83.33,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 16.67
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 25,
+          "red_cards": 2
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 8,
+          "matches_with_red_count": 2
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.778,
+          "red_cards_per_game": 0.222,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 88.89,
+          "matches_with_red_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 7,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 3,
+              "matches_with_1plus_yellow_count": 3,
+              "matches_with_2plus_yellows_count": 2,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.333,
+              "red_cards_per_game": 0.333,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 66.67,
+              "matches_with_red_pct": 33.33
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 18,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_1plus_yellow_count": 6,
+              "matches_with_2plus_yellows_count": 6,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3,
+              "red_cards_per_game": 0.167,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 16.67
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 26,
+          "corners_against": 48
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_corners_for_count": 3,
+          "matches_with_5plus_corners_for_count": 2,
+          "matches_with_7plus_corners_for_count": 1
+        },
+        "rates": {
+          "corners_for_per_game": 2.889,
+          "corners_against_per_game": 5.333,
+          "matches_with_3plus_corners_for_pct": 33.33,
+          "matches_with_5plus_corners_for_pct": 22.22,
+          "matches_with_7plus_corners_for_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 7,
+              "corners_against": 19
+            },
+            "counts": {
+              "matches": 3,
+              "matches_with_3plus_corners_for_count": 1,
+              "matches_with_5plus_corners_for_count": 0,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 2.333,
+              "corners_against_per_game": 6.333,
+              "matches_with_3plus_corners_for_pct": 33.33,
+              "matches_with_5plus_corners_for_pct": 0,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 19,
+              "corners_against": 29
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_corners_for_count": 2,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 3.167,
+              "corners_against_per_game": 4.833,
+              "matches_with_3plus_corners_for_pct": 33.33,
+              "matches_with_5plus_corners_for_pct": 33.33,
+              "matches_with_7plus_corners_for_pct": 16.67
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 34
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_saves_count": 8,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 3.778,
+          "save_pct": 65.38,
+          "matches_with_3plus_saves_pct": 88.89,
+          "matches_with_5plus_saves_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 9
+            },
+            "counts": {
+              "matches": 3,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 3,
+              "save_pct": 64.29,
+              "matches_with_3plus_saves_pct": 66.67,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 25
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_saves_count": 6,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 4.167,
+              "save_pct": 65.79,
+              "matches_with_3plus_saves_pct": 100,
+              "matches_with_5plus_saves_pct": 33.33
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 121,
+        "team": "Palmeiras"
+      },
+      "totals": {
+        "goals_for": 21,
+        "goals_against": 10
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 8,
+        "over_25_count": 8,
+        "over_35_count": 3,
+        "under_25_count": 2,
+        "btts_count": 8,
+        "clean_sheets_count": 2,
+        "failed_to_score_count": 0
+      },
+      "rates": {
+        "goals_for_per_game": 2.1,
+        "goals_against_per_game": 1,
+        "over_15_pct": 80,
+        "over_25_pct": 80,
+        "over_35_pct": 30,
+        "under_25_pct": 20,
+        "btts_pct": 80,
+        "clean_sheets_pct": 20,
+        "failed_to_score_pct": 0
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 12,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 4,
+            "over_35_count": 1,
+            "under_25_count": 1,
+            "btts_count": 4,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 2.4,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 80,
+            "over_25_pct": 80,
+            "over_35_pct": 20,
+            "under_25_pct": 20,
+            "btts_pct": 80,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 9,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 4,
+            "over_35_count": 2,
+            "under_25_count": 1,
+            "btts_count": 4,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.8,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 80,
+            "over_25_pct": 80,
+            "over_35_pct": 40,
+            "under_25_pct": 20,
+            "btts_pct": 80,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 0
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 20,
+          "red_cards": 0
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 5,
+          "matches_with_red_count": 0
+        },
+        "rates": {
+          "yellow_cards_per_game": 2,
+          "red_cards_per_game": 0,
+          "matches_with_1plus_yellow_pct": 90,
+          "matches_with_2plus_yellows_pct": 50,
+          "matches_with_red_pct": 0
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 6,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 1,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.2,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 20,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 14,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.8,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 49,
+          "corners_against": 69
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 7,
+          "matches_with_7plus_corners_for_count": 2
+        },
+        "rates": {
+          "corners_for_per_game": 4.9,
+          "corners_against_per_game": 6.9,
+          "matches_with_3plus_corners_for_pct": 80,
+          "matches_with_5plus_corners_for_pct": 70,
+          "matches_with_7plus_corners_for_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 27,
+              "corners_against": 22
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 4,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 5.4,
+              "corners_against_per_game": 4.4,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 80,
+              "matches_with_7plus_corners_for_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 22,
+              "corners_against": 47
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 4.4,
+              "corners_against_per_game": 9.4,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 20
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 28
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 5,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 2.8,
+          "save_pct": 71.79,
+          "matches_with_3plus_saves_pct": 50,
+          "matches_with_5plus_saves_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 16
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 3.2,
+              "save_pct": 76.19,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 12
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.4,
+              "save_pct": 66.67,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 124,
+        "team": "Fluminense"
+      },
+      "totals": {
+        "goals_for": 17,
+        "goals_against": 11
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 8,
+        "over_25_count": 5,
+        "over_35_count": 3,
+        "under_25_count": 5,
+        "btts_count": 7,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 0
+      },
+      "rates": {
+        "goals_for_per_game": 1.7,
+        "goals_against_per_game": 1.1,
+        "over_15_pct": 80,
+        "over_25_pct": 50,
+        "over_35_pct": 30,
+        "under_25_pct": 50,
+        "btts_pct": 70,
+        "clean_sheets_pct": 30,
+        "failed_to_score_pct": 0
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 10,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 3,
+            "over_35_count": 2,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 2,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 60,
+            "over_25_pct": 60,
+            "over_35_pct": 40,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 7,
+            "goals_against": 7
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 3,
+            "btts_count": 4,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.4,
+            "goals_against_per_game": 1.4,
+            "over_15_pct": 100,
+            "over_25_pct": 40,
+            "over_35_pct": 20,
+            "under_25_pct": 60,
+            "btts_pct": 80,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 0
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 22,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 8,
+          "matches_with_2plus_yellows_count": 5,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.2,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 80,
+          "matches_with_2plus_yellows_pct": 50,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 14,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.8,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 8,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 3,
+              "matches_with_2plus_yellows_count": 2,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.6,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 60,
+              "matches_with_2plus_yellows_pct": 40,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 59,
+          "corners_against": 44
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 10,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 4
+        },
+        "rates": {
+          "corners_for_per_game": 5.9,
+          "corners_against_per_game": 4.4,
+          "matches_with_3plus_corners_for_pct": 100,
+          "matches_with_5plus_corners_for_pct": 50,
+          "matches_with_7plus_corners_for_pct": 40
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 25,
+              "corners_against": 19
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 5,
+              "corners_against_per_game": 3.8,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 34,
+              "corners_against": 25
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 6.8,
+              "corners_against_per_game": 5,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 31
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 8,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 3.1,
+          "save_pct": 73.81,
+          "matches_with_3plus_saves_pct": 80,
+          "matches_with_5plus_saves_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 12
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.4,
+              "save_pct": 70.59,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 19
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 5,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 3.8,
+              "save_pct": 76,
+              "matches_with_3plus_saves_pct": 100,
+              "matches_with_5plus_saves_pct": 40
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 126,
+        "team": "Sao Paulo"
+      },
+      "totals": {
+        "goals_for": 15,
+        "goals_against": 7
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 7,
+        "over_25_count": 3,
+        "over_35_count": 1,
+        "under_25_count": 7,
+        "btts_count": 5,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 2
+      },
+      "rates": {
+        "goals_for_per_game": 1.5,
+        "goals_against_per_game": 0.7,
+        "over_15_pct": 70,
+        "over_25_pct": 30,
+        "over_35_pct": 10,
+        "under_25_pct": 70,
+        "btts_pct": 50,
+        "clean_sheets_pct": 30,
+        "failed_to_score_pct": 20
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 10,
+            "goals_against": 3
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 3,
+            "btts_count": 2,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 2,
+            "goals_against_per_game": 0.6,
+            "over_15_pct": 80,
+            "over_25_pct": 40,
+            "over_35_pct": 20,
+            "under_25_pct": 60,
+            "btts_pct": 40,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 20
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 5,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 1,
+            "over_35_count": 0,
+            "under_25_count": 4,
+            "btts_count": 3,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 60,
+            "over_25_pct": 20,
+            "over_35_pct": 0,
+            "under_25_pct": 80,
+            "btts_pct": 60,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 17,
+          "red_cards": 0
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 8,
+          "matches_with_2plus_yellows_count": 5,
+          "matches_with_red_count": 0
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.7,
+          "red_cards_per_game": 0,
+          "matches_with_1plus_yellow_pct": 80,
+          "matches_with_2plus_yellows_pct": 50,
+          "matches_with_red_pct": 0
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 7,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 3,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.4,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 60,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 10,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 2,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 40,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 59,
+          "corners_against": 42
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 4
+        },
+        "rates": {
+          "corners_for_per_game": 5.9,
+          "corners_against_per_game": 4.2,
+          "matches_with_3plus_corners_for_pct": 80,
+          "matches_with_5plus_corners_for_pct": 50,
+          "matches_with_7plus_corners_for_pct": 40
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 32,
+              "corners_against": 20
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 6.4,
+              "corners_against_per_game": 4,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 27,
+              "corners_against": 22
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 5.4,
+              "corners_against_per_game": 4.4,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 25
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 4,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 2.5,
+          "save_pct": 78.13,
+          "matches_with_3plus_saves_pct": 40,
+          "matches_with_5plus_saves_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 13
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 2.6,
+              "save_pct": 81.25,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 12
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.4,
+              "save_pct": 75,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 127,
+        "team": "Flamengo"
+      },
+      "totals": {
+        "goals_for": 16,
+        "goals_against": 9
+      },
+      "counts": {
+        "matches": 9,
+        "over_15_count": 9,
+        "over_25_count": 6,
+        "over_35_count": 1,
+        "under_25_count": 3,
+        "btts_count": 5,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 1
+      },
+      "rates": {
+        "goals_for_per_game": 1.778,
+        "goals_against_per_game": 1,
+        "over_15_pct": 100,
+        "over_25_pct": 66.67,
+        "over_35_pct": 11.11,
+        "under_25_pct": 33.33,
+        "btts_pct": 55.56,
+        "clean_sheets_pct": 33.33,
+        "failed_to_score_pct": 11.11
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 9,
+            "goals_against": 2
+          },
+          "counts": {
+            "matches": 4,
+            "over_15_count": 4,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 2,
+            "btts_count": 2,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 2.25,
+            "goals_against_per_game": 0.5,
+            "over_15_pct": 100,
+            "over_25_pct": 50,
+            "over_35_pct": 25,
+            "under_25_pct": 50,
+            "btts_pct": 50,
+            "clean_sheets_pct": 50,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 7,
+            "goals_against": 7
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 4,
+            "over_35_count": 0,
+            "under_25_count": 1,
+            "btts_count": 3,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.4,
+            "goals_against_per_game": 1.4,
+            "over_15_pct": 100,
+            "over_25_pct": 80,
+            "over_35_pct": 0,
+            "under_25_pct": 20,
+            "btts_pct": 60,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 18,
+          "red_cards": 2
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_1plus_yellow_count": 7,
+          "matches_with_2plus_yellows_count": 6,
+          "matches_with_red_count": 2
+        },
+        "rates": {
+          "yellow_cards_per_game": 2,
+          "red_cards_per_game": 0.222,
+          "matches_with_1plus_yellow_pct": 77.78,
+          "matches_with_2plus_yellows_pct": 66.67,
+          "matches_with_red_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 8,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_1plus_yellow_count": 3,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 75,
+              "matches_with_2plus_yellows_pct": 75,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 10,
+              "red_cards": 2
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 2
+            },
+            "rates": {
+              "yellow_cards_per_game": 2,
+              "red_cards_per_game": 0.4,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 40
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 36,
+          "corners_against": 43
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_corners_for_count": 6,
+          "matches_with_5plus_corners_for_count": 3,
+          "matches_with_7plus_corners_for_count": 1
+        },
+        "rates": {
+          "corners_for_per_game": 4,
+          "corners_against_per_game": 4.778,
+          "matches_with_3plus_corners_for_pct": 66.67,
+          "matches_with_5plus_corners_for_pct": 33.33,
+          "matches_with_7plus_corners_for_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 17,
+              "corners_against": 19
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 1,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 4.25,
+              "corners_against_per_game": 4.75,
+              "matches_with_3plus_corners_for_pct": 75,
+              "matches_with_5plus_corners_for_pct": 25,
+              "matches_with_7plus_corners_for_pct": 25
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 19,
+              "corners_against": 24
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.8,
+              "corners_against_per_game": 4.8,
+              "matches_with_3plus_corners_for_pct": 60,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 19
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_saves_count": 3,
+          "matches_with_5plus_saves_count": 0
+        },
+        "rates": {
+          "saves_per_game": 2.111,
+          "save_pct": 67.86,
+          "matches_with_3plus_saves_pct": 33.33,
+          "matches_with_5plus_saves_pct": 0
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 10
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.5,
+              "save_pct": 83.33,
+              "matches_with_3plus_saves_pct": 50,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 9
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 1,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 1.8,
+              "save_pct": 56.25,
+              "matches_with_3plus_saves_pct": 20,
+              "matches_with_5plus_saves_pct": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 128,
+        "team": "Santos"
+      },
+      "totals": {
+        "goals_for": 13,
+        "goals_against": 16
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 9,
+        "over_25_count": 6,
+        "over_35_count": 3,
+        "under_25_count": 4,
+        "btts_count": 8,
+        "clean_sheets_count": 2,
+        "failed_to_score_count": 1
+      },
+      "rates": {
+        "goals_for_per_game": 1.3,
+        "goals_against_per_game": 1.6,
+        "over_15_pct": 90,
+        "over_25_pct": 60,
+        "over_35_pct": 30,
+        "under_25_pct": 40,
+        "btts_pct": 80,
+        "clean_sheets_pct": 20,
+        "failed_to_score_pct": 10
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 7,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 2,
+            "over_35_count": 0,
+            "under_25_count": 3,
+            "btts_count": 4,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.4,
+            "goals_against_per_game": 1,
+            "over_15_pct": 100,
+            "over_25_pct": 40,
+            "over_35_pct": 0,
+            "under_25_pct": 60,
+            "btts_pct": 80,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 6,
+            "goals_against": 11
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 4,
+            "over_35_count": 3,
+            "under_25_count": 1,
+            "btts_count": 4,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.2,
+            "goals_against_per_game": 2.2,
+            "over_15_pct": 80,
+            "over_25_pct": 80,
+            "over_35_pct": 60,
+            "under_25_pct": 20,
+            "btts_pct": 80,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 33,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 10,
+          "matches_with_2plus_yellows_count": 9,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 3.3,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 90,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 19,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3.8,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 14,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 5,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.8,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 56,
+          "corners_against": 47
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 6,
+          "matches_with_7plus_corners_for_count": 5
+        },
+        "rates": {
+          "corners_for_per_game": 5.6,
+          "corners_against_per_game": 4.7,
+          "matches_with_3plus_corners_for_pct": 80,
+          "matches_with_5plus_corners_for_pct": 60,
+          "matches_with_7plus_corners_for_pct": 50
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 26,
+              "corners_against": 24
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 5.2,
+              "corners_against_per_game": 4.8,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 30,
+              "corners_against": 23
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 6,
+              "corners_against_per_game": 4.6,
+              "matches_with_3plus_corners_for_pct": 60,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 60
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 28
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 5,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 2.8,
+          "save_pct": 65.12,
+          "matches_with_3plus_saves_pct": 50,
+          "matches_with_5plus_saves_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 15
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 3,
+              "save_pct": 83.33,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 13
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 2.6,
+              "save_pct": 52,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 130,
+        "team": "Gremio"
+      },
+      "totals": {
+        "goals_for": 14,
+        "goals_against": 14
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 9,
+        "over_25_count": 5,
+        "over_35_count": 1,
+        "under_25_count": 5,
+        "btts_count": 7,
+        "clean_sheets_count": 2,
+        "failed_to_score_count": 2
+      },
+      "rates": {
+        "goals_for_per_game": 1.4,
+        "goals_against_per_game": 1.4,
+        "over_15_pct": 90,
+        "over_25_pct": 50,
+        "over_35_pct": 10,
+        "under_25_pct": 50,
+        "btts_pct": 70,
+        "clean_sheets_pct": 20,
+        "failed_to_score_pct": 20
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 10,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 3,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 2,
+            "goals_against_per_game": 1,
+            "over_15_pct": 80,
+            "over_25_pct": 40,
+            "over_35_pct": 20,
+            "under_25_pct": 60,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 20
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 4,
+            "goals_against": 9
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 3,
+            "over_35_count": 0,
+            "under_25_count": 2,
+            "btts_count": 4,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 0.8,
+            "goals_against_per_game": 1.8,
+            "over_15_pct": 100,
+            "over_25_pct": 60,
+            "over_35_pct": 0,
+            "under_25_pct": 40,
+            "btts_pct": 80,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 21,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 6,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.1,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 90,
+          "matches_with_2plus_yellows_pct": 60,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 9,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.8,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 12,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.4,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 44,
+          "corners_against": 37
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 4,
+          "matches_with_7plus_corners_for_count": 1
+        },
+        "rates": {
+          "corners_for_per_game": 4.4,
+          "corners_against_per_game": 3.7,
+          "matches_with_3plus_corners_for_pct": 80,
+          "matches_with_5plus_corners_for_pct": 40,
+          "matches_with_7plus_corners_for_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 26,
+              "corners_against": 19
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 5.2,
+              "corners_against_per_game": 3.8,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 18,
+              "corners_against": 18
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.6,
+              "corners_against_per_game": 3.6,
+              "matches_with_3plus_corners_for_pct": 60,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 24
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 4,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 2.4,
+          "save_pct": 61.54,
+          "matches_with_3plus_saves_pct": 40,
+          "matches_with_5plus_saves_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 13
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 2.6,
+              "save_pct": 68.42,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 11
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.2,
+              "save_pct": 55,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 131,
+        "team": "Corinthians"
+      },
+      "totals": {
+        "goals_for": 8,
+        "goals_against": 11
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 7,
+        "over_25_count": 2,
+        "over_35_count": 1,
+        "under_25_count": 8,
+        "btts_count": 5,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 3
+      },
+      "rates": {
+        "goals_for_per_game": 0.8,
+        "goals_against_per_game": 1.1,
+        "over_15_pct": 70,
+        "over_25_pct": 20,
+        "over_35_pct": 10,
+        "under_25_pct": 80,
+        "btts_pct": 50,
+        "clean_sheets_pct": 30,
+        "failed_to_score_pct": 30
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 4,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 1,
+            "over_35_count": 0,
+            "under_25_count": 4,
+            "btts_count": 2,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.8,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 80,
+            "over_25_pct": 20,
+            "over_35_pct": 0,
+            "under_25_pct": 80,
+            "btts_pct": 40,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 40
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 4,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 1,
+            "over_35_count": 1,
+            "under_25_count": 4,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 0.8,
+            "goals_against_per_game": 1,
+            "over_15_pct": 60,
+            "over_25_pct": 20,
+            "over_35_pct": 20,
+            "under_25_pct": 80,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 30,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 10,
+          "matches_with_2plus_yellows_count": 10,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 3,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 100,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 13,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 5,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.6,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 17,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 5,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3.4,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 51,
+          "corners_against": 52
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 9,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 3
+        },
+        "rates": {
+          "corners_for_per_game": 5.1,
+          "corners_against_per_game": 5.2,
+          "matches_with_3plus_corners_for_pct": 90,
+          "matches_with_5plus_corners_for_pct": 50,
+          "matches_with_7plus_corners_for_pct": 30
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 28,
+              "corners_against": 21
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 5.6,
+              "corners_against_per_game": 4.2,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 23,
+              "corners_against": 31
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 4.6,
+              "corners_against_per_game": 6.2,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 20
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 32
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 6,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 3.2,
+          "save_pct": 74.42,
+          "matches_with_3plus_saves_pct": 60,
+          "matches_with_5plus_saves_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 11
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.2,
+              "save_pct": 64.71,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 21
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 4,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 4.2,
+              "save_pct": 80.77,
+              "matches_with_3plus_saves_pct": 80,
+              "matches_with_5plus_saves_pct": 40
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 132,
+        "team": "Chapecoense-sc"
+      },
+      "totals": {
+        "goals_for": 10,
+        "goals_against": 16
+      },
+      "counts": {
+        "matches": 9,
+        "over_15_count": 8,
+        "over_25_count": 3,
+        "over_35_count": 3,
+        "under_25_count": 6,
+        "btts_count": 5,
+        "clean_sheets_count": 1,
+        "failed_to_score_count": 4
+      },
+      "rates": {
+        "goals_for_per_game": 1.111,
+        "goals_against_per_game": 1.778,
+        "over_15_pct": 88.89,
+        "over_25_pct": 33.33,
+        "over_35_pct": 33.33,
+        "under_25_pct": 66.67,
+        "btts_pct": 55.56,
+        "clean_sheets_pct": 11.11,
+        "failed_to_score_pct": 44.44
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 9,
+            "goals_against": 11
+          },
+          "counts": {
+            "matches": 6,
+            "over_15_count": 5,
+            "over_25_count": 3,
+            "over_35_count": 3,
+            "under_25_count": 3,
+            "btts_count": 4,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 1.5,
+            "goals_against_per_game": 1.833,
+            "over_15_pct": 83.33,
+            "over_25_pct": 50,
+            "over_35_pct": 50,
+            "under_25_pct": 50,
+            "btts_pct": 66.67,
+            "clean_sheets_pct": 16.67,
+            "failed_to_score_pct": 33.33
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 1,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 3,
+            "over_15_count": 3,
+            "over_25_count": 0,
+            "over_35_count": 0,
+            "under_25_count": 3,
+            "btts_count": 1,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.333,
+            "goals_against_per_game": 1.667,
+            "over_15_pct": 100,
+            "over_25_pct": 0,
+            "over_35_pct": 0,
+            "under_25_pct": 100,
+            "btts_pct": 33.33,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 66.67
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 17,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_1plus_yellow_count": 8,
+          "matches_with_2plus_yellows_count": 6,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.889,
+          "red_cards_per_game": 0.111,
+          "matches_with_1plus_yellow_pct": 88.89,
+          "matches_with_2plus_yellows_pct": 66.67,
+          "matches_with_red_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 13,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_1plus_yellow_count": 6,
+              "matches_with_2plus_yellows_count": 5,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.167,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 83.33,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 4,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 3,
+              "matches_with_1plus_yellow_count": 2,
+              "matches_with_2plus_yellows_count": 1,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.333,
+              "red_cards_per_game": 0.333,
+              "matches_with_1plus_yellow_pct": 66.67,
+              "matches_with_2plus_yellows_pct": 33.33,
+              "matches_with_red_pct": 33.33
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 43,
+          "corners_against": 61
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_corners_for_count": 7,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 2
+        },
+        "rates": {
+          "corners_for_per_game": 4.778,
+          "corners_against_per_game": 6.778,
+          "matches_with_3plus_corners_for_pct": 77.78,
+          "matches_with_5plus_corners_for_pct": 55.56,
+          "matches_with_7plus_corners_for_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 33,
+              "corners_against": 32
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 4,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 5.5,
+              "corners_against_per_game": 5.333,
+              "matches_with_3plus_corners_for_pct": 83.33,
+              "matches_with_5plus_corners_for_pct": 66.67,
+              "matches_with_7plus_corners_for_pct": 33.33
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 10,
+              "corners_against": 29
+            },
+            "counts": {
+              "matches": 3,
+              "matches_with_3plus_corners_for_count": 2,
+              "matches_with_5plus_corners_for_count": 1,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.333,
+              "corners_against_per_game": 9.667,
+              "matches_with_3plus_corners_for_pct": 66.67,
+              "matches_with_5plus_corners_for_pct": 33.33,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 44
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_saves_count": 8,
+          "matches_with_5plus_saves_count": 4
+        },
+        "rates": {
+          "saves_per_game": 4.889,
+          "save_pct": 70.97,
+          "matches_with_3plus_saves_pct": 88.89,
+          "matches_with_5plus_saves_pct": 44.44
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 24
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_saves_count": 5,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 4,
+              "save_pct": 68.57,
+              "matches_with_3plus_saves_pct": 83.33,
+              "matches_with_5plus_saves_pct": 16.67
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 20
+            },
+            "counts": {
+              "matches": 3,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 3
+            },
+            "rates": {
+              "saves_per_game": 6.667,
+              "save_pct": 74.07,
+              "matches_with_3plus_saves_pct": 100,
+              "matches_with_5plus_saves_pct": 100
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 133,
+        "team": "Vasco DA Gama"
+      },
+      "totals": {
+        "goals_for": 15,
+        "goals_against": 16
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 9,
+        "over_25_count": 7,
+        "over_35_count": 2,
+        "under_25_count": 3,
+        "btts_count": 9,
+        "clean_sheets_count": 0,
+        "failed_to_score_count": 1
+      },
+      "rates": {
+        "goals_for_per_game": 1.5,
+        "goals_against_per_game": 1.6,
+        "over_15_pct": 90,
+        "over_25_pct": 70,
+        "over_35_pct": 20,
+        "under_25_pct": 30,
+        "btts_pct": 90,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 10
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 9,
+            "goals_against": 8
+          },
+          "counts": {
+            "matches": 6,
+            "over_15_count": 5,
+            "over_25_count": 4,
+            "over_35_count": 1,
+            "under_25_count": 2,
+            "btts_count": 5,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.5,
+            "goals_against_per_game": 1.333,
+            "over_15_pct": 83.33,
+            "over_25_pct": 66.67,
+            "over_35_pct": 16.67,
+            "under_25_pct": 33.33,
+            "btts_pct": 83.33,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 16.67
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 6,
+            "goals_against": 8
+          },
+          "counts": {
+            "matches": 4,
+            "over_15_count": 4,
+            "over_25_count": 3,
+            "over_35_count": 1,
+            "under_25_count": 1,
+            "btts_count": 4,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.5,
+            "goals_against_per_game": 2,
+            "over_15_pct": 100,
+            "over_25_pct": 75,
+            "over_35_pct": 25,
+            "under_25_pct": 25,
+            "btts_pct": 100,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 0
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 18,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 5,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.8,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 90,
+          "matches_with_2plus_yellows_pct": 50,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 13,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.167,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 83.33,
+              "matches_with_2plus_yellows_pct": 66.67,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 5,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 1,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.25,
+              "red_cards_per_game": 0.25,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 25,
+              "matches_with_red_pct": 25
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 54,
+          "corners_against": 36
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 3
+        },
+        "rates": {
+          "corners_for_per_game": 5.4,
+          "corners_against_per_game": 3.6,
+          "matches_with_3plus_corners_for_pct": 80,
+          "matches_with_5plus_corners_for_pct": 50,
+          "matches_with_7plus_corners_for_pct": 30
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 39,
+              "corners_against": 18
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 4,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 6.5,
+              "corners_against_per_game": 3,
+              "matches_with_3plus_corners_for_pct": 83.33,
+              "matches_with_5plus_corners_for_pct": 66.67,
+              "matches_with_7plus_corners_for_pct": 50
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 15,
+              "corners_against": 18
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 1,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.75,
+              "corners_against_per_game": 4.5,
+              "matches_with_3plus_corners_for_pct": 75,
+              "matches_with_5plus_corners_for_pct": 25,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 29
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 5,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 2.9,
+          "save_pct": 69.05,
+          "matches_with_3plus_saves_pct": 50,
+          "matches_with_5plus_saves_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 17
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 2.833,
+              "save_pct": 70.83,
+              "matches_with_3plus_saves_pct": 33.33,
+              "matches_with_5plus_saves_pct": 16.67
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 12
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 3,
+              "save_pct": 66.67,
+              "matches_with_3plus_saves_pct": 75,
+              "matches_with_5plus_saves_pct": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 134,
+        "team": "Atletico Paranaense"
+      },
+      "totals": {
+        "goals_for": 15,
+        "goals_against": 13
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 8,
+        "over_25_count": 6,
+        "over_35_count": 2,
+        "under_25_count": 4,
+        "btts_count": 6,
+        "clean_sheets_count": 2,
+        "failed_to_score_count": 2
+      },
+      "rates": {
+        "goals_for_per_game": 1.5,
+        "goals_against_per_game": 1.3,
+        "over_15_pct": 80,
+        "over_25_pct": 60,
+        "over_35_pct": 20,
+        "under_25_pct": 40,
+        "btts_pct": 60,
+        "clean_sheets_pct": 20,
+        "failed_to_score_pct": 20
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 10,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 3,
+            "over_35_count": 1,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 2,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 80,
+            "over_25_pct": 60,
+            "over_35_pct": 20,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 20
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 5,
+            "goals_against": 9
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 3,
+            "over_35_count": 1,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1,
+            "goals_against_per_game": 1.8,
+            "over_15_pct": 80,
+            "over_25_pct": 60,
+            "over_35_pct": 20,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 17,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 6,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.7,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 90,
+          "matches_with_2plus_yellows_pct": 60,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 8,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.6,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 9,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.8,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 46,
+          "corners_against": 48
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 6,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 5
+        },
+        "rates": {
+          "corners_for_per_game": 4.6,
+          "corners_against_per_game": 4.8,
+          "matches_with_3plus_corners_for_pct": 60,
+          "matches_with_5plus_corners_for_pct": 50,
+          "matches_with_7plus_corners_for_pct": 50
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 28,
+              "corners_against": 20
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 5.6,
+              "corners_against_per_game": 4,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 60
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 18,
+              "corners_against": 28
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 2,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 3.6,
+              "corners_against_per_game": 5.6,
+              "matches_with_3plus_corners_for_pct": 40,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 27
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 4,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 2.7,
+          "save_pct": 64.29,
+          "matches_with_3plus_saves_pct": 40,
+          "matches_with_5plus_saves_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 8
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 1,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 1.6,
+              "save_pct": 66.67,
+              "matches_with_3plus_saves_pct": 20,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 19
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 3.8,
+              "save_pct": 63.33,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 40
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 135,
+        "team": "Cruzeiro"
+      },
+      "totals": {
+        "goals_for": 12,
+        "goals_against": 20
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 9,
+        "over_25_count": 7,
+        "over_35_count": 4,
+        "under_25_count": 3,
+        "btts_count": 6,
+        "clean_sheets_count": 2,
+        "failed_to_score_count": 3
+      },
+      "rates": {
+        "goals_for_per_game": 1.2,
+        "goals_against_per_game": 2,
+        "over_15_pct": 90,
+        "over_25_pct": 70,
+        "over_35_pct": 40,
+        "under_25_pct": 30,
+        "btts_pct": 60,
+        "clean_sheets_pct": 20,
+        "failed_to_score_pct": 30
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 8,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 3,
+            "over_35_count": 1,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.6,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 80,
+            "over_25_pct": 60,
+            "over_35_pct": 20,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 20
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 4,
+            "goals_against": 14
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 4,
+            "over_35_count": 3,
+            "under_25_count": 1,
+            "btts_count": 3,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.8,
+            "goals_against_per_game": 2.8,
+            "over_15_pct": 100,
+            "over_25_pct": 80,
+            "over_35_pct": 60,
+            "under_25_pct": 20,
+            "btts_pct": 60,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 40
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 19,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 7,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.9,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 90,
+          "matches_with_2plus_yellows_pct": 70,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 10,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 9,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.8,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 57,
+          "corners_against": 41
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 9,
+          "matches_with_5plus_corners_for_count": 8,
+          "matches_with_7plus_corners_for_count": 3
+        },
+        "rates": {
+          "corners_for_per_game": 5.7,
+          "corners_against_per_game": 4.1,
+          "matches_with_3plus_corners_for_pct": 90,
+          "matches_with_5plus_corners_for_pct": 80,
+          "matches_with_7plus_corners_for_pct": 30
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 33,
+              "corners_against": 15
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 5,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 6.6,
+              "corners_against_per_game": 3,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 100,
+              "matches_with_7plus_corners_for_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 24,
+              "corners_against": 26
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 4.8,
+              "corners_against_per_game": 5.2,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 60,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 22
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 2,
+          "matches_with_5plus_saves_count": 1
+        },
+        "rates": {
+          "saves_per_game": 2.2,
+          "save_pct": 50,
+          "matches_with_3plus_saves_pct": 20,
+          "matches_with_5plus_saves_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 5
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 0,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 1,
+              "save_pct": 38.46,
+              "matches_with_3plus_saves_pct": 0,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 17
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 3.4,
+              "save_pct": 54.84,
+              "matches_with_3plus_saves_pct": 40,
+              "matches_with_5plus_saves_pct": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 136,
+        "team": "Vitoria"
+      },
+      "totals": {
+        "goals_for": 9,
+        "goals_against": 14
+      },
+      "counts": {
+        "matches": 9,
+        "over_15_count": 8,
+        "over_25_count": 3,
+        "over_35_count": 1,
+        "under_25_count": 6,
+        "btts_count": 4,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 2
+      },
+      "rates": {
+        "goals_for_per_game": 1,
+        "goals_against_per_game": 1.556,
+        "over_15_pct": 88.89,
+        "over_25_pct": 33.33,
+        "over_35_pct": 11.11,
+        "under_25_pct": 66.67,
+        "btts_pct": 44.44,
+        "clean_sheets_pct": 33.33,
+        "failed_to_score_pct": 22.22
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 6,
+            "goals_against": 2
+          },
+          "counts": {
+            "matches": 4,
+            "over_15_count": 3,
+            "over_25_count": 1,
+            "over_35_count": 0,
+            "under_25_count": 3,
+            "btts_count": 1,
+            "clean_sheets_count": 3,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.5,
+            "goals_against_per_game": 0.5,
+            "over_15_pct": 75,
+            "over_25_pct": 25,
+            "over_35_pct": 0,
+            "under_25_pct": 75,
+            "btts_pct": 25,
+            "clean_sheets_pct": 75,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 3,
+            "goals_against": 12
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 5,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 3,
+            "btts_count": 3,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.6,
+            "goals_against_per_game": 2.4,
+            "over_15_pct": 100,
+            "over_25_pct": 40,
+            "over_35_pct": 20,
+            "under_25_pct": 60,
+            "btts_pct": 60,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 40
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 26,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 8,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.889,
+          "red_cards_per_game": 0.111,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 88.89,
+          "matches_with_red_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 10,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.5,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 16,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3.2,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 38,
+          "corners_against": 49
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 3,
+          "matches_with_7plus_corners_for_count": 1
+        },
+        "rates": {
+          "corners_for_per_game": 4.222,
+          "corners_against_per_game": 5.444,
+          "matches_with_3plus_corners_for_pct": 88.89,
+          "matches_with_5plus_corners_for_pct": 33.33,
+          "matches_with_7plus_corners_for_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 19,
+              "corners_against": 18
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 1,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 4.75,
+              "corners_against_per_game": 4.5,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 25,
+              "matches_with_7plus_corners_for_pct": 25
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 19,
+              "corners_against": 31
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.8,
+              "corners_against_per_game": 6.2,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 25
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_saves_count": 5,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 2.778,
+          "save_pct": 60.98,
+          "matches_with_3plus_saves_pct": 55.56,
+          "matches_with_5plus_saves_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 7
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_saves_count": 2,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 1.75,
+              "save_pct": 77.78,
+              "matches_with_3plus_saves_pct": 50,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 18
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 3.6,
+              "save_pct": 56.25,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 40
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 147,
+        "team": "Coritiba"
+      },
+      "totals": {
+        "goals_for": 11,
+        "goals_against": 10
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 6,
+        "over_25_count": 2,
+        "over_35_count": 1,
+        "under_25_count": 8,
+        "btts_count": 4,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 3
+      },
+      "rates": {
+        "goals_for_per_game": 1.1,
+        "goals_against_per_game": 1,
+        "over_15_pct": 60,
+        "over_25_pct": 20,
+        "over_35_pct": 10,
+        "under_25_pct": 80,
+        "btts_pct": 40,
+        "clean_sheets_pct": 30,
+        "failed_to_score_pct": 30
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 3,
+            "goals_against": 4
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 2,
+            "over_25_count": 0,
+            "over_35_count": 0,
+            "under_25_count": 5,
+            "btts_count": 2,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.6,
+            "goals_against_per_game": 0.8,
+            "over_15_pct": 40,
+            "over_25_pct": 0,
+            "over_35_pct": 0,
+            "under_25_pct": 100,
+            "btts_pct": 40,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 40
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 8,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 3,
+            "btts_count": 2,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.6,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 80,
+            "over_25_pct": 40,
+            "over_35_pct": 20,
+            "under_25_pct": 60,
+            "btts_pct": 40,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 20
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 19,
+          "red_cards": 2
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 10,
+          "matches_with_2plus_yellows_count": 7,
+          "matches_with_red_count": 2
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.9,
+          "red_cards_per_game": 0.2,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 70,
+          "matches_with_red_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 10,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 9,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.8,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 33,
+          "corners_against": 72
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 7,
+          "matches_with_5plus_corners_for_count": 2,
+          "matches_with_7plus_corners_for_count": 0
+        },
+        "rates": {
+          "corners_for_per_game": 3.3,
+          "corners_against_per_game": 7.2,
+          "matches_with_3plus_corners_for_pct": 70,
+          "matches_with_5plus_corners_for_pct": 20,
+          "matches_with_7plus_corners_for_pct": 0
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 14,
+              "corners_against": 32
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 0,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 2.8,
+              "corners_against_per_game": 6.4,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 0,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 19,
+              "corners_against": 40
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.8,
+              "corners_against_per_game": 8,
+              "matches_with_3plus_corners_for_pct": 60,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 36
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 6,
+          "matches_with_5plus_saves_count": 4
+        },
+        "rates": {
+          "saves_per_game": 3.6,
+          "save_pct": 80,
+          "matches_with_3plus_saves_pct": 60,
+          "matches_with_5plus_saves_pct": 40
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 19
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 3.8,
+              "save_pct": 86.36,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 17
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 3.4,
+              "save_pct": 73.91,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 40
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 794,
+        "team": "RB Bragantino"
+      },
+      "totals": {
+        "goals_for": 10,
+        "goals_against": 10
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 7,
+        "over_25_count": 3,
+        "over_35_count": 0,
+        "under_25_count": 7,
+        "btts_count": 4,
+        "clean_sheets_count": 4,
+        "failed_to_score_count": 2
+      },
+      "rates": {
+        "goals_for_per_game": 1,
+        "goals_against_per_game": 1,
+        "over_15_pct": 70,
+        "over_25_pct": 30,
+        "over_35_pct": 0,
+        "under_25_pct": 70,
+        "btts_pct": 40,
+        "clean_sheets_pct": 40,
+        "failed_to_score_pct": 20
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 7,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 4,
+            "over_25_count": 3,
+            "over_35_count": 0,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.4,
+            "goals_against_per_game": 1,
+            "over_15_pct": 80,
+            "over_25_pct": 60,
+            "over_35_pct": 0,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 3,
+            "goals_against": 5
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 0,
+            "over_35_count": 0,
+            "under_25_count": 5,
+            "btts_count": 1,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 0.6,
+            "goals_against_per_game": 1,
+            "over_15_pct": 60,
+            "over_25_pct": 0,
+            "over_35_pct": 0,
+            "under_25_pct": 100,
+            "btts_pct": 20,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 40
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 36,
+          "red_cards": 3
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 10,
+          "matches_with_2plus_yellows_count": 9,
+          "matches_with_red_count": 2
+        },
+        "rates": {
+          "yellow_cards_per_game": 3.6,
+          "red_cards_per_game": 0.3,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 90,
+          "matches_with_red_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 18,
+              "red_cards": 2
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 5,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3.6,
+              "red_cards_per_game": 0.4,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 18,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 3.6,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 80,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 59,
+          "corners_against": 61
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 9,
+          "matches_with_5plus_corners_for_count": 8,
+          "matches_with_7plus_corners_for_count": 3
+        },
+        "rates": {
+          "corners_for_per_game": 5.9,
+          "corners_against_per_game": 6.1,
+          "matches_with_3plus_corners_for_pct": 90,
+          "matches_with_5plus_corners_for_pct": 80,
+          "matches_with_7plus_corners_for_pct": 30
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 32,
+              "corners_against": 34
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 4,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 6.4,
+              "corners_against_per_game": 6.8,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 80,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 27,
+              "corners_against": 27
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 4,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 5.4,
+              "corners_against_per_game": 5.4,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 80,
+              "matches_with_7plus_corners_for_pct": 20
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 26
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 4,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 2.6,
+          "save_pct": 66.67,
+          "matches_with_3plus_saves_pct": 40,
+          "matches_with_5plus_saves_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 9
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 1,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 1.8,
+              "save_pct": 60,
+              "matches_with_3plus_saves_pct": 20,
+              "matches_with_5plus_saves_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 17
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 3.4,
+              "save_pct": 70.83,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 1062,
+        "team": "Atletico-MG"
+      },
+      "totals": {
+        "goals_for": 14,
+        "goals_against": 12
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 6,
+        "over_25_count": 5,
+        "over_35_count": 3,
+        "under_25_count": 5,
+        "btts_count": 4,
+        "clean_sheets_count": 3,
+        "failed_to_score_count": 3
+      },
+      "rates": {
+        "goals_for_per_game": 1.4,
+        "goals_against_per_game": 1.2,
+        "over_15_pct": 60,
+        "over_25_pct": 50,
+        "over_35_pct": 30,
+        "under_25_pct": 50,
+        "btts_pct": 40,
+        "clean_sheets_pct": 30,
+        "failed_to_score_pct": 30
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 9,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 3,
+            "over_35_count": 2,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 2,
+            "failed_to_score_count": 0
+          },
+          "rates": {
+            "goals_for_per_game": 1.8,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 60,
+            "over_25_pct": 60,
+            "over_35_pct": 40,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 40,
+            "failed_to_score_pct": 0
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 5,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 3,
+            "btts_count": 1,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 3
+          },
+          "rates": {
+            "goals_for_per_game": 1,
+            "goals_against_per_game": 1.2,
+            "over_15_pct": 60,
+            "over_25_pct": 40,
+            "over_35_pct": 20,
+            "under_25_pct": 60,
+            "btts_pct": 20,
+            "clean_sheets_pct": 20,
+            "failed_to_score_pct": 60
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 18,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 7,
+          "matches_with_2plus_yellows_count": 5,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 1.8,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 70,
+          "matches_with_2plus_yellows_pct": 50,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 7,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 3,
+              "matches_with_2plus_yellows_count": 2,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 1.4,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 60,
+              "matches_with_2plus_yellows_pct": 40,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 11,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 3,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.2,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 80,
+              "matches_with_2plus_yellows_pct": 60,
+              "matches_with_red_pct": 20
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 49,
+          "corners_against": 61
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 7,
+          "matches_with_5plus_corners_for_count": 4,
+          "matches_with_7plus_corners_for_count": 2
+        },
+        "rates": {
+          "corners_for_per_game": 4.9,
+          "corners_against_per_game": 6.1,
+          "matches_with_3plus_corners_for_pct": 70,
+          "matches_with_5plus_corners_for_pct": 40,
+          "matches_with_7plus_corners_for_pct": 20
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 19,
+              "corners_against": 35
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 3,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.8,
+              "corners_against_per_game": 7,
+              "matches_with_3plus_corners_for_pct": 60,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 30,
+              "corners_against": 26
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 2
+            },
+            "rates": {
+              "corners_for_per_game": 6,
+              "corners_against_per_game": 5.2,
+              "matches_with_3plus_corners_for_pct": 80,
+              "matches_with_5plus_corners_for_pct": 40,
+              "matches_with_7plus_corners_for_pct": 40
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 37
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 8,
+          "matches_with_5plus_saves_count": 3
+        },
+        "rates": {
+          "saves_per_game": 3.7,
+          "save_pct": 74,
+          "matches_with_3plus_saves_pct": 80,
+          "matches_with_5plus_saves_pct": 30
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 20
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 4,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 4,
+              "save_pct": 76.92,
+              "matches_with_3plus_saves_pct": 80,
+              "matches_with_5plus_saves_pct": 40
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 17
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 4,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 3.4,
+              "save_pct": 70.83,
+              "matches_with_3plus_saves_pct": 80,
+              "matches_with_5plus_saves_pct": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 1198,
+        "team": "Remo"
+      },
+      "totals": {
+        "goals_for": 10,
+        "goals_against": 17
+      },
+      "counts": {
+        "matches": 10,
+        "over_15_count": 8,
+        "over_25_count": 4,
+        "over_35_count": 3,
+        "under_25_count": 6,
+        "btts_count": 4,
+        "clean_sheets_count": 1,
+        "failed_to_score_count": 6
+      },
+      "rates": {
+        "goals_for_per_game": 1,
+        "goals_against_per_game": 1.7,
+        "over_15_pct": 80,
+        "over_25_pct": 40,
+        "over_35_pct": 30,
+        "under_25_pct": 60,
+        "btts_pct": 40,
+        "clean_sheets_pct": 10,
+        "failed_to_score_pct": 60
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 7,
+            "goals_against": 6
+          },
+          "counts": {
+            "matches": 4,
+            "over_15_count": 4,
+            "over_25_count": 2,
+            "over_35_count": 2,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 1
+          },
+          "rates": {
+            "goals_for_per_game": 1.75,
+            "goals_against_per_game": 1.5,
+            "over_15_pct": 100,
+            "over_25_pct": 50,
+            "over_35_pct": 50,
+            "under_25_pct": 50,
+            "btts_pct": 75,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 25
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 3,
+            "goals_against": 11
+          },
+          "counts": {
+            "matches": 6,
+            "over_15_count": 4,
+            "over_25_count": 2,
+            "over_35_count": 1,
+            "under_25_count": 4,
+            "btts_count": 1,
+            "clean_sheets_count": 1,
+            "failed_to_score_count": 5
+          },
+          "rates": {
+            "goals_for_per_game": 0.5,
+            "goals_against_per_game": 1.833,
+            "over_15_pct": 66.67,
+            "over_25_pct": 33.33,
+            "over_35_pct": 16.67,
+            "under_25_pct": 66.67,
+            "btts_pct": 16.67,
+            "clean_sheets_pct": 16.67,
+            "failed_to_score_pct": 83.33
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 28,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_1plus_yellow_count": 10,
+          "matches_with_2plus_yellows_count": 10,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.8,
+          "red_cards_per_game": 0.1,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 100,
+          "matches_with_red_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 11,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.75,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 17,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_1plus_yellow_count": 6,
+              "matches_with_2plus_yellows_count": 6,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.833,
+              "red_cards_per_game": 0.167,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 16.67
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 44,
+          "corners_against": 65
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_corners_for_count": 8,
+          "matches_with_5plus_corners_for_count": 5,
+          "matches_with_7plus_corners_for_count": 1
+        },
+        "rates": {
+          "corners_for_per_game": 4.4,
+          "corners_against_per_game": 6.5,
+          "matches_with_3plus_corners_for_pct": 80,
+          "matches_with_5plus_corners_for_pct": 50,
+          "matches_with_7plus_corners_for_pct": 10
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 23,
+              "corners_against": 29
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 3,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 5.75,
+              "corners_against_per_game": 7.25,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 75,
+              "matches_with_7plus_corners_for_pct": 25
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 21,
+              "corners_against": 36
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 0
+            },
+            "rates": {
+              "corners_for_per_game": 3.5,
+              "corners_against_per_game": 6,
+              "matches_with_3plus_corners_for_pct": 66.67,
+              "matches_with_5plus_corners_for_pct": 33.33,
+              "matches_with_7plus_corners_for_pct": 0
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 30
+        },
+        "counts": {
+          "matches": 10,
+          "matches_with_3plus_saves_count": 7,
+          "matches_with_5plus_saves_count": 3
+        },
+        "rates": {
+          "saves_per_game": 3,
+          "save_pct": 63.83,
+          "matches_with_3plus_saves_pct": 70,
+          "matches_with_5plus_saves_pct": 30
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 13
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 1
+            },
+            "rates": {
+              "saves_per_game": 3.25,
+              "save_pct": 68.42,
+              "matches_with_3plus_saves_pct": 75,
+              "matches_with_5plus_saves_pct": 25
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 17
+            },
+            "counts": {
+              "matches": 6,
+              "matches_with_3plus_saves_count": 4,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 2.833,
+              "save_pct": 60.71,
+              "matches_with_3plus_saves_pct": 66.67,
+              "matches_with_5plus_saves_pct": 33.33
+            }
+          }
+        }
+      }
+    },
+    {
+      "identity": {
+        "team_id": 7848,
+        "team": "Mirassol"
+      },
+      "totals": {
+        "goals_for": 10,
+        "goals_against": 14
+      },
+      "counts": {
+        "matches": 9,
+        "over_15_count": 5,
+        "over_25_count": 5,
+        "over_35_count": 4,
+        "under_25_count": 4,
+        "btts_count": 5,
+        "clean_sheets_count": 0,
+        "failed_to_score_count": 4
+      },
+      "rates": {
+        "goals_for_per_game": 1.111,
+        "goals_against_per_game": 1.556,
+        "over_15_pct": 55.56,
+        "over_25_pct": 55.56,
+        "over_35_pct": 44.44,
+        "under_25_pct": 44.44,
+        "btts_pct": 55.56,
+        "clean_sheets_pct": 0,
+        "failed_to_score_pct": 44.44
+      },
+      "splits": {
+        "home": {
+          "totals": {
+            "goals_for": 6,
+            "goals_against": 7
+          },
+          "counts": {
+            "matches": 5,
+            "over_15_count": 3,
+            "over_25_count": 3,
+            "over_35_count": 2,
+            "under_25_count": 2,
+            "btts_count": 3,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 1.2,
+            "goals_against_per_game": 1.4,
+            "over_15_pct": 60,
+            "over_25_pct": 60,
+            "over_35_pct": 40,
+            "under_25_pct": 40,
+            "btts_pct": 60,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 40
+          }
+        },
+        "away": {
+          "totals": {
+            "goals_for": 4,
+            "goals_against": 7
+          },
+          "counts": {
+            "matches": 4,
+            "over_15_count": 2,
+            "over_25_count": 2,
+            "over_35_count": 2,
+            "under_25_count": 2,
+            "btts_count": 2,
+            "clean_sheets_count": 0,
+            "failed_to_score_count": 2
+          },
+          "rates": {
+            "goals_for_per_game": 1,
+            "goals_against_per_game": 1.75,
+            "over_15_pct": 50,
+            "over_25_pct": 50,
+            "over_35_pct": 50,
+            "under_25_pct": 50,
+            "btts_pct": 50,
+            "clean_sheets_pct": 0,
+            "failed_to_score_pct": 50
+          }
+        }
+      },
+      "discipline": {
+        "totals": {
+          "yellow_cards": 24,
+          "red_cards": 1
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_1plus_yellow_count": 9,
+          "matches_with_2plus_yellows_count": 9,
+          "matches_with_red_count": 1
+        },
+        "rates": {
+          "yellow_cards_per_game": 2.667,
+          "red_cards_per_game": 0.111,
+          "matches_with_1plus_yellow_pct": 100,
+          "matches_with_2plus_yellows_pct": 100,
+          "matches_with_red_pct": 11.11
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "yellow_cards": 12,
+              "red_cards": 1
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_1plus_yellow_count": 5,
+              "matches_with_2plus_yellows_count": 5,
+              "matches_with_red_count": 1
+            },
+            "rates": {
+              "yellow_cards_per_game": 2.4,
+              "red_cards_per_game": 0.2,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 20
+            }
+          },
+          "away": {
+            "totals": {
+              "yellow_cards": 12,
+              "red_cards": 0
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_1plus_yellow_count": 4,
+              "matches_with_2plus_yellows_count": 4,
+              "matches_with_red_count": 0
+            },
+            "rates": {
+              "yellow_cards_per_game": 3,
+              "red_cards_per_game": 0,
+              "matches_with_1plus_yellow_pct": 100,
+              "matches_with_2plus_yellows_pct": 100,
+              "matches_with_red_pct": 0
+            }
+          }
+        }
+      },
+      "corners": {
+        "totals": {
+          "corners_for": 60,
+          "corners_against": 32
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_corners_for_count": 9,
+          "matches_with_5plus_corners_for_count": 7,
+          "matches_with_7plus_corners_for_count": 4
+        },
+        "rates": {
+          "corners_for_per_game": 6.667,
+          "corners_against_per_game": 3.556,
+          "matches_with_3plus_corners_for_pct": 100,
+          "matches_with_5plus_corners_for_pct": 77.78,
+          "matches_with_7plus_corners_for_pct": 44.44
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "corners_for": 39,
+              "corners_against": 20
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_corners_for_count": 5,
+              "matches_with_5plus_corners_for_count": 5,
+              "matches_with_7plus_corners_for_count": 3
+            },
+            "rates": {
+              "corners_for_per_game": 7.8,
+              "corners_against_per_game": 4,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 100,
+              "matches_with_7plus_corners_for_pct": 60
+            }
+          },
+          "away": {
+            "totals": {
+              "corners_for": 21,
+              "corners_against": 12
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_corners_for_count": 4,
+              "matches_with_5plus_corners_for_count": 2,
+              "matches_with_7plus_corners_for_count": 1
+            },
+            "rates": {
+              "corners_for_per_game": 5.25,
+              "corners_against_per_game": 3,
+              "matches_with_3plus_corners_for_pct": 100,
+              "matches_with_5plus_corners_for_pct": 50,
+              "matches_with_7plus_corners_for_pct": 25
+            }
+          }
+        }
+      },
+      "goalkeeper": {
+        "totals": {
+          "saves": 28
+        },
+        "counts": {
+          "matches": 9,
+          "matches_with_3plus_saves_count": 6,
+          "matches_with_5plus_saves_count": 2
+        },
+        "rates": {
+          "saves_per_game": 3.111,
+          "save_pct": 66.67,
+          "matches_with_3plus_saves_pct": 66.67,
+          "matches_with_5plus_saves_pct": 22.22
+        },
+        "splits": {
+          "home": {
+            "totals": {
+              "saves": 13
+            },
+            "counts": {
+              "matches": 5,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 0
+            },
+            "rates": {
+              "saves_per_game": 2.6,
+              "save_pct": 65,
+              "matches_with_3plus_saves_pct": 60,
+              "matches_with_5plus_saves_pct": 0
+            }
+          },
+          "away": {
+            "totals": {
+              "saves": 15
+            },
+            "counts": {
+              "matches": 4,
+              "matches_with_3plus_saves_count": 3,
+              "matches_with_5plus_saves_count": 2
+            },
+            "rates": {
+              "saves_per_game": 3.75,
+              "save_pct": 68.18,
+              "matches_with_3plus_saves_pct": 75,
+              "matches_with_5plus_saves_pct": 50
+            }
+          }
+        }
+      }
+    }
+  ],
+  "home_away_splits": {
+    "total": {
+      "goals_avg": 2.66,
+      "btts_pct": 57.73,
+      "over_25_pct": 48.45,
+      "clean_sheets_pct": 22.68
+    },
+    "home": {
+      "goals_avg": 1.598,
+      "btts_pct": 57.73,
+      "over_25_pct": 48.45,
+      "clean_sheets_pct": 27.84
+    },
+    "away": {
+      "goals_avg": 1.062,
+      "btts_pct": 57.73,
+      "over_25_pct": 48.45,
+      "clean_sheets_pct": 17.53
+    },
+    "home_goals_avg": 1.598,
+    "away_goals_avg": 1.062,
+    "home_btts_pct": 57.73,
+    "away_btts_pct": 57.73,
+    "home_over_25_pct": 48.45,
+    "away_over_25_pct": 48.45,
+    "home_clean_sheets_pct": 27.84,
+    "away_clean_sheets_pct": 17.53,
+    "goals_home": 155,
+    "goals_away": 103,
+    "btts_home_pct": 57.73,
+    "btts_away_pct": 57.73,
+    "over_25_home_pct": 48.45,
+    "over_25_away_pct": 48.45,
+    "clean_sheets_home_pct": 27.84,
+    "clean_sheets_away_pct": 17.53
+  },
+  "team_rankings": {
+    "by_goals_for": [
+      {
+        "team_id": 121,
+        "team": "Palmeiras",
+        "value": 21,
+        "matches": 10
+      },
+      {
+        "team_id": 124,
+        "team": "Fluminense",
+        "value": 17,
+        "matches": 10
+      },
+      {
+        "team_id": 120,
+        "team": "Botafogo",
+        "value": 16,
+        "matches": 9
+      },
+      {
+        "team_id": 127,
+        "team": "Flamengo",
+        "value": 16,
+        "matches": 9
+      },
+      {
+        "team_id": 126,
+        "team": "Sao Paulo",
+        "value": 15,
+        "matches": 10
+      },
+      {
+        "team_id": 133,
+        "team": "Vasco DA Gama",
+        "value": 15,
+        "matches": 10
+      },
+      {
+        "team_id": 134,
+        "team": "Atletico Paranaense",
+        "value": 15,
+        "matches": 10
+      },
+      {
+        "team_id": 130,
+        "team": "Gremio",
+        "value": 14,
+        "matches": 10
+      },
+      {
+        "team_id": 1062,
+        "team": "Atletico-MG",
+        "value": 14,
+        "matches": 10
+      },
+      {
+        "team_id": 118,
+        "team": "Bahia",
+        "value": 13,
+        "matches": 9
+      },
+      {
+        "team_id": 128,
+        "team": "Santos",
+        "value": 13,
+        "matches": 10
+      },
+      {
+        "team_id": 135,
+        "team": "Cruzeiro",
+        "value": 12,
+        "matches": 10
+      },
+      {
+        "team_id": 147,
+        "team": "Coritiba",
+        "value": 11,
+        "matches": 10
+      },
+      {
+        "team_id": 132,
+        "team": "Chapecoense-sc",
+        "value": 10,
+        "matches": 9
+      },
+      {
+        "team_id": 794,
+        "team": "RB Bragantino",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 1198,
+        "team": "Remo",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 7848,
+        "team": "Mirassol",
+        "value": 10,
+        "matches": 9
+      },
+      {
+        "team_id": 119,
+        "team": "Internacional",
+        "value": 9,
+        "matches": 10
+      },
+      {
+        "team_id": 136,
+        "team": "Vitoria",
+        "value": 9,
+        "matches": 9
+      },
+      {
+        "team_id": 131,
+        "team": "Corinthians",
+        "value": 8,
+        "matches": 10
+      }
+    ],
+    "by_goals_against": [
+      {
+        "team_id": 126,
+        "team": "Sao Paulo",
+        "value": 7,
+        "matches": 10
+      },
+      {
+        "team_id": 118,
+        "team": "Bahia",
+        "value": 9,
+        "matches": 9
+      },
+      {
+        "team_id": 127,
+        "team": "Flamengo",
+        "value": 9,
+        "matches": 9
+      },
+      {
+        "team_id": 119,
+        "team": "Internacional",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 121,
+        "team": "Palmeiras",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 147,
+        "team": "Coritiba",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 794,
+        "team": "RB Bragantino",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 124,
+        "team": "Fluminense",
+        "value": 11,
+        "matches": 10
+      },
+      {
+        "team_id": 131,
+        "team": "Corinthians",
+        "value": 11,
+        "matches": 10
+      },
+      {
+        "team_id": 1062,
+        "team": "Atletico-MG",
+        "value": 12,
+        "matches": 10
+      },
+      {
+        "team_id": 134,
+        "team": "Atletico Paranaense",
+        "value": 13,
+        "matches": 10
+      },
+      {
+        "team_id": 130,
+        "team": "Gremio",
+        "value": 14,
+        "matches": 10
+      },
+      {
+        "team_id": 136,
+        "team": "Vitoria",
+        "value": 14,
+        "matches": 9
+      },
+      {
+        "team_id": 7848,
+        "team": "Mirassol",
+        "value": 14,
+        "matches": 9
+      },
+      {
+        "team_id": 128,
+        "team": "Santos",
+        "value": 16,
+        "matches": 10
+      },
+      {
+        "team_id": 132,
+        "team": "Chapecoense-sc",
+        "value": 16,
+        "matches": 9
+      },
+      {
+        "team_id": 133,
+        "team": "Vasco DA Gama",
+        "value": 16,
+        "matches": 10
+      },
+      {
+        "team_id": 1198,
+        "team": "Remo",
+        "value": 17,
+        "matches": 10
+      },
+      {
+        "team_id": 120,
+        "team": "Botafogo",
+        "value": 19,
+        "matches": 9
+      },
+      {
+        "team_id": 135,
+        "team": "Cruzeiro",
+        "value": 20,
+        "matches": 10
+      }
+    ],
+    "by_btts_pct": [
+      {
+        "team_id": 133,
+        "team": "Vasco DA Gama",
+        "value": 90,
+        "matches": 10
+      },
+      {
+        "team_id": 121,
+        "team": "Palmeiras",
+        "value": 80,
+        "matches": 10
+      },
+      {
+        "team_id": 128,
+        "team": "Santos",
+        "value": 80,
+        "matches": 10
+      },
+      {
+        "team_id": 124,
+        "team": "Fluminense",
+        "value": 70,
+        "matches": 10
+      },
+      {
+        "team_id": 130,
+        "team": "Gremio",
+        "value": 70,
+        "matches": 10
+      },
+      {
+        "team_id": 120,
+        "team": "Botafogo",
+        "value": 66.67,
+        "matches": 9
+      },
+      {
+        "team_id": 134,
+        "team": "Atletico Paranaense",
+        "value": 60,
+        "matches": 10
+      },
+      {
+        "team_id": 135,
+        "team": "Cruzeiro",
+        "value": 60,
+        "matches": 10
+      },
+      {
+        "team_id": 118,
+        "team": "Bahia",
+        "value": 55.56,
+        "matches": 9
+      },
+      {
+        "team_id": 127,
+        "team": "Flamengo",
+        "value": 55.56,
+        "matches": 9
+      },
+      {
+        "team_id": 132,
+        "team": "Chapecoense-sc",
+        "value": 55.56,
+        "matches": 9
+      },
+      {
+        "team_id": 7848,
+        "team": "Mirassol",
+        "value": 55.56,
+        "matches": 9
+      },
+      {
+        "team_id": 119,
+        "team": "Internacional",
+        "value": 50,
+        "matches": 10
+      },
+      {
+        "team_id": 126,
+        "team": "Sao Paulo",
+        "value": 50,
+        "matches": 10
+      },
+      {
+        "team_id": 131,
+        "team": "Corinthians",
+        "value": 50,
+        "matches": 10
+      },
+      {
+        "team_id": 136,
+        "team": "Vitoria",
+        "value": 44.44,
+        "matches": 9
+      },
+      {
+        "team_id": 147,
+        "team": "Coritiba",
+        "value": 40,
+        "matches": 10
+      },
+      {
+        "team_id": 794,
+        "team": "RB Bragantino",
+        "value": 40,
+        "matches": 10
+      },
+      {
+        "team_id": 1062,
+        "team": "Atletico-MG",
+        "value": 40,
+        "matches": 10
+      },
+      {
+        "team_id": 1198,
+        "team": "Remo",
+        "value": 40,
+        "matches": 10
+      }
+    ],
+    "by_over_25_pct": [
+      {
+        "team_id": 120,
+        "team": "Botafogo",
+        "value": 88.89,
+        "matches": 9
+      },
+      {
+        "team_id": 121,
+        "team": "Palmeiras",
+        "value": 80,
+        "matches": 10
+      },
+      {
+        "team_id": 133,
+        "team": "Vasco DA Gama",
+        "value": 70,
+        "matches": 10
+      },
+      {
+        "team_id": 135,
+        "team": "Cruzeiro",
+        "value": 70,
+        "matches": 10
+      },
+      {
+        "team_id": 127,
+        "team": "Flamengo",
+        "value": 66.67,
+        "matches": 9
+      },
+      {
+        "team_id": 128,
+        "team": "Santos",
+        "value": 60,
+        "matches": 10
+      },
+      {
+        "team_id": 134,
+        "team": "Atletico Paranaense",
+        "value": 60,
+        "matches": 10
+      },
+      {
+        "team_id": 7848,
+        "team": "Mirassol",
+        "value": 55.56,
+        "matches": 9
+      },
+      {
+        "team_id": 124,
+        "team": "Fluminense",
+        "value": 50,
+        "matches": 10
+      },
+      {
+        "team_id": 130,
+        "team": "Gremio",
+        "value": 50,
+        "matches": 10
+      },
+      {
+        "team_id": 1062,
+        "team": "Atletico-MG",
+        "value": 50,
+        "matches": 10
+      },
+      {
+        "team_id": 118,
+        "team": "Bahia",
+        "value": 44.44,
+        "matches": 9
+      },
+      {
+        "team_id": 1198,
+        "team": "Remo",
+        "value": 40,
+        "matches": 10
+      },
+      {
+        "team_id": 132,
+        "team": "Chapecoense-sc",
+        "value": 33.33,
+        "matches": 9
+      },
+      {
+        "team_id": 136,
+        "team": "Vitoria",
+        "value": 33.33,
+        "matches": 9
+      },
+      {
+        "team_id": 126,
+        "team": "Sao Paulo",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 794,
+        "team": "RB Bragantino",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 119,
+        "team": "Internacional",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 131,
+        "team": "Corinthians",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 147,
+        "team": "Coritiba",
+        "value": 20,
+        "matches": 10
+      }
+    ],
+    "by_clean_sheets_pct": [
+      {
+        "team_id": 118,
+        "team": "Bahia",
+        "value": 44.44,
+        "matches": 9
+      },
+      {
+        "team_id": 794,
+        "team": "RB Bragantino",
+        "value": 40,
+        "matches": 10
+      },
+      {
+        "team_id": 127,
+        "team": "Flamengo",
+        "value": 33.33,
+        "matches": 9
+      },
+      {
+        "team_id": 136,
+        "team": "Vitoria",
+        "value": 33.33,
+        "matches": 9
+      },
+      {
+        "team_id": 124,
+        "team": "Fluminense",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 126,
+        "team": "Sao Paulo",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 131,
+        "team": "Corinthians",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 147,
+        "team": "Coritiba",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 1062,
+        "team": "Atletico-MG",
+        "value": 30,
+        "matches": 10
+      },
+      {
+        "team_id": 119,
+        "team": "Internacional",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 121,
+        "team": "Palmeiras",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 128,
+        "team": "Santos",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 130,
+        "team": "Gremio",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 134,
+        "team": "Atletico Paranaense",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 135,
+        "team": "Cruzeiro",
+        "value": 20,
+        "matches": 10
+      },
+      {
+        "team_id": 120,
+        "team": "Botafogo",
+        "value": 11.11,
+        "matches": 9
+      },
+      {
+        "team_id": 132,
+        "team": "Chapecoense-sc",
+        "value": 11.11,
+        "matches": 9
+      },
+      {
+        "team_id": 1198,
+        "team": "Remo",
+        "value": 10,
+        "matches": 10
+      },
+      {
+        "team_id": 133,
+        "team": "Vasco DA Gama",
+        "value": 0,
+        "matches": 10
+      },
+      {
+        "team_id": 7848,
+        "team": "Mirassol",
+        "value": 0,
+        "matches": 9
+      }
+    ]
+  }
+}

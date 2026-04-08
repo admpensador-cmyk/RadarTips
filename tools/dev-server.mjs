@@ -2,6 +2,7 @@
 /**
  * Static dev preview for RadarTips.
  * Default: repo root (source HTML). Paths like /assets/ and /data/v1/ mirror production.
+ * GET /api/v1/calendar_2d → data/v1/calendar_2d.json (local stub; production uses the Worker).
  *
  * Serving dist/ requires RADARTIPS_ALLOW_DIST_ROOT=1 (use npm run dev:dist after build).
  *
@@ -139,10 +140,60 @@ function resolvePath(root, pathname) {
   return null;
 }
 
+const CALENDAR_2D_LOCAL = path.join(repoRoot, "data", "v1", "calendar_2d.json");
+
+const FLAG_ICONS_4X3 = path.join(repoRoot, "node_modules", "flag-icons", "flags", "4x3");
+const FLAG_URL_PREFIX = "/assets/flags/countries/";
+
+function tryCountryFlagFile(pathname) {
+  if (!pathname.startsWith(FLAG_URL_PREFIX) || !pathname.toLowerCase().endsWith(".svg")) {
+    return null;
+  }
+  const base = pathname.slice(FLAG_URL_PREFIX.length).replace(/\\/g, "/");
+  const safe = path.normalize(base).replace(/^(\.\.(\/|\\|$))+/, "");
+  if (safe.includes("..") || !/^[a-z0-9-]+\.svg$/i.test(safe)) return null;
+  const abs = path.join(FLAG_ICONS_4X3, safe);
+  if (!abs.startsWith(path.resolve(FLAG_ICONS_4X3))) return null;
+  return tryFile(abs);
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
   let pathname = url.pathname;
   if (pathname === "/") pathname = "/en/radar/day/";
+
+  const flagFile = tryCountryFlagFile(pathname);
+  if (flagFile) {
+    const body = fs.readFileSync(flagFile);
+    res.writeHead(200, {
+      "Content-Type": "image/svg+xml",
+      "Cache-Control": "no-store"
+    });
+    res.end(body);
+    return;
+  }
+
+  if (pathname === "/api/v1/calendar_2d" && req.method === "GET") {
+    const calFile = tryFile(CALENDAR_2D_LOCAL);
+    if (!calFile) {
+      send(
+        res,
+        503,
+        JSON.stringify({
+          error: "Dev stub: missing data/v1/calendar_2d.json (copy or generate calendar pipeline output).",
+        }),
+        { "Content-Type": "application/json; charset=utf-8" }
+      );
+      return;
+    }
+    const body = fs.readFileSync(calFile);
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    });
+    res.end(body);
+    return;
+  }
 
   const file = resolvePath(root, pathname);
   if (!file) {
@@ -172,6 +223,7 @@ server.listen(port, "127.0.0.1", () => {
   console.log(`  ${base}/`);
   console.log(`  Localized: ${base}/pt/radar/day/ …`);
   console.log(`  Dist preview: npm run dev:dist (after npm run build)`);
+  console.log(`  API stub: GET /api/v1/calendar_2d → ${CALENDAR_2D_LOCAL}`);
   if (open) {
     const url = `${base}/en/radar/day/`;
     const cmd = process.platform === "win32" ? "cmd" : "xdg-open";

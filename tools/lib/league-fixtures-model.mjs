@@ -10,7 +10,11 @@
  *
  * Design rules:
  *   - Every stat is attributed correctly to mandante / visitante.
- *   - Corners, cards and shots come from /fixtures/statistics — null if not fetched yet.
+ *   - Corners from /fixtures/statistics: only when BOTH sides have "Corner Kicks" on the
+ *     same fixture are corners_for / corners_against set; otherwise null (fixture discarded
+ *     for corners). Strict rollups use buildStrictCornersStats (valid fixtures only).
+ *   - Cards and shots come from /fixtures/statistics when present; cards can fall back to events.
+ *   - Goalkeeper strict facts: "Goalkeeper Saves" + opponent "Shots on Goal" both present or both null.
  *   - BTTS, clean_sheet, over_X are computed from goals — no API aggregate dependency.
  *   - Over_X means TOTAL match goals > X (same value for both team facts in a match).
  */
@@ -64,6 +68,30 @@ export function getFixtureStatValue(statsArray, type) {
  * @param {number} season        - season year (e.g. 2025)
  * @returns {object|null}
  */
+/** API-Football fixture.status.short values we treat as finished (goals required for aggregation). */
+export function isApiFixtureFinished(apiItem) {
+  const short = String(apiItem?.fixture?.status?.short || "").trim().toUpperCase();
+  return short === "FT" || short === "AET" || short === "PEN";
+}
+
+/**
+ * Deduplicate by fixture_id; only finished matches with both goal tallies present.
+ * @param {Array} apiItems - /fixtures response[].items
+ */
+export function filterFinishedFixturesWithScores(apiItems, competitionId, season) {
+  const out = [];
+  const seen = new Set();
+  for (const item of Array.isArray(apiItems) ? apiItems : []) {
+    if (!isApiFixtureFinished(item)) continue;
+    const raw = buildRawFixtureRecord(item, competitionId, season);
+    if (!raw || raw.home_goals === null || raw.away_goals === null) continue;
+    if (seen.has(raw.fixture_id)) continue;
+    seen.add(raw.fixture_id);
+    out.push(raw);
+  }
+  return out;
+}
+
 export function buildRawFixtureRecord(apiItem, competitionId, season) {
   const fixture = apiItem?.fixture || {};
   const teams = apiItem?.teams || {};
@@ -84,6 +112,16 @@ export function buildRawFixtureRecord(apiItem, competitionId, season) {
   const fixtureId = toInt(fixture?.id);
   if (!fixtureId) return null;
 
+  const ht = apiItem?.score?.halftime;
+  let halftime_home = null;
+  let halftime_away = null;
+  if (ht && typeof ht === "object") {
+    const hh = Number(ht.home);
+    const ha = Number(ht.away);
+    if (Number.isFinite(hh)) halftime_home = Math.round(hh);
+    if (Number.isFinite(ha)) halftime_away = Math.round(ha);
+  }
+
   return {
     fixture_id: fixtureId,
     played_at_utc: playedAtUtc,
@@ -97,8 +135,84 @@ export function buildRawFixtureRecord(apiItem, competitionId, season) {
     away_id: toInt(teams?.away?.id),
     away_name: String(teams?.away?.name || "").trim(),
     home_goals: Number.isFinite(homeGoals) ? homeGoals : null,
-    away_goals: Number.isFinite(awayGoals) ? awayGoals : null
+    away_goals: Number.isFinite(awayGoals) ? awayGoals : null,
+    halftime_home,
+    halftime_away
   };
+}
+
+/**
+ * Goal events from /fixtures/events, chronological (API-Football v3).
+ * Skips disallowed / VAR-cancelled style rows when detail says so.
+ */
+export function sortedCanonicalGoalEvents(eventsArray) {
+  const arr = Array.isArray(eventsArray) ? eventsArray : [];
+  const out = [];
+  for (const ev of arr) {
+    const type = String(ev?.type || "").trim().toLowerCase();
+    if (type !== "goal") continue;
+    const detail = String(ev?.detail || "").toLowerCase();
+    if (detail.includes("disallowed")) continue;
+    const elapsed = Number(ev?.time?.elapsed) || 0;
+    const extra = Number(ev?.time?.extra) || 0;
+    const teamId = Number(ev?.team?.id);
+    if (!Number.isFinite(teamId)) continue;
+    out.push({ elapsed, extra, teamId });
+  }
+  out.sort((a, b) => a.elapsed - b.elapsed || a.extra - b.extra);
+  return out;
+}
+
+/**
+ * Control flags for Team Profile rows — only from real halftime scores and/or goal events.
+ * Omits a key when the value cannot be established (no fabrication from final score alone).
+ *
+ * @param {object} rawFixture — buildRawFixtureRecord output (goals + optional halftime)
+ * @param {Array} eventsArray — raw response[] from /fixtures/events
+ * @param {number} teamId
+ * @param {boolean} isHome
+ * @param {string} result — W | D | L
+ * @returns {Record<string, boolean>}
+ */
+export function deriveProfileMatchControlBooleans(rawFixture, eventsArray, teamId, isHome, result) {
+  const out = {};
+  const tid = Number(teamId);
+  const res = result === "W" || result === "D" || result === "L" ? result : "L";
+
+  const hh = rawFixture?.halftime_home;
+  const ha = rawFixture?.halftime_away;
+  const htKnown =
+    hh != null && ha != null && Number.isFinite(Number(hh)) && Number.isFinite(Number(ha));
+  if (htKnown) {
+    const gfHt = isHome ? Number(hh) : Number(ha);
+    const gaHt = isHome ? Number(ha) : Number(hh);
+    out.leading_ht = gfHt > gaHt;
+  }
+
+  const goalEvents = sortedCanonicalGoalEvents(eventsArray);
+  const ftGf = isHome ? Number(rawFixture?.home_goals) : Number(rawFixture?.away_goals);
+  const ftGa = isHome ? Number(rawFixture?.away_goals) : Number(rawFixture?.home_goals);
+
+  if (goalEvents.length > 0) {
+    const first = goalEvents[0];
+    out.scored_first = first.teamId === tid;
+    out.conceded_first = first.teamId !== tid;
+  } else if (Number.isFinite(ftGf) && Number.isFinite(ftGa) && ftGf === 0 && ftGa === 0) {
+    out.scored_first = false;
+    out.conceded_first = false;
+  }
+
+  if (res !== "W") {
+    out.comeback_win = false;
+  } else if (htKnown) {
+    const gfHt = isHome ? Number(hh) : Number(ha);
+    const gaHt = isHome ? Number(ha) : Number(hh);
+    out.comeback_win = gfHt < gaHt;
+  } else if (typeof out.conceded_first === "boolean") {
+    out.comeback_win = out.conceded_first === true;
+  }
+
+  return out;
 }
 
 /**
@@ -233,6 +347,19 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats, fixtureEvent
     const eventsBlock = fixtureEvents ? (isHome ? fixtureEvents.home : fixtureEvents.away) : null;
     const opponentEventsBlock = fixtureEvents ? (isHome ? fixtureEvents.away : fixtureEvents.home) : null;
 
+    const hc = fixtureStats?.home?.corners;
+    const ac = fixtureStats?.away?.corners;
+    const cornersBothSides =
+      fixtureStats != null &&
+      hc != null &&
+      ac != null &&
+      Number.isFinite(Number(hc)) &&
+      Number.isFinite(Number(ac)) &&
+      Number(hc) >= 0 &&
+      Number(ac) >= 0;
+    const cornersHomeVal = cornersBothSides ? toInt(hc) : null;
+    const cornersAwayVal = cornersBothSides ? toInt(ac) : null;
+
     const yellowFor = statsBlock?.yellow_cards ?? eventsBlock?.yellow_cards ?? null;
     const yellowAgainst = opponentStatsBlock?.yellow_cards ?? opponentEventsBlock?.yellow_cards ?? null;
     const redFor = statsBlock?.red_cards ?? eventsBlock?.red_cards ?? null;
@@ -266,9 +393,9 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats, fixtureEvent
       over_15: totalGoals > 1.5,
       over_25: totalGoals > 2.5,
       over_35: totalGoals > 3.5,
-      // Advanced stats — null if fixture stats not fetched yet
-      corners_for: statsBlock?.corners ?? null,
-      corners_against: opponentStatsBlock?.corners ?? null,
+      // Corners — only when both teams have Corner Kicks on this fixture; never partial
+      corners_for: cornersBothSides ? (isHome ? cornersHomeVal : cornersAwayVal) : null,
+      corners_against: cornersBothSides ? (isHome ? cornersAwayVal : cornersHomeVal) : null,
       yellow_cards_for: yellowFor,
       yellow_cards_against: yellowAgainst,
       red_cards_for: redFor,
@@ -281,7 +408,24 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats, fixtureEvent
       fouls_for: statsBlock?.fouls ?? null,
       fouls_against: opponentStatsBlock?.fouls ?? null,
       offsides_for: statsBlock?.offsides ?? null,
-      offsides_against: opponentStatsBlock?.offsides ?? null
+      offsides_against: opponentStatsBlock?.offsides ?? null,
+      // Goalkeeper — only when saves + opponent Shots on Goal both present (/fixtures/statistics)
+      ...(() => {
+        const gs = statsBlock?.saves;
+        const osog = opponentStatsBlock?.shots_on_target;
+        const ok =
+          fixtureStats != null &&
+          gs != null &&
+          osog != null &&
+          Number.isFinite(Number(gs)) &&
+          Number.isFinite(Number(osog)) &&
+          Number(gs) >= 0 &&
+          Number(osog) >= 0;
+        return {
+          goalkeeper_saves: ok ? toInt(gs) : null,
+          goalkeeper_shots_on_goal_faced: ok ? toInt(osog) : null
+        };
+      })()
     };
   }
 
@@ -294,6 +438,173 @@ export function buildTeamFactsFromFixture(rawFixture, fixtureStats, fixtureEvent
 // ---------------------------------------------------------------------------
 // Layer 3 — Team Aggregates
 // ---------------------------------------------------------------------------
+
+/**
+ * Strict discipline rollup from team facts: every fact must have finite
+ * yellow_cards_for and red_cards_for (0 allowed). Otherwise null — no coercion.
+ * Derived only from per-fixture data (e.g. /fixtures/events) merged into facts.
+ *
+ * @param {Array} facts
+ * @returns {{ totals: object, counts: object, rates: object } | null}
+ */
+export function buildStrictDisciplineStats(facts) {
+  const list = Array.isArray(facts) ? facts : [];
+  const n = list.length;
+  if (n === 0) return null;
+  for (const f of list) {
+    const y = f?.yellow_cards_for;
+    const r = f?.red_cards_for;
+    if (y === null || y === undefined || r === null || r === undefined) return null;
+    const yn = Number(y);
+    const rn = Number(r);
+    if (!Number.isFinite(yn) || !Number.isFinite(rn) || yn < 0 || rn < 0) return null;
+  }
+  let yellowSum = 0;
+  let redSum = 0;
+  let m1y = 0;
+  let m2y = 0;
+  let mr = 0;
+  for (const f of list) {
+    const y = Number(f.yellow_cards_for);
+    const r = Number(f.red_cards_for);
+    yellowSum += y;
+    redSum += r;
+    if (y >= 1) m1y += 1;
+    if (y >= 2) m2y += 1;
+    if (r >= 1) mr += 1;
+  }
+  return {
+    totals: {
+      yellow_cards: yellowSum,
+      red_cards: redSum
+    },
+    counts: {
+      matches: n,
+      matches_with_1plus_yellow_count: m1y,
+      matches_with_2plus_yellows_count: m2y,
+      matches_with_red_count: mr
+    },
+    rates: {
+      yellow_cards_per_game: Number((yellowSum / n).toFixed(3)),
+      red_cards_per_game: Number((redSum / n).toFixed(3)),
+      matches_with_1plus_yellow_pct: pct(m1y, n),
+      matches_with_2plus_yellows_pct: pct(m2y, n),
+      matches_with_red_pct: pct(mr, n)
+    }
+  };
+}
+
+/**
+ * Strict corners rollup: only facts with BOTH corners_for and corners_against non-null
+ * (same fixture had complete Corner Kicks for both sides). Denominator = count of those facts.
+ * No null-as-zero. Returns null if no valid facts.
+ *
+ * @param {Array} facts
+ * @returns {{ totals: object, counts: object, rates: object } | null}
+ */
+export function buildStrictCornersStats(facts) {
+  const list = Array.isArray(facts) ? facts : [];
+  const valid = [];
+  for (const f of list) {
+    const cf = f?.corners_for;
+    const ca = f?.corners_against;
+    if (cf === null || cf === undefined || ca === null || ca === undefined) continue;
+    const cfn = Number(cf);
+    const can = Number(ca);
+    if (!Number.isFinite(cfn) || !Number.isFinite(can) || cfn < 0 || can < 0) continue;
+    valid.push({ corners_for: Math.round(cfn), corners_against: Math.round(can) });
+  }
+  const n = valid.length;
+  if (n === 0) return null;
+
+  let sumFor = 0;
+  let sumAgainst = 0;
+  let m3 = 0;
+  let m5 = 0;
+  let m7 = 0;
+  for (const v of valid) {
+    sumFor += v.corners_for;
+    sumAgainst += v.corners_against;
+    if (v.corners_for >= 3) m3 += 1;
+    if (v.corners_for >= 5) m5 += 1;
+    if (v.corners_for >= 7) m7 += 1;
+  }
+
+  return {
+    totals: {
+      corners_for: sumFor,
+      corners_against: sumAgainst
+    },
+    counts: {
+      matches: n,
+      matches_with_3plus_corners_for_count: m3,
+      matches_with_5plus_corners_for_count: m5,
+      matches_with_7plus_corners_for_count: m7
+    },
+    rates: {
+      corners_for_per_game: Number((sumFor / n).toFixed(3)),
+      corners_against_per_game: Number((sumAgainst / n).toFixed(3)),
+      matches_with_3plus_corners_for_pct: pct(m3, n),
+      matches_with_5plus_corners_for_pct: pct(m5, n),
+      matches_with_7plus_corners_for_pct: pct(m7, n)
+    }
+  };
+}
+
+/**
+ * Strict goalkeeper rollup: only facts with BOTH goalkeeper_saves and
+ * goalkeeper_shots_on_goal_faced (opponent "Shots on Goal"). No null-as-zero.
+ * save_pct = 100 * sum(saves) / sum(SoG faced) when sum(SoG faced) > 0, else null.
+ *
+ * @param {Array} facts
+ * @returns {{ totals: object, counts: object, rates: object } | null}
+ */
+export function buildStrictGoalkeeperStats(facts) {
+  const list = Array.isArray(facts) ? facts : [];
+  const valid = [];
+  for (const f of list) {
+    const s = f?.goalkeeper_saves;
+    const sog = f?.goalkeeper_shots_on_goal_faced;
+    if (s === null || s === undefined || sog === null || sog === undefined) continue;
+    const sn = Number(s);
+    const ogn = Number(sog);
+    if (!Number.isFinite(sn) || !Number.isFinite(ogn) || sn < 0 || ogn < 0) continue;
+    valid.push({ saves: Math.round(sn), sog: Math.round(ogn) });
+  }
+  const n = valid.length;
+  if (n === 0) return null;
+
+  let saveSum = 0;
+  let sogSum = 0;
+  let m3 = 0;
+  let m5 = 0;
+  for (const v of valid) {
+    saveSum += v.saves;
+    sogSum += v.sog;
+    if (v.saves >= 3) m3 += 1;
+    if (v.saves >= 5) m5 += 1;
+  }
+
+  const savePct =
+    sogSum > 0 ? Number(((saveSum / sogSum) * 100).toFixed(2)) : null;
+
+  return {
+    totals: {
+      saves: saveSum
+    },
+    counts: {
+      matches: n,
+      matches_with_3plus_saves_count: m3,
+      matches_with_5plus_saves_count: m5
+    },
+    rates: {
+      saves_per_game: Number((saveSum / n).toFixed(3)),
+      save_pct: savePct,
+      matches_with_3plus_saves_pct: pct(m3, n),
+      matches_with_5plus_saves_pct: pct(m5, n)
+    }
+  };
+}
 
 /**
  * Aggregate a set of team facts into a split stats object.
@@ -314,6 +625,7 @@ export function buildSplitStats(facts) {
       over_15_count: 0, over_15_pct: null,
       over_25_count: 0, over_25_pct: null,
       over_35_count: 0, over_35_pct: null,
+      under_25_count: 0, under_25_pct: null,
       corners_for_total: null, corners_for_avg: null,
       corners_against_total: null, corners_against_avg: null,
       yellow_cards_for_total: null, yellow_cards_for_avg: null,
@@ -359,10 +671,14 @@ export function buildSplitStats(facts) {
     if (f.over_15) over_15_count++;
     if (f.over_25) over_25_count++;
     if (f.over_35) over_35_count++;
-    if (f.corners_for !== null) {
-      corners_for_sum += f.corners_for;
-      corners_against_sum += (f.corners_against ?? 0);
-      corners_count++;
+    if (f.corners_for !== null && f.corners_against !== null) {
+      const cff = Number(f.corners_for);
+      const caf = Number(f.corners_against);
+      if (Number.isFinite(cff) && Number.isFinite(caf) && cff >= 0 && caf >= 0) {
+        corners_for_sum += cff;
+        corners_against_sum += caf;
+        corners_count++;
+      }
     }
     if (f.yellow_cards_for !== null) {
       yellow_for_sum += f.yellow_cards_for;
@@ -411,6 +727,8 @@ export function buildSplitStats(facts) {
     over_15_count, over_15_pct: pct(over_15_count, n),
     over_25_count, over_25_pct: pct(over_25_count, n),
     over_35_count, over_35_pct: pct(over_35_count, n),
+    under_25_count: n - over_25_count,
+    under_25_pct: pct(n - over_25_count, n),
     corners_for_total: corners_count > 0 ? corners_for_sum : null,
     corners_for_avg: corners_count > 0 ? toFloat(corners_for_sum / corners_count, 2) : null,
     corners_against_total: corners_count > 0 ? corners_against_sum : null,
@@ -463,7 +781,22 @@ export function buildTeamAggregate(teamId, teamName, competitionId, season, allF
     season,
     total: buildSplitStats(teamFacts),
     home: buildSplitStats(homeFacts),
-    away: buildSplitStats(awayFacts)
+    away: buildSplitStats(awayFacts),
+    discipline: {
+      total: buildStrictDisciplineStats(teamFacts),
+      home: buildStrictDisciplineStats(homeFacts),
+      away: buildStrictDisciplineStats(awayFacts)
+    },
+    corners: {
+      total: buildStrictCornersStats(teamFacts),
+      home: buildStrictCornersStats(homeFacts),
+      away: buildStrictCornersStats(awayFacts)
+    },
+    goalkeeper: {
+      total: buildStrictGoalkeeperStats(teamFacts),
+      home: buildStrictGoalkeeperStats(homeFacts),
+      away: buildStrictGoalkeeperStats(awayFacts)
+    }
   };
 }
 
@@ -489,6 +822,27 @@ export function buildAllTeamAggregates(allFacts, competitionId, season) {
     aggregates[String(teamId)] = buildTeamAggregate(teamId, teamName, competitionId, season, allFacts);
   }
   return aggregates;
+}
+
+/**
+ * Ensure every team in /standings has an aggregate (0 played if no finished facts yet).
+ */
+export function ensureAggregatesCoverStandings(teamAggregates, standingsPayload, competitionId, season) {
+  const response = Array.isArray(standingsPayload?.response) ? standingsPayload.response : [];
+  const leagueBlock = response[0]?.league || null;
+  const groups = Array.isArray(leagueBlock?.standings) ? leagueBlock.standings : [];
+  const rows = groups.find((entry) => Array.isArray(entry)) || [];
+  const next = { ...(teamAggregates || {}) };
+  for (const row of rows) {
+    const id = Number(row?.team?.id);
+    if (!Number.isFinite(id)) continue;
+    const key = String(id);
+    if (!next[key]) {
+      const name = String(row?.team?.name || "").trim();
+      next[key] = buildTeamAggregate(id, name, competitionId, season, []);
+    }
+  }
+  return next;
 }
 
 /**

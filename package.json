@@ -13,9 +13,17 @@
     "preview:build": "node tools/with-env.mjs preview -- node tools/build-static.mjs",
     "verify": "node tools/with-env.mjs development -- node tools/verify-no-zombie-radar.mjs",
     "verify:dist": "node tools/with-env.mjs production -- node tools/verify-no-zombie-radar.mjs --dist",
+    "verify:team-profile": "node tools/validate-team-profile-engine.mjs",
+    "validate:profile-finished": "node tools/validate-profile-finished-matches.mjs",
     "deploy:preview": "node tools/deploy-hint.mjs preview",
     "deploy:prod": "node tools/deploy-hint.mjs production",
+    "pages:deploy": "node tools/with-env.mjs production -- node tools/pages-deploy-production.mjs",
     "migrate:r2-legacy-to-prod": "node tools/r2-migrate-legacy-to-prod-prefix.mjs",
-    "verify:r2-prod": "node tools/r2-verify-prod-prefix.mjs"
+    "verify:r2-prod": "node tools/r2-verify-prod-prefix.mjs",
+    "pipeline:brasileirao:preview": "node tools/preview-pipeline-brasileirao.mjs",
+    "upload:brasileirao:preview": "node tools/upload-preview-brasileirao.mjs"
+  },
+  "devDependencies": {
+    "flag-icons": "^7.5.0"
   }
 }

@@ -3,8 +3,7 @@
  * RadarTips - Update data via API-FOOTBALL (API-SPORTS)
  *
  * Generates:
- *  - data/v1/calendar_2d.json
- *  - data/v1/radar_day.json
+ *  - data/v1/calendar_2d.json (embeds radar_day.highlights — no separate radar_day.json)
  *
  * Keeps: form/gols enrichment.
  * Fixes:
@@ -32,12 +31,12 @@ import {
   buildAllTeamAggregates,
   buildScopedTeamAggregates
 } from "./lib/league-fixtures-model.mjs";
+import { enrichCalendar2dPayload } from "./lib/match-analytics-engine.mjs";
 
 const OUT_DIR = path.join(process.cwd(), "data", "v1");
 const OUT_LEAGUES_DIR = path.join(OUT_DIR, "leagues");
 const OUT_CAL_DAY = path.join(OUT_DIR, "calendar_day.json");
 const OUT_CAL_2D = path.join(OUT_DIR, "calendar_2d.json");
-const OUT_RADAR_DAY = path.join(OUT_DIR, "radar_day.json");
 const OUT_STATS_SUPPORTED = path.join(OUT_DIR, "stats_supported.json");
 const OUT_COVERAGE_REPORT = path.join(OUT_DIR, "calendar_coverage_report.json");
 const LEAGUE_PAGE_OUTPUTS = new Map(
@@ -263,6 +262,53 @@ function readCoverageAllowlist() {
     throw new Error("Coverage allowlist has no valid numeric league_id entries.");
   }
   return cleaned;
+}
+
+/** Full rows for embedding in calendar_2d.meta.allowlist_leagues (client sidebar / geography). */
+function readCoverageAllowlistEmbedRows() {
+  if (!fs.existsSync(COVERAGE_ALLOWLIST_PATH)) {
+    throw new Error(`Missing coverage allowlist file: ${COVERAGE_ALLOWLIST_PATH}`);
+  }
+  const raw = fs.readFileSync(COVERAGE_ALLOWLIST_PATH, "utf-8");
+  const parsed = JSON.parse(raw);
+  const leagues = Array.isArray(parsed?.leagues) ? parsed.leagues : [];
+  return leagues
+    .map((entry) => ({
+      league_id: Number(entry?.league_id),
+      country: String(entry?.country ?? "").trim(),
+      display_name: String(entry?.display_name ?? "").trim(),
+      region: entry?.region != null && String(entry.region).trim() ? String(entry.region).trim() : null,
+      type: entry?.type != null ? String(entry.type).trim() : "",
+      tier: entry?.tier != null ? String(entry.tier).trim() : null
+    }))
+    .filter((e) => Number.isFinite(e.league_id));
+}
+
+/** One meta row per id in allowlist (sorted), aligned with meta.allowlist_league_ids. */
+function buildAllowlistLeaguesMeta(allowlistLeagueIds, embedRows) {
+  const byId = new Map(embedRows.map((r) => [r.league_id, r]));
+  const ids = Array.from(allowlistLeagueIds).sort((a, b) => a - b);
+  return ids.map((id) => {
+    const row = byId.get(id);
+    if (row) {
+      return {
+        league_id: id,
+        country: row.country,
+        display_name: row.display_name || `League ${id}`,
+        region: row.region,
+        type: row.type || "",
+        tier: row.tier
+      };
+    }
+    return {
+      league_id: id,
+      country: "",
+      display_name: `League ${id}`,
+      region: null,
+      type: "",
+      tier: null
+    };
+  });
 }
 
 function extractLeagueIdFromMatch(match) {
@@ -1351,6 +1397,12 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
   writeJsonAtomic(OUT_CAL_DAY, calendarDayOut);
   console.log(`[CALENDAR] Wrote ${OUT_CAL_DAY.replace(process.cwd(), ".")} matches=${dayMatches.length}`);
 
+  const radarHighlights = pickRadarHighlights(sorted);
+  const embedRows = readCoverageAllowlistEmbedRows();
+  const allowlist_leagues = buildAllowlistLeaguesMeta(allowlistLeagueIds, embedRows);
+  if (allowlist_leagues.length !== Array.from(allowlistLeagueIds).length) {
+    throw new Error("[FAIL-CLOSED] allowlist_leagues length mismatch vs allowlistLeagueIds");
+  }
   const calendar2dOut = {
     meta: {
       tz: "America/Bahia",
@@ -1366,11 +1418,16 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
       source: "calendar_2d",
       leagues_source: leaguesSource,
       leagues_count: leaguesCount,
-      allowlist_league_ids: Array.from(allowlistLeagueIds).sort((a, b) => a - b)
+      allowlist_league_ids: Array.from(allowlistLeagueIds).sort((a, b) => a - b),
+      allowlist_leagues
     },
     matches: sorted,
     today: split.todayMatches,
-    tomorrow: split.tomorrowMatches
+    tomorrow: split.tomorrowMatches,
+    radar_day: {
+      highlights: radarHighlights,
+      generated_at_utc: generatedAtUtc
+    }
   };
 
   const forensicToday20Bahia = {};
@@ -1386,6 +1443,7 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     calendar2dOut.meta.today
   );
 
+  enrichCalendar2dPayload(calendar2dOut);
   writeJsonAtomic(OUT_CAL_2D, calendar2dOut);
   console.log(`[CALENDAR] Wrote ${OUT_CAL_2D.replace(process.cwd(), ".")} today=${split.todayMatches.length} tomorrow=${split.tomorrowMatches.length}`);
 
@@ -1407,13 +1465,9 @@ async function generateCalendar(cfg, resolved, timezone, daysAhead, formWindow, 
     `vanished=${coverageReport.summary.vanished_leagues} leaked=${coverageReport.summary.leaked_leagues}`
   );
 
-  // Write radar_day.json
-  const radarDayOut = {
-    generated_at_utc: generatedAtUtc,
-    highlights: pickRadarHighlights(sorted)
-  };
-  writeJsonAtomic(OUT_RADAR_DAY, radarDayOut);
-  console.log(`[CALENDAR] Wrote ${OUT_RADAR_DAY.replace(process.cwd(), ".")} highlights=${radarDayOut.highlights.length}`);
+  console.log(
+    `[CALENDAR] embedded radar_day highlights=${radarHighlights.length} inside calendar_2d (single artifact)`
+  );
 
   const statsSupportedOut = {
     meta: {
@@ -1683,13 +1737,15 @@ async function generateStandings(flags, resolved, timezone) {
         league_id: leagueDefinition.leagueId,
         outputPath,
         standings: snapshot.standings.length,
+        finished: Array.isArray(snapshot.fixtures.finished) ? snapshot.fixtures.finished.length : 0,
         upcoming: snapshot.fixtures.upcoming.length,
         recent: snapshot.fixtures.recent.length,
         matches_count: snapshot.statistics.league.matches_count
       });
+      const finN = Array.isArray(snapshot.fixtures.finished) ? snapshot.fixtures.finished.length : 0;
       console.log(
         `[LEAGUE-V1] Wrote ${outputPath.replace(process.cwd(), ".")} ` +
-        `standings=${snapshot.standings.length} upcoming=${snapshot.fixtures.upcoming.length} recent=${snapshot.fixtures.recent.length} matches=${snapshot.statistics.league.matches_count}`
+        `standings=${snapshot.standings.length} finished=${finN} upcoming=${snapshot.fixtures.upcoming.length} recent=${snapshot.fixtures.recent.length} matches=${snapshot.statistics.league.matches_count}`
       );
     } catch (err) {
       const reason = err?.message || String(err);

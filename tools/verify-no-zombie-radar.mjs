@@ -124,6 +124,17 @@ if (!useDist) {
     const text = fs.readFileSync(f, "utf8");
     if (/radar_week/i.test(text)) fail(`FAIL ${rel}: forbidden token radar_week`);
     if (/radar\/week/i.test(text)) fail(`FAIL ${rel}: forbidden path segment radar/week`);
+    if (rel === "assets/js/app.js") {
+      if (/loadJSON\s*\(\s*["']\/data\/v1\/radar_day\.json["']/.test(text)) {
+        fail(`FAIL ${rel}: Radar Day must come from calendar_2d, not static /data/v1/radar_day.json`);
+      }
+      if (/\/api\/v1\/radar_day/.test(text)) {
+        fail(`FAIL ${rel}: Do not call /api/v1/radar_day; use calendar_2d.radar_day only`);
+      }
+      if (/\/data\/coverage_allowlist\.json/.test(text)) {
+        fail(`FAIL ${rel}: Product data must come from /api/v1/calendar_2d only; do not fetch /data/coverage_allowlist.json`);
+      }
+    }
   }
 }
 
